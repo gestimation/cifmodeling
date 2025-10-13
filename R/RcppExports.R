@@ -2,6 +2,6 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 calculateKM <- function(t, d, w = as.numeric( c()), strata = as.integer( c()), error = "greenwood") {
-    .Call(`_competingrisk_calculateKM`, t, d, w, strata, error)
+    .Call(`_cifmodeling_calculateKM`, t, d, w, strata, error)
 }
 

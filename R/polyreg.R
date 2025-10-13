@@ -96,7 +96,7 @@
 #' @importFrom nleqslv nleqslv
 #' @importFrom boot boot boot.ci
 #' @importFrom Rcpp sourceCpp
-#' @useDynLib polyreg, .registration = TRUE
+#' @useDynLib cifmodeling, .registration = TRUE
 #'
 #' @return A list containing fitted exposure effects and supporting results. The
 #'   main components include \code{coefficient} (estimated exposure and

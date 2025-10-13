@@ -71,7 +71,7 @@
 #' @importFrom ggsurvfit ggsurvfit add_confidence_interval add_risktable add_censor_mark
 #' @importFrom ggplot2 theme_classic theme element_text labs lims geom_point aes ggsave
 #' @importFrom Rcpp sourceCpp
-#' @useDynLib polycif, .registration = TRUE
+#' @useDynLib cifmodeling, .registration = TRUE
 #' @export
 cifcurve <- function(formula,
                            data,
