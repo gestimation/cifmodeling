@@ -370,57 +370,26 @@ polyreg <- function(
   #######################################################################################################
   # 5. Calculating variance (functions: calculateCov, calculateCovSurvival)
   #######################################################################################################
-  normalizeEstimate <- function(
-    outcome.type,
-    report.sandwich.conf,
-    should.normalize.covariate,
-    current_params,
-    out_getResults,
-    estimand,
-    prob.bound,
-    out_normalizeCovariate
-  ) {
-    if (report.sandwich.conf == FALSE) {
-      alpha_beta_estimated <- if (should.normalize.covariate) {
-        adj <- 1 / as.vector(out_normalizeCovariate$range)
-        if (length(adj) != length(current_params)) stop("Length of adj (range) must match length of current_params.")
-        adj * current_params
-      } else {
-        current_params
-      }
-      return(list(alpha_beta_estimated = alpha_beta_estimated, cov_estimated = NULL))
-    }
-    if (should.normalize.covariate) { #本来はoutcome.typeで分岐が必要
-      adj <- 1 / as.vector(out_normalizeCovariate$range)
-      if (length(adj) != length(current_params)) stop("Length of adj (range) must match length of current_params.")
-      alpha_beta_estimated <- adj * current_params
-      adj_matrix <- diag(adj, length(adj))
-      cov_estimated <- adj_matrix %*% out_calculateCov$cov_estimated %*% adj_matrix
-    } else {
-      alpha_beta_estimated <- current_params
-      cov_estimated <- out_calculateCov$cov_estimated
-    }
-    return(list(alpha_beta_estimated = alpha_beta_estimated, cov_estimated = cov_estimated))
-  }
-
   out_calculateCov <- switch(
     outcome.type,
-    "COMPETING-RISK" = calculateCov(out_getResults, estimand, prob.bound),
-    "SURVIVAL" = calculateCovSurvival(out_getResults, estimand, prob.bound),
-    "BINOMIAL" = calculateCovSurvival(out_getResults, estimand, prob.bound),
-    "PROPORTIONAL" = NULL,
-    "POLY-PROPORTIONAL" = NULL,
+    "COMPETING-RISK"   = calculateCov(out_getResults, estimand, prob.bound),
+    "SURVIVAL"         = calculateCovSurvival(out_getResults, estimand, prob.bound),
+    "BINOMIAL"         = calculateCovSurvival(out_getResults, estimand, prob.bound),
+    "PROPORTIONAL"     = NULL,
+    "POLY-PROPORTIONAL"= NULL,
     stop(sprintf("Unsupported outcome.type for covariance: %s", outcome.type))
   )
+
   out_normalizeEstimate <- normalizeEstimate(
-    outcome.type = outcome.type,
-    report.sandwich.conf = report.sandwich.conf,
+    outcome.type               = outcome.type,
+    report.sandwich.conf       = report.sandwich.conf,
     should.normalize.covariate = should.normalize.covariate,
-    current_params = current_params,
-    out_getResults = out_getResults,
-    estimand = estimand,
-    prob.bound = prob.bound,
-    out_normalizeCovariate = out_normalizeCovariate
+    current_params             = current_params,
+    out_getResults             = out_getResults,
+    estimand                   = estimand,
+    prob.bound                 = prob.bound,
+    out_normalizeCovariate     = out_normalizeCovariate,
+    out_calculateCov           = out_calculateCov
   )
 
   alpha_beta_estimated <- out_normalizeEstimate$alpha_beta_estimated

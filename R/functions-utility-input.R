@@ -75,6 +75,18 @@ Event_old <- function(time, event) {
 #' @export
 Surv <- function(...) Event(...)
 
+untangle.specials <- function(tt, special, order = 1) {
+  spc <- attr(tt, "specials")[[special]]
+  if (length(spc) == 0)
+    return(list(vars = character(0), terms = numeric(0)))
+  facs <- attr(tt, "factors")
+  fname <- dimnames(facs)
+  ff <- apply(facs[spc, , drop = FALSE], 2, sum)
+  list(vars = (fname[[1]])[spc], tvar = spc - attr(tt, "response"),
+       terms = seq(ff)[ff & match(attr(tt, "order"), order,
+                                  nomatch = 0)])
+}
+
 createAnalysisDataset <- function(formula, data, other.variables.analyzed=NULL, subset.condition=NULL, na.action=na.pass) {
   if (!is.null(subset.condition)) {
     analysis_dataset <- subset(data, eval(parse(text = subset.condition)))
@@ -133,7 +145,7 @@ readSurv <- function(formula, data, weights = NULL,
     rep(1, nrow(mf))
   } else {
     ww <- data_sync[[weights]]
-    validate_weights(ww)
+    check_weights(ww)
     ww
   }
 
@@ -304,7 +316,6 @@ checkInput <- function(data, formula, exposure, code.event1, code.event2, code.c
 
   mf$formula <- out_terms
   mf[[1]] <- as.name("model.frame")
-  # ★ 追加：ここでも na.action を明示
   mf$na.action <- na.action
   mf <- eval(mf, parent.frame())
 
@@ -437,8 +448,6 @@ check_effect.measure <- function(effect.measure1, effect.measure2) {
 }
 
 
-
-
 check_effect.measure_old <- function(effect.measure1, effect.measure2) {
   if (effect.measure1 %in% c("RR", "rr", "RISK RATIO", "Risk ratio", "risk ratio")) {
     effect.measure1.corrected <- "RR"
@@ -518,23 +527,6 @@ check_label.strata <- function(out_readSurv, label.strata) {
   }
 }
 
-untangle.specials <- function(tt, special, order = 1) {
-  spc <- attr(tt, "specials")[[special]]
-  if (length(spc) == 0)
-    return(list(vars = character(0), terms = numeric(0)))
-  facs <- attr(tt, "factors")
-  fname <- dimnames(facs)
-  ff <- apply(facs[spc, , drop = FALSE], 2, sum)
-  list(vars = (fname[[1]])[spc], tvar = spc - attr(tt, "response"),
-       terms = seq(ff)[ff & match(attr(tt, "order"), order,
-                                  nomatch = 0)])
-}
-
-
-
-
-
-
 .msg <- list(
   req           = "`{arg}` is required.",
   numeric       = "`{arg}` must be numeric.",
@@ -572,16 +564,13 @@ normalize_time_event <- function(time, event, allowed = NULL) {
   if (!is.numeric(time)) .err("numeric", arg = "time")
   if (any(time < 0, na.rm = TRUE)) .err("nonneg", arg = "time")
 
-  # --- event を NA 許容で整数化 ---
   if (is.numeric(event)) {
-    # if (anyNA(event)) .err("na", arg = "event")  # ← これを消す
     if (any(event < 0, na.rm = TRUE) || any(event != floor(event), na.rm = TRUE)) {
       .err("ev_codes", allowed = "{0,1,2,...}",
            found = paste(unique(event[!is.na(event)]), collapse = ", "))
     }
     status <- suppressWarnings(as.integer(event))
   } else if (is.logical(event)) {
-    # if (anyNA(event)) .err("na", arg = "event")  # ← これを消す
     status <- ifelse(is.na(event), NA_integer_, as.integer(event))  # FALSE=0, TRUE=1
   } else if (is.factor(event) || is.character(event)) {
     ev_chr <- as.character(event)  # NA は NA のまま
@@ -601,14 +590,13 @@ normalize_time_event <- function(time, event, allowed = NULL) {
   }
 
   if (!is.null(allowed)) {
-    ok <- is.na(status) | status %in% allowed  # ← NA を許容
+    ok <- is.na(status) | status %in% allowed
     if (!all(ok)) {
       .err("ev_codes",
            allowed = paste0("{", paste(allowed, collapse = ","), "}"),
            found   = paste(sort(unique(status[!ok])), collapse = ", "))
     }
   }
-
   list(time = as.numeric(time), event = status)
 }
 
@@ -648,12 +636,20 @@ normalize_time_event_old <- function(time, event, allowed = NULL) {
   list(time = as.numeric(time), event = status)
 }
 
-validate_weights <- function(w) {
+check_weights <- function(w) {
   if (!is.numeric(w))     .err("weights_num")
   if (any(!is.finite(w))) .err("weights_fin")
   if (any(w < 0))         .err("weights_pos")
   if (anyNA(w))           .err("na", arg = "weights")
   invisible(TRUE)
+}
+
+normalize_effect_measure <- function(x, which = "effect.measure") {
+  ux <- toupper(x)
+  if (ux %in% c("RR","RISK RATIO")) return("RR")
+  if (ux %in% c("OR","ODDS RATIO")) return("OR")
+  if (ux %in% c("SHR","HR","SUBDISTRIBUTION HAZARD RATIO")) return("SHR")
+  .err("effect_meas", which = which)
 }
 
 check_outcome.type <- function(x) {
@@ -669,14 +665,6 @@ check_outcome.type <- function(x) {
     if (ux == k || tolower(ux) %in% tolower(map[[k]])) return(k)
   }
   .err("outcome_type", choices = paste(names(map), collapse = ", "))
-}
-
-normalize_effect_measure <- function(x, which = "effect.measure") {
-  ux <- toupper(x)
-  if (ux %in% c("RR","RISK RATIO")) return("RR")
-  if (ux %in% c("OR","ODDS RATIO")) return("OR")
-  if (ux %in% c("SHR","HR","SUBDISTRIBUTION HAZARD RATIO")) return("SHR")
-  .err("effect_meas", which = which)
 }
 
 check_error <- function(x, outcome.type) {
