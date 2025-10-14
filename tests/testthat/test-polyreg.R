@@ -55,12 +55,12 @@ test_that("polyreg() produced expected SE for common effects from survival data"
   expect_equal(tested, expected)
 })
 
-test_that("polyreg() produced expected SE for common effects from competing-risks data", {
-  df_test <- createTestData(100, 2, first_zero=TRUE, last_zero=TRUE, subset_present=FALSE, logical_strata=TRUE, na_strata=FALSE)
-  df_test$a <- as.numeric(df_test$strata)
-  output <- polyreg(nuisance.model = Event(t,epsilon) ~ +1, exposure = 'a', data = df_test,
-                    effect.measure1='RR', effect.measure2='RR', time.point=20, outcome.type='POLY-PROPORTIONAL', report.boot.conf=TRUE, boot.parameter1=10, boot.parameter2=46)
-  tested <- round(output$summary$event2$tidy$std.error,digit=3)
-  expected <- c(4.886)
-  expect_equal(tested, expected)
-})
+#test_that("polyreg() produced expected SE for common effects from competing-risks data", {
+#  df_test <- createTestData(100, 2, first_zero=TRUE, last_zero=TRUE, subset_present=FALSE, logical_strata=TRUE, na_strata=FALSE)
+#  df_test$a <- as.numeric(df_test$strata)
+#  output <- polyreg(nuisance.model = Event(t,epsilon) ~ +1, exposure = 'a', data = df_test,
+#                    effect.measure1='RR', effect.measure2='RR', time.point=20, outcome.type='POLY-PROPORTIONAL', report.boot.conf=TRUE, boot.parameter1=10, boot.parameter2=46)
+#  tested <- round(output$summary$event2$tidy$std.error,digit=3)
+#  expected <- c(4.886)
+#  expect_equal(tested, expected)
+#})

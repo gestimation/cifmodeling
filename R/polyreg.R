@@ -213,7 +213,7 @@ polyreg <- function(
   #######################################################################################################
   # 2. Pre-processing and Calculating initial values alpha_beta_0 (function: calculateInitialValues)
   #######################################################################################################
-  if (outcome.type == "COMPETING-RISK" | outcome.type == "SURVIVAL" | outcome.type == "BINOMIAL") {
+  if (outcome.type == "COMPETING-RISK" || outcome.type == "SURVIVAL" || outcome.type == "BINOMIAL") {
     alpha_beta_0 <- getInitialValues(
       formula = nuisance.model,
       data = normalized_data,
@@ -240,11 +240,11 @@ polyreg <- function(
   #######################################################################################################
   # 3. Calculating IPCW (function: calculateIPCW, calculateIPCWMatrix)
   #######################################################################################################
-  if (outcome.type == "COMPETING-RISK" | outcome.type == "SURVIVAL") {
+  if (outcome.type == "COMPETING-RISK" || outcome.type == "SURVIVAL") {
     ip.weight.matrix <- calculateIPCW(nuisance.model, normalized_data, code.censoring, strata, estimand$time.point)
   } else if (outcome.type == "BINOMIAL") {
     ip.weight.matrix <- matrix(1,nrow(normalized_data),1)
-  } else if (outcome.type == "PROPORTIONAL" | outcome.type == "POLY-PROPORTIONAL") {
+  } else if (outcome.type == "PROPORTIONAL" || outcome.type == "POLY-PROPORTIONAL") {
     ip.weight.matrix <- calculateIPCWMatrix(nuisance.model, normalized_data, code.censoring, strata, estimand, out_normalizeCovariate)
   }
 

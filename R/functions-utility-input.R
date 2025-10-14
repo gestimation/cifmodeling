@@ -1,116 +1,79 @@
-Surv <- function(time, event) {
-  if (missing(time))
-    stop("Must have a time argument")
-  if (!is.numeric(time))
-    stop("Time variable is not numeric")
-  #  if (any(is.na(time)))
-  #    warning("Invalid time variable. NA values included")
-  #  if (any(time<0))
-  #    warning("Invalid time variable. Non-negative values included")
-  if (length(event) != length(time))
-    stop("Time and event variables are different lengths")
-  if (missing(event))
-    stop("Must have an event argument")
-  if (is.numeric(event)) {
-  #  if (any(is.na(event)))
-  #    warning("Invalid event variable. NA values included")
-    status <- event
-  } else if (is.logical(event)) {
-  #  if (any(is.na(event)))
-  #    warning("Invalid event variable. NA values included")
-    status <- as.numeric(event)
-  #  warning("Event variable is logical, converted to numearic")
-  } else if (is.factor(event)) {
-    status <- as.numeric(as.factor(event)) - 1
-  #  warning("Event variable is a factor, converted to numearic")
-  } else stop("Invalid status value, must be logical or numeric")
-  #if (nlevels(as.factor(event)) > 3)
-  #  warning("Event variable should not have more than three levels")
-  ss <- cbind(time = time, status = status)
-  type <- "right"
-
-  inputAttributes <- list()
-  if (!is.null(attributes(time)))
-    inputAttributes$time <- attributes(time)
-  cname <- dimnames(ss)[[2]]
-  if (length(cname) == 0) {
-    cname <- c("time", "status")
-  }
-  dimnames(ss) <- list(NULL, cname)
-  attr(ss, "type") <- type
-  if (length(inputAttributes) > 0)
-    attr(ss, "inputAttributes") <- inputAttributes
-  class(ss) <- "Surv"
-  return(ss)
-}
-
-#' Create a survival or competing risks response
+#' Create a survival or competing-risks response
 #'
-#' A lightweight response constructor used in \code{survival.curve()} and \code{polyreg()}
-#' to pass survival and competing risks data via a model formula.
+#' A lightweight response constructor used in \code{cifcurve()} and \code{polyreg()}
+#' to pass survival and competing-risks data via a model formula.
 #'
 #' @param time Numeric vector of follow-up times (non-negative).
-#' @param event Integer or factor vector of event codes
-#'   (e.g., 0 = censored, 1 = event of interest, 2 = competing event).
+#' @param event Integer (0=censor, 1,2,...) or a character/factor vector whose levels
+#'   are numeric codes "0","1","2",... for competing events.
 #'
-#' @return An object of class \code{"Event"} with fields \code{time}, \code{event}
+#' @return An object of class \code{"Event"} (a 2-column matrix) with columns \code{time}, \code{event}.
+#' @aliases Event Surv
 #' @examples
-#' data(diabetes.complications)
-#' polyreg(
-#'   nuisance.model = Event(t, epsilon) ~ +1,
-#'   exposure = "fruitq1",
-#'   data = diabetes.complications,
-#'   effect.measure1 = "RR",
-#'   effect.measure2 = "RR",
-#'   time.point = 8,
-#'   outcome.type = "COMPETING-RISK"
-#' )
+#' ## event: 0=censor, 1=primary, 2=competing
+#' # polyreg(nuisance.model = Event(t, epsilon) ~ 1, data = df, outcome.type="COMPETING-RISK")
+#'
 #' @export
 Event <- function(time, event) {
-  if (missing(time))
-    stop("Must have a time argument")
-  if (!is.numeric(time))
-    stop("Time variable is not numeric")
-  #  if (any(is.na(time)))
-  #    warning("Invalid time variable. NA values included")
-  #  if (any(time<0))
-  #    warning("Invalid time variable. Non-negative values included")
-  if (length(event) != length(time))
-    stop("Time and event variables are different lengths")
-  if (missing(event))
-    stop("Must have an event argument")
-  if (is.numeric(event)) {
-    #  if (any(is.na(event)))
-    #    warning("Invalid event variable. NA values included")
-    status <- event
-  } else if (is.logical(event)) {
-    #  if (any(is.na(event)))
-    #    warning("Invalid event variable. NA values included")
-    status <- as.numeric(event)
-    #  warning("Event variable is logical, converted to numearic")
-  } else if (is.factor(event)) {
-    status <- as.numeric(as.factor(event)) - 1
-    #  warning("Event variable is a factor, converted to numearic")
-  } else stop("Invalid status value, must be logical or numeric")
-  #if (nlevels(as.factor(event)) > 3)
-  #  warning("Event variable should not have more than three levels")
-  ss <- cbind(time = time, status = status)
-  type <- "right"
-
-  inputAttributes <- list()
-  if (!is.null(attributes(time)))
-    inputAttributes$time <- attributes(time)
-  cname <- dimnames(ss)[[2]]
-  if (length(cname) == 0) {
-    cname <- c("time", "status")
-  }
-  dimnames(ss) <- list(NULL, cname)
-  attr(ss, "type") <- type
-  if (length(inputAttributes) > 0)
-    attr(ss, "inputAttributes") <- inputAttributes
-  class(ss) <- "Event"
-  return(ss)
+  te <- normalize_time_event(time, event)
+  ss <- cbind(time = te$time, event = te$event)
+  dimnames(ss) <- list(NULL, c("time","event"))
+  attr(ss, "type") <- "right"
+  class(ss) <- c("Event", class(ss))
+  ss
 }
+
+Event_old <- function(time, event) {
+  if (missing(time))  stop("`time` is required.")
+  if (missing(event)) stop("`event` is required.")
+  if (!is.numeric(time)) stop("`time` must be numeric.")
+  if (anyNA(time))   stop("`time` contains NA.")
+  if (any(time < 0)) stop("`time` must be non-negative.")
+
+  # coerce event to integer codes 0,1,2,...
+  if (is.numeric(event)) {
+    if (anyNA(event)) stop("`event` contains NA.")
+    if (any(event < 0) || any(event != floor(event))) {
+      stop("`event` must be non-negative integers when numeric (0=censor, 1,2,...).")
+    }
+    status <- as.integer(event)
+  } else if (is.logical(event)) {
+    if (anyNA(event)) stop("`event` contains NA.")
+    status <- as.integer(event)  # FALSE->0, TRUE->1
+  } else if (is.factor(event) || is.character(event)) {
+    ev_chr <- as.character(event)
+    if (anyNA(ev_chr)) stop("`event` contains NA.")
+    if (!all(grepl("^[0-9]+$", ev_chr))) {
+      stop("Factor/character `event` must have numeric-like levels: '0','1','2',... .")
+    }
+    status <- as.integer(ev_chr)
+  } else {
+    stop("`event` must be numeric, logical, factor, or character.")
+  }
+
+  if (length(status) != length(time)) {
+    stop("`time` and `event` must have the same length.")
+  }
+
+  # basic sanity: allow {0,1,2,...}
+  if (any(status < 0)) stop("`event` codes must be >= 0.")
+  if (!any(status == 0)) {
+    warning("No censoring (no event==0) detected.")
+  }
+
+  # construct matrix with proper column names
+  ss <- cbind(time = as.numeric(time), event = status)
+  dimnames(ss) <- list(NULL, c("time","event"))
+  attr(ss, "type") <- "right"
+  # keep original attributes of time if any
+  if (!is.null(attributes(time))) attr(ss, "inputAttributes") <- list(time = attributes(time))
+  class(ss) <- c("Event", class(ss))  # preserve "matrix"
+  ss
+}
+
+#' @rdname Event
+#' @export
+Surv <- function(...) Event(...)
 
 createAnalysisDataset <- function(formula, data, other.variables.analyzed=NULL, subset.condition=NULL, na.action=na.pass) {
   if (!is.null(subset.condition)) {
@@ -132,7 +95,53 @@ readStrata <- function(out_readSurv, out_aj, label.strata=NULL) {
   return(out_aj)
 }
 
-readSurv <- function(formula, data, weights = NULL, code.event1 = 1, code.event2 = 2, code.censoring = 0, subset.condition = NULL, na.action = na.omit) {
+readSurv <- function(formula, data, weights = NULL,
+                     code.event1 = 1, code.event2 = 2, code.censoring = 0,
+                     subset.condition = NULL, na.action = na.omit) {
+  data <- createAnalysisDataset(formula, data, weights, subset.condition, na.action)
+
+  Terms <- terms(formula, c("strata","offset","cluster"), data = data)
+  mf <- model.frame(Terms, data = data, na.action = na.action)
+
+  Y <- model.extract(mf, "response")
+  if (!inherits(Y, c("Event","Surv"))) stop("A 'Surv' or 'Event' object is expected")
+
+  te <- normalize_time_event(Y[,1], Y[,2], allowed = c(code.censoring, code.event1, code.event2))
+  t <- te$time; epsilon <- te$event
+  d  <- as.integer(epsilon != code.censoring)
+  d0 <- as.integer(epsilon == code.censoring)
+  d1 <- as.integer(epsilon == code.event1)
+  d2 <- as.integer(epsilon == code.event2)
+
+  rows <- rownames(mf)
+  if (!is.null(rows) && length(rows)) {
+    data_sync <- data[rows, , drop = FALSE]
+  } else {
+    data_sync <- data
+  }
+
+  vars <- all.vars(Terms)
+  if (length(vars) >= 3L) {
+    strata_name <- vars[3L]
+    strata <- factor(data_sync[[strata_name]])
+  } else {
+    strata_name <- NULL
+    strata <- factor(rep(1L, nrow(mf)))
+  }
+
+  w <- if (is.null(weights)) {
+    rep(1, nrow(mf))
+  } else {
+    ww <- data_sync[[weights]]
+    validate_weights(ww)
+    ww
+  }
+
+  list(t=t, epsilon=epsilon, d=d, d0=d0, d1=d1, d2=d2,
+       strata=strata, strata_name=strata_name, w=w)
+}
+
+readSurv_old <- function(formula, data, weights = NULL, code.event1 = 1, code.event2 = 2, code.censoring = 0, subset.condition = NULL, na.action = na.omit) {
   data <- createAnalysisDataset(formula, data, weights, subset.condition, na.action)
   cl <- match.call()
   if (missing(formula))
@@ -275,7 +284,80 @@ read_time.point <- function(formula, data, x_a, outcome.type, code.censoring, sh
   }
 }
 
-checkInput <- function(data, formula, exposure, code.event1, code.event2, code.censoring, code.exposure.ref, outcome.type, conf.level, report.sandwich.conf, report.boot.conf, nleqslv.method, should.normalize.covariate) {
+checkInput <- function(data, formula, exposure, code.event1, code.event2, code.censoring,
+                       code.exposure.ref, outcome.type, conf.level, report.sandwich.conf,
+                       report.boot.conf, nleqslv.method, should.normalize.covariate,
+                       strata = NULL, subset.condition = NULL, na.action = na.omit) {
+
+  other_vars <- c(exposure, strata)
+  other_vars <- other_vars[!is.null(other_vars) & nzchar(other_vars)]
+  data <- createAnalysisDataset(formula, data,
+                                other.variables.analyzed = other_vars,
+                                subset.condition = subset.condition,
+                                na.action = na.action)
+
+  mf <- match.call(expand.dots = TRUE)[1:3]
+  special <- c("strata", "offset", "cluster")
+  out_terms <- terms(formula, special, data = data)
+  if (!is.null(attr(out_terms, "specials")$strata)) stop("strata() cannot appear in formula")
+  if (!is.null(attr(out_terms, "specials")$offset))  stop("offset() cannot appear in formula")
+  if (!is.null(attr(out_terms, "specials")$cluster)) stop("cluster() cannot appear in formula")
+
+  mf$formula <- out_terms
+  mf[[1]] <- as.name("model.frame")
+  # ★ 追加：ここでも na.action を明示
+  mf$na.action <- na.action
+  mf <- eval(mf, parent.frame())
+
+  Y <- model.extract(mf, "response")
+  if (outcome.type %in% c("COMPETING-RISK","SURVIVAL","PROPORTIONAL","POLY-PROPORTIONAL")) {
+    if (!inherits(Y, c("Event","Surv"))) stop("A 'Surv' or 'Event' object is expected")
+    t <- as.numeric(Y[,1]); epsilon <- as.numeric(Y[,2])
+    if (any(t < 0, na.rm = TRUE)) stop("Invalid time variable. Expected non-negative values.")
+    if (outcome.type == "SURVIVAL") {
+      if (!all(epsilon %in% c(code.event1, code.censoring), na.rm = TRUE))
+        stop("SURVIVAL requires event codes {censoring,event1}.")
+    } else {
+      if (!all(epsilon %in% c(code.event1, code.event2, code.censoring), na.rm = TRUE))
+        stop("COMPETING-RISK requires event codes {censoring,event1,event2}.")
+    }
+  }
+
+  out_defineExposureDesign <- defineExposureDesign(data, exposure, code.exposure.ref)
+  x_a <- out_defineExposureDesign$x_a
+  x_l <- model.matrix(out_terms, mf)
+
+  if (!is.numeric(conf.level) || length(conf.level) != 1 || conf.level <= 0 || conf.level >= 1)
+    stop("conf.level must be a single number between 0 and 1")
+
+  if (outcome.type == "PROPORTIONAL" | outcome.type == "POLY-PROPORTIONAL") {
+    should.normalize.covariate.corrected <- FALSE
+    report.sandwich.conf.corrected <- FALSE
+    if (is.null(report.boot.conf)) {
+      report.boot.conf.corrected <- TRUE
+    } else {
+      report.boot.conf.corrected <- report.boot.conf
+    }
+  } else {
+    should.normalize.covariate.corrected <- should.normalize.covariate
+    if (is.null(report.boot.conf)) {
+      report.boot.conf.corrected <- FALSE
+    } else {
+      report.boot.conf.corrected <- report.boot.conf
+    }
+    if (report.boot.conf == FALSE || is.null(report.boot.conf)) {
+      report.sandwich.conf.corrected <- report.sandwich.conf
+    } else {
+      report.sandwich.conf.corrected <- FALSE
+    }
+  }
+
+  outer_choices <- c("nleqslv","Newton","Broyden")
+  nleqslv.method <- match.arg(nleqslv.method, choices = outer_choices)
+  return(list(should.normalize.covariate = should.normalize.covariate.corrected, report.sandwich.conf = report.sandwich.conf.corrected, report.boot.conf = report.boot.conf.corrected, out_defineExposureDesign=out_defineExposureDesign, x_a=x_a, x_l=x_l))
+}
+
+checkInput_old <- function(data, formula, exposure, code.event1, code.event2, code.censoring, code.exposure.ref, outcome.type, conf.level, report.sandwich.conf, report.boot.conf, nleqslv.method, should.normalize.covariate) {
   cl <- match.call()
   if (missing(formula)) stop("A formula argument is required")
   mf <- match.call(expand.dots = TRUE)[1:3]
@@ -345,7 +427,20 @@ checkInput <- function(data, formula, exposure, code.event1, code.event2, code.c
   return(list(should.normalize.covariate = should.normalize.covariate.corrected, report.sandwich.conf = report.sandwich.conf.corrected, report.boot.conf = report.boot.conf.corrected, out_defineExposureDesign=out_defineExposureDesign, x_a=x_a, x_l=x_l))
 }
 
+
+#check_outcome.type <- normalize_outcome_type
+#check_error <- normalize_error_method
 check_effect.measure <- function(effect.measure1, effect.measure2) {
+  list(
+    effect.measure1 = normalize_effect_measure(effect.measure1, "effect.measure1"),
+    effect.measure2 = normalize_effect_measure(effect.measure2, "effect.measure2")
+  )
+}
+
+
+
+
+check_effect.measure_old <- function(effect.measure1, effect.measure2) {
   if (effect.measure1 %in% c("RR", "rr", "RISK RATIO", "Risk ratio", "risk ratio")) {
     effect.measure1.corrected <- "RR"
   } else if (effect.measure1 %in% c("OR", "or", "ODDS RATIO", "Odds ratio", "odds ratio")) {
@@ -369,7 +464,7 @@ check_effect.measure <- function(effect.measure1, effect.measure2) {
   return(list(effect.measure1 = effect.measure1.corrected, effect.measure2 = effect.measure2.corrected))
 }
 
-check_outcome.type <- function(outcome.type) {
+check_outcome.type_old <- function(outcome.type) {
   if (outcome.type %in% c("COMPETING-RISK", "COMPETINGRISK", "C", "CR", "COMPETING RISK", "COMPETING-RISKS", "COMPETINGRISKS", "COMPETING RISKS", "Competingrisk", "Competing-risk", "Competing risk", "Competingrisks", "Competing-risks", "Competing risks", "competing-risk", "competingrisk", "competing risk", "competing-risks", "competingrisks", "competing risks")) {
     outcome.type.corrected <- "COMPETING-RISK"
   } else if (outcome.type %in% c("SURVIVAL", "S", "Survival", "Survival")) {
@@ -386,7 +481,7 @@ check_outcome.type <- function(outcome.type) {
   return(outcome.type.corrected)
 }
 
-check_error <- function(error, outcome.type) {
+check_error_old <- function(error, outcome.type) {
   if (outcome.type == "SURVIVAL") {
     if (is.null(error)) error <- "greenwood"
   } else {
@@ -435,3 +530,168 @@ untangle.specials <- function(tt, special, order = 1) {
        terms = seq(ff)[ff & match(attr(tt, "order"), order,
                                   nomatch = 0)])
 }
+
+
+
+
+
+
+.msg <- list(
+  req           = "`{arg}` is required.",
+  numeric       = "`{arg}` must be numeric.",
+  nonneg        = "`{arg}` must be non-negative.",
+  na            = "`{arg}` contains NA.",
+  len_mismatch  = "`{x}` and `{y}` must have the same length (got {nx} vs {ny}).",
+  ev_type       = "`event` must be numeric, logical, factor, or character.",
+  ev_codes      = "`event` codes must be non-negative integers: {allowed}. Found: {found}.",
+  weights_num   = "`weights` must be numeric.",
+  weights_fin   = "`weights` must be finite.",
+  weights_pos   = "`weights` must be non-negative.",
+  outcome_type  = "Invalid input for outcome.type. Choose one of: {choices}.",
+  effect_meas   = "Invalid input for {which}. Choose 'RR', 'OR', or 'SHR'.",
+  error_surv    = "Invalid SE method for SURVIVAL. Use 'greenwood','tsiatis','jackknife'. Defaulting to 'greenwood'.",
+  error_cr      = "Invalid SE method for COMPETING-RISK. Use 'aalen','delta','jackknife'. Defaulting to 'delta'."
+)
+
+.err <- function(key, ..., .class = NULL) {
+  dots <- rlang::list2(...)
+  env  <- rlang::env(rlang::caller_env(), !!!dots)
+  cli::cli_abort(.msg[[key]], class = c(.class, paste0("cifmodeling_", key)), .envir = env)
+}
+
+
+.chk_numeric_nonneg <- function(x, name) {
+  if (!is.numeric(x)) .err("numeric", arg = name)
+  if (anyNA(x))       .err("na",      arg = name)
+  if (any(x < 0))     .err("nonneg",  arg = name)
+  invisible(TRUE)
+}
+
+normalize_time_event <- function(time, event, allowed = NULL) {
+  if (missing(time))  .err("req", arg = "time")
+  if (missing(event)) .err("req", arg = "event")
+  if (!is.numeric(time)) .err("numeric", arg = "time")
+  if (any(time < 0, na.rm = TRUE)) .err("nonneg", arg = "time")
+
+  # --- event を NA 許容で整数化 ---
+  if (is.numeric(event)) {
+    # if (anyNA(event)) .err("na", arg = "event")  # ← これを消す
+    if (any(event < 0, na.rm = TRUE) || any(event != floor(event), na.rm = TRUE)) {
+      .err("ev_codes", allowed = "{0,1,2,...}",
+           found = paste(unique(event[!is.na(event)]), collapse = ", "))
+    }
+    status <- suppressWarnings(as.integer(event))
+  } else if (is.logical(event)) {
+    # if (anyNA(event)) .err("na", arg = "event")  # ← これを消す
+    status <- ifelse(is.na(event), NA_integer_, as.integer(event))  # FALSE=0, TRUE=1
+  } else if (is.factor(event) || is.character(event)) {
+    ev_chr <- as.character(event)  # NA は NA のまま
+    ok <- !is.na(ev_chr)
+    if (!all(grepl("^[0-9]+$", ev_chr[ok]))) {
+      .err("ev_codes", allowed = "'0','1','2',...",
+           found = paste(unique(ev_chr[ok]), collapse = ", "))
+    }
+    status <- suppressWarnings(as.integer(ev_chr))  # "NA" 等は NA になる
+  } else {
+    .err("ev_type")
+  }
+
+  if (length(status) != length(time)) {
+    .err("len_mismatch", x = "time", y = "event",
+         nx = length(time), ny = length(status))
+  }
+
+  if (!is.null(allowed)) {
+    ok <- is.na(status) | status %in% allowed  # ← NA を許容
+    if (!all(ok)) {
+      .err("ev_codes",
+           allowed = paste0("{", paste(allowed, collapse = ","), "}"),
+           found   = paste(sort(unique(status[!ok])), collapse = ", "))
+    }
+  }
+
+  list(time = as.numeric(time), event = status)
+}
+
+
+normalize_time_event_old <- function(time, event, allowed = NULL) {
+  if (missing(time))  .err("req", arg = "time")
+  if (missing(event)) .err("req", arg = "event")
+  .chk_numeric_nonneg(time, "time")
+  status <- NULL
+  if (is.numeric(event)) {
+    if (anyNA(event)) .err("na", arg = "event")
+    if (any(event < 0) || any(event != floor(event))) {
+      .err("ev_codes", allowed = "{0,1,2,...}", found = paste(unique(event), collapse=", "))
+    }
+    status <- as.integer(event)
+  } else if (is.logical(event)) {
+    if (anyNA(event)) .err("na", arg = "event")
+    status <- as.integer(event)  # FALSE=0/TRUE=1
+  } else if (is.factor(event) || is.character(event)) {
+    ev_chr <- as.character(event)
+    if (anyNA(ev_chr)) .err("na", arg = "event")
+    if (!all(grepl("^[0-9]+$", ev_chr))) {
+      .err("ev_codes", allowed = "'0','1','2',...", found = paste(unique(ev_chr), collapse=", "))
+    }
+    status <- as.integer(ev_chr)
+  } else {
+    .err("ev_type")
+  }
+
+  if (length(status) != length(time)) {
+    .err("len_mismatch", x = "time", y = "event", nx = length(time), ny = length(status))
+  }
+  if (!is.null(allowed) && !all(status %in% allowed)) {
+    .err("ev_codes", allowed = paste0("{", paste(allowed, collapse=","), "}"),
+         found = paste(sort(unique(status)), collapse=", "))
+  }
+  list(time = as.numeric(time), event = status)
+}
+
+validate_weights <- function(w) {
+  if (!is.numeric(w))     .err("weights_num")
+  if (any(!is.finite(w))) .err("weights_fin")
+  if (any(w < 0))         .err("weights_pos")
+  if (anyNA(w))           .err("na", arg = "weights")
+  invisible(TRUE)
+}
+
+check_outcome.type <- function(x) {
+  map <- list(
+    "COMPETING-RISK"   = c("competing-risk","competing risk","competingrisks","competing-risks","cr","c"),
+    "SURVIVAL"         = c("survival","s"),
+    "POLY-PROPORTIONAL"= c("poly-proportional","pp"),
+    "PROPORTIONAL"     = c("proportional","p"),
+    "BINOMIAL"         = c("binomial","b")
+  )
+  ux <- toupper(gsub("[[:space:]]+", " ", x))
+  for (k in names(map)) {
+    if (ux == k || tolower(ux) %in% tolower(map[[k]])) return(k)
+  }
+  .err("outcome_type", choices = paste(names(map), collapse = ", "))
+}
+
+normalize_effect_measure <- function(x, which = "effect.measure") {
+  ux <- toupper(x)
+  if (ux %in% c("RR","RISK RATIO")) return("RR")
+  if (ux %in% c("OR","ODDS RATIO")) return("OR")
+  if (ux %in% c("SHR","HR","SUBDISTRIBUTION HAZARD RATIO")) return("SHR")
+  .err("effect_meas", which = which)
+}
+
+check_error <- function(x, outcome.type) {
+  if (is.null(x)) x <- if (outcome.type == "SURVIVAL") "greenwood" else "delta"
+  out <- tolower(x)
+  if (outcome.type == "SURVIVAL") {
+    if (!out %in% c("greenwood","tsiatis","jackknife")) {
+      cli::cli_warn(.msg$error_surv); out <- "greenwood"
+    }
+  } else {
+    if (!out %in% c("aalen","delta","jackknife")) {
+      cli::cli_warn(.msg$error_cr); out <- "delta"
+    }
+  }
+  return(out)
+}
+
