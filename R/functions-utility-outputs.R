@@ -252,13 +252,25 @@ check_ggsurvfit <- function(
     ggsurvfit.type = NULL,
     addConfidenceInterval = TRUE,
     addCensorMark = TRUE,
+    addCompetingRiskMark = TRUE,
     addIntercurrentEventMark = TRUE,
     shape.censor.mark = 3,
-    shape.intercurrent.event.mark = 16
+    shape.competing.risk.mark = 16,
+    shape.intercurrent.event.mark = 1
 ){
   if (isTRUE(addCensorMark) && isTRUE(addIntercurrentEventMark) &&
       !is.null(shape.censor.mark) && !is.null(shape.intercurrent.event.mark) &&
       identical(shape.censor.mark, shape.intercurrent.event.mark)) {
+    warning("shape.censor.mark and shape.intercurrent.event.mark specify an idencical type of symbol")
+  }
+  if (isTRUE(addCensorMark) && isTRUE(addCompetingRiskMark) &&
+      !is.null(shape.censor.mark) && !is.null(shape.competing.risk.mark) &&
+      identical(shape.censor.mark, shape.competing.risk.mark)) {
+    warning("shape.censor.mark and shape.intercurrent.event.mark specify an idencical type of symbol")
+  }
+  if (isTRUE(addCompetingRiskMark) && isTRUE(addIntercurrentEventMark) &&
+      !is.null(shape.competing.risk.mark) && !is.null(shape.intercurrent.event.mark) &&
+      identical(shape.competing.risk.mark, shape.intercurrent.event.mark)) {
     warning("shape.censor.mark and shape.intercurrent.event.mark specify an idencical type of symbol")
   }
   if (!is.null(lims.x) && length(lims.x) == 2 && is.numeric(lims.x)) {

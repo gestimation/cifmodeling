@@ -41,12 +41,12 @@
 #' @param addCensorMark Logical add \code{add_censor_mark()} to plot (default \code{TRUE}).
 #' @param shape.censor.mark Integer point shape for censor marks (default \code{3}).
 #' @param size.censor.mark Numeric point size for censor marks (default \code{2}).
-#' @param addCompetingRiskMark Logical add time marks to descrive incidents of competing risks (default \code{TRUE}).
-#' @param shape.competingrisk.mark Integer point shape for competing-risk marks (default \code{3}).
-#' @param size.competingrisk.mark Numeric point size for competing-risk marks (default \code{2}).
+#' @param addCompetingRiskMark Logical add time marks to describe event2 specified by Event(), usually the competing events (default \code{TRUE}).
+#' @param shape.competing.risk.mark Integer point shape for competing-risk marks (default \code{16}).
+#' @param size.competing.risk.mark Numeric point size for competing-risk marks (default \code{2}).
 #' @param addIntercurrentEventMark Logical overlay user-specified time marks per strata (default \code{TRUE}).
 #' @param intercurrent.event.time Named list of numeric vectors (names must match or be mapped to strata labels).
-#' @param shape.intercurrent.event.mark Integer point shape for intercurrent-event marks (default \code{16}).
+#' @param shape.intercurrent.event.mark Integer point shape for intercurrent-event marks (default \code{1}).
 #' @param size.intercurrent.event.mark Numeric point size for intercurrent-event marks (default \code{2}).
 #' @param label.strata Character vector of labels for strata.
 #' @param label.x Axis labels (defaults: \code{"Time"}).
@@ -77,71 +77,58 @@
 #' @useDynLib cifmodeling, .registration = TRUE
 #' @export
 cifcurve <- function(formula,
-                           data,
-                           weights = NULL,
-                           subset.condition = NULL,
-                           na.action = na.omit,
-                           code.event1 = 1,
-                           code.event2 = 2,
-                           code.censoring = 0,
-                           outcome.type = "SURVIVAL",
-                           conf.int = 0.95,
-                           error = "greenwood",
-                           conf.type = "arcsine-square root",
-                           report.survfit.std.err = FALSE,
-                           report.ggsurvfit = TRUE,
-                           ggsurvfit.type = NULL,
-                           addConfidenceInterval = TRUE,
-                           addRiskTable = TRUE,
-                           addCensorMark = FALSE,
-                           addCompetingRiskMark = TRUE,
-                           addIntercurrentEventMark = FALSE,
-                           label.x = "Time",
-                           label.y = "Survival probability",
-                           label.strata = NULL,
-                           lims.x = NULL,
-                           lims.y = c(0, 1),
-                           shape.censor.mark = 3,
-                           size.censor.mark = 2,
-                           shape.competingrisk.mark = 3,
-                           size.competingrisk.mark = 2,
-                           intercurrent.event.time = NULL,
-                           shape.intercurrent.event.mark = 16,
-                           size.intercurrent.event.mark = 2,
-                           font.family = "sans",
-                           font.size = 14,
-                           legend.position = "top",
-                           filename = NULL) {
-  outcome.type <- check_outcome.type(outcome.type)
-  out_readSurv <- readSurv(formula, data, weights, code.event1, code.event2, code.censoring, subset.condition, na.action)
-  if (addCompetingRiskMark) {
-    out_mcm <- make_competingrisk_marks(out_readSurv, event_code = code.event2)
-  }
-#  intercurrent_named_list <- list("(all)" = out_readSurv$data_sync$t[out_readSurv$data_sync$epsilon == 2])
-#  ds <- out_readSurv$data_sync
-#  levs <- levels(ds$fruitq)
-#  intercurrent_named_list <- setNames(
-#    lapply(levs, function(z) ds$t[ds$epsilon == 2 & ds$fruitq == z]),
-#    paste0("fruitq=", levs)
-#  )
-#  print(intercurrent_named_list)
+                     data,
+                     weights = NULL,
+                     subset.condition = NULL,
+                     na.action = na.omit,
+                     code.event1 = 1,
+                     code.event2 = 2,
+                     code.censoring = 0,
+                     outcome.type = "SURVIVAL",
+                     conf.int = 0.95,
+                     error = "greenwood",
+                     conf.type = "arcsine-square root",
+                     report.survfit.std.err = FALSE,
+                     report.ggsurvfit = TRUE,
+                     ggsurvfit.type = NULL,
+                     addConfidenceInterval = FALSE,
+                     addRiskTable = TRUE,
+                     addCensorMark = TRUE,
+                     addCompetingRiskMark = FALSE,
+                     addIntercurrentEventMark = FALSE,
+                     label.x = "Time",
+                     label.y = "Survival probability",
+                     label.strata = NULL,
+                     lims.x = NULL,
+                     lims.y = c(0, 1),
+                     shape.censor.mark = 3,
+                     size.censor.mark = 2,
+                     shape.competing.risk.mark = 16,
+                     size.competing.risk.mark = 2,
+                     intercurrent.event.time = NULL,
+                     shape.intercurrent.event.mark = 1,
+                     size.intercurrent.event.mark = 2,
+                     font.family = "sans",
+                     font.size = 14,
+                     legend.position = "top",
+                     filename = NULL) {
+
+  outcome.type  <- check_outcome.type(outcome.type)
+  out_readSurv  <- readSurv(formula, data, weights, code.event1, code.event2, code.censoring, subset.condition, na.action)
+  out_mcm       <- make_competingrisk_marks(out_readSurv, event_code = code.event2)
 
   error <- check_error(error, outcome.type)
   check_label.strata(out_readSurv, label.strata)
 
-  if (outcome.type == "SURVIVAL") {
+  if (identical(outcome.type, "SURVIVAL")) {
     out_km <- calculateKM(out_readSurv$t, out_readSurv$d, out_readSurv$w, as.integer(out_readSurv$strata), error)
     out_km$std.err <- out_km$surv * out_km$std.err
-    out_ci <- calculateCI(out_km, conf.int, conf.type, conf.lower=NULL)
+    out_ci <- calculateCI(out_km, conf.int, conf.type, conf.lower = NULL)
 
-    if (!all(as.integer(out_readSurv$strata) == 1) & is.null(label.strata)) {
-      names(out_km$strata) <- levels(as.factor(out_readSurv$strata))
-    } else if (!all(as.integer(out_readSurv$strata) == 1)) {
-      names(out_km$strata) <- label.strata
+    if (any(as.integer(out_readSurv$strata) != 1)) {
+      names(out_km$strata) <- if (is.null(label.strata)) levels(as.factor(out_readSurv$strata)) else label.strata
     }
-    if (report.survfit.std.err) {
-      out_km$std.err <- out_km$std.err / out_km$surv
-    }
+    if (isTRUE(report.survfit.std.err)) out_km$std.err <- out_km$std.err / out_km$surv
 
     survfit_object <- list(
       time = out_km$time,
@@ -151,20 +138,20 @@ cifcurve <- function(formula,
       n.event = out_km$n.event,
       n.censor = out_km$n.censor,
       std.err = out_km$std.err,
-      upper = if (is.null(conf.type) | conf.type == "none" | conf.type == "n") NULL else out_ci$upper,
-      lower = if (is.null(conf.type) | conf.type == "none" | conf.type == "n") NULL else out_ci$lower,
+      upper = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$upper,
+      lower = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$lower,
       conf.type = conf.type,
       call = match.call(),
       type = "kaplan-meier",
       method = "Kaplan-Meier"
     )
-    if (any(as.integer(out_readSurv$strata) != 1)) {
-      survfit_object$strata <- out_km$strata
-    }
-    class(survfit_object) <- c("survfit")
+    if (any(as.integer(out_readSurv$strata) != 1)) survfit_object$strata <- out_km$strata
+    class(survfit_object) <- "survfit"
+
   } else {
     out_aj <- calculateAJ(out_readSurv)
     out_aj <- readStrata(out_readSurv, out_aj, label.strata)
+
     if (any(as.integer(out_readSurv$strata) != 1)) {
       n <- table(as.integer(out_readSurv$strata))
       rep_list <- mapply(rep, n, out_aj$strata1, SIMPLIFY = FALSE)
@@ -173,12 +160,11 @@ cifcurve <- function(formula,
       n <- length(out_readSurv$strata)
       n.risk <- n - out_aj$n.cum.censor - out_aj$n.cum.event1 - out_aj$n.cum.event2
     }
-    out_aj$std.err <- calculateAalenDeltaSE(out_aj$time1, out_aj$aj1, out_aj$n.event1, out_aj$n.event2, n.risk, out_aj$time0, out_aj$km0, out_aj$strata1, error)
+    out_aj$std.err <- calculateAalenDeltaSE(out_aj$time1, out_aj$aj1, out_aj$n.event1, out_aj$n.event2,
+                                            n.risk, out_aj$time0, out_aj$km0, out_aj$strata1, error)
     out_aj$surv <- 1 - out_aj$aj1
-    out_ci <- calculateCI(out_aj, conf.int, conf.type, conf.lower=NULL)
-    if (report.survfit.std.err) {
-      out_aj$std.err <- out_aj$std.err / out_aj$surv
-    }
+    out_ci <- calculateCI(out_aj, conf.int, conf.type, conf.lower = NULL)
+    if (isTRUE(report.survfit.std.err)) out_aj$std.err <- out_aj$std.err / out_aj$surv
 
     survfit_object <- list(
       time = out_aj$time1,
@@ -188,20 +174,18 @@ cifcurve <- function(formula,
       n.event = out_aj$n.event1,
       n.censor = out_aj$n.censor,
       std.err = out_aj$std.err,
-      upper = if (is.null(conf.type) | conf.type == "none" | conf.type == "n") NULL else out_ci$upper,
-      lower = if (is.null(conf.type) | conf.type == "none" | conf.type == "n") NULL else out_ci$lower,
+      upper = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$upper,
+      lower = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$lower,
       conf.type = conf.type,
       call = match.call(),
       type = "Aalen-Johansen",
       method = "Aalen-Johansen"
     )
-    if (any(as.integer(out_readSurv$strata) != 1)) {
-      survfit_object$strata <- out_aj$strata1
-    }
-    class(survfit_object) <- c("survfit")
+    if (any(as.integer(out_readSurv$strata) != 1)) survfit_object$strata <- out_aj$strata1
+    class(survfit_object) <- "survfit"
   }
 
-  if (report.ggsurvfit || !is.null(filename)) {
+  if (isTRUE(report.ggsurvfit) || !is.null(filename)) {
     out_ggsurvfit <- call_ggsurvfit(
       survfit_object = survfit_object,
       out_readSurv   = out_readSurv,
@@ -213,10 +197,11 @@ cifcurve <- function(formula,
       shape.censor.mark = shape.censor.mark,
       size.censor.mark  = size.censor.mark,
       addCompetingRiskMark = addCompetingRiskMark,
-      shape.competingrisk.mark = shape.competingrisk.mark,
-      size.competingrisk.mark = size.competingrisk.mark,
+      competing.risk.time  = out_mcm,
+      shape.competing.risk.mark = shape.competing.risk.mark,
+      size.competing.risk.mark  = size.competing.risk.mark,
       addIntercurrentEventMark = addIntercurrentEventMark,
-      intercurrent.event.time  = out_mcm,
+      intercurrent.event.time  = intercurrent.event.time,
       shape.intercurrent.event.mark = shape.intercurrent.event.mark,
       size.intercurrent.event.mark  = size.intercurrent.event.mark,
       label.x = label.x, label.y = label.y,
@@ -224,32 +209,11 @@ cifcurve <- function(formula,
       font.family = font.family, font.size = font.size,
       legend.position = legend.position
     )
-    if (report.ggsurvfit) {
-      print(out_ggsurvfit)
-    }
-    if (!is.null(filename)) {
-      ggsave(filename, plot = out_ggsurvfit, width = 6, height = 6, dpi = 300)
-    }
+    if (isTRUE(report.ggsurvfit)) print(out_ggsurvfit)
+    if (!is.null(filename)) ggsave(filename, plot = out_ggsurvfit, width = 6, height = 6, dpi = 300)
   }
-  return(survfit_object)
+  survfit_object
 }
-
-data(diabetes.complications)
-diabetes.complications$t2 <- ifelse(
-  diabetes.complications$epsilon == 2,
-  diabetes.complications$t,
-  NA
-)
-survfit_by_group <- cifcurve(Event(t,epsilon) ~ fruitq, data = diabetes.complications,addCensorMark=FALSE,intercurrent.event.time="t2",
-                             outcome.type='COMPETING-RISK', error='delta', ggsurvfit.type = 'risk',
-                             label.y = 'CIF of diabetic retinopathy', label.x = 'Years from registration')
-
-
-survfit_by_group <- cifcurve(Event(t,epsilon) ~ fruitq, data = diabetes.complications,addCensorMark=FALSE,addCompetingRiskMark=TRUE,addIntercurrentEventMark = TRUE,
-                             outcome.type='COMPETING-RISK', error='delta', ggsurvfit.type = 'risk',
-                             label.y = 'CIF of diabetic retinopathy', label.x = 'Years from registration')
-
-
 
 #' Plot survival or cumulative incidence curves with ggsurvfit
 #'
@@ -263,11 +227,11 @@ survfit_by_group <- cifcurve(Event(t,epsilon) ~ fruitq, data = diabetes.complica
 #' @param shape.censor.mark Integer point shape for censor marks (default \code{3}).
 #' @param size.censor.mark Numeric point size for censor marks (default \code{2}).
 #' @param addCompetingRiskMark Logical add time marks to descrive incidents of competing risks (default \code{TRUE}).
-#' @param shape.competingrisk.mark Integer point shape for competing-risk marks (default \code{3}).
-#' @param size.competingrisk.mark Numeric point size for competing-risk marks (default \code{2}).
+#' @param shape.competing.risk.mark Integer point shape for competing-risk marks (default \code{16}).
+#' @param size.competing.risk.mark Numeric point size for competing-risk marks (default \code{2}).
 #' @param addIntercurrentEventMark Logical overlay user-specified time marks per strata (default \code{TRUE}).
 #' @param intercurrent.event.time Named list of numeric vectors (names must match or be mapped to strata labels).
-#' @param shape.intercurrent.event.mark Integer point shape for intercurrent-event marks (default \code{16}).
+#' @param shape.intercurrent.event.mark Integer point shape for intercurrent-event marks (default \code{1}).
 #' @param size.intercurrent.event.mark Numeric point size for intercurrent-event marks (default \code{2}).
 #' @param label.x,label.y Axis labels. If \code{label.y = "Survival probability"} (default) and
 #'   \code{ggsurvfit.type == "risk"}, it is automatically replaced with \code{"1 - survival probability"}.
@@ -276,6 +240,10 @@ survfit_by_group <- cifcurve(Event(t,epsilon) ~ fruitq, data = diabetes.complica
 #' @param font.family,font.size Theme controls.
 #' @param legend.position "top","right","bottom","left" or "none".
 #' @return A \code{ggplot} object.
+#' Plot survival or cumulative incidence curves with ggsurvfit
+#' ...
+#' @param addCompetingRiskMark Logical; add time marks to describe incidents of competing risks (default TRUE).
+#' ...
 call_ggsurvfit <- function(
     survfit_object,
     out_readSurv = NULL,
@@ -287,11 +255,12 @@ call_ggsurvfit <- function(
     shape.censor.mark = 3,
     size.censor.mark = 2,
     addCompetingRiskMark = TRUE,
-    shape.competingrisk.mark = 16,
-    size.competingrisk.mark = 2,
+    competing.risk.time = list(),
+    shape.competing.risk.mark = 16,
+    size.competing.risk.mark = 2,
     addIntercurrentEventMark = TRUE,
     intercurrent.event.time = list(),
-    shape.intercurrent.event.mark = 16,
+    shape.intercurrent.event.mark = 1,
     size.intercurrent.event.mark = 2,
     label.x = "Time",
     label.y = "Survival probability",
@@ -301,17 +270,13 @@ call_ggsurvfit <- function(
     font.size = 14,
     legend.position = "top"
 ){
-  if (is.null(lims.x)) {
-    if (!is.null(out_readSurv) && !is.null(out_readSurv$t)) {
-      lims.x <- c(0, max(out_readSurv$t))
-    }
+  if (is.null(lims.x) && !is.null(out_readSurv) && !is.null(out_readSurv$t)) {
+    lims.x <- c(0, max(out_readSurv$t))
   }
 
   label.y.corrected <- if (identical(ggsurvfit.type, "risk") && identical(label.y, "Survival probability")) {
     "1 - survival probability"
-  } else {
-    label.y
-  }
+  } else label.y
 
   check_ggsurvfit(
     survfit_object = survfit_object,
@@ -319,8 +284,10 @@ call_ggsurvfit <- function(
     ggsurvfit.type = ggsurvfit.type,
     addConfidenceInterval = addConfidenceInterval,
     addCensorMark = addCensorMark,
+    addCompetingRiskMark = addCompetingRiskMark,
     addIntercurrentEventMark = addIntercurrentEventMark,
     shape.censor.mark = shape.censor.mark,
+    shape.competing.risk.mark = shape.competing.risk.mark,
     shape.intercurrent.event.mark = shape.intercurrent.event.mark
   )
 
@@ -328,101 +295,110 @@ call_ggsurvfit <- function(
     if (identical(ggsurvfit.type, "risk")) ggsurvfit(sfobj, type = "risk") else ggsurvfit(sfobj)
   }
 
-  if (conf.type %in% c("none","n") || length(survfit_object$strata) > 2) {
-    survfit_object_ <- survfit_object
-    survfit_object_$lower <- survfit_object_$surv
-    survfit_object_$upper <- survfit_object_$surv
+  sf_for_plot <- coerce_ci_if_needed(survfit_object, conf.type)
 
-    p <- select_y_axis(survfit_object_) +
-      theme_classic() +
-      theme(
-        legend.position = legend.position,
-        axis.title = element_text(size = (font.size + 2), family = font.family),
-        axis.text  = element_text(size = font.size, family = font.family),
-        legend.text = element_text(size = font.size, family = font.family)
-      ) +
-      labs(x = label.x, y = label.y.corrected) +
-      lims(x = lims.x, y = lims.y) +
-      theme(legend.position = "top")
+  p <- select_y_axis(sf_for_plot) +
+    base_surv_theme(font.family, font.size, legend.position) +
+    labs(x = label.x, y = label.y.corrected) +
+    lims(x = lims.x, y = lims.y)
 
-    if (isTRUE(addConfidenceInterval)) p <- p + add_confidence_interval()
-    if (isTRUE(addRiskTable))         p <- p + add_risktable(risktable_stats = c("n.risk"))
-    if (isTRUE(addCensorMark))        p <- p + add_censor_mark(shape = shape.censor.mark, size = size.censor.mark)
+  if (isTRUE(addConfidenceInterval)) p <- p + add_confidence_interval()
+  if (isTRUE(addRiskTable))          p <- p + add_risktable(risktable_stats = c("n.risk"))
+  if (isTRUE(addCensorMark))         p <- p + add_censor_mark(shape = shape.censor.mark, size = size.censor.mark)
 
-  } else {
-    if (length(survfit_object$time) != length(survfit_object$lower))
-      stop("time and upper/lower required for ggsurvfit are different lengths")
-    if (length(survfit_object$time) != length(survfit_object$n.risk))
-      stop("time and n.risk used required ggsurvfit are different lengths")
-
-    p <- select_y_axis(survfit_object) +
-      theme_classic() +
-      theme(
-        legend.position = legend.position,
-        axis.title = element_text(size = (font.size + 2), family = font.family),
-        axis.text  = element_text(size = font.size, family = font.family),
-        legend.text = element_text(size = font.size, family = font.family)
-      ) +
-      labs(x = label.x, y = label.y.corrected) +
-      lims(x = lims.x, y = lims.y)
-
-    if (isTRUE(addConfidenceInterval)) p <- p + add_confidence_interval()
-    if (isTRUE(addRiskTable))         p <- p + add_risktable(risktable_stats = c("n.risk"))
-    if (isTRUE(addCensorMark))        p <- p + add_censor_mark(shape = shape.censor.mark, size = size.censor.mark)
+  if (isTRUE(addCompetingRiskMark) && length(competing.risk.time)) {
+    p <- draw_marks_if_any(p, survfit_object, competing.risk.time, ggsurvfit.type,
+                           shape = shape.competing.risk.mark, size = size.competing.risk.mark)
   }
-
   if (isTRUE(addIntercurrentEventMark) && length(intercurrent.event.time)) {
-
-    align_marks_keys <- function(fit, marks) {
-      canon_str <- function(x) sub("^.*=", "", as.character(x))
-      if (is.null(marks) || length(marks) == 0) return(marks)
-      fit_names <- if (is.null(fit$strata)) "(all)" else names(fit$strata)
-      fit_key   <- canon_str(fit_names)
-      out <- list()
-      for (k in names(marks)) {
-        k_can <- canon_str(k)
-        j <- match(k_can, fit_key)
-        if (is.na(j)) next
-        out[[ fit_names[j] ]] <- marks[[k]]
-      }
-      out
-    }
-
-    make_mark_df <- function(fit, marks, extend = TRUE) {
-      if (is.null(marks) || length(marks) == 0) return(NULL)
-      marks2 <- align_marks_keys(fit, marks)
-      strata_names <- if (is.null(fit$strata)) "(all)" else names(fit$strata)
-
-      out <- lapply(names(marks2), function(st_lab) {
-        tt <- marks2[[st_lab]]
-        if (length(tt) == 0) return(NULL)
-        fit_st <- if (is.null(fit$strata)) {
-          if (!identical(st_lab, "(all)")) return(NULL)
-          fit
-        } else {
-          i <- match(st_lab, strata_names); if (is.na(i)) return(NULL)
-          fit[i]
-        }
-        sm <- summary(fit_st, times = tt, extend = extend)
-        y  <- if (identical(ggsurvfit.type, "risk")) 1 - sm$surv else sm$surv
-        data.frame(strata = st_lab, time = sm$time, y = y, stringsAsFactors = FALSE)
-      })
-      do.call(rbind, out)
-    }
-
-    mark_df <- make_mark_df(survfit_object, intercurrent.event.time)
-    if (!is.null(mark_df) && nrow(mark_df) > 0) {
-      p <- p + geom_point(
-        data = mark_df,
-        aes(x = time, y = y, group = strata, colour = strata),
-        inherit.aes = FALSE,
-        shape = shape.intercurrent.event.mark,
-        size  = size.intercurrent.event.mark,
-        show.legend = FALSE
-      )
-    }
+    p <- draw_marks_if_any(p, survfit_object, intercurrent.event.time, ggsurvfit.type,
+                           shape = shape.intercurrent.event.mark, size = size.intercurrent.event.mark)
   }
-  return(p)
+  p
+}
+
+base_surv_theme <- function(font.family, font.size, legend.position) {
+  theme_classic() +
+    theme(
+      legend.position = legend.position,
+      axis.title = element_text(size = (font.size + 2), family = font.family),
+      axis.text  = element_text(size = font.size, family = font.family),
+      legend.text = element_text(size = font.size, family = font.family)
+    )
+}
+
+coerce_ci_if_needed <- function(survfit_object, conf.type) {
+  if (!is.null(survfit_object$lower) && !is.null(survfit_object$upper)) return(survfit_object)
+  if (conf.type %in% c("none","n") || length(survfit_object$strata) > 2) {
+    x <- survfit_object
+    x$lower <- x$surv
+    x$upper <- x$surv
+    return(x)
+  }
+  survfit_object
+}
+
+draw_marks_if_any <- function(p, survfit_object, marks, ggsurvfit.type, shape, size) {
+  if (is.null(marks) || !length(marks)) return(p)
+  mark_df <- make_mark_df(survfit_object, marks, ggsurvfit.type, extend = TRUE)
+  if (is.null(mark_df) || !nrow(mark_df)) return(p)
+
+  if (is.null(survfit_object$strata)) {
+    p + geom_point(
+      data = mark_df,
+      aes(x = time, y = y),
+      inherit.aes = FALSE,
+      shape = shape,
+      size  = size,
+      show.legend = FALSE
+    )
+  } else {
+    p + geom_point(
+      data = mark_df,
+      aes(x = time, y = y, group = strata, colour = strata),
+      inherit.aes = FALSE,
+      shape = shape,
+      size  = size,
+      show.legend = FALSE
+    )
+  }
+}
+
+align_marks_keys <- function(fit, marks) {
+  canon_str <- function(x) sub("^.*=", "", as.character(x))
+  if (is.null(marks) || length(marks) == 0) return(marks)
+  fit_names <- if (is.null(fit$strata)) "(all)" else names(fit$strata)
+  fit_key   <- canon_str(fit_names)
+  out <- list()
+  for (k in names(marks)) {
+    k_can <- canon_str(k)
+    j <- match(k_can, fit_key)
+    if (is.na(j)) next
+    out[[ fit_names[j] ]] <- marks[[k]]
+  }
+  out
+}
+
+make_mark_df <- function(fit, marks, ggsurvfit.type, extend = TRUE) {
+  if (is.null(marks) || length(marks) == 0) return(NULL)
+  marks2 <- align_marks_keys(fit, marks)
+  strata_names <- if (is.null(fit$strata)) "(all)" else names(fit$strata)
+
+  out <- lapply(names(marks2), function(st_lab) {
+    tt <- marks2[[st_lab]]
+    if (length(tt) == 0) return(NULL)
+    fit_st <- if (is.null(fit$strata)) {
+      if (!identical(st_lab, "(all)")) return(NULL)
+      fit
+    } else {
+      i <- match(st_lab, strata_names); if (is.na(i)) return(NULL)
+      fit[i]
+    }
+    sm <- summary(fit_st, times = tt, extend = extend)
+    y  <- if (identical(ggsurvfit.type, "risk")) 1 - sm$surv else sm$surv
+    data.frame(strata = st_lab, time = sm$time, y = y, stringsAsFactors = FALSE)
+  })
+  do.call(rbind, out)
 }
 
 calculateAJ <- function(data) {

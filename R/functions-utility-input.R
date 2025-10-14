@@ -23,54 +23,6 @@ Event <- function(time, event) {
   ss
 }
 
-Event_old <- function(time, event) {
-  if (missing(time))  stop("`time` is required.")
-  if (missing(event)) stop("`event` is required.")
-  if (!is.numeric(time)) stop("`time` must be numeric.")
-  if (anyNA(time))   stop("`time` contains NA.")
-  if (any(time < 0)) stop("`time` must be non-negative.")
-
-  # coerce event to integer codes 0,1,2,...
-  if (is.numeric(event)) {
-    if (anyNA(event)) stop("`event` contains NA.")
-    if (any(event < 0) || any(event != floor(event))) {
-      stop("`event` must be non-negative integers when numeric (0=censor, 1,2,...).")
-    }
-    status <- as.integer(event)
-  } else if (is.logical(event)) {
-    if (anyNA(event)) stop("`event` contains NA.")
-    status <- as.integer(event)  # FALSE->0, TRUE->1
-  } else if (is.factor(event) || is.character(event)) {
-    ev_chr <- as.character(event)
-    if (anyNA(ev_chr)) stop("`event` contains NA.")
-    if (!all(grepl("^[0-9]+$", ev_chr))) {
-      stop("Factor/character `event` must have numeric-like levels: '0','1','2',... .")
-    }
-    status <- as.integer(ev_chr)
-  } else {
-    stop("`event` must be numeric, logical, factor, or character.")
-  }
-
-  if (length(status) != length(time)) {
-    stop("`time` and `event` must have the same length.")
-  }
-
-  # basic sanity: allow {0,1,2,...}
-  if (any(status < 0)) stop("`event` codes must be >= 0.")
-  if (!any(status == 0)) {
-    warning("No censoring (no event==0) detected.")
-  }
-
-  # construct matrix with proper column names
-  ss <- cbind(time = as.numeric(time), event = status)
-  dimnames(ss) <- list(NULL, c("time","event"))
-  attr(ss, "type") <- "right"
-  # keep original attributes of time if any
-  if (!is.null(attributes(time))) attr(ss, "inputAttributes") <- list(time = attributes(time))
-  class(ss) <- c("Event", class(ss))  # preserve "matrix"
-  ss
-}
-
 #' @rdname Event
 #' @export
 Surv <- function(...) Event(...)
@@ -107,33 +59,31 @@ readStrata <- function(out_readSurv, out_aj, label.strata=NULL) {
   return(out_aj)
 }
 
-
-
-
-## ---- helpers ---------------------------------------------------------------
 readSurv <- function(formula, data, weights = NULL,
                      code.event1 = 1, code.event2 = 2, code.censoring = 0,
                      subset.condition = NULL, na.action = na.omit) {
+  stopifnot(is.data.frame(data))
+  allowed <- c(code.censoring, code.event1, code.event2)
+
   data <- createAnalysisDataset(formula, data, weights, subset.condition, na.action)
 
-  Terms <- terms(formula, c("strata","offset","cluster"), data = data)
-  mf <- model.frame(Terms, data = data, na.action = na.action)
+  Terms <- terms(formula, specials = c("strata","offset","cluster"), data = data)
+  mf    <- model.frame(Terms, data = data, na.action = na.action)
 
   Y <- model.extract(mf, "response")
   if (!inherits(Y, c("Event","Surv"))) stop("A 'Surv' or 'Event' object is expected")
 
-  te <- normalize_time_event(Y[,1], Y[,2], allowed = c(code.censoring, code.event1, code.event2))
-  t <- te$time; epsilon <- te$event
+  te <- normalize_time_event(Y[,1], Y[,2], allowed = allowed)
+  t <- te$time
+  epsilon <- te$event
   d  <- as.integer(epsilon != code.censoring)
   d0 <- as.integer(epsilon == code.censoring)
   d1 <- as.integer(epsilon == code.event1)
   d2 <- as.integer(epsilon == code.event2)
 
-  # --- ここが重要：解析対象の“数値”行インデックスを作る ---
-  mf_rows <- rownames(mf)                  # "1","2",... の文字もある
+  mf_rows <- rownames(mf)
   idx <- suppressWarnings(as.integer(mf_rows))
   if (any(is.na(idx))) {
-    # rownames(data) があるならマッチ、それでもNAならエラー
     rn <- rownames(data)
     if (!is.null(rn)) idx <- match(mf_rows, rn)
   }
@@ -147,91 +97,60 @@ readSurv <- function(formula, data, weights = NULL,
     strata <- factor(data_sync[[strata_name]])
   } else {
     strata_name <- NULL
-    strata <- factor(rep(1L, nrow(mf)))
+    strata <- factor(rep(1L, nrow(data_sync)))
   }
 
-  w <- if (is.null(weights)) {
-    rep(1, nrow(mf))
+  if (is.null(weights)) {
+    w <- rep(1, nrow(data_sync))
   } else {
     ww <- data_sync[[weights]]
-    check_weights(ww)
-    ww
-  }
+    if (is.null(ww)) stop(sprintf("weights column '%s' not found in data.", weights))
+    bad_finite <- !is.finite(ww)
+    bad_neg    <- ww < 0
+    bad_any    <- bad_finite | bad_neg
 
-  list(
-    t=t, epsilon=epsilon, d=d, d0=d0, d1=d1, d2=d2,
-    strata=strata, strata_name=strata_name, w=w,
-    data_sync = data_sync,
-    rows = mf_rows,     # 参考用に残す
-    idx  = idx          # ★ これを追加（数値行インデックス）
-  )
+    if (any(bad_any)) {
+      if (identical(na.action, na.omit) || identical(na.action, stats::na.omit)) {
+        keep <- !bad_any
+        t        <- t[keep]
+        epsilon  <- epsilon[keep]
+        d        <- d[keep]; d0 <- d0[keep]; d1 <- d1[keep]; d2 <- d2[keep]
+        strata   <- droplevels(strata[keep])
+        ww       <- ww[keep]
+        data_sync <- data_sync[keep, , drop = FALSE]
+        idx      <- idx[keep]
+        mf_rows  <- mf_rows[keep]
+        if (!length(ww)) stop("All rows removed due to non-finite or negative weights.")
+      } else if (identical(na.action, na.fail) || identical(na.action, stats::na.fail)) {
+        stop("`weights` must be finite and non-negative (na.fail).")
+      } else {
+        stop("`weights` contain non-finite or negative values; set na.action = na.omit or clean weights.")
+      }
+    }
+    check_weights(ww)
+    w <- ww
+  }
+  list(t=t, epsilon=epsilon, d=d, d0=d0, d1=d1, d2=d2, strata=strata, strata_name=strata_name, w=w, data_sync=data_sync)
 }
 
-
-#' Build marks (Named list) for a specific competing risk event
-#'
-#' @description
-#' Extracts event times corresponding to a given competing-risk code
-#' (e.g., `epsilon == 2`) from the dataset returned by `readSurv()`,
-#' and organizes them by strata for use in `call_ggsurvfit()`.
-#'
-#' @param out_readSurv A list returned by [readSurv()].
-#' @param event_code Integer/numeric. Which event code in `epsilon` should be used (default 2).
-#' @param time_var Character. Column name of event time in `out_readSurv$data_sync` (default "t").
-#' @param event_var Character. Column name of event type in `out_readSurv$data_sync` (default "epsilon").
-#' @param strata_label_style "auto","full","plain".
-#'   - "full": key names like `"fruitq=0"` to match `survfit_object$strata`
-#'   - "plain": only `"0"`, `"1"`, ...
-#'   - "auto": `"full"` if strata exist, otherwise `"(all)"`
-#' @param na_rm Logical; remove NA/Inf times. Default TRUE.
-#' @param unique Logical; keep unique times. Default TRUE.
-#' @param sort Logical; sort times within each stratum. Default TRUE.
-#'
-#' @return
-#' A named list of numeric vectors keyed by strata label(s),
-#' ready to be passed to `intercurrent.event.time` in [call_ggsurvfit()].
-#'
-#' @examples
-#' out_readSurv <- readSurv(Event(t, epsilon) ~ strata(fruitq),
-#'                          data = diabetes.complications)
-#' marks <- make_competingrisk_marks(out_readSurv, event_code = 2)
-#' # cifcurve(..., intercurrent.event.time = marks)
 make_competingrisk_marks <- function(
     out_readSurv,
     event_code = 2,
-    time_var ="t",
-    event_var = "epsilon",
     strata_label_style = c("auto","full","plain"),
     na_rm = TRUE,
     unique = TRUE,
     sort = TRUE
 ){
-  stopifnot(is.list(out_readSurv), !is.null(out_readSurv$data_sync))
-  ds <- out_readSurv$data_sync
-  if (!all(c(time_var, event_var) %in% names(ds))) {
-    stop(sprintf("Columns '%s' and/or '%s' not found in out_readSurv$data_sync.",
-                 time_var, event_var))
-  }
-
+  stopifnot(is.list(out_readSurv))
   strata_label_style <- match.arg(strata_label_style)
 
-  # 1) strata factor（無い/単一でもOK）
+  if (!is.numeric(out_readSurv$t)) stop("Time vector must be numeric.")
+  if (length(out_readSurv$t) != length(out_readSurv$epsilon)) stop("Length of time and event vectors must match.")
+
   sfac <- out_readSurv$strata
   has_strata <- !is.null(sfac) && is.factor(sfac) && nlevels(sfac) > 1L
   if (has_strata) sfac <- droplevels(sfac)
 
-  # 2) キーのラベル付け
-  mk_key <- function(level = NULL) {
-    if (!has_strata) return("(all)")
-    sname <- out_readSurv$strata_name
-    if (strata_label_style == "plain" || is.null(sname)) {
-      return(as.character(level))
-    } else {
-      return(paste0(sname, "=", level))
-    }
-  }
-
-  # 3) 整理関数
   clean_vec <- function(v){
     if (na_rm) v <- v[is.finite(v)]
     if (unique) v <- base::unique(v)
@@ -239,126 +158,23 @@ make_competingrisk_marks <- function(
     unname(v)
   }
 
-  # 4) strata 無し
+  mk_key <- function(level = NULL) {
+    if (!has_strata) return("(all)")
+    sname <- out_readSurv$strata_name
+    if (identical(strata_label_style, "plain") || is.null(sname)) as.character(level)
+    else paste0(sname, "=", level)
+  }
+
+  pick <- (out_readSurv$epsilon == event_code)
+
   if (!has_strata) {
-    v <- ds[[time_var]][ ds[[event_var]] == event_code ]
-    return( setNames(list(clean_vec(v)), mk_key()) )
+    return( setNames(list(clean_vec(out_readSurv$t[pick])), mk_key()) )
   }
 
-  # 5) strata 有り
   levs <- levels(sfac)
-  out_list <- setNames(vector("list", length(levs)), sapply(levs, mk_key))
-  for (i in seq_along(levs)) {
-    lv <- levs[i]
-    idx <- (ds[[event_var]] == event_code) & (sfac == lv)
-    v <- ds[[time_var]][ idx ]
-    out_list[[i]] <- clean_vec(v)
-  }
-  out_list
-}
-
-readSurv_old <- function(formula, data, weights = NULL,
-                     code.event1 = 1, code.event2 = 2, code.censoring = 0,
-                     subset.condition = NULL, na.action = na.omit) {
-  data <- createAnalysisDataset(formula, data, weights, subset.condition, na.action)
-
-  Terms <- terms(formula, c("strata","offset","cluster"), data = data)
-  mf <- model.frame(Terms, data = data, na.action = na.action)
-
-  Y <- model.extract(mf, "response")
-  if (!inherits(Y, c("Event","Surv"))) stop("A 'Surv' or 'Event' object is expected")
-
-  te <- normalize_time_event(Y[,1], Y[,2], allowed = c(code.censoring, code.event1, code.event2))
-  t <- te$time; epsilon <- te$event
-  d  <- as.integer(epsilon != code.censoring)
-  d0 <- as.integer(epsilon == code.censoring)
-  d1 <- as.integer(epsilon == code.event1)
-  d2 <- as.integer(epsilon == code.event2)
-
-  rows <- rownames(mf)
-  if (!is.null(rows) && length(rows)) {
-    data_sync <- data[rows, , drop = FALSE]
-  } else {
-    data_sync <- data
-  }
-
-  vars <- all.vars(Terms)
-  if (length(vars) >= 3L) {
-    strata_name <- vars[3L]
-    strata <- factor(data_sync[[strata_name]])
-  } else {
-    strata_name <- NULL
-    strata <- factor(rep(1L, nrow(mf)))
-  }
-
-  w <- if (is.null(weights)) {
-    rep(1, nrow(mf))
-  } else {
-    ww <- data_sync[[weights]]
-    check_weights(ww)
-    ww
-  }
-
-  list(t=t, epsilon=epsilon, d=d, d0=d0, d1=d1, d2=d2,
-       strata=strata, strata_name=strata_name, w=w)
-}
-
-readSurv_old <- function(formula, data, weights = NULL, code.event1 = 1, code.event2 = 2, code.censoring = 0, subset.condition = NULL, na.action = na.omit) {
-  data <- createAnalysisDataset(formula, data, weights, subset.condition, na.action)
-  cl <- match.call()
-  if (missing(formula))
-    stop("A formula argument is required")
-  mf <- match.call(expand.dots = TRUE)[1:3]
-  special <- c("strata", "offset", "cluster")
-  out_terms <- terms(formula, special, data = data)
-  if (!is.null(attr(out_terms, "specials")$strata))
-    stop("strata() cannot appear in formula")
-  if (!is.null(attr(out_terms, "specials")$offset))
-    stop("offset() cannot appear in formula")
-  if (!is.null(attr(out_terms, "specials")$cluster))
-    stop("cluster() cannot appear in formula")
-  mf$formula <- out_terms
-  mf[[1]] <- as.name("model.frame")
-  mf <- eval(mf, parent.frame())
-  Y <- model.extract(mf, "response")
-  if (!inherits(Y, c("Event", "Surv"))) {
-    stop("A 'Surv' or 'Event' object is expected")
-  } else {
-    t <- Y[, 1]
-    if (any(t<0)) {
-      stop("Invalid time variable. Expected non-negative values. ")
-    }
-    if (!all(Y[, 2] %in% c(code.event1, code.event2, code.censoring))) {
-      stop("Invalid event codes. Must be 0 or 1 for survival and 0, 1 or 2 for competing risks, with 0 representing censoring, if event codes are not specified. ")
-    } else {
-      epsilon <- Y[, 2]
-      d <- ifelse(Y[, 2] == code.censoring, 0, 1)
-      d0 <- ifelse(Y[, 2] == code.censoring, 1, 0)
-      d1 <- ifelse(Y[, 2] == code.event1, 1, 0)
-      d2 <- ifelse(Y[, 2] == code.event2, 1, 0)
-    }
-  }
-  if (is.na(all.vars(out_terms)[3])) {
-    strata <- rep(1, nrow(data))
-    strata_name <- NULL
-  } else {
-    strata_name <- all.vars(out_terms)[3]
-    strata <- as.factor(data[[strata_name]])
-  }
-  if (is.null(weights)) {
-    w <- rep(1, nrow(data))
-  } else {
-    w <- data[[weights]]
-    if (!is.numeric(w))
-      stop("Weights must be numeric")
-    if (any(!is.finite(w)))
-      stop("Weights must be finite")
-    if (any(w < 0))
-      stop("Weights must be non-negative")
-    if (any(is.na(w)))
-      stop("Weights contain NA values")
-  }
-  return(list(t = t, epsilon = epsilon, d = d, d0 = d0, d1 = d1, d2 = d2, strata = strata, strata_name = strata_name, w=w))
+  lst  <- lapply(levs, function(lv) out_readSurv$t[pick & (sfac == lv)])
+  names(lst) <- vapply(levs, mk_key, FUN.VALUE = character(1))
+  lapply(lst, clean_vec)
 }
 
 readExposureDesign <- function(data, exposure, code.exposure.ref = NULL, prefix = "a") {
