@@ -12,7 +12,7 @@ mkdf <- function(n = 20) {
   df
 }
 
-test_that("Event() allows NA and retains length; use na.omit as necessary", {
+test_that("Event() allowed NA and retained length; use na.omit as necessary", {
   df <- mkdf()
   df$t[1] <- NA
   df$d[2] <- NA
@@ -23,7 +23,6 @@ test_that("Event() allows NA and retains length; use na.omit as necessary", {
   expect_true(any(is.na(ev[,1])))
   expect_true(any(is.na(ev[,2])))
 
-  # model.frame + na.omit で NA 行が落ちること
   mf <- model.frame(Event(t, d) ~ sex, data = df, na.action = na.omit)
   y <- model.extract(mf, "response")
   expect_true(nrow(y) < nrow(df))
@@ -70,15 +69,15 @@ test_that("readSurv() handled strata/weights as expected", {
   expect_false(any(is.na(out$epsilon)))
 })
 
-test_that("defineExposureDesign() allowed only expected codes for exposure", {
+test_that("readExposureDesign() allowed only expected codes for exposure", {
   df <- mkdf()
-  de1 <- defineExposureDesign(df, exposure = "fruitq1", code.exposure.ref = 1)
+  de1 <- readExposureDesign(df, exposure = "fruitq1", code.exposure.ref = 1)
   expect_true(is.matrix(de1$x_a))
   expect_equal(nrow(de1$x_a), nrow(df))
   expect_true(all(colnames(de1$x_a) != "a__2"))
 
   df$fruitq1 <- factor(0)
-  expect_error(defineExposureDesign(df, "fruitq1"), "only one level")
+  expect_error(readExposureDesign(df, "fruitq1"), "only one level")
 })
 
 test_that("check_outcome.type() / check_effect.measure() / check_error()", {

@@ -176,9 +176,9 @@ polyreg <- function(
   report.boot.conf <- ci$report.boot.conf
 
   data <- createAnalysisDataset(formula=nuisance.model, data=data, other.variables.analyzed=c(exposure, strata), subset.condition=subset.condition, na.action=na.action)
-  out_normalizeCovariate <- normalizeCovariate(nuisance.model, data, should.normalize.covariate, outcome.type, ci$out_defineExposureDesign$exposure.levels)
+  out_normalizeCovariate <- normalizeCovariate(nuisance.model, data, should.normalize.covariate, outcome.type, ci$out_readExposureDesign$exposure.levels)
   normalized_data <- out_normalizeCovariate$normalized_data
-  tp <- read_time.point(nuisance.model, normalized_data, ci$out_defineExposureDesign$x_a, outcome.type, code.censoring, should.terminate.time.point, time.point)
+  tp <- read_time.point(nuisance.model, normalized_data, ci$out_readExposureDesign$x_a, outcome.type, code.censoring, should.terminate.time.point, time.point)
   index.vector <- calculateIndexForParameter(NA, ci$x_l, ci$x_a, length(tp))
 
   estimand <- list(
@@ -189,7 +189,7 @@ polyreg <- function(
     code.event2=code.event2,
     code.censoring=code.censoring,
     code.exposure.ref=code.exposure.ref,
-    exposure.levels=ci$out_defineExposureDesign$exposure.levels,
+    exposure.levels=ci$out_readExposureDesign$exposure.levels,
     index.vector=index.vector
   )
 

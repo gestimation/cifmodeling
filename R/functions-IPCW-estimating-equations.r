@@ -39,8 +39,8 @@ estimating_equation_ipcw <- function(
     time.point <- as.numeric(estimand$time.point)
   }
 
-  out_defineExposureDesign <- defineExposureDesign(data, exposure, estimand$code.exposure.ref)
-  x_a <- out_defineExposureDesign$x_a
+  out_readExposureDesign <- readExposureDesign(data, exposure, estimand$code.exposure.ref)
+  x_a <- out_readExposureDesign$x_a
   x_l <- model.matrix(out_terms, mf)
   x_la <- cbind(x_l, x_a)
 

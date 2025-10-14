@@ -36,8 +36,8 @@ getInitialValues <- function(formula, data, outcome.type, exposure, estimand,
   }
   if (any(is.na(x_l))) stop("Covariate design (x_l) contains NA.")
 
-  out_defineExposureDesign <- defineExposureDesign(data, exposure, estimand$code.exposure.ref)
-  x_a <- out_defineExposureDesign$x_a
+  out_readExposureDesign <- readExposureDesign(data, exposure, estimand$code.exposure.ref)
+  x_a <- out_readExposureDesign$x_a
   p_l <- ncol(x_l)
   p_a <- ncol(x_a)
 

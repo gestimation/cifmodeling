@@ -199,7 +199,7 @@ readSurv_old <- function(formula, data, weights = NULL, code.event1 = 1, code.ev
   return(list(t = t, epsilon = epsilon, d = d, d0 = d0, d1 = d1, d2 = d2, strata = strata, strata_name = strata_name, w=w))
 }
 
-defineExposureDesign <- function(data, exposure, code.exposure.ref = NULL, prefix = "a") {
+readExposureDesign <- function(data, exposure, code.exposure.ref = NULL, prefix = "a") {
   stopifnot(is.data.frame(data))
   if (!exposure %in% names(data)) {
     stop("exposure = '", exposure, "' is not found in data.")
@@ -234,7 +234,6 @@ defineExposureDesign <- function(data, exposure, code.exposure.ref = NULL, prefi
     ref = ref_lab
   ))
 }
-
 
 read_time.point <- function(formula, data, x_a, outcome.type, code.censoring, should.terminate.time.point, time.point) {
   #  read_time.point <- function(formula, data, outcome.type, exposure, code.censoring, code.exposure.ref, time.point) {
@@ -323,8 +322,8 @@ checkInput <- function(data, formula, exposure, code.event1, code.event2, code.c
     }
   }
 
-  out_defineExposureDesign <- defineExposureDesign(data, exposure, code.exposure.ref)
-  x_a <- out_defineExposureDesign$x_a
+  out_readExposureDesign <- readExposureDesign(data, exposure, code.exposure.ref)
+  x_a <- out_readExposureDesign$x_a
   x_l <- model.matrix(out_terms, mf)
 
   if (!is.numeric(conf.level) || length(conf.level) != 1 || conf.level <= 0 || conf.level >= 1)
@@ -354,7 +353,7 @@ checkInput <- function(data, formula, exposure, code.event1, code.event2, code.c
 
   outer_choices <- c("nleqslv","Newton","Broyden")
   nleqslv.method <- match.arg(nleqslv.method, choices = outer_choices)
-  return(list(should.normalize.covariate = should.normalize.covariate.corrected, report.sandwich.conf = report.sandwich.conf.corrected, report.boot.conf = report.boot.conf.corrected, out_defineExposureDesign=out_defineExposureDesign, x_a=x_a, x_l=x_l))
+  return(list(should.normalize.covariate = should.normalize.covariate.corrected, report.sandwich.conf = report.sandwich.conf.corrected, report.boot.conf = report.boot.conf.corrected, out_readExposureDesign=out_readExposureDesign, x_a=x_a, x_l=x_l))
 }
 
 checkInput_old <- function(data, formula, exposure, code.event1, code.event2, code.censoring, code.exposure.ref, outcome.type, conf.level, report.sandwich.conf, report.boot.conf, nleqslv.method, should.normalize.covariate) {
@@ -393,8 +392,8 @@ checkInput_old <- function(data, formula, exposure, code.event1, code.event2, co
     }
   }
 
-  out_defineExposureDesign <- defineExposureDesign(data, exposure, code.exposure.ref)
-  x_a <- out_defineExposureDesign$x_a
+  out_readExposureDesign <- readExposureDesign(data, exposure, code.exposure.ref)
+  x_a <- out_readExposureDesign$x_a
   x_l <- model.matrix(out_terms, mf)
 
   if (!is.numeric(conf.level) || length(conf.level) != 1 || conf.level <= 0 || conf.level >= 1)
@@ -424,7 +423,7 @@ checkInput_old <- function(data, formula, exposure, code.event1, code.event2, co
 
   outer_choices <- c("nleqslv","Newton","Broyden")
   nleqslv.method <- match.arg(nleqslv.method, choices = outer_choices)
-  return(list(should.normalize.covariate = should.normalize.covariate.corrected, report.sandwich.conf = report.sandwich.conf.corrected, report.boot.conf = report.boot.conf.corrected, out_defineExposureDesign=out_defineExposureDesign, x_a=x_a, x_l=x_l))
+  return(list(should.normalize.covariate = should.normalize.covariate.corrected, report.sandwich.conf = report.sandwich.conf.corrected, report.boot.conf = report.boot.conf.corrected, out_readExposureDesign=out_readExposureDesign, x_a=x_a, x_l=x_l))
 }
 
 
