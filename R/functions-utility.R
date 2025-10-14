@@ -19,7 +19,6 @@ calculateIndexForParameter <- function(i_parameter,x_l,x_a,length.time.point) {
   return(i_parameter)
 }
 
-
 normalizeCovariate <- function(formula, data, should.normalize.covariate,
                                    outcome.type, exposure.levels) {
   mf <- model.frame(formula, data)

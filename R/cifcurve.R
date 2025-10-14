@@ -41,7 +41,10 @@
 #' @param addCensorMark Logical add \code{add_censor_mark()} to plot (default \code{TRUE}).
 #' @param shape.censor.mark Integer point shape for censor marks (default \code{3}).
 #' @param size.censor.mark Numeric point size for censor marks (default \code{2}).
-#' @param addIntercurrentEventMark Logical; overlay user-specified time marks per strata (default \code{TRUE}).
+#' @param addCompetingRiskMark Logical add time marks to descrive incidents of competing risks (default \code{TRUE}).
+#' @param shape.competingrisk.mark Integer point shape for competing-risk marks (default \code{3}).
+#' @param size.competingrisk.mark Numeric point size for competing-risk marks (default \code{2}).
+#' @param addIntercurrentEventMark Logical overlay user-specified time marks per strata (default \code{TRUE}).
 #' @param intercurrent.event.time Named list of numeric vectors (names must match or be mapped to strata labels).
 #' @param shape.intercurrent.event.mark Integer point shape for intercurrent-event marks (default \code{16}).
 #' @param size.intercurrent.event.mark Numeric point size for intercurrent-event marks (default \code{2}).
@@ -90,8 +93,9 @@ cifcurve <- function(formula,
                            ggsurvfit.type = NULL,
                            addConfidenceInterval = TRUE,
                            addRiskTable = TRUE,
-                           addCensorMark = TRUE,
-                           addIntercurrentEventMark = TRUE,
+                           addCensorMark = FALSE,
+                           addCompetingRiskMark = TRUE,
+                           addIntercurrentEventMark = FALSE,
                            label.x = "Time",
                            label.y = "Survival probability",
                            label.strata = NULL,
@@ -99,6 +103,8 @@ cifcurve <- function(formula,
                            lims.y = c(0, 1),
                            shape.censor.mark = 3,
                            size.censor.mark = 2,
+                           shape.competingrisk.mark = 3,
+                           size.competingrisk.mark = 2,
                            intercurrent.event.time = NULL,
                            shape.intercurrent.event.mark = 16,
                            size.intercurrent.event.mark = 2,
@@ -108,6 +114,18 @@ cifcurve <- function(formula,
                            filename = NULL) {
   outcome.type <- check_outcome.type(outcome.type)
   out_readSurv <- readSurv(formula, data, weights, code.event1, code.event2, code.censoring, subset.condition, na.action)
+  if (addCompetingRiskMark) {
+    out_mcm <- make_competingrisk_marks(out_readSurv, event_code = code.event2)
+  }
+#  intercurrent_named_list <- list("(all)" = out_readSurv$data_sync$t[out_readSurv$data_sync$epsilon == 2])
+#  ds <- out_readSurv$data_sync
+#  levs <- levels(ds$fruitq)
+#  intercurrent_named_list <- setNames(
+#    lapply(levs, function(z) ds$t[ds$epsilon == 2 & ds$fruitq == z]),
+#    paste0("fruitq=", levs)
+#  )
+#  print(intercurrent_named_list)
+
   error <- check_error(error, outcome.type)
   check_label.strata(out_readSurv, label.strata)
 
@@ -194,8 +212,11 @@ cifcurve <- function(formula,
       addCensorMark  = addCensorMark,
       shape.censor.mark = shape.censor.mark,
       size.censor.mark  = size.censor.mark,
+      addCompetingRiskMark = addCompetingRiskMark,
+      shape.competingrisk.mark = shape.competingrisk.mark,
+      size.competingrisk.mark = size.competingrisk.mark,
       addIntercurrentEventMark = addIntercurrentEventMark,
-      intercurrent.event.time  = intercurrent.event.time,
+      intercurrent.event.time  = out_mcm,
       shape.intercurrent.event.mark = shape.intercurrent.event.mark,
       size.intercurrent.event.mark  = size.intercurrent.event.mark,
       label.x = label.x, label.y = label.y,
@@ -213,6 +234,22 @@ cifcurve <- function(formula,
   return(survfit_object)
 }
 
+data(diabetes.complications)
+diabetes.complications$t2 <- ifelse(
+  diabetes.complications$epsilon == 2,
+  diabetes.complications$t,
+  NA
+)
+survfit_by_group <- cifcurve(Event(t,epsilon) ~ fruitq, data = diabetes.complications,addCensorMark=FALSE,intercurrent.event.time="t2",
+                             outcome.type='COMPETING-RISK', error='delta', ggsurvfit.type = 'risk',
+                             label.y = 'CIF of diabetic retinopathy', label.x = 'Years from registration')
+
+
+survfit_by_group <- cifcurve(Event(t,epsilon) ~ fruitq, data = diabetes.complications,addCensorMark=FALSE,addCompetingRiskMark=TRUE,addIntercurrentEventMark = TRUE,
+                             outcome.type='COMPETING-RISK', error='delta', ggsurvfit.type = 'risk',
+                             label.y = 'CIF of diabetic retinopathy', label.x = 'Years from registration')
+
+
 
 #' Plot survival or cumulative incidence curves with ggsurvfit
 #'
@@ -222,13 +259,16 @@ cifcurve <- function(formula,
 #' @param conf.type Character; same as used when constructing CI (e.g., "none", "n", "arcsine-square root").
 #' @param addConfidenceInterval Logical; add CI via \code{add_confidence_interval()}.
 #' @param addRiskTable Logical; add risk table via \code{add_risktable(risktable_stats="n.risk")}.
-#' @param addCensorMark Logical; add censor marks via \code{add_censor_mark()}.
-#' @param shape.censor.mark Integer; shape for censor marks. Defaults to 3.
-#' @param size.censor.mark Numeric; size for censor marks. Defaults to 2.
-#' @param addIntercurrentEventMark Logical; add user-specified marks at strata-specific times.
-#' @param intercurrent.event.time Named list of numeric vectors.
-#' @param shape.intercurrent.event.mark Integer; fixed shape for intercurrent marks across strata. Defaults 16.
-#' @param size.intercurrent.event.mark Numeric; size for intercurrent marks. Defaults 2.
+#' @param addCensorMark Logical add \code{add_censor_mark()} to plot (default \code{TRUE}).
+#' @param shape.censor.mark Integer point shape for censor marks (default \code{3}).
+#' @param size.censor.mark Numeric point size for censor marks (default \code{2}).
+#' @param addCompetingRiskMark Logical add time marks to descrive incidents of competing risks (default \code{TRUE}).
+#' @param shape.competingrisk.mark Integer point shape for competing-risk marks (default \code{3}).
+#' @param size.competingrisk.mark Numeric point size for competing-risk marks (default \code{2}).
+#' @param addIntercurrentEventMark Logical overlay user-specified time marks per strata (default \code{TRUE}).
+#' @param intercurrent.event.time Named list of numeric vectors (names must match or be mapped to strata labels).
+#' @param shape.intercurrent.event.mark Integer point shape for intercurrent-event marks (default \code{16}).
+#' @param size.intercurrent.event.mark Numeric point size for intercurrent-event marks (default \code{2}).
 #' @param label.x,label.y Axis labels. If \code{label.y = "Survival probability"} (default) and
 #'   \code{ggsurvfit.type == "risk"}, it is automatically replaced with \code{"1 - survival probability"}.
 #' @param lims.x Numeric length-2; x limits. If NULL and \code{out_readSurv} given, uses \code{c(0,max(out_readSurv$t))}.
@@ -246,6 +286,9 @@ call_ggsurvfit <- function(
     addCensorMark = TRUE,
     shape.censor.mark = 3,
     size.censor.mark = 2,
+    addCompetingRiskMark = TRUE,
+    shape.competingrisk.mark = 16,
+    size.competingrisk.mark = 2,
     addIntercurrentEventMark = TRUE,
     intercurrent.event.time = list(),
     shape.intercurrent.event.mark = 16,

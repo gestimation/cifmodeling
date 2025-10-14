@@ -107,7 +107,157 @@ readStrata <- function(out_readSurv, out_aj, label.strata=NULL) {
   return(out_aj)
 }
 
+
+
+
+## ---- helpers ---------------------------------------------------------------
 readSurv <- function(formula, data, weights = NULL,
+                     code.event1 = 1, code.event2 = 2, code.censoring = 0,
+                     subset.condition = NULL, na.action = na.omit) {
+  data <- createAnalysisDataset(formula, data, weights, subset.condition, na.action)
+
+  Terms <- terms(formula, c("strata","offset","cluster"), data = data)
+  mf <- model.frame(Terms, data = data, na.action = na.action)
+
+  Y <- model.extract(mf, "response")
+  if (!inherits(Y, c("Event","Surv"))) stop("A 'Surv' or 'Event' object is expected")
+
+  te <- normalize_time_event(Y[,1], Y[,2], allowed = c(code.censoring, code.event1, code.event2))
+  t <- te$time; epsilon <- te$event
+  d  <- as.integer(epsilon != code.censoring)
+  d0 <- as.integer(epsilon == code.censoring)
+  d1 <- as.integer(epsilon == code.event1)
+  d2 <- as.integer(epsilon == code.event2)
+
+  # --- ここが重要：解析対象の“数値”行インデックスを作る ---
+  mf_rows <- rownames(mf)                  # "1","2",... の文字もある
+  idx <- suppressWarnings(as.integer(mf_rows))
+  if (any(is.na(idx))) {
+    # rownames(data) があるならマッチ、それでもNAならエラー
+    rn <- rownames(data)
+    if (!is.null(rn)) idx <- match(mf_rows, rn)
+  }
+  if (any(is.na(idx))) stop("Failed to align analysis rows to original data (cannot compute numeric index).")
+
+  data_sync <- data[idx, , drop = FALSE]
+
+  vars <- all.vars(Terms)
+  if (length(vars) >= 3L) {
+    strata_name <- vars[3L]
+    strata <- factor(data_sync[[strata_name]])
+  } else {
+    strata_name <- NULL
+    strata <- factor(rep(1L, nrow(mf)))
+  }
+
+  w <- if (is.null(weights)) {
+    rep(1, nrow(mf))
+  } else {
+    ww <- data_sync[[weights]]
+    check_weights(ww)
+    ww
+  }
+
+  list(
+    t=t, epsilon=epsilon, d=d, d0=d0, d1=d1, d2=d2,
+    strata=strata, strata_name=strata_name, w=w,
+    data_sync = data_sync,
+    rows = mf_rows,     # 参考用に残す
+    idx  = idx          # ★ これを追加（数値行インデックス）
+  )
+}
+
+
+#' Build marks (Named list) for a specific competing risk event
+#'
+#' @description
+#' Extracts event times corresponding to a given competing-risk code
+#' (e.g., `epsilon == 2`) from the dataset returned by `readSurv()`,
+#' and organizes them by strata for use in `call_ggsurvfit()`.
+#'
+#' @param out_readSurv A list returned by [readSurv()].
+#' @param event_code Integer/numeric. Which event code in `epsilon` should be used (default 2).
+#' @param time_var Character. Column name of event time in `out_readSurv$data_sync` (default "t").
+#' @param event_var Character. Column name of event type in `out_readSurv$data_sync` (default "epsilon").
+#' @param strata_label_style "auto","full","plain".
+#'   - "full": key names like `"fruitq=0"` to match `survfit_object$strata`
+#'   - "plain": only `"0"`, `"1"`, ...
+#'   - "auto": `"full"` if strata exist, otherwise `"(all)"`
+#' @param na_rm Logical; remove NA/Inf times. Default TRUE.
+#' @param unique Logical; keep unique times. Default TRUE.
+#' @param sort Logical; sort times within each stratum. Default TRUE.
+#'
+#' @return
+#' A named list of numeric vectors keyed by strata label(s),
+#' ready to be passed to `intercurrent.event.time` in [call_ggsurvfit()].
+#'
+#' @examples
+#' out_readSurv <- readSurv(Event(t, epsilon) ~ strata(fruitq),
+#'                          data = diabetes.complications)
+#' marks <- make_competingrisk_marks(out_readSurv, event_code = 2)
+#' # cifcurve(..., intercurrent.event.time = marks)
+make_competingrisk_marks <- function(
+    out_readSurv,
+    event_code = 2,
+    time_var ="t",
+    event_var = "epsilon",
+    strata_label_style = c("auto","full","plain"),
+    na_rm = TRUE,
+    unique = TRUE,
+    sort = TRUE
+){
+  stopifnot(is.list(out_readSurv), !is.null(out_readSurv$data_sync))
+  ds <- out_readSurv$data_sync
+  if (!all(c(time_var, event_var) %in% names(ds))) {
+    stop(sprintf("Columns '%s' and/or '%s' not found in out_readSurv$data_sync.",
+                 time_var, event_var))
+  }
+
+  strata_label_style <- match.arg(strata_label_style)
+
+  # 1) strata factor（無い/単一でもOK）
+  sfac <- out_readSurv$strata
+  has_strata <- !is.null(sfac) && is.factor(sfac) && nlevels(sfac) > 1L
+  if (has_strata) sfac <- droplevels(sfac)
+
+  # 2) キーのラベル付け
+  mk_key <- function(level = NULL) {
+    if (!has_strata) return("(all)")
+    sname <- out_readSurv$strata_name
+    if (strata_label_style == "plain" || is.null(sname)) {
+      return(as.character(level))
+    } else {
+      return(paste0(sname, "=", level))
+    }
+  }
+
+  # 3) 整理関数
+  clean_vec <- function(v){
+    if (na_rm) v <- v[is.finite(v)]
+    if (unique) v <- base::unique(v)
+    if (sort)   v <- base::sort(v)
+    unname(v)
+  }
+
+  # 4) strata 無し
+  if (!has_strata) {
+    v <- ds[[time_var]][ ds[[event_var]] == event_code ]
+    return( setNames(list(clean_vec(v)), mk_key()) )
+  }
+
+  # 5) strata 有り
+  levs <- levels(sfac)
+  out_list <- setNames(vector("list", length(levs)), sapply(levs, mk_key))
+  for (i in seq_along(levs)) {
+    lv <- levs[i]
+    idx <- (ds[[event_var]] == event_code) & (sfac == lv)
+    v <- ds[[time_var]][ idx ]
+    out_list[[i]] <- clean_vec(v)
+  }
+  out_list
+}
+
+readSurv_old <- function(formula, data, weights = NULL,
                      code.event1 = 1, code.event2 = 2, code.censoring = 0,
                      subset.condition = NULL, na.action = na.omit) {
   data <- createAnalysisDataset(formula, data, weights, subset.condition, na.action)
