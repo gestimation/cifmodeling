@@ -280,7 +280,8 @@ patterns over follow-up.
 cifcurve(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, 
 outcome.type='COMPETING-RISK', error='delta', ggsurvfit.type='risk', 
 addConfidenceInterval=FALSE, addCensorMark=TRUE, addCompetingRiskMark=FALSE, 
-label.y='CIF of diabetic retinopathy', label.x='Years from registration')
+label.y='CIF of diabetic retinopathy', label.x='Years from registration', 
+label.strata=c('High intake','Low intake'))
 ```
 
 <img src="man/figures/README-example1-2-1.png" width="100%" />
@@ -288,11 +289,12 @@ label.y='CIF of diabetic retinopathy', label.x='Years from registration')
     #> Call: cifcurve(formula = Event(t, epsilon) ~ fruitq1, data = diabetes.complications, 
     #>     outcome.type = "COMPETING-RISK", error = "delta", ggsurvfit.type = "risk", 
     #>     addConfidenceInterval = FALSE, addCensorMark = TRUE, addCompetingRiskMark = FALSE, 
-    #>     label.x = "Years from registration", label.y = "CIF of diabetic retinopathy")
+    #>     label.x = "Years from registration", label.y = "CIF of diabetic retinopathy", 
+    #>     label.strata = c("High intake", "Low intake"))
     #> 
-    #>   records   n events median LCL UCL
-    #> 0     720 719    189     11  NA  NA
-    #> 1     258 257     92     NA  NA  NA
+    #>             records   n events median LCL UCL
+    #> High intake     720 719    189     11  NA  NA
+    #> Low intake      258 257     92     NA  NA  NA
 
 In the final figure, competing risk marks are added
 (addCompetingRiskMark = TRUE) to indicate individuals who experienced
@@ -304,7 +306,8 @@ primary cause and those attributable to competing causes.
 cifcurve(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, 
 outcome.type='COMPETING-RISK', error='delta', ggsurvfit.type='risk', 
 addConfidenceInterval=FALSE, addCensorMark=FALSE, addCompetingRiskMark=TRUE, 
-label.y='CIF of diabetic retinopathy', label.x='Years from registration')
+label.y='CIF of diabetic retinopathy', label.x='Years from registration', 
+label.strata=c('High intake','Low intake'))
 ```
 
 <img src="man/figures/README-example1-3-1.png" width="100%" />
@@ -312,11 +315,12 @@ label.y='CIF of diabetic retinopathy', label.x='Years from registration')
     #> Call: cifcurve(formula = Event(t, epsilon) ~ fruitq1, data = diabetes.complications, 
     #>     outcome.type = "COMPETING-RISK", error = "delta", ggsurvfit.type = "risk", 
     #>     addConfidenceInterval = FALSE, addCensorMark = FALSE, addCompetingRiskMark = TRUE, 
-    #>     label.x = "Years from registration", label.y = "CIF of diabetic retinopathy")
+    #>     label.x = "Years from registration", label.y = "CIF of diabetic retinopathy", 
+    #>     label.strata = c("High intake", "Low intake"))
     #> 
-    #>   records   n events median LCL UCL
-    #> 0     720 719    189     11  NA  NA
-    #> 1     258 257     92     NA  NA  NA
+    #>             records   n events median LCL UCL
+    #> High intake     720 719    189     11  NA  NA
+    #> Low intake      258 257     92     NA  NA  NA
 
 An estimate of the unadjusted risk ratio for the risk of diabetic
 retinopathy at 8 years is obtained using `polyreg()` with
@@ -461,7 +465,7 @@ diabetes.complications$d <- (diabetes.complications$epsilon>0)
 cifcurve(Event(t,d) ~ fruitq1, data=diabetes.complications, 
 outcome.type='SURVIVAL', addConfidenceInterval=TRUE, addCensorMark=FALSE, 
 addCompetingRiskMark=FALSE, label.y='Survival probability', 
-label.x='Years from registration')
+label.x='Years from registration', label.strata=c('High intake','Low intake'))
 ```
 
 <img src="man/figures/README-example3-1.png" width="100%" />
@@ -469,11 +473,12 @@ label.x='Years from registration')
     #> Call: cifcurve(formula = Event(t, d) ~ fruitq1, data = diabetes.complications, 
     #>     outcome.type = "SURVIVAL", addConfidenceInterval = TRUE, 
     #>     addCensorMark = FALSE, addCompetingRiskMark = FALSE, label.x = "Years from registration", 
-    #>     label.y = "Survival probability")
+    #>     label.y = "Survival probability", label.strata = c("High intake", 
+    #>         "Low intake"))
     #> 
-    #>     n events median LCL UCL
-    #> 0 720    248     11  NA  NA
-    #> 1 258    114     NA 8.3  NA
+    #>               n events median LCL UCL
+    #> High intake 720    248     11  NA  NA
+    #> Low intake  258    114     NA 8.3  NA
 
 The code below specifies the Richardson model on the risk of diabetic
 retinopathy or macrovascular complications at 8 years

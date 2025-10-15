@@ -196,7 +196,8 @@ In the next figure, censoring marks are added along each curve (addCensorMark = 
 cifcurve(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, 
 outcome.type='COMPETING-RISK', error='delta', ggsurvfit.type='risk', 
 addConfidenceInterval=FALSE, addCensorMark=TRUE, addCompetingRiskMark=FALSE, 
-label.y='CIF of diabetic retinopathy', label.x='Years from registration')
+label.y='CIF of diabetic retinopathy', label.x='Years from registration', 
+label.strata=c('High intake','Low intake'))
 ```
 
 In the final figure, competing risk marks are added (addCompetingRiskMark = TRUE) to indicate individuals who experienced the competing event (macrovascular complications) before diabetic retinopathy. 
@@ -206,7 +207,8 @@ These symbols help distinguish between events due to the primary cause and those
 cifcurve(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, 
 outcome.type='COMPETING-RISK', error='delta', ggsurvfit.type='risk', 
 addConfidenceInterval=FALSE, addCensorMark=FALSE, addCompetingRiskMark=TRUE, 
-label.y='CIF of diabetic retinopathy', label.x='Years from registration')
+label.y='CIF of diabetic retinopathy', label.x='Years from registration', 
+label.strata=c('High intake','Low intake'))
 ```
 
 An estimate of the unadjusted risk ratio for the risk of diabetic retinopathy at 8 years is obtained using `polyreg()` with `outcome.type='COMPETING-RISK'`. Here, no covariates are included in the nuisance model (intercept only). The effect of low fruit intake (fruitq1) is estimated as a risk ratio (effect.measure1='RR') for diabetic retinopathy (event 1) and macrovascular complications (event 2) at 8 years (time.point=8).
@@ -236,7 +238,7 @@ diabetes.complications$d <- (diabetes.complications$epsilon>0)
 cifcurve(Event(t,d) ~ fruitq1, data=diabetes.complications, 
 outcome.type='SURVIVAL', addConfidenceInterval=TRUE, addCensorMark=FALSE, 
 addCompetingRiskMark=FALSE, label.y='Survival probability', 
-label.x='Years from registration')
+label.x='Years from registration', label.strata=c('High intake','Low intake'))
 ```
 
 The code below specifies the Richardson model on the risk of diabetic retinopathy or macrovascular complications at 8 years (outcome.type='SURVIVAL'). Dependent censoring is adjusted by stratified IPCW method (`strata='strata'`). Estimates other than the effects of exposure (e.g. intercept) are suppressed when `report.nuisance.parameter` is not specified.
