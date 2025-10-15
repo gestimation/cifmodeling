@@ -102,7 +102,7 @@ install.packages("boot")
 install.packages("ggplot2")
 install.packages("ggsurvfit")
 install.packages("modelsummary")
-devtools::install_github("gestimation/cif")
+devtools::install_github("gestimation/cifmodeling")
 ```
 
 If you only need the core functionality of `cif`, installing `Rcpp` and `nleqslv` are enough; the other packages are optional but recommended to reproduce the examples below.

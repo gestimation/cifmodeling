@@ -132,7 +132,7 @@ install.packages("boot")
 install.packages("ggplot2")
 install.packages("ggsurvfit")
 install.packages("modelsummary")
-devtools::install_github("gestimation/cif")
+devtools::install_github("gestimation/cifmodeling")
 ```
 
 If you only need the core functionality of `cif`, installing `Rcpp` and
@@ -266,9 +266,9 @@ label.strata=c('High intake','Low intake'))
     #>     label.x = "Years from registration", label.y = "CIF of diabetic retinopathy", 
     #>     label.strata = c("High intake", "Low intake"))
     #> 
-    #>             records   n events median LCL UCL
-    #> High intake     720 719    189     11  NA  NA
-    #> Low intake      258 257     92     NA  NA  NA
+    #>   records   n events median LCL UCL
+    #> 0     720 719    189     11  NA  NA
+    #> 1     258 257     92     NA  NA  NA
 
 In the next figure, censoring marks are added along each curve
 (addCensorMark = TRUE) to indicate individuals who were censored before
@@ -292,9 +292,9 @@ label.strata=c('High intake','Low intake'))
     #>     label.x = "Years from registration", label.y = "CIF of diabetic retinopathy", 
     #>     label.strata = c("High intake", "Low intake"))
     #> 
-    #>             records   n events median LCL UCL
-    #> High intake     720 719    189     11  NA  NA
-    #> Low intake      258 257     92     NA  NA  NA
+    #>   records   n events median LCL UCL
+    #> 0     720 719    189     11  NA  NA
+    #> 1     258 257     92     NA  NA  NA
 
 In the final figure, competing risk marks are added
 (addCompetingRiskMark = TRUE) to indicate individuals who experienced
@@ -318,9 +318,9 @@ label.strata=c('High intake','Low intake'))
     #>     label.x = "Years from registration", label.y = "CIF of diabetic retinopathy", 
     #>     label.strata = c("High intake", "Low intake"))
     #> 
-    #>             records   n events median LCL UCL
-    #> High intake     720 719    189     11  NA  NA
-    #> Low intake      258 257     92     NA  NA  NA
+    #>   records   n events median LCL UCL
+    #> 0     720 719    189     11  NA  NA
+    #> 1     258 257     92     NA  NA  NA
 
 An estimate of the unadjusted risk ratio for the risk of diabetic
 retinopathy at 8 years is obtained using `polyreg()` with
@@ -476,9 +476,9 @@ label.x='Years from registration', label.strata=c('High intake','Low intake'))
     #>     label.y = "Survival probability", label.strata = c("High intake", 
     #>         "Low intake"))
     #> 
-    #>               n events median LCL UCL
-    #> High intake 720    248     11  NA  NA
-    #> Low intake  258    114     NA 8.3  NA
+    #>        n events median LCL UCL
+    #> [1,] 720    248     11  NA  NA
+    #> [2,] 258    114     NA 8.3  NA
 
 The code below specifies the Richardson model on the risk of diabetic
 retinopathy or macrovascular complications at 8 years

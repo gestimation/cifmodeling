@@ -119,16 +119,13 @@ cifcurve <- function(formula,
 
   error <- check_error(error, outcome.type)
   check_label.strata(out_readSurv, label.strata)
+  lev_old <- levels(as.factor(out_readSurv$strata))
+  lab_map <- setNames(if (is.null(label.strata)) lev_old else label.strata, lev_old)
 
   if (identical(outcome.type, "SURVIVAL")) {
     out_km <- calculateKM(out_readSurv$t, out_readSurv$d, out_readSurv$w, as.integer(out_readSurv$strata), error)
-    out_km$std.err <- out_km$surv * out_km$std.err
     out_ci <- calculateCI(out_km, conf.int, conf.type, conf.lower = NULL)
-
-    if (any(as.integer(out_readSurv$strata) != 1)) {
-      names(out_km$strata) <- if (is.null(label.strata)) levels(as.factor(out_readSurv$strata)) else label.strata
-    }
-    if (isTRUE(report.survfit.std.err)) out_km$std.err <- out_km$std.err / out_km$surv
+    if (isFALSE(report.survfit.std.err)) out_km$std.err <- out_km$surv * out_km$std.err
 
     survfit_object <- list(
       time = out_km$time,
@@ -150,7 +147,7 @@ cifcurve <- function(formula,
 
   } else {
     out_aj <- calculateAJ(out_readSurv)
-    out_aj <- readStrata(out_readSurv, out_aj, label.strata)
+    names(out_aj$strata1) <- levels(as.factor(out_readSurv$strata))
 
     if (any(as.integer(out_readSurv$strata) != 1)) {
       n <- table(as.integer(out_readSurv$strata))
@@ -204,7 +201,7 @@ cifcurve <- function(formula,
       intercurrent.event.time  = intercurrent.event.time,
       shape.intercurrent.event.mark = shape.intercurrent.event.mark,
       size.intercurrent.event.mark  = size.intercurrent.event.mark,
-      label.x = label.x, label.y = label.y,
+      label.x = label.x, label.y = label.y, label.strata = lab_map,
       lims.x = lims.x, lims.y = lims.y,
       font.family = font.family, font.size = font.size,
       legend.position = legend.position
@@ -264,6 +261,7 @@ call_ggsurvfit <- function(
     size.intercurrent.event.mark = 2,
     label.x = "Time",
     label.y = "Survival probability",
+    label.strata = NULL,
     lims.x = NULL,
     lims.y = c(0, 1),
     font.family = "sans",
@@ -301,6 +299,15 @@ call_ggsurvfit <- function(
     base_surv_theme(font.family, font.size, legend.position) +
     labs(x = label.x, y = label.y.corrected) +
     lims(x = lims.x, y = lims.y)
+  p <- p +
+    ggplot2::scale_color_discrete(
+      breaks = names(label.strata),
+      labels = unname(label.strata)
+    ) +
+    ggplot2::scale_fill_discrete(
+      breaks = names(label.strata),
+      labels = unname(label.strata)
+    )
 
   if (isTRUE(addConfidenceInterval)) p <- p + add_confidence_interval()
   if (isTRUE(addRiskTable))          p <- p + add_risktable(risktable_stats = c("n.risk"))
