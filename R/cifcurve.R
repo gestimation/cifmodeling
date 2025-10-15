@@ -305,7 +305,6 @@ call_ggsurvfit <- function(
   if (isTRUE(addConfidenceInterval)) p <- p + add_confidence_interval()
   if (isTRUE(addRiskTable))          p <- p + add_risktable(risktable_stats = c("n.risk"))
   if (isTRUE(addCensorMark))         p <- p + add_censor_mark(shape = shape.censor.mark, size = size.censor.mark)
-
   if (isTRUE(addCompetingRiskMark) && length(competing.risk.time)) {
     p <- draw_marks_if_any(p, survfit_object, competing.risk.time, ggsurvfit.type,
                            shape = shape.competing.risk.mark, size = size.competing.risk.mark)
@@ -314,7 +313,7 @@ call_ggsurvfit <- function(
     p <- draw_marks_if_any(p, survfit_object, intercurrent.event.time, ggsurvfit.type,
                            shape = shape.intercurrent.event.mark, size = size.intercurrent.event.mark)
   }
-  p
+  return(p)
 }
 
 base_surv_theme <- function(font.family, font.size, legend.position) {
