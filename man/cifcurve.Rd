@@ -20,10 +20,11 @@ cifcurve(
   report.survfit.std.err = FALSE,
   report.ggsurvfit = TRUE,
   ggsurvfit.type = NULL,
-  addConfidenceInterval = TRUE,
+  addConfidenceInterval = FALSE,
   addRiskTable = TRUE,
   addCensorMark = TRUE,
-  addIntercurrentEventMark = TRUE,
+  addCompetingRiskMark = FALSE,
+  addIntercurrentEventMark = FALSE,
   label.x = "Time",
   label.y = "Survival probability",
   label.strata = NULL,
@@ -31,8 +32,10 @@ cifcurve(
   lims.y = c(0, 1),
   shape.censor.mark = 3,
   size.censor.mark = 2,
+  shape.competing.risk.mark = 16,
+  size.competing.risk.mark = 2,
   intercurrent.event.time = NULL,
-  shape.intercurrent.event.mark = 16,
+  shape.intercurrent.event.mark = 1,
   size.intercurrent.event.mark = 2,
   font.family = "sans",
   font.size = 14,
@@ -78,7 +81,9 @@ For \code{"SURVIVAL"} typically \code{"greenwood"}; for \code{"COMPETING-RISK"} 
 
 \item{addCensorMark}{Logical add \code{add_censor_mark()} to plot (default \code{TRUE}).}
 
-\item{addIntercurrentEventMark}{Logical; overlay user-specified time marks per strata (default \code{TRUE}).}
+\item{addCompetingRiskMark}{Logical add time marks to describe event2 specified by Event(), usually the competing events (default \code{TRUE}).}
+
+\item{addIntercurrentEventMark}{Logical overlay user-specified time marks per strata (default \code{TRUE}).}
 
 \item{label.x}{Axis labels (defaults: \code{"Time"}).}
 
@@ -95,9 +100,13 @@ If \code{ggsurvfit.type="risk"} and \code{label.y} is unchanged, it is internall
 
 \item{size.censor.mark}{Numeric point size for censor marks (default \code{2}).}
 
+\item{shape.competing.risk.mark}{Integer point shape for competing-risk marks (default \code{16}).}
+
+\item{size.competing.risk.mark}{Numeric point size for competing-risk marks (default \code{2}).}
+
 \item{intercurrent.event.time}{Named list of numeric vectors (names must match or be mapped to strata labels).}
 
-\item{shape.intercurrent.event.mark}{Integer point shape for intercurrent-event marks (default \code{16}).}
+\item{shape.intercurrent.event.mark}{Integer point shape for intercurrent-event marks (default \code{1}).}
 
 \item{size.intercurrent.event.mark}{Numeric point size for intercurrent-event marks (default \code{2}).}
 

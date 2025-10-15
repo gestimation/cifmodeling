@@ -1,6 +1,6 @@
 Package: cifmodeling
 Title: Visualize Cumulative Incidence Functions and Fit Coherent Regression Models Based on Polytomous Log Odds Products
-Version: 0.2.0
+Version: 0.3.0
 Maintainer: ST <gestimation@gmail.com>
 Authors@R: 
     person("Shiro", "Tanaka", , "gestimation@gmail.com", role = c("aut", "cre", "cph"))

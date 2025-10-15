@@ -58,7 +58,7 @@ freely add layers, modify themes, or change the axes and legend.
     `"log"`, `"log-log"`, `"logit"`, or `"none"`)
   - `error` chooses the estimator for standard error (`"greenwood"` or
     `"tsiatis"` for survival curves and “delta”`or`“aalen”\` for CIFs)
-- **Plot customization**
+- **Visual customization**
   - `addConfidenceInterval` adds confidence intervals on the
     ggplot2-based plot
   - `addIntercurrentEventMark` and `addCensorMark` add symbols to
@@ -97,25 +97,26 @@ such as **modelsummary** or **broom** for reporting.
 ### An example of usage
 
 ``` r
-library(cif)
-#> 
-#> Attaching package: 'cif'
-#> The following object is masked from 'package:cifmodeling':
-#> 
-#>     Event
 data(diabetes.complications)
-output1 <- cifcurve(Event(t,epsilon) ~ fruitq, data = diabetes.complications, 
-           outcome.type='COMPETING-RISK', error='delta', ggsurvfit.type = 'risk', 
-           label.y = 'CIF of diabetic retinopathy', label.x = 'Years from registration')
+cifcurve(Event(t,epsilon) ~ fruitq, data=diabetes.complications, 
+outcome.type='COMPETING-RISK', error='delta', ggsurvfit.type='risk', 
+label.y='CIF of diabetic retinopathy', label.x='Years from registration')
 ```
 
 <img src="man/figures/README-syntax-1.png" width="100%" />
 
-``` r
-output2 <- polyreg(nuisance.model = Event(t,epsilon) ~ +1, exposure = 'fruitq', 
-           data = diabetes.complications, effect.measure1='RR', effect.measure2='RR', 
-           time.point=8, outcome.type='COMPETING-RISK')
-```
+    #> Call: cifcurve(formula = Event(t, epsilon) ~ fruitq, data = diabetes.complications, 
+    #>     outcome.type = "COMPETING-RISK", error = "delta", ggsurvfit.type = "risk", 
+    #>     label.x = "Years from registration", label.y = "CIF of diabetic retinopathy")
+    #> 
+    #>    records   n events median LCL UCL
+    #> Q1     258 257     92     NA  NA  NA
+    #> Q2     231 230     61     NA  NA  NA
+    #> Q3     244 243     69     11  NA  NA
+    #> Q4     245 244     59     NA  NA  NA
+    output <- polyreg(nuisance.model=Event(t,epsilon) ~ +1, exposure='fruitq', 
+              data=diabetes.complications, effect.measure1='RR', 
+              effect.measure2='RR', time.point=8, outcome.type='COMPETING-RISK')
 
 ## Installation
 
@@ -196,7 +197,7 @@ Three effect measures available:
 
 - Odds Ratio (OR)
 
-- Sub-distribution Hazard Ratio (SHR)
+- Subdistribution Hazard Ratio (SHR)
 
 Set the desired measure using effect.measure1 and, for competing risks
 analysis, effect.measure2. The time.point argument specifies the
@@ -235,32 +236,101 @@ outcomes of individual observations.
 For the initial illustration, unadjusted analysis focusing on cumulative
 incidence probabilities of diabetic retinopathy (event 1) and
 macro-vascular complications (event 2) at 8 years of follow-up is
-demonstrated. Regression coefficients and variance covariance matrix of
-both exposure (fruitq1) and covariates (intercept in this case) in the
-fitted log-odds product models are presented.
+demonstrated. The figure below shows cumulative incidence of diabetic
+retinopathy for low (Q1) and high (Q2 to 4) intake of fruit. This is
+generated using `cifcurve()` with `outcome.type='COMPETING-RISK'` by
+calculating Aalen–Johansen estimator stratified by fruitq1. The
+`ggsurvfit.type='risk'` option sets the y-axis to display cumulative
+incidence probabilities. The `label.x` and `label.y` arguments customize
+the axis labels, and `label.strata` provides custom labels for the
+strata in the legend. The `addConfidenceInterval=TRUE` argument adds
+confidence intervals to the plot, while `error='delta'` specifies the
+delta method for variance estimation. This helps visualize the
+statistical uncertainty of estimated probabilities across exposure
+levels.
 
 ``` r
-library(cif)
 data(diabetes.complications)
-cifcurve(Event(t,epsilon) ~ fruitq1, data = diabetes.complications, 
-          outcome.type='COMPETING-RISK', error='delta', ggsurvfit.type = 'risk', 
-          label.y = 'CIF of diabetic retinopathy', label.x = 'Years from registration')
+cifcurve(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, 
+outcome.type='COMPETING-RISK', error='delta', ggsurvfit.type='risk', 
+addConfidenceInterval=TRUE, addCensorMark=FALSE, addCompetingRiskMark=FALSE, 
+label.y='CIF of diabetic retinopathy', label.x='Years from registration', 
+label.strata=c('High intake','Low intake'))
 ```
 
-<img src="man/figures/README-example1-1.png" width="100%" />
+<img src="man/figures/README-example1-1-1.png" width="100%" />
 
     #> Call: cifcurve(formula = Event(t, epsilon) ~ fruitq1, data = diabetes.complications, 
     #>     outcome.type = "COMPETING-RISK", error = "delta", ggsurvfit.type = "risk", 
+    #>     addConfidenceInterval = TRUE, addCensorMark = FALSE, addCompetingRiskMark = FALSE, 
+    #>     label.x = "Years from registration", label.y = "CIF of diabetic retinopathy", 
+    #>     label.strata = c("High intake", "Low intake"))
+    #> 
+    #>             records   n events median LCL UCL
+    #> High intake     720 719    189     11  NA  NA
+    #> Low intake      258 257     92     NA  NA  NA
+
+In the next figure, censoring marks are added along each curve
+(addCensorMark = TRUE) to indicate individuals who were censored before
+experiencing any event. These marks visualize the timing and frequency
+of censoring, allowing a clearer understanding of loss-to-censoring
+patterns over follow-up.
+
+``` r
+cifcurve(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, 
+outcome.type='COMPETING-RISK', error='delta', ggsurvfit.type='risk', 
+addConfidenceInterval=FALSE, addCensorMark=TRUE, addCompetingRiskMark=FALSE, 
+label.y='CIF of diabetic retinopathy', label.x='Years from registration')
+```
+
+<img src="man/figures/README-example1-2-1.png" width="100%" />
+
+    #> Call: cifcurve(formula = Event(t, epsilon) ~ fruitq1, data = diabetes.complications, 
+    #>     outcome.type = "COMPETING-RISK", error = "delta", ggsurvfit.type = "risk", 
+    #>     addConfidenceInterval = FALSE, addCensorMark = TRUE, addCompetingRiskMark = FALSE, 
     #>     label.x = "Years from registration", label.y = "CIF of diabetic retinopathy")
     #> 
     #>   records   n events median LCL UCL
     #> 0     720 719    189     11  NA  NA
     #> 1     258 257     92     NA  NA  NA
 
+In the final figure, competing risk marks are added
+(addCompetingRiskMark = TRUE) to indicate individuals who experienced
+the competing event (macrovascular complications) before diabetic
+retinopathy. These symbols help distinguish between events due to the
+primary cause and those attributable to competing causes.
+
 ``` r
-output <- polyreg(nuisance.model = Event(t,epsilon) ~ +1, exposure = 'fruitq1', 
-                  data = diabetes.complications, effect.measure1='RR', effect.measure2='RR', 
-                  time.point=8, outcome.type='COMPETING-RISK', report.nuisance.parameter = TRUE)
+cifcurve(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, 
+outcome.type='COMPETING-RISK', error='delta', ggsurvfit.type='risk', 
+addConfidenceInterval=FALSE, addCensorMark=FALSE, addCompetingRiskMark=TRUE, 
+label.y='CIF of diabetic retinopathy', label.x='Years from registration')
+```
+
+<img src="man/figures/README-example1-3-1.png" width="100%" />
+
+    #> Call: cifcurve(formula = Event(t, epsilon) ~ fruitq1, data = diabetes.complications, 
+    #>     outcome.type = "COMPETING-RISK", error = "delta", ggsurvfit.type = "risk", 
+    #>     addConfidenceInterval = FALSE, addCensorMark = FALSE, addCompetingRiskMark = TRUE, 
+    #>     label.x = "Years from registration", label.y = "CIF of diabetic retinopathy")
+    #> 
+    #>   records   n events median LCL UCL
+    #> 0     720 719    189     11  NA  NA
+    #> 1     258 257     92     NA  NA  NA
+
+An estimate of the unadjusted risk ratio for the risk of diabetic
+retinopathy at 8 years is obtained using `polyreg()` with
+`outcome.type='COMPETING-RISK'`. Here, no covariates are included in the
+nuisance model (intercept only). The effect of low fruit intake
+(fruitq1) is estimated as a risk ratio (effect.measure1=‘RR’) for
+diabetic retinopathy (event 1) and macrovascular complications (event 2)
+at 8 years (time.point=8).
+
+``` r
+output <- polyreg(nuisance.model=Event(t,epsilon) ~ +1, exposure='fruitq1', 
+          data=diabetes.complications, effect.measure1='RR', effect.measure2='RR', 
+          time.point=8, outcome.type='COMPETING-RISK', 
+          report.nuisance.parameter=TRUE)
 print(output$coefficient)
 #> [1] -1.38313159  0.30043942 -3.99147405  0.07582595
 print(output$cov)
@@ -276,9 +346,12 @@ The summaries of analysis results in the list of outputs
 ecosystem, which makes it easy to create publication-ready tables in a
 variety of formats. A typical workflow is to pass the `summary` element
 of a `polyreg()` fit (or a list of such fits) to
-`modelsummary::msummary(). In this case, all regression coefficients are included in summary by setting report.nuisance.parameter = TRUE. Model summary may be used to converted to risk ratios, odds ratios or sub-distribution hazards ratios using`exponentiate\`
-option. The summaries can be displayed in Viewer with customized
-statistics such as p-values or confidence intervals.
+`modelsummary::msummary()`. In this case, all regression coefficients
+are included in summary by setting `report.nuisance.parameter = TRUE`.
+Model summaries can also be exponentiated to display risk ratios, odds
+ratios, or sub-distribution hazard ratios using the exponentiate option.
+The summaries can be displayed in the Viewer with customized statistics
+such as p-values or confidence intervals.
 
 ``` r
 msummary(output$summary, statistic = c("conf.int", "p.value"), exponentiate = TRUE)
@@ -381,24 +454,46 @@ msummary(output$summary, statistic = c("conf.int", "p.value"), exponentiate = TR
 The second example is time to first event analysis
 (`outcome.type='SURVIVAL'`) to estimate the effect on the risk of
 diabetic retinopathy or macrovascular complications at 8 years.
-Dependent censoring is adjusted by stratified IPCW method
-(`strata='strata'`). Estimates other than the effects of exposure
-(e.g. intercept) are suppressed when `report.nuisance.parameter` is not
-specified.
 
 ``` r
 data(diabetes.complications)
 diabetes.complications$d <- (diabetes.complications$epsilon>0)
-output <- polyreg(nuisance.model = Event(t,d) ~ +1, 
-          exposure = 'fruitq1', strata='strata', data = diabetes.complications,
+cifcurve(Event(t,d) ~ fruitq1, data=diabetes.complications, 
+outcome.type='SURVIVAL', addConfidenceInterval=TRUE, addCensorMark=FALSE, 
+addCompetingRiskMark=FALSE, label.y='Survival probability', 
+label.x='Years from registration')
+```
+
+<img src="man/figures/README-example3-1.png" width="100%" />
+
+    #> Call: cifcurve(formula = Event(t, d) ~ fruitq1, data = diabetes.complications, 
+    #>     outcome.type = "SURVIVAL", addConfidenceInterval = TRUE, 
+    #>     addCensorMark = FALSE, addCompetingRiskMark = FALSE, label.x = "Years from registration", 
+    #>     label.y = "Survival probability")
+    #> 
+    #>     n events median LCL UCL
+    #> 0 720    248     11  NA  NA
+    #> 1 258    114     NA 8.3  NA
+
+The code below specifies the Richardson model on the risk of diabetic
+retinopathy or macrovascular complications at 8 years
+(outcome.type=‘SURVIVAL’). Dependent censoring is adjusted by stratified
+IPCW method (`strata='strata'`). Estimates other than the effects of
+exposure (e.g. intercept) are suppressed when
+`report.nuisance.parameter` is not specified.
+
+``` r
+output <- polyreg(nuisance.model=Event(t,d) ~ +1, 
+          exposure='fruitq1', strata='strata', data=diabetes.complications,
           effect.measure1='RR', time.point=8, outcome.type='SURVIVAL')
-msummary(output$summary, statistic = c("conf.int"), exponentiate = TRUE)
+msummary(output$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
 ```
 
 |                  | event 1 (no competing risk)     |
 |------------------|---------------------------------|
 | fruitq1, 1 vs 0  | 1.288                           |
 |                  | \[1.085, 1.529\]                |
+|                  | (0.004)                         |
 | effect.measure   | RR at 8                         |
 | n.events         | 358 in N = 978                  |
 | median.follow.up | 8                               |
@@ -414,9 +509,10 @@ events (outcome.type=‘COMPETING-RISK’). Here 15 covariates and censoring
 strata are specified in `nuisance.model=` and `strata=`, respectively.
 
 ``` r
-output <- polyreg(nuisance.model = Event(t,epsilon) ~ age+sex+bmi+hba1c+diabetes_duration
-          +drug_oha+drug_insulin+sbp+ldl+hdl+tg+current_smoker+alcohol_drinker+ltpa, 
-          exposure = 'fruitq1', strata='strata', data=diabetes.complications,
+output <- polyreg(nuisance.model = Event(t,epsilon) ~ age+sex+bmi+hba1c
+          +diabetes_duration+drug_oha+drug_insulin+sbp+ldl+hdl+tg
+          +current_smoker+alcohol_drinker+ltpa, 
+          exposure='fruitq1', strata='strata', data=diabetes.complications,
           effect.measure1='RR', time.point=8, outcome.type='COMPETING-RISK')
 ```
 
@@ -425,7 +521,7 @@ now model summary does not display parameters of the covariates other
 than exposure.
 
 ``` r
-msummary(output$summary, statistic = c("conf.int"), exponentiate = TRUE)
+msummary(output$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
 ```
 
 <table style="width:97%;">
@@ -451,6 +547,11 @@ msummary(output$summary, statistic = c("conf.int"), exponentiate = TRUE)
 <td></td>
 <td>[1.331, 1.810]</td>
 <td>[0.493, 1.676]</td>
+</tr>
+<tr>
+<td></td>
+<td>(&lt;0.001)</td>
+<td>(0.761)</td>
 </tr>
 <tr>
 <td>effect.measure</td>

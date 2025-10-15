@@ -2,32 +2,28 @@
 % Please edit documentation in R/functions-utility-input.R
 \name{Event}
 \alias{Event}
-\title{Create a survival or competing risks response}
+\alias{Surv}
+\title{Create a survival or competing-risks response}
 \usage{
 Event(time, event)
+
+Surv(...)
 }
 \arguments{
 \item{time}{Numeric vector of follow-up times (non-negative).}
 
-\item{event}{Integer or factor vector of event codes
-(e.g., 0 = censored, 1 = event of interest, 2 = competing event).}
+\item{event}{Integer (0=censor, 1,2,...) or a character/factor vector whose levels
+are numeric codes "0","1","2",... for competing events.}
 }
 \value{
-An object of class \code{"Event"} with fields \code{time}, \code{event}
+An object of class \code{"Event"} (a 2-column matrix) with columns \code{time}, \code{event}.
 }
 \description{
-A lightweight response constructor used in \code{survival.curve()} and \code{polyreg()}
-to pass survival and competing risks data via a model formula.
+A lightweight response constructor used in \code{cifcurve()} and \code{polyreg()}
+to pass survival and competing-risks data via a model formula.
 }
 \examples{
-data(diabetes.complications)
-polyreg(
-  nuisance.model = Event(t, epsilon) ~ +1,
-  exposure = "fruitq1",
-  data = diabetes.complications,
-  effect.measure1 = "RR",
-  effect.measure2 = "RR",
-  time.point = 8,
-  outcome.type = "COMPETING-RISK"
-)
+## event: 0=censor, 1=primary, 2=competing
+# polyreg(nuisance.model = Event(t, epsilon) ~ 1, data = df, outcome.type="COMPETING-RISK")
+
 }

@@ -14,9 +14,13 @@ call_ggsurvfit(
   addCensorMark = TRUE,
   shape.censor.mark = 3,
   size.censor.mark = 2,
+  addCompetingRiskMark = TRUE,
+  competing.risk.time = list(),
+  shape.competing.risk.mark = 16,
+  size.competing.risk.mark = 2,
   addIntercurrentEventMark = TRUE,
   intercurrent.event.time = list(),
-  shape.intercurrent.event.mark = 16,
+  shape.intercurrent.event.mark = 1,
   size.intercurrent.event.mark = 2,
   label.x = "Time",
   label.y = "Survival probability",
@@ -40,19 +44,26 @@ call_ggsurvfit(
 
 \item{addRiskTable}{Logical; add risk table via \code{add_risktable(risktable_stats="n.risk")}.}
 
-\item{addCensorMark}{Logical; add censor marks via \code{add_censor_mark()}.}
+\item{addCensorMark}{Logical add \code{add_censor_mark()} to plot (default \code{TRUE}).}
 
-\item{shape.censor.mark}{Integer; shape for censor marks. Defaults to 3.}
+\item{shape.censor.mark}{Integer point shape for censor marks (default \code{3}).}
 
-\item{size.censor.mark}{Numeric; size for censor marks. Defaults to 2.}
+\item{size.censor.mark}{Numeric point size for censor marks (default \code{2}).}
 
-\item{addIntercurrentEventMark}{Logical; add user-specified marks at strata-specific times.}
+\item{addCompetingRiskMark}{Logical; add time marks to describe incidents of competing risks (default TRUE).
+...}
 
-\item{intercurrent.event.time}{Named list of numeric vectors.}
+\item{shape.competing.risk.mark}{Integer point shape for competing-risk marks (default \code{16}).}
 
-\item{shape.intercurrent.event.mark}{Integer; fixed shape for intercurrent marks across strata. Defaults 16.}
+\item{size.competing.risk.mark}{Numeric point size for competing-risk marks (default \code{2}).}
 
-\item{size.intercurrent.event.mark}{Numeric; size for intercurrent marks. Defaults 2.}
+\item{addIntercurrentEventMark}{Logical overlay user-specified time marks per strata (default \code{TRUE}).}
+
+\item{intercurrent.event.time}{Named list of numeric vectors (names must match or be mapped to strata labels).}
+
+\item{shape.intercurrent.event.mark}{Integer point shape for intercurrent-event marks (default \code{1}).}
+
+\item{size.intercurrent.event.mark}{Numeric point size for intercurrent-event marks (default \code{2}).}
 
 \item{label.x, label.y}{Axis labels. If \code{label.y = "Survival probability"} (default) and
 \code{ggsurvfit.type == "risk"}, it is automatically replaced with \code{"1 - survival probability"}.}
@@ -67,6 +78,8 @@ call_ggsurvfit(
 }
 \value{
 A \code{ggplot} object.
+Plot survival or cumulative incidence curves with ggsurvfit
+...
 }
 \description{
 Plot survival or cumulative incidence curves with ggsurvfit
