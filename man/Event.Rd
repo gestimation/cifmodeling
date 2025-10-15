@@ -2,12 +2,9 @@
 % Please edit documentation in R/functions-utility-input.R
 \name{Event}
 \alias{Event}
-\alias{Surv}
 \title{Create a survival or competing-risks response}
 \usage{
 Event(time, event)
-
-Surv(...)
 }
 \arguments{
 \item{time}{Numeric vector of follow-up times (non-negative).}

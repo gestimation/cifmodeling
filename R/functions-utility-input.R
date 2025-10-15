@@ -8,7 +8,6 @@
 #'   are numeric codes "0","1","2",... for competing events.
 #'
 #' @return An object of class \code{"Event"} (a 2-column matrix) with columns \code{time}, \code{event}.
-#' @aliases Event Surv
 #' @examples
 #' ## event: 0=censor, 1=primary, 2=competing
 #' # polyreg(nuisance.model = Event(t, epsilon) ~ 1, data = df, outcome.type="COMPETING-RISK")
@@ -23,10 +22,6 @@ Event <- function(time, event) {
   ss
 }
 
-#' @rdname Event
-#' @export
-Surv <- function(...) Event(...)
-
 untangle.specials <- function(tt, special, order = 1) {
   spc <- attr(tt, "specials")[[special]]
   if (length(spc) == 0)
@@ -35,19 +30,39 @@ untangle.specials <- function(tt, special, order = 1) {
   fname <- dimnames(facs)
   ff <- apply(facs[spc, , drop = FALSE], 2, sum)
   list(vars = (fname[[1]])[spc], tvar = spc - attr(tt, "response"),
-       terms = seq(ff)[ff & match(attr(tt, "order"), order,
-                                  nomatch = 0)])
+       terms = seq(ff)[ff & match(attr(tt, "order"), order, nomatch = 0)])
 }
 
-createAnalysisDataset <- function(formula, data, other.variables.analyzed=NULL, subset.condition=NULL, na.action=na.pass) {
+createAnalysisDataset <- function(formula,
+                                  data,
+                                  other.variables.analyzed = NULL,
+                                  subset.condition = NULL,
+                                  na.action = na.pass,
+                                  fill_missing = FALSE) {
+  stopifnot(is.data.frame(data))
   if (!is.null(subset.condition)) {
-    analysis_dataset <- subset(data, eval(parse(text = subset.condition)))
+    cond <- if (is.character(subset.condition)) parse(text = subset.condition)[[1]] else subset.condition
+    analysis_dataset <- subset(data, eval(cond, envir = data, enclos = parent.frame()))
   } else {
     analysis_dataset <- data
   }
-  all_vars <- c(all.vars(formula), other.variables.analyzed)
+
+  all_vars <- unique(c(all.vars(formula), other.variables.analyzed))
+  missing_cols <- setdiff(all_vars, names(analysis_dataset))
+
+  if (length(missing_cols)) {
+    if (isTRUE(fill_missing)) {
+      warning(sprintf("The following columns are not in `data` and will be filled with NA: %s",
+                      paste(missing_cols, collapse = ", ")))
+      for (v in missing_cols) analysis_dataset[[v]] <- NA
+    } else {
+      stop(sprintf("Undefined columns selected: %s",
+                   paste(missing_cols, collapse = ", ")))
+    }
+  }
+
   analysis_dataset <- analysis_dataset[, all_vars, drop = FALSE]
-  return(na.action(analysis_dataset))
+  na.action(analysis_dataset)
 }
 
 readStrata <- function(out_readSurv, out_aj, label.strata=NULL) {
@@ -60,11 +75,10 @@ readStrata <- function(out_readSurv, out_aj, label.strata=NULL) {
 }
 
 readSurv <- function(formula, data, weights = NULL,
-                     code.event1 = 1, code.event2 = 2, code.censoring = 0,
-                     subset.condition = NULL, na.action = na.omit) {
+                        code.event1 = 1, code.event2 = 2, code.censoring = 0,
+                        subset.condition = NULL, na.action = na.omit) {
   stopifnot(is.data.frame(data))
   allowed <- c(code.censoring, code.event1, code.event2)
-
   data <- createAnalysisDataset(formula, data, weights, subset.condition, na.action)
 
   Terms <- terms(formula, specials = c("strata","offset","cluster"), data = data)
@@ -90,45 +104,31 @@ readSurv <- function(formula, data, weights = NULL,
   if (any(is.na(idx))) stop("Failed to align analysis rows to original data (cannot compute numeric index).")
 
   data_sync <- data[idx, , drop = FALSE]
-
-  vars <- all.vars(Terms)
-  if (length(vars) >= 3L) {
-    strata_name <- vars[3L]
-    strata <- factor(data_sync[[strata_name]])
-  } else {
+  term_labels <- attr(Terms, "term.labels")
+  if (length(term_labels) == 0L) {
     strata_name <- NULL
-    strata <- factor(rep(1L, nrow(data_sync)))
+    strata <- factor(rep(1, nrow(mf)))
+  } else if (length(term_labels) == 1) {
+    strata_name <- term_labels[1]
+    strata <- factor(mf[[strata_name]])
+  } else {
+    strata_name <- paste(term_labels, collapse = ":")
+    strata <- interaction(mf[term_labels], drop = TRUE)
   }
 
   if (is.null(weights)) {
-    w <- rep(1, nrow(data_sync))
-  } else {
-    ww <- data_sync[[weights]]
-    if (is.null(ww)) stop(sprintf("weights column '%s' not found in data.", weights))
-    bad_finite <- !is.finite(ww)
-    bad_neg    <- ww < 0
-    bad_any    <- bad_finite | bad_neg
-
-    if (any(bad_any)) {
-      if (identical(na.action, na.omit) || identical(na.action, stats::na.omit)) {
-        keep <- !bad_any
-        t        <- t[keep]
-        epsilon  <- epsilon[keep]
-        d        <- d[keep]; d0 <- d0[keep]; d1 <- d1[keep]; d2 <- d2[keep]
-        strata   <- droplevels(strata[keep])
-        ww       <- ww[keep]
-        data_sync <- data_sync[keep, , drop = FALSE]
-        idx      <- idx[keep]
-        mf_rows  <- mf_rows[keep]
-        if (!length(ww)) stop("All rows removed due to non-finite or negative weights.")
-      } else if (identical(na.action, na.fail) || identical(na.action, stats::na.fail)) {
-        stop("`weights` must be finite and non-negative (na.fail).")
-      } else {
-        stop("`weights` contain non-finite or negative values; set na.action = na.omit or clean weights.")
-      }
+    w <- rep(1, nrow(mf))
+  } else if (is.character(weights) && length(weights) == 1) {
+    if (!weights %in% names(data)) {
+      w <- rep(1, nrow(data))
     }
-    check_weights(ww)
-    w <- ww
+    else {
+      w <- data[[weights]]
+      if (!is.numeric(w)) stop("Weights must be numeric.")
+      if (any(!is.finite(w))) stop("Weights must be finite.")
+      if (any(w < 0)) stop("Weights must be non-negative.")
+      if (any(is.na(w))) stop("Weights contain NA values.")
+    }
   }
   list(t=t, epsilon=epsilon, d=d, d0=d0, d1=d1, d2=d2, strata=strata, strata_name=strata_name, w=w, data_sync=data_sync)
 }
@@ -510,12 +510,29 @@ check_label.strata <- function(out_readSurv, label.strata) {
   error_cr      = "Invalid SE method for COMPETING-RISK. Use 'aalen','delta','jackknife'. Defaulting to 'delta'."
 )
 
-.err <- function(key, ..., .class = NULL) {
-  dots <- rlang::list2(...)
-  env  <- rlang::env(rlang::caller_env(), !!!dots)
-  cli::cli_abort(.msg[[key]], class = c(.class, paste0("cifmodeling_", key)), .envir = env)
-}
+.err <- function(key, ..., .class = NULL, .messages = .msg) {
+  args <- list(...)
 
+  tmpl <- .messages[[key]]
+  if (is.null(tmpl)) {
+    stop(sprintf("Unknown error key: %s", key), call. = FALSE)
+  }
+
+  msg <- tmpl
+  if (length(args)) {
+    for (nm in names(args)) {
+      pat <- paste0("\\{", nm, "\\}")
+      msg <- gsub(pat, as.character(args[[nm]]), msg, perl = TRUE)
+    }
+  }
+
+  cls <- unique(c(.class, paste0("cifmodeling_", key), "cifmodeling_error"))
+  cond <- structure(
+    list(message = msg, call = sys.call(-1L)),
+    class = c(cls, "simpleError", "error", "condition")
+  )
+  stop(cond)
+}
 
 .chk_numeric_nonneg <- function(x, name) {
   if (!is.numeric(x)) .err("numeric", arg = name)
@@ -634,17 +651,20 @@ check_outcome.type <- function(x) {
 }
 
 check_error <- function(x, outcome.type) {
-  if (is.null(x)) x <- if (outcome.type == "SURVIVAL") "greenwood" else "delta"
-  out <- tolower(x)
-  if (outcome.type == "SURVIVAL") {
-    if (!out %in% c("greenwood","tsiatis","jackknife")) {
-      cli::cli_warn(.msg$error_surv); out <- "greenwood"
+  ot <- toupper(as.character(outcome.type))
+  out <- if (is.null(x)) if (ot == "SURVIVAL") "greenwood" else "delta" else tolower(x)
+
+  if (ot == "SURVIVAL") {
+    if (!out %in% c("greenwood", "tsiatis", "jackknife")) {
+      warning(.msg$error_surv, call. = FALSE); out <- "greenwood"
+    }
+  } else if (ot == "COMPETING-RISK") {
+    if (!out %in% c("aalen", "delta", "jackknife")) {
+      warning(.msg$error_cr, call. = FALSE); out <- "delta"
     }
   } else {
-    if (!out %in% c("aalen","delta","jackknife")) {
-      cli::cli_warn(.msg$error_cr); out <- "delta"
-    }
+    stop(sprintf("Invalid outcome.type: %s", outcome.type), call. = FALSE)
   }
-  return(out)
+  out
 }
 

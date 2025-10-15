@@ -45,16 +45,6 @@ test_that("normalize_time_event() allowed only expected codes for events", {
   )
 })
 
-test_that("Surv() and Event() in readSurv() yield the same event status", {
-  df <- mkdf()
-  df$t[1:2] <- NA; df$d[3] <- NA; df$sex[4] <- NA
-
-  a <- readSurv(Surv(t, d) ~ sex, data = df, na.action = na.omit)
-  b <- readSurv(Event(t, d) ~ sex, data = df, na.action = na.omit)
-  expect_equal(a$d, b$d)
-  expect_equal(a$t, b$t)
-})
-
 test_that("readSurv() handled strata/weights as expected", {
   df <- mkdf()
   df$t[1] <- NA

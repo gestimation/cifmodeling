@@ -24,6 +24,7 @@ call_ggsurvfit(
   size.intercurrent.event.mark = 2,
   label.x = "Time",
   label.y = "Survival probability",
+  label.strata = NULL,
   lims.x = NULL,
   lims.y = c(0, 1),
   font.family = "sans",
@@ -50,8 +51,9 @@ call_ggsurvfit(
 
 \item{size.censor.mark}{Numeric point size for censor marks (default \code{2}).}
 
-\item{addCompetingRiskMark}{Logical; add time marks to describe incidents of competing risks (default TRUE).
-...}
+\item{addCompetingRiskMark}{Logical add time marks to descrive incidents of competing risks (default \code{TRUE}).}
+
+\item{competing.risk.time}{Named list of numeric vectors (names must match or be mapped to strata labels).}
 
 \item{shape.competing.risk.mark}{Integer point shape for competing-risk marks (default \code{16}).}
 
@@ -68,6 +70,8 @@ call_ggsurvfit(
 \item{label.x, label.y}{Axis labels. If \code{label.y = "Survival probability"} (default) and
 \code{ggsurvfit.type == "risk"}, it is automatically replaced with \code{"1 - survival probability"}.}
 
+\item{label.strata}{Character vector of labels for strata.}
+
 \item{lims.x}{Numeric length-2; x limits. If NULL and \code{out_readSurv} given, uses \code{c(0,max(out_readSurv$t))}.}
 
 \item{lims.y}{Numeric length-2; y limits.}
@@ -79,6 +83,7 @@ call_ggsurvfit(
 \value{
 A \code{ggplot} object.
 Plot survival or cumulative incidence curves with ggsurvfit
+...
 ...
 }
 \description{

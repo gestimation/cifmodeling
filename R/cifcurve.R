@@ -124,8 +124,9 @@ cifcurve <- function(formula,
 
   if (identical(outcome.type, "SURVIVAL")) {
     out_km <- calculateKM(out_readSurv$t, out_readSurv$d, out_readSurv$w, as.integer(out_readSurv$strata), error)
+    out_km$std.err <- out_km$surv * out_km$std.err
     out_ci <- calculateCI(out_km, conf.int, conf.type, conf.lower = NULL)
-    if (isFALSE(report.survfit.std.err)) out_km$std.err <- out_km$surv * out_km$std.err
+    if (isTRUE(report.survfit.std.err)) out_km$std.err <- out_km$std.err / out_km$surv
 
     survfit_object <- list(
       time = out_km$time,
@@ -224,6 +225,7 @@ cifcurve <- function(formula,
 #' @param shape.censor.mark Integer point shape for censor marks (default \code{3}).
 #' @param size.censor.mark Numeric point size for censor marks (default \code{2}).
 #' @param addCompetingRiskMark Logical add time marks to descrive incidents of competing risks (default \code{TRUE}).
+#' @param competing.risk.time Named list of numeric vectors (names must match or be mapped to strata labels).
 #' @param shape.competing.risk.mark Integer point shape for competing-risk marks (default \code{16}).
 #' @param size.competing.risk.mark Numeric point size for competing-risk marks (default \code{2}).
 #' @param addIntercurrentEventMark Logical overlay user-specified time marks per strata (default \code{TRUE}).
@@ -232,6 +234,7 @@ cifcurve <- function(formula,
 #' @param size.intercurrent.event.mark Numeric point size for intercurrent-event marks (default \code{2}).
 #' @param label.x,label.y Axis labels. If \code{label.y = "Survival probability"} (default) and
 #'   \code{ggsurvfit.type == "risk"}, it is automatically replaced with \code{"1 - survival probability"}.
+#' @param label.strata Character vector of labels for strata.
 #' @param lims.x Numeric length-2; x limits. If NULL and \code{out_readSurv} given, uses \code{c(0,max(out_readSurv$t))}.
 #' @param lims.y Numeric length-2; y limits.
 #' @param font.family,font.size Theme controls.
@@ -239,7 +242,6 @@ cifcurve <- function(formula,
 #' @return A \code{ggplot} object.
 #' Plot survival or cumulative incidence curves with ggsurvfit
 #' ...
-#' @param addCompetingRiskMark Logical; add time marks to describe incidents of competing risks (default TRUE).
 #' ...
 call_ggsurvfit <- function(
     survfit_object,
