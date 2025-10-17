@@ -296,7 +296,7 @@ calculateEY <- function(potential.CIFs, x_a) {
   return(list(ey_1 = ey_1, ey_2 = ey_2))
 }
 
-calculateCov <- function(objget_results, estimand, prob.bound)
+calculateCov_old <- function(objget_results, estimand, prob.bound)
 {
   score <- objget_results$score
   ey_1 <- objget_results$ey_1
@@ -362,6 +362,155 @@ calculateCov <- function(objget_results, estimand, prob.bound)
                                       "intercept", paste("covariate", 1:(ncol(influence.function)/2 - 2), sep = ""), "exposure")
   }
   return(list(cov_estimated = cov_estimated, score.function = total_score, influence.function = influence.function))
+}
+
+calculateCov <- function(objget_results, estimand, prob.bound)
+{
+  score <- objget_results$score
+  ey_1 <- objget_results$ey_1
+  ey_2 <- objget_results$ey_2
+  w11 <- objget_results$w11
+  w12 <- objget_results$w12
+  w22 <- objget_results$w22
+  t <- objget_results$t
+  y_0_ <- objget_results$y_0_
+  y_1 <- objget_results$y_1
+  y_2 <- objget_results$y_2
+  x_a <- objget_results$x_a
+  x_l <- objget_results$x_l
+  potential.CIFs <- objget_results$potential.CIFs
+  iv <- estimand$index.vector
+  n <- length(t)
+
+  censoring_dna	<- calculateNelsonAalen(t,y_0_)
+  censoring_martingale <- diag(y_0_) - (outer(t, t, ">") * censoring_dna)
+  censoring_km <- calculateKaplanMeier(t, y_0_)
+  censoring_km[censoring_km == 0] <- prob.bound
+  censoring_mkm <- censoring_martingale / censoring_km
+  y_12 <- (y_1 + y_2 > 0)
+  survival_km <- calculateKaplanMeier(t, y_12)
+  ###############################################################
+#  wy_1 <- w11 * (y_1 - ey_1) + w12 * (y_2 - ey_2)
+#  wy_2 <- w12 * (y_1 - ey_1) + w22 * (y_2 - ey_2)
+  wy_1 <- w11 * y_1 + w12 * y_2
+  wy_2 <- w12 * y_1 + w22 * y_2
+  x_la <- cbind(x_l, x_a)
+  AB1 <- score[1:n, 1:iv[3]]
+  AB2 <- score[(n + 1):(2 * n), iv[4]:iv[7]]
+  for (i_para in 1:iv[2]) {
+    tmp0 <- x_la[, i_para]
+    use <- (t <= estimand$time.point)
+    tmp1 <- colSums((use * tmp0) * (outer(t, t, ">=") * wy_1))
+    tmp1 <- tmp1 / survival_km / n
+    integrand1 <- tmp1 * censoring_mkm
+    tmp2 <- colSums((use * tmp0) * (outer(t, t, ">=") * wy_2))
+    tmp2 <- tmp2 / survival_km / n
+    integrand2 <- tmp2 * censoring_mkm
+    for (i_score in 1:n) {
+      integral1 <- cumsum(integrand1[i_score, ])
+      AB1[i_score, i_para] <- AB1[i_score, i_para] + integral1[n]
+      integral2 <- cumsum(integrand2[i_score, ])
+      AB2[i_score, i_para] <- AB2[i_score, i_para] + integral2[n]
+    }
+  }
+  out_calculateD <- calculateD(potential.CIFs, x_a, x_l, estimand, prob.bound)
+  hesse_d11 <- crossprod(x_la, w11 * out_calculateD$d_11) / n
+  hesse_d12 <- crossprod(x_la, w12 * out_calculateD$d_12) / n
+  hesse_d22 <- crossprod(x_la, w22 * out_calculateD$d_22) / n
+  hesse_d1 <- cbind(hesse_d11, hesse_d12)
+  hesse_d2 <- cbind(hesse_d12, hesse_d22)
+  hesse <- rbind(hesse_d1, hesse_d2)
+  total_score <- cbind(AB1, AB2)
+  influence.function <- t(solve(hesse, t(total_score)))
+  v1 <- crossprod(influence.function) / n^2
+  ###############################################################
+  wy_1 <- w11 * (y_1 - ey_1) + w12 * (y_2 - ey_2)
+  wy_2 <- w12 * (y_1 - ey_1) + w22 * (y_2 - ey_2)
+  x_la <- cbind(x_l, x_a)
+  AB1 <- score[1:n, 1:iv[3]]
+  AB2 <- score[(n + 1):(2 * n), iv[4]:iv[7]]
+  for (i_para in 1:iv[2]) {
+    tmp0 <- x_la[, i_para]
+    use <- (t <= estimand$time.point)
+    tmp1 <- colSums((use * tmp0) * (outer(t, t, ">=") * wy_1))
+    tmp1 <- tmp1 / survival_km / n
+    integrand1 <- tmp1 * censoring_mkm
+    tmp2 <- colSums((use * tmp0) * (outer(t, t, ">=") * wy_2))
+    tmp2 <- tmp2 / survival_km / n
+    integrand2 <- tmp2 * censoring_mkm
+    for (i_score in 1:n) {
+      integral1 <- cumsum(integrand1[i_score, ])
+      AB1[i_score, i_para] <- AB1[i_score, i_para] - integral1[n]
+      integral2 <- cumsum(integrand2[i_score, ])
+      AB2[i_score, i_para] <- AB2[i_score, i_para] - integral2[n]
+    }
+  }
+  out_calculateD <- calculateD(potential.CIFs, x_a, x_l, estimand, prob.bound)
+  hesse_d11 <- crossprod(x_la, w11 * out_calculateD$d_11) / n
+  hesse_d12 <- crossprod(x_la, w12 * out_calculateD$d_12) / n
+  hesse_d22 <- crossprod(x_la, w22 * out_calculateD$d_22) / n
+  hesse_d1 <- cbind(hesse_d11, hesse_d12)
+  hesse_d2 <- cbind(hesse_d12, hesse_d22)
+  hesse <- rbind(hesse_d1, hesse_d2)
+  total_score <- cbind(AB1, AB2)
+  influence.function <- t(solve(hesse, t(total_score)))
+  v2 <- crossprod(influence.function) / n^2
+  ###############################################################
+  wy_1 <- w11 * (y_1 - ey_1) + w12 * (y_2 - ey_2)
+  wy_2 <- w12 * (y_1 - ey_1) + w22 * (y_2 - ey_2)
+  x_la <- cbind(x_l, x_a)
+  AB1 <- score[1:n, 1:iv[3]]
+  AB2 <- score[(n + 1):(2 * n), iv[4]:iv[7]]
+  out_calculateD <- calculateD(potential.CIFs, x_a, x_l, estimand, prob.bound)
+  hesse_d11 <- crossprod(x_la, w11 * out_calculateD$d_11) / n
+  hesse_d12 <- crossprod(x_la, w12 * out_calculateD$d_12) / n
+  hesse_d22 <- crossprod(x_la, w22 * out_calculateD$d_22) / n
+  hesse_d1 <- cbind(hesse_d11, hesse_d12)
+  hesse_d2 <- cbind(hesse_d12, hesse_d22)
+  hesse <- rbind(hesse_d1, hesse_d2)
+  total_score <- cbind(AB1, AB2)
+  influence.function <- t(solve(hesse, t(total_score)))
+  v3 <- crossprod(influence.function) / n^2
+  ###############################################################
+  wy_1 <- w11 * (y_1 - ey_1) + w12 * (y_2 - ey_2)
+  wy_2 <- w12 * (y_1 - ey_1) + w22 * (y_2 - ey_2)
+  x_la <- cbind(x_l, x_a)
+  AB1 <- score[1:n, 1:iv[3]]
+  AB2 <- score[(n + 1):(2 * n), iv[4]:iv[7]]
+  for (i_para in 1:iv[2]) {
+    tmp0 <- x_la[, i_para]
+    use <- (t <= estimand$time.point)
+    tmp1 <- colSums((use * tmp0) * (outer(t, t, ">=") * wy_1))
+    tmp1 <- tmp1 / survival_km / n
+    integrand1 <- tmp1 * censoring_mkm
+    tmp2 <- colSums((use * tmp0) * (outer(t, t, ">=") * wy_2))
+    tmp2 <- tmp2 / survival_km / n
+    integrand2 <- tmp2 * censoring_mkm
+    for (i_score in 1:n) {
+      integral1 <- cumsum(integrand1[i_score, ])
+      AB1[i_score, i_para] <- AB1[i_score, i_para] + integral1[n]
+      integral2 <- cumsum(integrand2[i_score, ])
+      AB2[i_score, i_para] <- AB2[i_score, i_para] + integral2[n]
+    }
+  }
+  out_calculateD <- calculateD(potential.CIFs, x_a, x_l, estimand, prob.bound)
+  hesse_d11 <- crossprod(x_la, w11 * out_calculateD$d_11) / n
+  hesse_d12 <- crossprod(x_la, w12 * out_calculateD$d_12) / n
+  hesse_d22 <- crossprod(x_la, w22 * out_calculateD$d_22) / n
+  hesse_d1 <- cbind(hesse_d11, hesse_d12)
+  hesse_d2 <- cbind(hesse_d12, hesse_d22)
+  hesse <- rbind(hesse_d1, hesse_d2)
+  total_score <- cbind(AB1, AB2)
+  influence.function <- t(solve(hesse, t(total_score)))
+  cov_estimated <- crossprod(influence.function) / n^2
+
+  if (ncol(influence.function)==4) {
+    colnames(influence.function) <- c("intercept", "exposure", "intercept", "exposure")
+  } else if (ncol(influence.function)>4) {
+    colnames(influence.function) <- c("intercept", paste("covariate", 1:(ncol(influence.function)/2 - 2), sep = ""), "exposure",
+                                      "intercept", paste("covariate", 1:(ncol(influence.function)/2 - 2), sep = ""), "exposure")
+  }
+  return(list(cov_estimated = cov_estimated, v1=v1, v2=v2, v3=v3, score.function = total_score, influence.function = influence.function))
 }
 
 calculateD <- function(potential.CIFs, x_a, x_l, estimand, prob.bound) {
@@ -432,7 +581,112 @@ calculateD <- function(potential.CIFs, x_a, x_l, estimand, prob.bound) {
   return(list(d_11 = d_11, d_12 = d_12, d_22 = d_22))
 }
 
-calculateCovSurvival <- function(objget_results, estimand, prob.bound)
+calculateCovSurvival2 <- function(objget_results, estimand, prob.bound)
+{
+  score <- objget_results$score
+  ey_1 <- objget_results$ey_1
+  w11 <- objget_results$w11
+  t <- objget_results$t
+  y_0_ <- objget_results$y_0_
+  y_1 <- objget_results$y_1
+  x_a <- objget_results$x_a
+  x_l <- objget_results$x_l
+  potential.CIFs <- objget_results$potential.CIFs
+  iv <- estimand$index.vector
+  n <- length(t)
+
+  censoring_dna	<- calculateNelsonAalen(t,y_0_)
+  censoring_martingale <- diag(y_0_) - (outer(t, t, ">") * censoring_dna)
+  censoring_km <- calculateKaplanMeier(t, y_0_)
+  censoring_km[censoring_km == 0] <- 1e-5
+  censoring_mkm <- censoring_martingale / censoring_km
+  y_12 <- (y_1 > 0)
+  survival_km <- calculateKaplanMeier(t, y_12)
+################################################################
+#  wy_1 <- w11 * (y_1 - ey_1)
+  wy_1 <- w11 * y_1
+  x_la <- cbind(x_l, x_a)
+  AB1 <- score[1:n, 1:iv[3]]
+  for (i_para in 1:iv[2]) {
+    tmp0 <- x_la[, i_para]
+    use <- (t <= estimand$time.point)
+    tmp1 <- colSums((use * tmp0) * (outer(t, t, ">=") * wy_1))
+    tmp1 <- tmp1 / survival_km / n
+    integrand1 <- tmp1 * censoring_mkm
+    for (i_score in 1:n) {
+      integral1 <- cumsum(integrand1[i_score, ])
+      AB1[i_score, i_para] <- AB1[i_score, i_para] + integral1[n]
+    }
+  }
+  out_calculateDSurvival <- calculateDSurvival(potential.CIFs, x_a, x_l, estimand, prob.bound)
+  hesse <- crossprod(x_la, w11 * out_calculateDSurvival) / n
+
+  total_score <- AB1
+  influence.function <- t(solve(hesse, t(total_score)))
+  v1 <- crossprod(influence.function) / n^2
+################################################################
+  wy_1 <- w11 * (y_1 - ey_1)
+  x_la <- cbind(x_l, x_a)
+  AB1 <- score[1:n, 1:iv[3]]
+  for (i_para in 1:iv[2]) {
+    tmp0 <- x_la[, i_para]
+    use <- (t <= estimand$time.point)
+    tmp1 <- colSums((use * tmp0) * (outer(t, t, ">=") * wy_1))
+    tmp1 <- tmp1 / survival_km / n
+    integrand1 <- tmp1 * censoring_mkm
+    for (i_score in 1:n) {
+      integral1 <- cumsum(integrand1[i_score, ])
+#      AB1[i_score, i_para] <- AB1[i_score, i_para] + integral1[n]
+      AB1[i_score, i_para] <- AB1[i_score, i_para] - integral1[n]
+    }
+  }
+  out_calculateDSurvival <- calculateDSurvival(potential.CIFs, x_a, x_l, estimand, prob.bound)
+  hesse <- crossprod(x_la, w11 * out_calculateDSurvival) / n
+
+  total_score <- AB1
+  influence.function <- t(solve(hesse, t(total_score)))
+  v2 <- crossprod(influence.function) / n^2
+################################################################
+  wy_1 <- w11 * (y_1 - ey_1)
+  x_la <- cbind(x_l, x_a)
+  AB1 <- score[1:n, 1:iv[3]]
+  out_calculateDSurvival <- calculateDSurvival(potential.CIFs, x_a, x_l, estimand, prob.bound)
+  hesse <- crossprod(x_la, w11 * out_calculateDSurvival) / n
+
+  total_score <- AB1
+  influence.function <- t(solve(hesse, t(total_score)))
+  v3 <- crossprod(influence.function) / n^2
+################################################################
+  wy_1 <- w11 * (y_1 - ey_1)
+  x_la <- cbind(x_l, x_a)
+  AB1 <- score[1:n, 1:iv[3]]
+  for (i_para in 1:iv[2]) {
+    tmp0 <- x_la[, i_para]
+    use <- (t <= estimand$time.point)
+    tmp1 <- colSums((use * tmp0) * (outer(t, t, ">=") * wy_1))
+    tmp1 <- tmp1 / survival_km / n
+    integrand1 <- tmp1 * censoring_mkm
+    for (i_score in 1:n) {
+      integral1 <- cumsum(integrand1[i_score, ])
+      AB1[i_score, i_para] <- AB1[i_score, i_para] + integral1[n]
+    }
+  }
+  out_calculateDSurvival <- calculateDSurvival(potential.CIFs, x_a, x_l, estimand, prob.bound)
+  hesse <- crossprod(x_la, w11 * out_calculateDSurvival) / n
+
+  total_score <- AB1
+  influence.function <- t(solve(hesse, t(total_score)))
+  cov_estimated <- crossprod(influence.function) / n^2
+################################################################
+  if (ncol(influence.function)==2) {
+    colnames(influence.function) <- c("intercept", "exposure")
+  } else if (ncol(influence.function)>2) {
+    colnames(influence.function) <- c("intercept", paste("covariate", 1:(ncol(influence.function) - 2), sep = ""), "exposure")
+  }
+  return(list(cov_estimated = cov_estimated, v1=v1, v2=v2, v3=v3, score.function = total_score, influence.function = influence.function))
+}
+
+calculateCovSurvival2 <- function(objget_results, estimand, prob.bound)
 {
   score <- objget_results$score
   ey_1 <- objget_results$ey_1

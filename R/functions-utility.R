@@ -99,7 +99,7 @@ normalizeCovariate <- function(formula, data, should.normalize.covariate,
   )
 }
 
-normalizeEstimate <- function(
+normalizeEstimate2 <- function(
     outcome.type,
     report.sandwich.conf,
     should.normalize.covariate,
@@ -155,6 +155,68 @@ normalizeEstimate <- function(
   }
 
   list(alpha_beta_estimated = alpha_beta_estimated, cov_estimated = cov_estimated)
+}
+
+
+normalizeEstimate <- function(
+    outcome.type,
+    report.sandwich.conf,
+    should.normalize.covariate,
+    current_params,
+    out_getResults,
+    estimand,
+    prob.bound,
+    out_normalizeCovariate,
+    out_calculateCov = NULL
+) {
+  if (isFALSE(report.sandwich.conf)) {
+    if (isTRUE(should.normalize.covariate) && !is.null(out_normalizeCovariate$range)) {
+      adj <- 1 / as.vector(out_normalizeCovariate$range)
+      if (length(adj) != length(current_params)) {
+        stop(sprintf(
+          "Length mismatch: adj=%d vs params=%d. outcome.type=%s, p_num=%d, k_ex=%d",
+          length(adj), length(current_params), outcome.type,
+          out_normalizeCovariate$p_num %||% NA_integer_,
+          out_normalizeCovariate$k_ex  %||% NA_integer_
+        ))
+      }
+      alpha_beta_estimated <- adj * current_params
+    } else {
+      alpha_beta_estimated <- current_params
+    }
+    return(list(alpha_beta_estimated = alpha_beta_estimated, cov_estimated = NULL))
+  }
+
+  if (isTRUE(should.normalize.covariate) && !is.null(out_normalizeCovariate$range)) {
+    adj <- 1 / as.vector(out_normalizeCovariate$range)
+
+    if (length(adj) != length(current_params)) {
+      stop(sprintf(
+        "Length mismatch: adj=%d vs params=%d. outcome.type=%s, p_num=%d, k_ex=%d",
+        length(adj), length(current_params), outcome.type,
+        out_normalizeCovariate$p_num %||% NA_integer_,
+        out_normalizeCovariate$k_ex  %||% NA_integer_
+      ))
+    }
+
+    alpha_beta_estimated <- adj * current_params
+    if (is.null(out_calculateCov) || is.null(out_calculateCov$cov_estimated)) {
+      stop("out_calculateCov$cov_estimated is required when report.sandwich.conf=TRUE.")
+    }
+    A <- diag(adj, length(adj))
+    cov_estimated <- A %*% out_calculateCov$cov_estimated %*% A
+    v1 <- A %*% out_calculateCov$v1 %*% A
+    v2 <- A %*% out_calculateCov$v2 %*% A
+    v3 <- A %*% out_calculateCov$v3 %*% A
+  } else {
+    alpha_beta_estimated <- current_params
+    if (is.null(out_calculateCov) || is.null(out_calculateCov$cov_estimated)) {
+      stop("out_calculateCov$cov_estimated is required when report.sandwich.conf=TRUE.")
+    }
+    cov_estimated <- out_calculateCov$cov_estimated
+  }
+
+  list(alpha_beta_estimated = alpha_beta_estimated, cov_estimated = cov_estimated, v1=v1, v2=v2, v3=v3)
 }
 
 
