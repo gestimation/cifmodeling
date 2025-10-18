@@ -505,6 +505,7 @@ check_label.strata <- function(out_readSurv, label.strata) {
   weights_fin   = "`weights` must be finite.",
   weights_pos   = "`weights` must be non-negative.",
   outcome_type  = "Invalid input for outcome.type. Choose one of: {choices}.",
+  style         = "Invalid input for style. Choose one of: {choices}.",
   effect_meas   = "Invalid input for {which}. Choose 'RR', 'OR', or 'SHR'.",
   error_surv    = "Invalid SE method for SURVIVAL. Use 'greenwood','tsiatis','jackknife'. Defaulting to 'greenwood'.",
   error_cr      = "Invalid SE method for COMPETING-RISK. Use 'aalen','delta','jackknife'. Defaulting to 'delta'."
@@ -554,15 +555,15 @@ normalize_time_event <- function(time, event, allowed = NULL) {
     }
     status <- suppressWarnings(as.integer(event))
   } else if (is.logical(event)) {
-    status <- ifelse(is.na(event), NA_integer_, as.integer(event))  # FALSE=0, TRUE=1
+    status <- ifelse(is.na(event), NA_integer_, as.integer(event))
   } else if (is.factor(event) || is.character(event)) {
-    ev_chr <- as.character(event)  # NA は NA のまま
+    ev_chr <- as.character(event)
     ok <- !is.na(ev_chr)
     if (!all(grepl("^[0-9]+$", ev_chr[ok]))) {
       .err("ev_codes", allowed = "'0','1','2',...",
            found = paste(unique(ev_chr[ok]), collapse = ", "))
     }
-    status <- suppressWarnings(as.integer(ev_chr))  # "NA" 等は NA になる
+    status <- suppressWarnings(as.integer(ev_chr))
   } else {
     .err("ev_type")
   }
@@ -582,7 +583,6 @@ normalize_time_event <- function(time, event, allowed = NULL) {
   }
   list(time = as.numeric(time), event = status)
 }
-
 
 normalize_time_event_old <- function(time, event, allowed = NULL) {
   if (missing(time))  .err("req", arg = "time")
@@ -642,6 +642,22 @@ check_outcome.type <- function(x) {
     "POLY-PROPORTIONAL"= c("poly-proportional","pp"),
     "PROPORTIONAL"     = c("proportional","p"),
     "BINOMIAL"         = c("binomial","b")
+  )
+  ux <- toupper(gsub("[[:space:]]+", " ", x))
+  for (k in names(map)) {
+    if (ux == k || tolower(ux) %in% tolower(map[[k]])) return(k)
+  }
+  .err("outcome_type", choices = paste(names(map), collapse = ", "))
+}
+
+
+check_style <- function(x) {
+  map <- list(
+    "CLASSIC"     = c("classic","c"),
+    "BOLD"        = c("bold","b"),
+    "FRAMED"      = c("framed","f"),
+    "MONOCHROME"  = c("monochrome","monotone","m"),
+    "GGSURVFIT"   = c("ggsurvfit","g")
   )
   ux <- toupper(gsub("[[:space:]]+", " ", x))
   for (k in names(map)) {

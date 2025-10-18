@@ -248,60 +248,147 @@ create_rr_text <- function(coefficient, cov, index, omit.conf.int=TRUE, conf.int
 
 check_ggsurvfit <- function(
     survfit_object,
-    lims.x, lims.y,
-    ggsurvfit.type = NULL,
-    addConfidenceInterval = TRUE,
-    addCensorMark = TRUE,
-    addCompetingRiskMark = TRUE,
-    addIntercurrentEventMark = TRUE,
-    shape.censor.mark = 3,
-    shape.competing.risk.mark = 16,
-    shape.intercurrent.event.mark = 1
+    type.y,
+    conf.type,
+    label.y,
+    limits.x, limits.y,
+    breaks.x,  breaks.y,
+    addConfidenceInterval,
+    addCensorMark,
+    addCompetingRiskMark,
+    addIntercurrentEventMark,
+    shape.censor.mark,
+    shape.competing.risk.mark,
+    shape.intercurrent.event.mark,
+    out_readSurv,
+    use_coord_cartesian,
+    style
 ){
   if (isTRUE(addCensorMark) && isTRUE(addIntercurrentEventMark) &&
-      !is.null(shape.censor.mark) && !is.null(shape.intercurrent.event.mark) &&
       identical(shape.censor.mark, shape.intercurrent.event.mark)) {
-    warning("shape.censor.mark and shape.intercurrent.event.mark specify an idencical type of symbol")
+    warning("shape.censor.mark and shape.intercurrent.event.mark specify an idencical type of symbol", call. = FALSE)
   }
   if (isTRUE(addCensorMark) && isTRUE(addCompetingRiskMark) &&
-      !is.null(shape.censor.mark) && !is.null(shape.competing.risk.mark) &&
       identical(shape.censor.mark, shape.competing.risk.mark)) {
-    warning("shape.censor.mark and shape.intercurrent.event.mark specify an idencical type of symbol")
+    warning("shape.censor.mark and shape.competing.risk.mark specify an idencical type of symbol", call. = FALSE)
   }
   if (isTRUE(addCompetingRiskMark) && isTRUE(addIntercurrentEventMark) &&
-      !is.null(shape.competing.risk.mark) && !is.null(shape.intercurrent.event.mark) &&
       identical(shape.competing.risk.mark, shape.intercurrent.event.mark)) {
-    warning("shape.censor.mark and shape.intercurrent.event.mark specify an idencical type of symbol")
+    warning("shape.competing.risk.mark and shape.intercurrent.event.mark specify an idencical type of symbol", call. = FALSE)
   }
-  if (!is.null(lims.x) && length(lims.x) == 2 && is.numeric(lims.x)) {
+
+  is_len2_num <- function(x) is.numeric(x) && length(x) == 2L && all(is.finite(x))
+  is_increasing <- function(x) all(diff(x) > 0, na.rm = TRUE)
+  is_nondec <- function(x) all(diff(x) >= 0, na.rm = TRUE)
+
+  if (!is.null(limits.x)) {
+    if (!is_len2_num(limits.x)) {
+      warning("`limits.x` must be a numeric length-2 vector.", call. = FALSE)
+    } else if (!is_increasing(limits.x)) {
+      warning("`limits.x` must be strictly increasing, e.g., c(xmin, xmax).", call. = FALSE)
+    }
     tmax <- suppressWarnings(max(survfit_object$time, na.rm = TRUE))
-    if (is.finite(tmax) && (tmax < lims.x[1] || tmax > lims.x[2])) {
-      warning(sprintf("Max of survfit_object$time (%.4g) is out of lims.x=[%.4g, %.4g]",
-                      tmax, lims.x[1], lims.x[2]))
+    if (is.finite(tmax) && is_len2_num(limits.x)) {
+      if (tmax < limits.x[1] || tmax > limits.x[2]) {
+        warning(sprintf("Max of `survfit_object$time` (%.4g) lies outside `limits.x` = [%.4g, %.4g].",
+                        tmax, limits.x[1], limits.x[2]), call. = FALSE)
+      }
+    }
+  } else if (!is.null(out_readSurv) && !is.null(out_readSurv$t)) {
+    tmax <- suppressWarnings(max(out_readSurv$t, na.rm = TRUE))
+    if (!is.finite(tmax) || tmax <= 0) {
+      warning("`out_readSurv$t` provided but has no finite positive max; x-limits fallback may fail.", call. = FALSE)
     }
   }
-  if (!is.null(lims.y) && length(lims.y) == 2 && is.numeric(lims.y)) {
-    surv <- survfit_object$surv
+
+  if (!is.null(limits.y)) {
+    if (!is_len2_num(limits.y)) {
+      warning("`limits.y` must be a numeric length-2 vector.", call. = FALSE)
+    } else if (!is_increasing(limits.y)) {
+      warning("`limits.y` must be strictly increasing, e.g., c(ymin, ymax).", call. = FALSE)
+    }
+    surv  <- survfit_object$surv
     upper <- survfit_object$upper
     lower <- survfit_object$lower
-    if (identical(ggsurvfit.type, "risk")) {
+    if (identical(type.y, "risk")) {
       surv  <- 1 - surv
       if (!is.null(upper)) upper <- 1 - upper
       if (!is.null(lower)) lower <- 1 - lower
     }
-
-    if (any(surv < lims.y[1] | surv > lims.y[2], na.rm = TRUE)) {
-      warning(sprintf("Some point estimates are out of lims.y=[%.4g, %.4g]", lims.y[1], lims.y[2]))
+    if (any(surv < limits.y[1] | surv > limits.y[2], na.rm = TRUE)) {
+      warning(sprintf("Some point estimates fall outside `limits.y` = [%.4g, %.4g].",
+                      limits.y[1], limits.y[2]), call. = FALSE)
     }
     if (isTRUE(addConfidenceInterval)) {
-      if (!is.null(upper) && any(upper < lims.y[1] | upper > lims.y[2], na.rm = TRUE)) {
-        warning(sprintf("Some upper confidence limits are lims.y=[%.4g, %.4g]", lims.y[1], lims.y[2]))
+      if (!is.null(upper) && any(upper < limits.y[1] | upper > limits.y[2], na.rm = TRUE)) {
+        warning(sprintf("Some upper CI values fall outside `limits.y` = [%.4g, %.4g].",
+                        limits.y[1], limits.y[2]), call. = FALSE)
       }
-      if (!is.null(lower) && any(lower < lims.y[1] | lower > lims.y[2], na.rm = TRUE)) {
-        warning(sprintf("Some lower confidence limits are lims.y=[%.4g, %.4g]", lims.y[1], lims.y[2]))
+      if (!is.null(lower) && any(lower < limits.y[1] | lower > limits.y[2], na.rm = TRUE)) {
+        warning(sprintf("Some lower CI values fall outside `limits.y` = [%.4g, %.4g].",
+                        limits.y[1], limits.y[2]), call. = FALSE)
       }
     }
   }
+
+  check_breaks <- function(bk, nm, lims) {
+    if (is.null(bk) || is.function(bk)) return(invisible())
+    if (!is.numeric(bk)) {
+      warning(sprintf("`%s` should be numeric (or a function).", nm), call. = FALSE); return(invisible())
+    }
+    if (!is_nondec(bk)) {
+      warning(sprintf("`%s` must be non-decreasing.", nm), call. = FALSE)
+    }
+    if (!is.null(lims) && is_len2_num(lims)) {
+      if (any(bk < lims[1] | bk > lims[2], na.rm = TRUE)) {
+        warning(sprintf("Some `%s` are outside plotting range [%g, %g].", nm, lims[1], lims[2]), call. = FALSE)
+      }
+    }
+    invisible()
+  }
+  check_breaks(breaks.x, "breaks.x", limits.x)
+  check_breaks(breaks.y, "breaks.y", limits.y)
+
+  type.y <- if (identical(tolower(type.y), "risk")) "risk"
+  else if (identical(tolower(type.y), "r")) "risk"
+  else if (identical(tolower(type.y), "survival")) "survival"
+  else if (identical(tolower(type.y), "s")) "survival"
+  else type.y
+
+  label.y <- if (is.null(label.y) && !identical(type.y, "risk") && identical(survfit_object$type, "kaplan-meier")) "Survival"
+  else if (is.null(label.y) && identical(type.y, "risk") && identical(survfit_object$type, "kaplan-meier")) "Risk"
+  else if (is.null(label.y) && !identical(type.y, "survival") && identical(survfit_object$type, "aalen-johansen")) "Cumulative incidence"
+  else if (is.null(label.y) && identical(type.y, "survival") && identical(survfit_object$type, "aalen-johansen")) "1 - cumulative incidence"
+  else label.y
+
+  coerce_conf <- function(survfit_object, conf.type) {
+    if (!is.null(survfit_object$lower) && !is.null(survfit_object$upper)) return(survfit_object)
+    if (conf.type %in% c("none","n") || length(survfit_object$strata) > 2) {
+      x <- survfit_object
+      x$lower <- x$surv
+      x$upper <- x$surv
+      return(x)
+    }
+    return(survfit_object)
+  }
+  survfit_object <- coerce_conf(survfit_object, conf.type)
+
+  if (identical(style, "MONOCHROME")) options("ggsurvfit.switch-color-linetype" = TRUE)
+  if (       !identical(type.y,     "risk") && identical(survfit_object$type, "kaplan-meier")) {
+    survfit_object <- ggsurvfit(survfit_object, type = "survival")
+    type.y <- "survival"
+  } else if ( identical(type.y,     "risk") && identical(survfit_object$type, "kaplan-meier")) {
+    survfit_object <- ggsurvfit(survfit_object, type = "risk")
+    type.y <- "risk"
+  } else if (!identical(type.y, "survival") && identical(survfit_object$type, "aalen-johansen")) {
+    survfit_object <- ggsurvfit(survfit_object, type = "risk")
+    type.y <- "risk"
+  } else if ( identical(type.y, "survival") && identical(survfit_object$type, "aalen-johansen")) {
+    survfit_object <- ggsurvfit(survfit_object, type = "survival")
+    type.y <- "survival"
+  }
+  if (identical(style, "MONOCHROME")) options("ggsurvfit.switch-color-linetype" = FALSE)
+  return(list(out_survfit_object=survfit_object, label.y=label.y, type.y=type.y))
 }
 
 `%||%` <- function(x, y) if (is.null(x)) y else x
