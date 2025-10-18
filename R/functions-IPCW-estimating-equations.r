@@ -321,8 +321,8 @@ calculateCov <- function(objget_results, estimand, prob.bound)
   censoring_mkm <- censoring_martingale / censoring_km
   y_12 <- (y_1 + y_2 > 0)
   survival_km <- calculateKaplanMeier(t, y_12)
-  wy_1 <- w11 * (y_1 - ey_1) + w12 * (y_2 - ey_2)
-  wy_2 <- w12 * (y_1 - ey_1) + w22 * (y_2 - ey_2)
+  wy_1 <- w11 * y_1 + w12 * y_2
+  wy_2 <- w12 * y_1 + w22 * y_2
   x_la <- cbind(x_l, x_a)
   AB1 <- score[1:n, 1:iv[3]]
   AB2 <- score[(n + 1):(2 * n), iv[4]:iv[7]]
@@ -453,7 +453,7 @@ calculateCovSurvival <- function(objget_results, estimand, prob.bound)
   censoring_mkm <- censoring_martingale / censoring_km
   y_12 <- (y_1 > 0)
   survival_km <- calculateKaplanMeier(t, y_12)
-  wy_1 <- w11 * (y_1 - ey_1)
+  wy_1 <- w11 * y_1
   x_la <- cbind(x_l, x_a)
   AB1 <- score[1:n, 1:iv[3]]
   for (i_para in 1:iv[2]) {
