@@ -170,7 +170,7 @@ polyreg <- function(
   computation.time0 <- proc.time()
   outcome.type <- check_outcome.type(outcome.type)
   ce <- check_effect.measure(effect.measure1, effect.measure2)
-  ci <- checkInput(data, nuisance.model, exposure, code.event1, code.event2, code.censoring, code.exposure.ref, outcome.type, conf.level, report.sandwich.conf, report.boot.conf, nleqslv.method, should.normalize.covariate)
+  ci <- check_input_polyreg(data, nuisance.model, exposure, code.event1, code.event2, code.censoring, code.exposure.ref, outcome.type, conf.level, report.sandwich.conf, report.boot.conf, nleqslv.method, should.normalize.covariate)
   should.normalize.covariate <- ci$should.normalize.covariate
   report.sandwich.conf <- ci$report.sandwich.conf
   report.boot.conf <- ci$report.boot.conf

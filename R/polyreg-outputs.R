@@ -228,28 +228,6 @@ getCoef <- function(
   list(coef = coef, coef_se = coef_se, conf_low = conf_low, conf_high = conf_high, p_value = p_value)
 }
 
-create_rr_text <- function(coefficient, cov, index, omit.conf.int=TRUE, conf.int=0.95) {
-  alpha <- 1 - conf.int
-  critical_value <- qnorm(1 - alpha / 2)
-  coef <- coefficient[index]
-  coef_se <- sqrt(diag(cov)[index])
-  conf_low <- coef - critical_value * coef_se
-  conf_high <- coef + critical_value * coef_se
-  p_value <- floor(2 * (1 - pnorm(abs(coef) / coef_se)))
-  if (omit.conf.int==TRUE) {
-    if (p_value<0.01) text <- paste0("RR=", round(exp(coef), digit=2), ", p<0.01")
-    else text <- paste0("RR=", round(exp(coef), digit=2), ", p=", p_value)
-  } else {
-    if (p_value<0.01) text <- paste0("RR=", round(exp(coef), digit=2), " (", round(exp(conf_low), digit=2), " to ", round(exp(conf_high), digit=2), ", p<0.01", ")")
-    else text <- paste0("RR=", round(exp(coef), digit=2), " (", round(exp(conf_low), digit=2), " to ", round(exp(conf_high), digit=2), ", p=", p_value, ")")
-  }
-  return(text)
-}
-
-
-`%||%` <- function(x, y) if (is.null(x)) y else x
-
-
 extractOptimizationInfo <- function(sol, method) {
   out <- list(solver = method)
   if (method %in% c("nleqslv","Broyden","Newton")) {

@@ -1,3 +1,123 @@
+#' @title Arrange multiple survival/CIF plots into a panel (grid or inset)
+#' @description
+#' Build a panel of publication-ready time-to-event plots by combining
+#' \code{\link{cifcurve}} (estimation) and \code{\link{cifplot}} (rendering).
+#' Supports grid layout or an inset plot overlay. Panel-wise overrides for
+#' y-scale type, labels, limits, and various plot decorations are supported.
+#'
+#' @details
+#' \strong{How it works:}
+#' For each panel slot, the function first calls \code{\link{cifcurve}} to obtain
+#' a \code{survfit}-like object, and then calls \code{\link{cifplot}} to render it.
+#' You can pass \code{code.events = list(c(e1, e2, c), ...)} for competing risks
+#' (Aalen–Johansen), or \code{code.events = list(c(e1, c), ...)} for standard
+#' survival (Kaplan–Meier). If \code{outcome.type} is not specified, each panel's
+#' outcome is inferred from the length of its \code{code.events[[i]]}.
+#'
+#' \strong{Grid vs inset:}
+#' - \code{use_inset_element = FALSE} (default): arrange plots in a grid using
+#'   \pkg{patchwork} \code{wrap_plots()}. With \code{legend.collect = TRUE}, legends are
+#'   collected across panels.
+#' - \code{use_inset_element = TRUE}: overlay the second plot into the first one using
+#'   \code{patchwork::inset_element()}. Only the first two plots are used; extra plots are ignored.
+#'
+#' \strong{Notes:}
+#' - \code{type.x} is reserved for future x-scale control (currently not applied).
+#' - If both \code{formula} and \code{formulas} are provided, the latter takes precedence.
+#'
+#' @param formula A single model formula evaluated in \code{data}, used for all panels
+#'   when \code{formulas} is not provided.
+#' @param formulas A list of formulas (one per panel). If provided, overrides \code{formula}.
+#' @param data A data.frame containing variables used in the formula(s).
+#' @param outcome.type Optional vector/list of outcome types per panel:
+#'   \code{"SURVIVAL"} or \code{"COMPETING-RISK"}. If \code{NULL}, each panel is inferred from
+#'   its \code{code.events} length (2 = SURVIVAL; 3 = COMPETING-RISK).
+#' @param code.events A list of numeric vectors per panel.
+#'   For SURVIVAL: \code{c(event.code1, censor.code)};
+#'   for COMPETING-RISK: \code{c(event.code1, event.code2, censor.code)}.
+#' @param type.x Reserved for future x-scale control (currently ignored).
+#' @param type.y Optional vector/list per panel: \code{NULL} (survival) or \code{"risk"} (1-survival).
+#' @param label.x,label.y Optional vectors/lists of axis labels per panel.
+#' @param label.strata Optional list of character vectors for legend labels per panel
+#'   (passed to \code{\link{cifplot}}).
+#' @param limits.x,limits.y Optional vectors/lists of numeric length-2 axis limits per panel.
+#' @param break.x,break.y Optional vectors/lists of axis breaks per panel (forwarded to
+#'   \code{breaks.x} / \code{breaks.y} in \code{\link{cifplot}}).
+#' @param addConfidenceInterval,addCensorMark,addCompetingRiskMark,addIntercurrentEventMark,addQuantileLine
+#'   Optional logical vectors/lists per panel to toggle features in \code{\link{cifplot}}.
+#'   If \code{NULL}, sensible defaults are used (CI/Censor on; others off).
+#' @param rows.columns.panel Integer vector \code{c(nrow, ncol)} specifying the grid size.
+#' @param title.panel,subtitle.panel,caption.panel Optional strings for panel annotation.
+#' @param tag_levels.panel Passed to \code{patchwork::plot_annotation(tag_levels = ...)}.
+#' @param title.plot Optional length-2 character vector, titles for base/inset plots when
+#'   \code{use_inset_element = TRUE}.
+#' @param legend.position Position of legends: \code{"top"}, \code{"right"}, \code{"bottom"},
+#'   \code{"left"}, or \code{"none"}.
+#' @param legend.collect If \code{TRUE} (grid mode), collect legends across subplots.
+#' @param use_inset_element If \code{TRUE}, place the second plot as an inset over the first.
+#' @param inset.left,inset.bottom,inset.right,inset.top Numeric positions (0–1) of the inset box.
+#' @param inset.align_to One of \code{"panel"}, \code{"plot"}, or \code{"full"}.
+#' @param inset.legend.position Legend position for the inset plot (e.g., \code{"none"}).
+#' @param print.panel If \code{TRUE}, print the composed panel.
+#' @param filename.ggsave Optional file path to save the composed panel.
+#' @param width.ggsave,height.ggsave,dpi.ggsave Size parameters for saving; if width/height
+#'   are \code{NULL}, defaults depend on grid size or inset mode.
+#' @param ... Additional arguments forwarded to \code{\link{cifplot}} (e.g., \code{style},
+#'   \code{font.family}, \code{font.size}, etc.). Panel-wise overrides provided via explicit
+#'   arguments take precedence over \code{...}.
+#'
+#' @return An invisible list: \code{list(plots = <list of ggplot objects>, out_patchwork = <patchwork object>)}.
+#'
+#' @examples
+#' cifpanel(
+#'   title.panel = "A comparison of cumulative incidence of competing events",
+#'   rows.columns.panel = c(1,2),
+#'   formula = Event(t, epsilon) ~ fruitq,
+#'   data = diabetes.complications,
+#'   outcome.type = "COMPETING-RISK",
+#'   code.events = list(c(1,2,0), c(2,1,0)),
+#'   label.y = c("Diabetic retinopathy", "Macrovascular complications"),
+#'   label.x = "Years from registration",
+#'   subtitle.panel = "Stratified by fruit intake",
+#'   caption.panel  = "Data: diabetes.complications",
+#'   title.plot = c("Diabetic retinopathy", "Macrovascular complications"),
+#'   legend.position = "bottom",
+#'   legend.collect=TRUE
+#' )
+#' cifpanel(
+#'   title.plot = c("Associations between fruit intake and macrovascular complications", "Details"),
+#'   use_inset_element = TRUE,
+#'   formula = Event(t, epsilon) ~ fruitq,
+#'   data = diabetes.complications,
+#'   outcome.type = "COMPETING-RISK",
+#'   code.events = list(c(2,1,0), c(2,1,0)),
+#'   label.y = c("Macrovascular complications", ""),
+#'   label.x = c("Years from registration", ""),
+#'   limits.y     = list(c(0,1), c(0,0.15)),
+#'   inset.left   = 0.40, inset.bottom = 0.45,
+#'   inset.right  = 1.00, inset.top    = 0.95,
+#'   inset.align_to = "plot",
+#'   inset.legend.position = "none",
+#'   legend.position = "bottom"
+#' )
+
+#' \dontrun{
+#' data(diabetes.complications)
+#' ce <- list(c(1, 2, 0), c(1, 2, 0), c(1, 0)) # 2 AJ panels + 1 KM panel
+#' cifpanel(
+#'   formulas = list(Event(t,epsilon)~fruitq, Event(t,epsilon)~sex, Surv(t, epsilon==1)~fruitq),
+#'   data = diabetes.complications,
+#'   code.events = ce,
+#'   rows.columns.panel = c(1, 3),
+#'   legend.collect = TRUE,
+#'   title.panel = "CIF and survival panels"
+#' )
+#' }
+#'
+#' @importFrom ggplot2 ggplot theme_void ggsave theme element_text labs
+#' @importFrom patchwork wrap_plots plot_layout inset_element plot_annotation
+#' @seealso \code{\link{cifcurve}}, \code{\link{cifplot}}
+#' @export
 cifpanel <- function(
     formula = NULL,
     formulas = NULL,
@@ -44,35 +164,30 @@ cifpanel <- function(
   nrow <- as.integer(rows.columns.panel[1]); ncol <- as.integer(rows.columns.panel[2])
   n_slots <- nrow * ncol
 
-  # Inputs
-  if (is.null(data)) stop("`data` must be provided.")
+#  .req(data, "data")  # -> .err("req", arg="data")
+  if (is.null(data)) stop("data must be provided.")
   if (is.null(code.events) || !is.list(code.events) || length(code.events) == 0)
-    stop("Provide non-empty `code.events` as a list of c(event.code1, event.code2[, censor]) per panel.")
+    .err("need_code_events")
+  if (!is.null(formulas) && !is.null(formula))
+    .warn("both_formula_forms")
+  if (is.null(formulas) && is.null(formula))
+    .err("need_formula_or_formulas")
+
   inset.align_to <- match.arg(inset.align_to)
-
-  # Panel count
   K <- max(n_slots, length(code.events))
-  code.events <- .cif_recycle_to(code.events, K)
+  code.events <- .panel_recycle_to(code.events, K)
 
-  # Formulas
   use_formula_list <- !is.null(formulas)
-  if (use_formula_list && !is.null(formula)) {
-    warning("Both `formula` and `formulas` provided. Using `formulas` only.")
-  }
-  if (!use_formula_list && is.null(formula)) {
-    stop("Provide either `formula` (single) or `formulas` (list).")
-  }
   if (use_formula_list) {
     stopifnot(is.list(formulas))
-    formulas <- lapply(formulas, .cif_as_formula_global)
-    formulas <- .cif_recycle_to(formulas, K)
+    formulas <- lapply(formulas, .panel_as_formula_global)
+    formulas <- .panel_recycle_to(formulas, K)
   } else {
-    formula  <- .cif_as_formula_global(formula)
+    formula  <- .panel_as_formula_global(formula)
     formulas <- rep(list(formula), K)
   }
 
-  # ----- per-panel overrides: to_list + recycle -----
-  toL <- .cif_to_list; rec <- .cif_recycle_to
+  toL <- .panel_to_list; rec <- .panel_recycle_to
 
   outcome.list <- toL(outcome.type); if (!is.null(outcome.list)) outcome.list <- rec(outcome.list, K)
   typey.list   <- toL(type.y);       if (!is.null(typey.list))   typey.list   <- rec(typey.list, K)
@@ -81,7 +196,6 @@ cifpanel <- function(
   typex.list   <- toL(type.x);       if (!is.null(typex.list))   typex.list   <- rec(typex.list, K)
   labelx.list  <- toL(label.x);      if (!is.null(labelx.list))  labelx.list  <- rec(labelx.list, K)
 
-  # limits.x / limits.y のバリデーション
   limsx.list <- NULL
   if (!is.null(limits.x)) {
     limsx.list <- if (is.list(limits.x)) limits.x else list(limits.x)
@@ -103,25 +217,26 @@ cifpanel <- function(
     }
   }
 
-  # breaks は型が色々ありうるので検証は最小限（そのまま渡す）
   breakx.list <- toL(break.x); if (!is.null(breakx.list)) breakx.list <- rec(breakx.list, K)
   breaky.list <- toL(break.y); if (!is.null(breaky.list)) breaky.list <- rec(breaky.list, K)
 
-  # flags
   addCI.list   <- toL(addConfidenceInterval);    if (!is.null(addCI.list))   addCI.list   <- rec(addCI.list, K)
   addCen.list  <- toL(addCensorMark);            if (!is.null(addCen.list))  addCen.list  <- rec(addCen.list, K)
   addCR.list   <- toL(addCompetingRiskMark);     if (!is.null(addCR.list))   addCR.list   <- rec(addCR.list, K)
   addIC.list   <- toL(addIntercurrentEventMark); if (!is.null(addIC.list))   addIC.list   <- rec(addIC.list, K)
   addQ.list    <- toL(addQuantileLine);          if (!is.null(addQ.list))    addQ.list    <- rec(addQ.list, K)
 
-  # strata labels
   strata.list  <- toL(label.strata);             if (!is.null(strata.list))  strata.list  <- rec(strata.list, K)
 
-  # Outcome flags (default "C") + code.events validation
-  outcome.flags <- if (!is.null(outcome.list)) vapply(outcome.list, .cif_norm_outcome, character(1)) else rep("C", K)
-  .cif_validate_code_events(code.events, outcome.flags)
+  infer_flag_by_codes <- function(v) if (length(v) == 2L) "S" else if (length(v) == 3L) "C" else NA_character_
+  if (!is.null(outcome.list)) {
+    outcome.flags <- vapply(outcome.list, .panel_norm_outcome, character(1))
+  } else {
+    outcome.flags <- vapply(code.events, infer_flag_by_codes, character(1))
+    if (anyNA(outcome.flags)) .err("infer_outcome_fail")
+  }
+  .panel_validate_code_events(code.events, outcome.flags)
 
-  # Dots & fonts（... と衝突するキーを削除）
   dots <- list(...)
   kill_names <- c()
   if (!is.null(outcome.list)) kill_names <- c(kill_names, "outcome.type")
@@ -139,10 +254,10 @@ cifpanel <- function(
   if (!is.null(addIC.list))   kill_names <- c(kill_names, "addIntercurrentEventMark")
   if (!is.null(addQ.list))    kill_names <- c(kill_names, "addQuantileLine")
   if (!is.null(strata.list))  kill_names <- c(kill_names, "label.strata")
-  dots <- .cif_strip_overrides_from_dots(dots, unique(kill_names))
+  dots <- .panel_strip_overrides_from_dots(dots, unique(kill_names))
 
-  fonts <- .cif_extract_fonts(dots)
-  theme.panel.unified <- .cif_build_theme(font.family = fonts$family, font.size = fonts$size)
+  fonts <- .panel_extract_fonts(dots)
+  theme.panel.unified <- .panel_build_theme(font.family = fonts$family, font.size = fonts$size)
 
   plots <- lapply(seq_len(K), function(i) {
     pair <- code.events[[i]]
@@ -152,21 +267,17 @@ cifpanel <- function(
       ce1 <- pair[1]; ce2 <- pair[2]; cc <- pair[3]
     }
 
-    ## 1) 推定だけ（描画系の引数は絶対に入れない）
-    args_est <- .cif_drop_nulls(list(
+    args_est <- .panel_drop_nulls(list(
       formula        = formulas[[i]],
       data           = data,
       outcome.type   = if (!is.null(outcome.list)) outcome.list[[i]] else NULL,
       code.event1    = ce1,
       code.event2    = ce2,
       code.censoring = cc
-      # 必要に応じて: weights, subset.condition, na.action, error, conf.type, conf.int,
-      # report.survfit.std.err, label.strata など（推定系のみ）
     ))
-    fit_i <- do.call(cifcurve, args_est)  # => survfit
+    fit_i <- do.call(cifcurve, args_est)
 
-    ## 2) 描画は cifplot() に集約
-    args_plot <- .cif_drop_nulls(list(
+    args_plot <- .panel_drop_nulls(list(
       x = fit_i,
       type.y         = if (!is.null(typey.list))   typey.list[[i]]   else NULL,
       label.y        = if (!is.null(labely.list))  labely.list[[i]]  else NULL,
@@ -189,10 +300,9 @@ cifpanel <- function(
     do.call(cifplot, args_plot)
   })
 
-  # ---- 合成部（inset or grid） ----
   if (isTRUE(use_inset_element)) {
-    if (length(plots) < 2L) stop("use_inset_element=TRUE の場合は少なくとも2枚のプロットが必要です。")
-    if (length(plots) > 2L) warning("use_inset_element=TRUE: 先頭2枚のみ使用します。")
+    if (length(plots) < 2L) .err("inset_need_two")
+    if (length(plots) > 2L) .warn("inset_extra_drop")
     p_base  <- plots[[1]] + ggplot2::theme(legend.position = legend.position)
     p_inset <- plots[[2]] + ggplot2::theme(legend.position = inset.legend.position)
     if (!is.null(title.plot)) {
@@ -208,7 +318,7 @@ cifpanel <- function(
     if (length(plots) < n_slots) {
       plots <- c(plots, rep(list(ggplot2::ggplot() + ggplot2::theme_void()), n_slots - length(plots)))
     } else if (length(plots) > n_slots) {
-      warning(sprintf("There are %d plots but grid holds %d. Extra plots are dropped.", length(plots), n_slots))
+      .warn("plots_extra_dropped", n_plots = length(plots), n_slots = n_slots)
       plots <- plots[seq_len(n_slots)]
     }
     out_patchwork <- patchwork::wrap_plots(plots, nrow = nrow, ncol = ncol)
@@ -237,74 +347,4 @@ cifpanel <- function(
     ggplot2::ggsave(filename.ggsave, plot = out_patchwork, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave)
   }
   invisible(list(plots = plots, out_patchwork = out_patchwork))
-}
-
-
-.cif_as_formula_global <- function(f) {
-  if (is.character(f))   return(stats::as.formula(f, env = .GlobalEnv))
-  if (inherits(f, "formula")) return(stats::as.formula(f, env = .GlobalEnv))
-  stop("Each formula must be a character string or a formula object.")
-}
-.cif_recycle_to <- function(x, n) {
-  if (length(x) == n) return(x)
-  if (length(x) == 0L) stop("Cannot recycle an empty object to nonzero length.")
-  rep_len(x, n)
-}
-.cif_to_list <- function(x) if (is.null(x)) NULL else if (is.list(x)) x else as.list(x)
-.cif_drop_nulls <- function(lst) lst[!vapply(lst, is.null, logical(1))]
-.cif_strip_overrides_from_dots <- function(dots, override_names) {
-  if (length(override_names) == 0L) return(dots)
-  dots[setdiff(names(dots), override_names)]
-}
-.cif_is_surv <- function(x) {
-  x <- toupper(as.character(x %||% ""))
-  x %in% c("S", "SURVIVAL")
-}
-.cif_is_comp <- function(x) {
-  x <- toupper(as.character(x %||% ""))
-  x %in% c("C", "COMPETING-RISK", "COMPETING_RISK", "COMPETINGRISK")
-}
-.cif_norm_outcome <- function(x) {
-  if (.cif_is_surv(x)) return("S")
-  if (.cif_is_comp(x)) return("C")
-  stop("Unknown outcome.type: ", x, " (use 'S'/'SURVIVAL' or 'C'/'COMPETING-RISK').")
-}
-.cif_validate_code_events <- function(code_events_list, outcome_flags) {
-  stopifnot(length(code_events_list) == length(outcome_flags))
-  for (i in seq_along(code_events_list)) {
-    pair <- code_events_list[[i]]
-    if (outcome_flags[i] == "S") {
-      if (!(is.numeric(pair) && length(pair) == 2L))
-        stop(sprintf("code.events[[%d]] must be c(event.code1, censoring) for SURVIVAL.", i))
-    } else {
-      if (!(is.numeric(pair) && length(pair) == 3L))
-        stop(sprintf("code.events[[%d]] must be c(event.code1, event.code2, censoring) for COMPETING-RISK.", i))
-    }
-  }
-  invisible(TRUE)
-}
-.cif_extract_fonts <- function(dots) {
-  list(
-    family = dots$font.family %||% "sans",
-    size   = dots$font.size   %||% 12
-  )
-}
-.cif_build_theme <- function(font.family = "sans", font.size = 12) {
-  base  <- font.size
-  big   <- base * 1.20
-  mid   <- base * 1.00
-  small <- base * 0.85
-  ggplot2::theme(
-    text          = ggplot2::element_text(family = font.family, size = base),
-    plot.title    = ggplot2::element_text(family = font.family, size = big, face = "bold"),
-    plot.subtitle = ggplot2::element_text(family = font.family, size = mid),
-    plot.caption  = ggplot2::element_text(family = font.family, size = small),
-    axis.title.x  = ggplot2::element_text(family = font.family, size = mid),
-    axis.title.y  = ggplot2::element_text(family = font.family, size = mid),
-    axis.text.x   = ggplot2::element_text(family = font.family, size = small),
-    axis.text.y   = ggplot2::element_text(family = font.family, size = small),
-    legend.title  = ggplot2::element_text(family = font.family, size = mid),
-    legend.text   = ggplot2::element_text(family = font.family, size = small),
-    strip.text    = ggplot2::element_text(family = font.family, size = mid)
-  )
 }

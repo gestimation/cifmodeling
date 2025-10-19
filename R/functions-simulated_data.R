@@ -1,4 +1,3 @@
-
 createTestData <- function(n, w, first_zero=FALSE, last_zero=FALSE, subset_present=FALSE, logical_strata=FALSE, na_strata=FALSE) {
   one <- rep(1, n)
   t <- c(1:(n/2), 1:(n/2))
