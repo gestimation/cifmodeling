@@ -480,18 +480,18 @@ check_error_old <- function(error, outcome.type) {
   return(error)
 }
 
-check_label.strata <- function(out_readSurv, label.strata) {
-  strata_levels <- levels(as.factor(out_readSurv$strata))
-  n_strata <- length(strata_levels)
-  if (!is.null(label.strata)) {
-    if (!is.character(label.strata)) {
-      stop("`label.strata` must be a character vector.", call. = FALSE)
-    }
-    if (length(label.strata) != n_strata) {
-      stop(sprintf("`label.strata` must have length %d (number of strata), but got %d.", n_strata, length(label.strata)), call. = FALSE)
-    }
-  }
-}
+#check_label.strata <- function(out_readSurv, label.strata) {
+#  strata_levels <- levels(as.factor(out_readSurv$strata))
+#  n_strata <- length(strata_levels)
+#  if (!is.null(label.strata)) {
+#    if (!is.character(label.strata)) {
+#      stop("`label.strata` must be a character vector.", call. = FALSE)
+#    }
+#    if (length(label.strata) != n_strata) {
+#      stop(sprintf("`label.strata` must have length %d (number of strata), but got %d.", n_strata, length(label.strata)), call. = FALSE)
+#    }
+#  }
+#}
 
 .msg <- list(
   req           = "`{arg}` is required.",
