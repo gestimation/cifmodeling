@@ -337,3 +337,13 @@ read_time.point <- function(formula, data, x_a, outcome.type, code.censoring, sh
     return(time.point)
   }
 }
+
+choose_nleqslv_method <- function(nleqslv.method) {
+  if (nleqslv.method == "nleqslv" || nleqslv.method == "Broyden") {
+    "Broyden"
+  } else if (nleqslv.method == "Newton") {
+    "Newton"
+  } else {
+    stop("Unsupported nleqslv.method: ", nleqslv.method)
+  }
+}

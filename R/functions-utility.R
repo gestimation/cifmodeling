@@ -53,7 +53,6 @@ get_surv <- function(
     keep <- !duplicated(t2, fromLast = TRUE)
     list(t = t2[keep], s = s2[keep])
   }
-
   n_pred <- length(predicted.time)
   predicted.surv <- numeric(n_pred)
 
@@ -61,7 +60,6 @@ get_surv <- function(
     is.null(predicted.strata) || is.null(estimated.strata) || is.null(strata.levels) ||
       length(estimated.strata) == 0L || length(strata.levels) == 0L
   )
-
   if (!strata_mode) {
     ser <- prepareSeries(estimated.time, estimated.surv)
     if (!length(ser$t)) return(rep(1.0, n_pred))
@@ -73,9 +71,10 @@ get_surv <- function(
   }
 
   if (!is.numeric(estimated.strata) || any(estimated.strata < 0))
-    stop("'estimated.strata' must be a non-negative integer vector.")
+    stop("'estimated.strata' must be a non-negative numeric vector of counts.")
   if (sum(estimated.strata) != length(estimated.time))
     stop("sum(estimated.strata) must equal length(estimated.time).")
+
   K <- length(estimated.strata)
   if (length(strata.levels) != K)
     stop("'strata.levels' must have length K = length(estimated.strata).")
@@ -97,19 +96,32 @@ get_surv <- function(
          paste(bad, collapse = ", "))
   }
 
-  strata_start <- c(1L, head(cumsum(estimated.strata), -1L) + 1L)
-  strata_end   <- cumsum(estimated.strata)
+  cs <- cumsum(estimated.strata)
+  strata_start <- c(1L, cs[-K] + 1L)
+  strata_end   <- cs
+
+  series_per_stratum <- vector("list", K)
+  for (s in seq_len(K)) {
+    if (estimated.strata[s] == 0L) {
+      series_per_stratum[[s]] <- list(t = numeric(0), s = numeric(0))
+    } else {
+      idx <- strata_start[s]:strata_end[s]
+      series_per_stratum[[s]] <- prepareSeries(estimated.time[idx], estimated.surv[idx])
+    }
+  }
 
   for (i in seq_len(n_pred)) {
     s <- mapped[i]
-    if (estimated.strata[s] == 0L) { out[i] <- NA_real_; next }
-    idx <- strata_start[s]:strata_end[s]
-    ser <- prepareSeries(estimated.time[idx], estimated.surv[idx])
-    if (!length(ser$t)) { out[i] <- 1.0; next }
-    j <- findInterval(predicted.time[i], ser$t, left.open = TRUE)
-    predicted.surv[i] <- if (j > 0L) ser$s[j] else 1.0
+    ser <- series_per_stratum[[s]]
+    if (!length(ser$t)) {
+      predicted.surv[i] <- 1.0
+    } else {
+      j <- findInterval(predicted.time[i], ser$t, left.open = TRUE)
+      predicted.surv[i] <- if (j > 0L) ser$s[j] else 1.0
+    }
   }
-  return(predicted.surv)
+
+  predicted.surv
 }
 
 readSurv <- function(formula, data, weights = NULL,

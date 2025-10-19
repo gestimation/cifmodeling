@@ -16,7 +16,8 @@
 #' @return Named list of numeric vectors (times per stratum).
 #' @export
 readEventTime <- function(
-    formula, data, which_event = c("event2", "event1", "censor", "censoring", "user_specified"),
+    formula, data,
+    which_event = c("event2", "event1", "censor", "censoring", "user_specified"),
     code.event1 = 1, code.event2 = 2, code.censoring = 0, user_specified_code = NULL,
     subset.condition = NULL, na.action = stats::na.omit,
     unique_times = TRUE, drop_empty = TRUE
@@ -25,7 +26,7 @@ readEventTime <- function(
   out_readSurv <- readSurv(
     formula = formula, data = data, weights = NULL,
     code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
-    subset.condition = subset.condition, na.action = stats::na.action
+    subset.condition = subset.condition, na.action = na.action  # ← 修正：stats::na.action ではなく引数をそのまま
   )
   getEventTime(
     out_readSurv = out_readSurv,
@@ -43,36 +44,39 @@ getEventTime <- function(
 ){
   which_event <- match.arg(which_event)
 
-  if (is.null(out_readSurv$t) || is.null(out_readSurv$strata)) {
-    stop("out_readSurv must contain $t and $strata.")
+  if (is.null(out_readSurv) || !is.list(out_readSurv)) {
+    .err("req", arg = "out_readSurv (list)")
   }
-  tvec   <- out_readSurv$t
-  strata <- as.character(out_readSurv$strata)
+
+  strata <- out_readSurv$strata
+  if (is.null(strata)) strata <- factor(rep("all", length(out_readSurv$t)))
+  if (is.factor(strata)) strata <- as.character(strata)
+
+  tvec    <- suppressWarnings(as.numeric(out_readSurv$t))
+  epsilon <- suppressWarnings(as.numeric(out_readSurv$epsilon))
+  if (anyNA(tvec))       .err("na", arg = "out_readSurv$t")
+  if (any(tvec < 0))     .err("time_nonneg", arg = "out_readSurv$t")
 
   pick <- switch(
     which_event,
-    event1      = out_readSurv$d1,
-    event2      = out_readSurv$d2,
-    censor      = out_readSurv$d0,
-    censoring   = out_readSurv$d0,
+    event1 = as.integer(out_readSurv$d1),
+    event2 = as.integer(out_readSurv$d2),
+    censor = as.integer(out_readSurv$d0),
+    censoring = as.integer(out_readSurv$d0),
     user_specified = {
-      epsilon <- out_readSurv$epsilon
-      if (is.null(epsilon)) stop("out_readSurv$epsilon is required when which_event='user_specified'.")
-      if (is.null(user_specified_code)) stop("Provide user_specified_code when which_event='user_specified'.")
-      as.integer(epsilon == user_specified_code)
+      if (is.null(user_specified_code)) .err("req", arg = "user_specified_code")
+      as.integer(epsilon == as.numeric(user_specified_code))
     }
   )
-  if (is.null(pick)) stop("Requested 'which_event' requires a component not found in out_readSurv.")
 
   labs <- unique(strata)
-  out  <- setNames(vector("list", length(labs)), labs)
+  out  <- stats::setNames(vector("list", length(labs)), labs)
   for (s in labs) {
-    idx <- (strata == s) & (pick > 0L)
+    idx <- (strata == s) & (pick > 0L) & is.finite(tvec)
     tt  <- tvec[idx]
-    if (unique_times) tt <- sort(unique(tt))
-    if (length(tt) > 0L || !drop_empty) out[[s]] <- tt
+    if (isTRUE(unique_times)) tt <- sort(unique(tt)) else tt <- sort(tt)
+    if (length(tt) > 0L || !isTRUE(drop_empty)) out[[s]] <- tt
   }
-  if (drop_empty) out <- out[vapply(out, length, integer(1)) > 0L]
+  if (isTRUE(drop_empty)) out <- out[vapply(out, length, integer(1)) > 0L]
   return(out)
 }
-

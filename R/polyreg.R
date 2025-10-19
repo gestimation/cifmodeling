@@ -5,7 +5,7 @@
 #' survival and binomial outcomes
 #' @param nuisance.model A \code{\link[stats]{formula}} describing the outcome and
 #'   nuisance covariates, excluding the exposure of interest.
-#' @param exposure A character string giving the name of the binary exposure
+#' @param exposure A character string giving the name of the categorical exposure
 #'   variable in \code{data}.
 #' @param strata Optional character string with the name of the stratification
 #'   variable used to adjust for dependent censoring. Defaults to \code{NULL}.
@@ -275,6 +275,17 @@ polyreg <- function(
   }
 
   assessConvergence <- function(new_params, current_params, current_obj_value, optim.parameter1, optim.parameter2, optim.parameter3) {
+    assessRelativeDifference <- function(new, old) {
+      max(abs(new - old) / pmax(1, abs(old)))
+    }
+    is_stalled <- function(x, stall_patience = 3, stall_eps = 1e-3) {
+      n <- length(x)
+      if (n < stall_patience) return(FALSE)
+      recent <- x[(n - stall_patience + 1L):n]
+      rng <- range(recent)
+      rel_diff <- (diff(rng) / max(1e-12, mean(recent)))
+      rel_diff <= stall_eps
+    }
     if (any(abs(new_params) > optim.parameter3)) {
       stop("Estimates are either too large or too small, and convergence might not be achieved.")
     }
@@ -294,26 +305,6 @@ polyreg <- function(
     else "Stalled"
 
     list(converged = converged, converged.by=converged.by, relative.difference = relative.difference, max.absolute.difference = max.absolute.difference, obj_value = obj_value)
-  }
-
-  assessRelativeDifference <- function(new, old) {
-    max(abs(new - old) / pmax(1, abs(old)))
-  }
-
-  is_stalled <- function(x, stall_patience=3, eps=1e-3) {
-    if (length(x) < stall_patience) return(FALSE)
-    recent <- tail(x, stall_patience)
-    (diff(range(recent)) / max(1e-12, mean(recent))) <= eps
-  }
-
-  choose_nleqslv_method <- function(nleqslv.method) {
-    if (nleqslv.method == "nleqslv" || nleqslv.method == "Broyden") {
-      "Broyden"
-    } else if (nleqslv.method == "Newton") {
-      "Newton"
-    } else {
-      stop("Unsupported nleqslv.method: ", nleqslv.method)
-    }
   }
 
   obj <- makeObjectiveFunction()

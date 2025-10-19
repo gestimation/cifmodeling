@@ -91,14 +91,15 @@
 #'   data = diabetes.complications,
 #'   outcome.type = "COMPETING-RISK",
 #'   code.events = list(c(2,1,0), c(2,1,0)),
-#'   label.y = c("Macrovascular complications", ""),
+#'   label.y = c("CIF of macrovascular complications", ""),
 #'   label.x = c("Years from registration", ""),
 #'   limits.y     = list(c(0,1), c(0,0.15)),
 #'   inset.left   = 0.40, inset.bottom = 0.45,
 #'   inset.right  = 1.00, inset.top    = 0.95,
 #'   inset.align_to = "plot",
 #'   inset.legend.position = "none",
-#'   legend.position = "bottom"
+#'   legend.position = "bottom",
+#'   addConfidenceInterval = FALSE
 #' )
 
 #' \dontrun{
