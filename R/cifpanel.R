@@ -228,7 +228,6 @@ cifpanel <- function(
   fonts <- .cif_extract_fonts(dots)
   theme.panel.unified <- .cif_build_theme(font.family = fonts$family, font.size = fonts$size)
 
-  # Build panel plots
   plots <- lapply(seq_len(K), function(i) {
     pair <- code.events[[i]]
     if (outcome.flags[i] == "S") {
@@ -236,34 +235,69 @@ cifpanel <- function(
     } else {
       ce1 <- pair[1]; ce2 <- pair[2]; cc <- pair[3]
     }
-    per_args <- list(
+
+    ## --- 1) 推定引数だけで cifcurve() を呼ぶ（描画引数は入れない）---
+    call_args_est <- .cif_drop_nulls(list(
       formula        = formulas[[i]],
       data           = data,
-      code.event1    = ce1,
-      code.censoring = cc,
-      print.ggsurvfit  = FALSE,
-      return.ggsurvfit = TRUE,
-      # per-panel overrides
       outcome.type   = if (!is.null(outcome.list)) outcome.list[[i]] else NULL,
-      type.y         = if (!is.null(typey.list))   typey.list[[i]]       else NULL,
-      label.y        = if (!is.null(labely.list))  labely.list[[i]]      else NULL,
-      limits.y       = if (!is.null(limsy.list))   limsy.list[[i]]       else NULL,
-      type.x         = if (!is.null(typex.list))   typex.list[[i]]       else NULL,
-      label.x        = if (!is.null(labelx.list))  labelx.list[[i]]      else NULL,
-      limits.x       = if (!is.null(limsx.list))   limsx.list[[i]]       else NULL,
-      breaks.x       = if (!is.null(breakx.list))  breakx.list[[i]]      else NULL,
-      breaks.y       = if (!is.null(breaky.list))  breaky.list[[i]]      else NULL,
-      addConfidenceInterval    = if (!is.null(addCI.list))  addCI.list[[i]]   else NULL,
-      addCensorMark            = if (!is.null(addCen.list)) addCen.list[[i]]  else NULL,
-      addCompetingRiskMark     = if (!is.null(addCR.list))  addCR.list[[i]]   else NULL,
-      addIntercurrentEventMark = if (!is.null(addIC.list))  addIC.list[[i]]   else NULL,
-      addQuantileLine          = if (!is.null(addQ.list))   addQ.list[[i]]    else NULL,
-      label.strata             = if (!is.null(strata.list)) strata.list[[i]]  else NULL
-    )
-    if (!is.null(ce2)) per_args$code.event2 <- ce2
-    call_args <- c(.cif_drop_nulls(per_args), dots)
-    do.call(cifcurve, call_args)
+      code.event1    = ce1,
+      code.event2    = ce2,
+      code.censoring = cc
+      # 必要に応じて：weights, subset.condition, na.action, error, conf.type, conf.int, report.survfit.std.err, label.strata など
+      # ただし描画系(addRiskTable等, label.x/y, limits/breaks, print/return…)は絶対に入れない
+    ))
+    fit_i <- do.call(cifcurve, call_args_est)
+
+    ## --- 2) 描画は cifplot() に渡す（ここに描画引数を集約）---
+    call_args_plot <- .cif_drop_nulls(list(
+      x = fit_i,
+      type.y         = if (!is.null(typey.list))   typey.list[[i]]   else NULL,
+      label.y        = if (!is.null(labely.list))  labely.list[[i]]  else NULL,
+      label.x        = if (!is.null(labelx.list))  labelx.list[[i]]  else NULL,
+      limits.y       = if (!is.null(limsy.list))   limsy.list[[i]]   else NULL,
+      limits.x       = if (!is.null(limsx.list))   limsx.list[[i]]   else NULL,
+      breaks.x       = if (!is.null(breakx.list))  breakx.list[[i]]  else NULL,
+      breaks.y       = if (!is.null(breaky.list))  breaky.list[[i]]  else NULL,
+      addConfidenceInterval    = if (!is.null(addCI.list))  addCI.list[[i]]   else TRUE,
+      addCensorMark            = if (!is.null(addCen.list)) addCen.list[[i]]  else TRUE,
+      addCompetingRiskMark     = if (!is.null(addCR.list))  addCR.list[[i]]   else FALSE,
+      addIntercurrentEventMark = if (!is.null(addIC.list))  addIC.list[[i]]   else FALSE,
+      addQuantileLine          = if (!is.null(addQ.list))   addQ.list[[i]]    else FALSE,
+      label.strata             = if (!is.null(strata.list)) strata.list[[i]]  else NULL,
+      # スタイル系は panel の共通設定をそのまま流用
+      style           = dots$style        %||% "CLASSIC",
+      font.family     = fonts$family,
+      font.size       = fonts$size,
+      legend.position = legend.position
+    ))
+    p_i <- do.call(cifplot, call_args_plot)
+
+    p_i
   })
+
+  obj_surv <- do.call(cifcurve, call_args_estimation_only)  # 描画引数は渡さない
+
+  obj_plot <- cifplot(
+    obj_surv,
+    type.y         = if (!is.null(typey.list))   typey.list[[i]]       else NULL,
+    label.y        = if (!is.null(labely.list))  labely.list[[i]]      else NULL,
+    limits.y       = if (!is.null(limsy.list))   limsy.list[[i]]       else NULL,
+    label.x        = if (!is.null(labelx.list))  labelx.list[[i]]      else NULL,
+    limits.x       = if (!is.null(limsx.list))   limsx.list[[i]]       else NULL,
+    breaks.x       = if (!is.null(breakx.list))  breakx.list[[i]]      else NULL,
+    breaks.y       = if (!is.null(breaky.list))  breaky.list[[i]]      else NULL,
+    addConfidenceInterval    = if (!is.null(addCI.list))  addCI.list[[i]]   else TRUE,
+    addCensorMark            = if (!is.null(addCen.list)) addCen.list[[i]]  else TRUE,
+    addCompetingRiskMark     = if (!is.null(addCR.list))  addCR.list[[i]]   else FALSE,
+    addIntercurrentEventMark = if (!is.null(addIC.list))  addIC.list[[i]]   else FALSE,
+    addQuantileLine          = if (!is.null(addQ.list))   addQ.list[[i]]    else FALSE,
+    label.strata             = if (!is.null(strata.list)) strata.list[[i]]  else NULL,
+    style                    = fonts$family %>% { NULL }  # ここは既存ロジックに合わせて
+  )
+  plots[[i]] <- obj_plot
+
+
 
   # ---- 合成部（inset or grid） ----
   if (isTRUE(use_inset_element)) {

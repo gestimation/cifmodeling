@@ -1,94 +1,100 @@
-#' @title Visualize time-to-event outcomes and intercurrent events
+#' @title Estimate time-to-event curves (KM / AJ)
 #' @description
-#' Estimate and plot survival curves using the Kaplan–Meier estimator or
-#' cumulative incidence curves under competing risks using the Aalen–Johansen estimator.
-#' Returns a \code{survfit}-compatible object and, by default, draws a publication-ready plot via \pkg{ggsurvfit}.
+#' Compute survival curves (KM) or cumulative incidence (AJ) and return a \code{survfit}-compatible object.
+#' Plotting is no longer handled here; use \code{cifplot()}.
 #'
-#' @details
-#' \strong{Estimation:}
-#' \itemize{
-#'   \item \code{outcome.type = "SURVIVAL"}: Kaplan–Meier estimator with Greenwood-type variance.
-#'   \item \code{outcome.type = "COMPETING-RISK"}: Aalen–Johansen estimator for CIF of \code{code.event1}
-#'         using IPCW for the censoring distribution. The returned \code{surv} corresponds to \code{1 - CIF}.
-#' }
-#' \strong{Confidence intervals:}
-#' Constructed on the probability scale with the specified \code{conf.type}.
-#' If \code{conf.type \%in\% c("none","n")}, the plot suppresses CI bands.
-#'
-#' \strong{Plotting:}
-#' By default, the function calls an internal helper \code{call_ggsurvfit()} which adds
-#' confidence bands, risk table, censoring marks, and optional intercurrent-event marks.
-#' For CIF display, set \code{type.y = "risk"}.
-#'
-#' @param formula A model formula specifying the outcome and (optionally) \code{strata()}.
-#' @param data A data frame containing variables in \code{formula}.
-#' @param weights Optional name of the weight variable in \code{data}. Weights must be nonnegative; strictly positive is recommended.
-#' @param subset.condition Optional character expression to subset \code{data} before analysis.
-#' @param na.action Function to handle missing values (default: \code{\link[stats]{na.omit}}).
-
-#' @param outcome.type \code{"SURVIVAL"} (KM) or \code{"COMPETING-RISK"} (AJ).
-#' @param code.event1 Integer code of the event of interest (default \code{1}).
-#' @param code.event2 Integer code of the competing event (default \code{2}).
-#' @param code.censoring Integer code of censoring (default \code{0}).
-
-#' @param error Character specifying variance type used internally. For \code{"SURVIVAL"} typically \code{"greenwood"}.
-#'   For \code{"COMPETING-RISK"} pass options supported by \code{calculateAalenDeltaSE()} (\code{"aalen"}, \code{"delta"}, \code{"none"}).
-#' @param conf.type Character transformation for CI on the probability scale (default \code{"arcsine-square root"}).
-#' @param conf.int numeric two-sided confidence level (default \code{0.95}).
-
-#' @param addConfidenceInterval Logical add \code{add_confidence_interval()} to plot. It calls geom_ribbon() (default \code{TRUE}).
-#' @param addRiskTable Logical add \code{add_risktable(risktable_stats="n.risk")} to plot (default \code{TRUE}).
-#' @param addEstimateTable Logical add \code{add_risktable(risktable_stats="estimate (conf.low, conf.high)")} to plot (default \code{FALSE}).
-#' @param addCensorMark Logical add \code{add_censor_mark()} to plot. It calls geom_point() (default \code{TRUE}).
-#' @param shape.censor.mark Integer point shape for censor marks (default \code{3}).
-#' @param size.censor.mark Numeric point size for censor marks (default \code{2}).
-#' @param addCompetingRiskMark Logical add time marks to describe event2 specified by Event(), usually the competing events. It calls geom_point() (default \code{TRUE}).
-#' @param shape.competing.risk.mark Integer point shape for competing-risk marks (default \code{16}).
-#' @param size.competing.risk.mark Numeric point size for competing-risk marks (default \code{2}).
-#' @param addIntercurrentEventMark Logical overlay user-specified time marks per strata calls geom_point() (default \code{TRUE}).
-#' @param intercurrent.event.time Named list of numeric vectors (names must be mapped to strata labels).
-#' @param shape.intercurrent.event.mark Integer point shape for intercurrent-event marks (default \code{1}).
-#' @param size.intercurrent.event.mark Numeric point size for intercurrent-event marks (default \code{2}).
-#' @param addQuantileLine Logical add \code{add_quantile()} to plot. It calls geom_segment() (default \code{TRUE}).
-#' @param quantile Numeric specify quantile for \code{add_quantile()} (default \code{0.5}).
-
-#' @param type.y \code{NULL} (survival) or \code{"risk"} (display \code{1 - survival} i.e. CIF).
-#' @param label.x Character x-axis labels (default \code{"Time"}).
-#' @param label.y Character y-axis labels (default internally set to \code{"Survival" or \code{"Cumulative incidence"}).
-#' @param label.strata Character vector of labels for strata.
-#' @param limits.x Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,max(out_readSurv$t))}.
-#' @param limits.y Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,1)}.
-#' @param breaks.x Numeric vectors for axis breaks (default \code{NULL}).
-#' @param breaks.y Numeric vectors for axis breaks (default \code{NULL}).
-#' @param use_coord_cartesian Logical specify use of coord_cartesian() (default \code{FALSE}).
-
-#' @param style Character plot theme controls (default \code{"CLASSIC"}).
-#' @param font.family Character plot theme controls (e.g. "sans", "serif", and "mono". default \code{"sans"}).
-#' @param font.size Integer plot theme controls (default \code{12}).
-#' @param legend.position Character specify position of legend: \code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, or \code{"none"} (default \code{"top"}).
-#' @param report.survfit.std.err If \code{TRUE}, report SE on the log-survival scale (survfit's convention). Otherwise SE is on the probability scale.
-#' @param return.ggsurvfit If \code{TRUE} (default), return a \pkg{ggsurvfit} object.
-#' @param print.ggsurvfit If \code{TRUE} (default), draw a \pkg{ggsurvfit} graph
-#' @param filename.ggsurvfit Character save the \pkg{ggsurvfit} graph with the name specified.
-
-#' @returns A \code{survfit} object. For \code{outcome.type="SURVIVAL"}, \code{$surv} is the survival function.
-#' For \code{outcome.type="COMPETING-RISK"}, \code{$surv} equals \code{1 - CIF} for \code{code.event1}.
-#' Standard error and CIs are provided per \code{conf.type}. Note that some methods for \code{survfit} (e.g., \code{residuals.survfit}) may not be supported.
-#'
-#' @seealso \code{\link{polyreg}} for log-odds product models of CIFs; \pkg{ggsurvfit} for plotting helpers.
-
-#' @examples
-#' data(diabetes.complications)
-#' survfit_by_group <- cifcurve(Event(t,epsilon) ~ fruitq, data = diabetes.complications,
-#'                     outcome.type='COMPETING-RISK', error='delta', type.y = 'risk',
-#'                     label.y = 'CIF of diabetic retinopathy', label.x = 'Years from registration')
-#'
-#' @importFrom ggsurvfit ggsurvfit add_confidence_interval add_risktable add_risktable_strata_symbol add_censor_mark add_quantile
-#' @importFrom ggplot2 theme_classic theme_bw element_text labs lims geom_point aes ggsave scale_color_discrete scale_fill_discrete element_text element_rect element_blank scale_color_manual scale_fill_manual scale_linetype_manual scale_shape_manual
-#' @importFrom Rcpp sourceCpp
-#' @useDynLib cifmodeling, .registration = TRUE
+#' @returns A \code{survfit} object. For outcome.type="SURVIVAL", $surv is S(t).
+#' For outcome.type="COMPETING-RISK", $surv equals 1 - CIF_event1(t).
 #' @export
-cifcurve <- function(formula,
+cifcurve <- function(
+    formula,
+    data,
+    weights = NULL,
+    subset.condition = NULL,
+    na.action = na.omit,
+    outcome.type = c("SURVIVAL","COMPETING-RISK"),
+    code.event1 = 1,
+    code.event2 = 2,
+    code.censoring = 0,
+    error = NULL,
+    conf.type = "arcsine-square root",
+    conf.int = 0.95,
+    report.survfit.std.err = FALSE,
+    label.strata = NULL
+) {
+  outcome.type  <- check_outcome.type(match.arg(outcome.type))
+  out_readSurv  <- readSurv(formula, data, weights, code.event1, code.event2, code.censoring, subset.condition, na.action)
+  error <- check_error(error, outcome.type)
+  check_label.strata(out_readSurv, label.strata)
+
+  if (identical(outcome.type, "SURVIVAL")) {
+    out_km <- calculateKM(out_readSurv$t, out_readSurv$d, out_readSurv$w, as.integer(out_readSurv$strata), error)
+    out_km$std.err <- out_km$surv * out_km$std.err
+    out_ci <- calculateCI(out_km, conf.int, conf.type, conf.lower = NULL)
+    if (isTRUE(report.survfit.std.err)) out_km$std.err <- out_km$std.err / out_km$surv
+
+    survfit_object <- list(
+      time      = out_km$time,
+      surv      = out_km$surv,
+      n         = out_km$n,
+      n.risk    = out_km$n.risk,
+      n.event   = out_km$n.event,
+      n.censor  = out_km$n.censor,
+      std.err   = out_km$std.err,
+      upper     = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$upper,
+      lower     = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$lower,
+      conf.type = conf.type,
+      call      = match.call(),
+      type      = "kaplan-meier",
+      method    = "Kaplan-Meier"
+    )
+    if (any(as.integer(out_readSurv$strata) != 1)) {
+      names(out_km$strata) <- levels(as.factor(out_readSurv$strata))
+      survfit_object$strata <- out_km$strata
+    }
+    class(survfit_object) <- "survfit"
+
+  } else {
+    out_aj <- calculateAJ(out_readSurv)  # 既存のまま
+    names(out_aj$strata1) <- levels(as.factor(out_readSurv$strata))
+
+    if (any(as.integer(out_readSurv$strata) != 1)) {
+      n <- table(as.integer(out_readSurv$strata))
+      rep_list <- mapply(rep, n, out_aj$strata1, SIMPLIFY = FALSE)
+      n.risk <- do.call(c, rep_list) - out_aj$n.cum.censor - out_aj$n.cum.event1 - out_aj$n.cum.event2
+    } else {
+      n <- length(out_readSurv$strata)
+      n.risk <- n - out_aj$n.cum.censor - out_aj$n.cum.event1 - out_aj$n.cum.event2
+    }
+    out_aj$std.err <- calculateAalenDeltaSE(out_aj$time1, out_aj$aj1, out_aj$n.event1, out_aj$n.event2,
+                                            n.risk, out_aj$time0, out_aj$km0, out_aj$strata1, error)
+    out_aj$surv <- 1 - out_aj$aj1
+    out_ci <- calculateCI(out_aj, conf.int, conf.type, conf.lower = NULL)
+    if (isTRUE(report.survfit.std.err)) out_aj$std.err <- out_aj$std.err / out_aj$surv
+
+    survfit_object <- list(
+      time        = out_aj$time1,
+      surv        = out_aj$surv,
+      n           = n,
+      n.risk      = n.risk,
+      n.event     = out_aj$n.event1,
+      n.censor    = out_aj$n.censor,
+      std.err     = out_aj$std.err,
+      upper       = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$upper,
+      lower       = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$lower,
+      conf.type   = conf.type,
+      call        = match.call(),
+      type        = "aalen-johansen",
+      method      = "aalen-johansen"
+    )
+    if (any(as.integer(out_readSurv$strata) != 1)) survfit_object$strata <- out_aj$strata1
+    class(survfit_object) <- "survfit"
+  }
+
+  return(survfit_object)
+}
+
+cifcurve_ <- function(formula,
                      data,
                      weights = NULL,
                      subset.condition = NULL,
