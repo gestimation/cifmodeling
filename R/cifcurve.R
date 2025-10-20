@@ -143,7 +143,10 @@ cifcurve <- function(formula,
       type = "kaplan-meier",
       method = "Kaplan-Meier"
     )
-    if (any(as.integer(out_readSurv$strata) != 1)) survfit_object$strata <- out_km$strata
+    if (any(as.integer(out_readSurv$strata) != 1)) {
+      names(out_km$strata) <- levels(as.factor(out_readSurv$strata))
+      survfit_object$strata <- out_km$strata
+    }
     class(survfit_object) <- "survfit"
 
   } else {
