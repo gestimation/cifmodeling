@@ -537,6 +537,101 @@ get_surv <- function(
   }
 
   if (!is.numeric(estimated.strata) || any(estimated.strata < 0))
+    stop("'estimated.strata' must be a non-negative numeric vector of counts.")
+  if (sum(estimated.strata) != length(estimated.time))
+    stop("sum(estimated.strata) must equal length(estimated.time).")
+
+  K <- length(estimated.strata)
+  if (length(strata.levels) != K)
+    stop("'strata.levels' must have length K = length(estimated.strata).")
+
+  if (length(predicted.strata) == 1L) {
+    predicted.strata <- rep(predicted.strata, n_pred)
+  } else if (length(predicted.strata) != n_pred) {
+    stop("Length of predicted.strata must be 1 or match length(predicted.time).")
+  }
+
+  mapped <- if (is.factor(predicted.strata)) {
+    match(as.character(predicted.strata), as.character(strata.levels))
+  } else {
+    match(predicted.strata, strata.levels)
+  }
+  if (any(is.na(mapped))) {
+    bad <- unique(predicted.strata[is.na(mapped)])
+    stop("Some values in predicted.strata are not found in 'strata.levels': ",
+         paste(bad, collapse = ", "))
+  }
+
+  cs <- cumsum(estimated.strata)
+  strata_start <- c(1L, cs[-K] + 1L)
+  strata_end   <- cs
+
+  series_per_stratum <- vector("list", K)
+  for (s in seq_len(K)) {
+    if (estimated.strata[s] == 0L) {
+      series_per_stratum[[s]] <- list(t = numeric(0), s = numeric(0))
+    } else {
+      idx <- strata_start[s]:strata_end[s]
+      series_per_stratum[[s]] <- prepareSeries(estimated.time[idx], estimated.surv[idx])
+    }
+  }
+
+  for (i in seq_len(n_pred)) {
+    s <- mapped[i]
+    ser <- series_per_stratum[[s]]
+    if (!length(ser$t)) {
+      predicted.surv[i] <- 1.0
+    } else {
+      j <- findInterval(predicted.time[i], ser$t, left.open = TRUE)
+      predicted.surv[i] <- if (j > 0L) ser$s[j] else 1.0
+    }
+  }
+
+  predicted.surv
+}
+
+
+get_surv_old <- function(
+    predicted.time,
+    estimated.surv,
+    estimated.time,
+    predicted.strata = NULL,
+    estimated.strata = NULL,
+    strata.levels = NULL
+){
+  if (anyNA(predicted.time)) stop("Invalid predicted.time: contains NA.")
+  if (length(estimated.surv) != length(estimated.time))
+    stop("estimated.surv and estimated.time must have the same length.")
+
+  prepareSeries <- function(time_vec, surv_vec) {
+    ok <- !(is.na(time_vec) | is.na(surv_vec))
+    time_vec <- time_vec[ok]; surv_vec <- surv_vec[ok]
+    if (!length(time_vec)) return(list(t = numeric(0), s = numeric(0)))
+    o <- order(time_vec)
+    t2 <- time_vec[o]; s2 <- surv_vec[o]
+    keep <- !duplicated(t2, fromLast = TRUE)
+    list(t = t2[keep], s = s2[keep])
+  }
+
+  n_pred <- length(predicted.time)
+  predicted.surv <- numeric(n_pred)
+
+  strata_mode <- !(
+    is.null(predicted.strata) || is.null(estimated.strata) || is.null(strata.levels) ||
+      length(estimated.strata) == 0L || length(strata.levels) == 0L
+  )
+
+  if (!strata_mode) {
+    ser <- prepareSeries(estimated.time, estimated.surv)
+    if (!length(ser$t)) return(rep(1.0, n_pred))
+    for (i in seq_len(n_pred)) {
+      idx <- findInterval(predicted.time[i], ser$t, left.open = TRUE)
+      predicted.surv[i] <- if (idx > 0L) ser$s[idx] else 1.0
+    }
+    return(predicted.surv)
+  }
+
+  if (!is.numeric(estimated.strata) || any(estimated.strata < 0))
     stop("'estimated.strata' must be a non-negative integer vector.")
   if (sum(estimated.strata) != length(estimated.time))
     stop("sum(estimated.strata) must equal length(estimated.time).")

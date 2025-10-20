@@ -590,10 +590,13 @@ solveEstimatingEquation <- function(
     max(abs(new - old) / pmax(1, abs(old)))
   }
 
-  is_stalled <- function(x, stall_patience=3, stall_eps=1e-3) {
-    if (length(x) < stall_patience) return(FALSE)
-    recent <- tail(x, stall_patience)
-    (diff(range(recent)) / max(1e-12, mean(recent))) <= stall_eps
+  is_stalled <- function(x, stall_patience = 3, stall_eps = 1e-3) {
+    n <- length(x)
+    if (n < stall_patience) return(FALSE)
+    recent <- x[(n - stall_patience + 1L):n]
+    rng <- range(recent)
+    rel_diff <- (diff(rng) / max(1e-12, mean(recent)))
+    rel_diff <= stall_eps
   }
 
   choose_nleqslv_method <- function(nleqslv.method) {

@@ -237,11 +237,11 @@ create_rr_text <- function(coefficient, cov, index, omit.conf.int=TRUE, conf.int
   conf_high <- coef + critical_value * coef_se
   p_value <- floor(2 * (1 - pnorm(abs(coef) / coef_se)))
   if (omit.conf.int==TRUE) {
-    if (p_value<0.01) text <- paste0("RR=", round(exp(coef), digit=2), ", p<0.01")
-    else text <- paste0("RR=", round(exp(coef), digit=2), ", p=", p_value)
+    if (p_value<0.01) text <- paste0("RR=", round(exp(coef), digits=2), ", p<0.01")
+    else text <- paste0("RR=", round(exp(coef), digits=2), ", p=", p_value)
   } else {
-    if (p_value<0.01) text <- paste0("RR=", round(exp(coef), digit=2), " (", round(exp(conf_low), digit=2), " to ", round(exp(conf_high), digit=2), ", p<0.01", ")")
-    else text <- paste0("RR=", round(exp(coef), digit=2), " (", round(exp(conf_low), digit=2), " to ", round(exp(conf_high), digit=2), ", p=", p_value, ")")
+    if (p_value<0.01) text <- paste0("RR=", round(exp(coef), digits=2), " (", round(exp(conf_low), digits=2), " to ", round(exp(conf_high), digits=2), ", p<0.01", ")")
+    else text <- paste0("RR=", round(exp(coef), digits=2), " (", round(exp(conf_low), digits=2), " to ", round(exp(conf_high), digits=2), ", p=", p_value, ")")
   }
   return(text)
 }
