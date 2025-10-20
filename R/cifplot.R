@@ -1,4 +1,5 @@
-#' @title Visualize time-to-event outcomes and intercurrent events
+#' @title Generate a survival or cumulative incidence curve with marks that represent
+#' censoring, competing risks and intermediate events
 #' @description
 #' Draw a publication-ready plot. Accepts a \code{survfit} object or a \code{formula+data}
 #' (in which case it computes a \code{survfit} via \code{cifcurve()} first).
@@ -39,6 +40,7 @@
 #' @param size.censor.mark Numeric point size for censor marks (default \code{2}).
 #' @param addCompetingRiskMark Logical add time marks to describe event2 specified by Event(), usually the competing events.
 #' It calls geom_point() (default \code{TRUE}).
+#' @param competing.risk.time Named list of numeric vectors (names must be mapped to strata labels).
 #' @param shape.competing.risk.mark Integer point shape for competing-risk marks (default \code{16}).
 #' @param size.competing.risk.mark Numeric point size for competing-risk marks (default \code{2}).
 #' @param addIntercurrentEventMark Logical overlay user-specified time marks per strata calls geom_point() (default \code{TRUE}).
@@ -57,21 +59,84 @@
 #' @param height.ggsave Numeric specify height of the \pkg{ggsurvfit} plot.
 #' @param dpi.ggsave Numeric specify dpi of the \pkg{ggsurvfit} plot.
 
+
+#' @details
+#'
+#' ### Advanced control (not required for typical use)
+#'
+#' The arguments below fine-tune internal estimation and figure appearance.
+#' **Most users do not need to change these defaults.**
+#'
+#' #### Variance & confidence intervals
+#'
+#' | Argument | Description | Default |
+#' |---|---|---|
+#' | `error` | Variance method. For KM: `"greenwood"`, `"tsiatis"`. For CIF: `"aalen"`, `"delta"`, `"none"`. | `NULL` (internally chosen: KM→`"greenwood"`, CIF→`"delta"`) |
+#' | `conf.type` | CI transformation on probability scale: `"plain"`, `"log"`, `"log-log"`, `"arcsin"`, `"logit"`, or `"none"`. | `"arcsine-square root"` |
+#' | `conf.int` | Two-sided CI level. | `0.95` |
+#'
+#' #### Graphical layers (toggle on/off)
+#'
+#' | Argument | Effect | Default |
+#' |---|---|---|
+#' | `addConfidenceInterval` | Add CI ribbon (`geom_ribbon()`). | `TRUE` |
+#' | `addRiskTable` | Add numbers-at-risk table below the plot. | `TRUE` |
+#' | `addEstimateTable` | Add estimates & CIs table. | `FALSE` |
+#' | `addCensorMark` | Add censoring marks (`geom_point()`). | `TRUE` |
+#' | `addCompetingRiskMark` | Add marks for Event2 (competing events) at supplied times. | `FALSE` |
+#' | `addIntercurrentEventMark` | Add user-specified intercurrent event marks at supplied times. | `FALSE` |
+#' | `addQuantileLine` | Add quantile line(s) via `add_quantile()` (`geom_segment()`). | `FALSE` |
+#' | `quantile` | Quantile for `addQuantileLine`. | `0.5` |
+#'
+#' #### Time marks (inputs for optional layers)
+#'
+#' | Argument | Description | Default |
+#' |---|---|---|
+#' | `competing.risk.time` | **Named list** of numeric vectors: per-stratum times for competing events (names must match legend strata). Typically created by `read_time_to_event()`. | `list()` |
+#' | `intercurrent.event.time` | **Named list** of numeric vectors: per-stratum times for intercurrent events (names must match legend strata). Typically created by `read_time_to_event()`. | `list()` |
+#'
+#' #### Appearance of marks (styling)
+#'
+#' | Argument | Applies to | Default |
+#' |---|---|---|
+#' | `shape.censor.mark` / `size.censor.mark` | Censor marks | `3` / `2` |
+#' | `shape.competing.risk.mark` / `size.competing.risk.mark` | Competing-risk marks | `16` / `2` |
+#' | `shape.intercurrent.event.mark` / `size.intercurrent.event.mark` | Intercurrent marks | `1` / `2` |
+#'
+#' #### Axes, legend, and zoom
+#'
+#' | Argument | Description | Default |
+#' |---|---|---|
+#' | `limits.x`, `limits.y` | Axis limits (`c(min, max)`). | Auto |
+#' | `breaks.x`, `breaks.y` | Tick breaks for x/y axes. | Auto |
+#' | `use_coord_cartesian` | Use `coord_cartesian()` for zooming (no data drop). | `FALSE` |
+#' | `legend.position` | Legend placement: `"top"`, `"right"`, `"bottom"`, `"left"`, `"none"`. | `"top"` |
+#'
+#' #### Export (optional convenience)
+#'
+#' | Argument | Description | Default |
+#' |---|---|---|
+#' | `filename.ggsave` | If non-`NULL`, save the plot with `ggsave()`. | `NULL` |
+#' | `width.ggsave`, `height.ggsave`, `dpi.ggsave` | Size/DPI passed to `ggsave()`. | `6`, `6`, `300` |
+#'
+#' **Notes.**
+#' - For CIF displays, set `type.y = "risk"`; for KM, use `type.y = NULL` (survival scale).
+#' - Event coding can be controlled via `code.event1`, `code.event2`, `code.censoring`.
+#'   For ADaM-style data, use `code.event1 = 0`, `code.censoring = 1`.
+#' - Per-stratum time lists should have names identical to plotted strata labels.
+
 #' @return A \code{ggplot} object.
 #' For \code{outcome.type="COMPETING-RISK"}, \code{$surv} equals \code{1 - CIF} for \code{code.event1}.
 #' Standard error and CIs are provided per \code{conf.type}. Note that some methods for \code{survfit} (e.g., \code{residuals.survfit}) may not be supported.
 
 #' @examples
 #' data(diabetes.complications)
-#' survfit_by_group <- cifcurve(Event(t,epsilon) ~ fruitq, data = diabetes.complications,
-#'                     outcome.type='COMPETING-RISK', error='delta')
-#' cifplot(survfit_by_group, type.y = 'risk', label.y = 'CIF of diabetic retinopathy', label.x = 'Years from registration', addConfidenceInterval=FALSE, style="MONOCHROME")
-#' out_readEventTime <- readEventTime(Event(t,epsilon) ~ fruitq, data = diabetes.complications, which_event = "event2")
-#' cifplot(survfit_by_group, type.y = 'risk', label.y = 'CIF of diabetic retinopathy', label.x = 'Years from registration',
-#' addCompetingRiskMark=TRUE, competing.risk.time=out_readEventTime)
+#' cifplot(Event(t,epsilon) ~ fruitq, data = diabetes.complications, addRiskTable = FALSE,
+#'         label.y = 'CIF of diabetic retinopathy', label.x = 'Years from registration')
 
 #' @importFrom ggsurvfit ggsurvfit add_confidence_interval add_risktable add_risktable_strata_symbol add_censor_mark add_quantile
 #' @importFrom ggplot2 theme_classic theme_bw element_text labs lims geom_point aes ggsave scale_color_discrete scale_fill_discrete element_text element_rect element_blank scale_color_manual scale_fill_manual scale_linetype_manual scale_shape_manual
+#' @importFrom grDevices gray
 #' @seealso \code{\link{cifcurve}} for the estimators; \code{\link{cifpanel}} for display of multiple plots; \pkg{ggsurvfit} for plotting helpers; \code{\link{polyreg}} for log-odds product models of CIFs.
 
 #' @export
@@ -125,7 +190,7 @@ cifplot <- function(
   if (!inherits(x, "survfit")) {
     if (is.null(data)) stop("When `x` is a formula, `data` must be provided.")
     if (addCompetingRiskMark==TRUE && length(competing.risk.time)==0) {
-      competing.risk.time <- readEventTime(x, data=data, which_event = "event2", code.event1=code.event1, code.event2=code.event2, code.censoring=code.censoring)
+      competing.risk.time <- read_time_to_event(x, data=data, which_event = "event2", code.event1=code.event1, code.event2=code.event2, code.censoring=code.censoring)
     }
     x <- cifcurve(x, data = data, weights=weights, subset.condition=subset.condition, na.action=na.action,
                   outcome.type=outcome.type, code.event1=code.event1, code.event2=code.event2, code.censoring=code.censoring,
@@ -166,7 +231,7 @@ cifplot <- function(
     font.size                     = font.size,
     legend.position               = legend.position
   )
-  if (!is.null(filename.ggsave)) ggplot2::ggsave(filename.ggsave, plot = p, width = width.ggsave, height = height.ggsave, dpi.ggsave = dpi)
+  if (!is.null(filename.ggsave)) ggplot2::ggsave(filename.ggsave, plot = p, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave)
   return(p)
 }
 
@@ -184,6 +249,7 @@ cifplot <- function(
 #' @param shape.censor.mark Integer point shape for censor marks (default \code{3}).
 #' @param size.censor.mark Numeric point size for censor marks (default \code{2}).
 #' @param addCompetingRiskMark Logical add time marks to describe event2 specified by Event(), usually the competing events. It calls geom_point() (default \code{TRUE}).
+#' @param competing.risk.time Named list of numeric vectors (names must be mapped to strata labels).
 #' @param shape.competing.risk.mark Integer point shape for competing-risk marks (default \code{16}).
 #' @param size.competing.risk.mark Numeric point size for competing-risk marks (default \code{2}).
 #' @param addIntercurrentEventMark Logical overlay user-specified time marks per strata calls geom_point() (default \code{TRUE}).
@@ -210,9 +276,8 @@ cifplot <- function(
 #' @param legend.position Character specify position of legend: \code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, or \code{"none"} (default \code{"top"}).
 
 #' @return A \code{ggplot} object.
-#' Plot survival or cumulative incidence curves with ggsurvfit
-#' ...
-#' ...
+#' @keywords internal
+#' @noRd
 call_ggsurvfit <- function(
     survfit_object,
     out_readSurv = NULL,
@@ -398,11 +463,11 @@ create_rr_text <- function(coefficient, cov, index, omit.conf.int=TRUE, conf.int
   conf_high <- coef + critical_value * coef_se
   p_value <- floor(2 * (1 - pnorm(abs(coef) / coef_se)))
   if (omit.conf.int==TRUE) {
-    if (p_value<0.01) text <- paste0("RR=", round(exp(coef), digit=2), ", p<0.01")
-    else text <- paste0("RR=", round(exp(coef), digit=2), ", p=", p_value)
+    if (p_value<0.01) text <- paste0("RR=", round(exp(coef), digits=2), ", p<0.01")
+    else text <- paste0("RR=", round(exp(coef), digits=2), ", p=", p_value)
   } else {
-    if (p_value<0.01) text <- paste0("RR=", round(exp(coef), digit=2), " (", round(exp(conf_low), digit=2), " to ", round(exp(conf_high), digit=2), ", p<0.01", ")")
-    else text <- paste0("RR=", round(exp(coef), digit=2), " (", round(exp(conf_low), digit=2), " to ", round(exp(conf_high), digit=2), ", p=", p_value, ")")
+    if (p_value<0.01) text <- paste0("RR=", round(exp(coef), digits=2), " (", round(exp(conf_low), digits=2), " to ", round(exp(conf_high), digits=2), ", p<0.01", ")")
+    else text <- paste0("RR=", round(exp(coef), digits=2), " (", round(exp(conf_low), digits=2), " to ", round(exp(conf_high), digits=2), ", p=", p_value, ")")
   }
   return(text)
 }
@@ -484,6 +549,21 @@ check_ggsurvfit <- function(
     }
   }
 
+  check_breaks <- function(bk, nm, lims) {
+    if (is.null(bk) || is.function(bk)) return(invisible())
+    if (!is.numeric(bk)) {
+      warning(sprintf("`%s` should be numeric (or a function).", nm), call. = FALSE); return(invisible())
+    }
+    if (!is_nondec(bk)) {
+      warning(sprintf("`%s` must be non-decreasing.", nm), call. = FALSE)
+    }
+    if (!is.null(lims) && is_len2_num(lims)) {
+      if (any(bk < lims[1] | bk > lims[2], na.rm = TRUE)) {
+        warning(sprintf("Some `%s` are outside plotting range [%g, %g].", nm, lims[1], lims[2]), call. = FALSE)
+      }
+    }
+    invisible()
+  }
   check_breaks(breaks.x, "breaks.x", limits.x)
   check_breaks(breaks.y, "breaks.y", limits.y)
 
@@ -499,6 +579,16 @@ check_ggsurvfit <- function(
   else if (is.null(label.y) && identical(type.y, "survival") && identical(survfit_object$type, "aalen-johansen")) "1 - cumulative incidence"
   else label.y
 
+  coerce_conf <- function(survfit_object, conf.type) {
+    if (!is.null(survfit_object$lower) && !is.null(survfit_object$upper)) return(survfit_object)
+    if (conf.type %in% c("none","n") || length(survfit_object$strata) > 2) {
+      x <- survfit_object
+      x$lower <- x$surv
+      x$upper <- x$surv
+      return(x)
+    }
+    return(survfit_object)
+  }
   survfit_object <- coerce_conf(survfit_object, conf.type)
 
   if (identical(style, "MONOCHROME")) options("ggsurvfit.switch-color-linetype" = TRUE)

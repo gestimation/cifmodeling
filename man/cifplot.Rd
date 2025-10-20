@@ -2,7 +2,8 @@
 % Please edit documentation in R/cifplot.R
 \name{cifplot}
 \alias{cifplot}
-\title{Visualize time-to-event outcomes and intercurrent events}
+\title{Generate a survival or cumulative incidence curve with marks that represent
+censoring, competing risks and intermediate events}
 \usage{
 cifplot(
   x,
@@ -111,6 +112,8 @@ For \code{"COMPETING-RISK"} pass options supported by \code{calculateAalenDeltaS
 \item{addCompetingRiskMark}{Logical add time marks to describe event2 specified by Event(), usually the competing events.
 It calls geom_point() (default \code{TRUE}).}
 
+\item{competing.risk.time}{Named list of numeric vectors (names must be mapped to strata labels).}
+
 \item{shape.competing.risk.mark}{Integer point shape for competing-risk marks (default \code{16}).}
 
 \item{size.competing.risk.mark}{Numeric point size for competing-risk marks (default \code{2}).}
@@ -157,15 +160,83 @@ Draw a publication-ready plot. Accepts a \code{survfit} object or a \code{formul
 This function calls an internal helper \code{call_ggsurvfit()} which adds confidence bands,
 risk table, censoring marks, and optional competing-risk and intercurrent-event marks.
 For CIF display, set \code{type.y = "risk"}.
+
+\subsection{Advanced control (not required for typical use)}{
+
+The arguments below fine-tune internal estimation and figure appearance.
+\strong{Most users do not need to change these defaults.}
+\subsection{Variance & confidence intervals}{\tabular{lll}{
+   Argument \tab Description \tab Default \cr
+   \code{error} \tab Variance method. For KM: \code{"greenwood"}, \code{"tsiatis"}. For CIF: \code{"aalen"}, \code{"delta"}, \code{"none"}. \tab \code{NULL} (internally chosen: KM→\code{"greenwood"}, CIF→\code{"delta"}) \cr
+   \code{conf.type} \tab CI transformation on probability scale: \code{"plain"}, \code{"log"}, \code{"log-log"}, \code{"arcsin"}, \code{"logit"}, or \code{"none"}. \tab \code{"arcsine-square root"} \cr
+   \code{conf.int} \tab Two-sided CI level. \tab \code{0.95} \cr
+}
+
+}
+
+\subsection{Graphical layers (toggle on/off)}{\tabular{lll}{
+   Argument \tab Effect \tab Default \cr
+   \code{addConfidenceInterval} \tab Add CI ribbon (\code{geom_ribbon()}). \tab \code{TRUE} \cr
+   \code{addRiskTable} \tab Add numbers-at-risk table below the plot. \tab \code{TRUE} \cr
+   \code{addEstimateTable} \tab Add estimates & CIs table. \tab \code{FALSE} \cr
+   \code{addCensorMark} \tab Add censoring marks (\code{geom_point()}). \tab \code{TRUE} \cr
+   \code{addCompetingRiskMark} \tab Add marks for Event2 (competing events) at supplied times. \tab \code{FALSE} \cr
+   \code{addIntercurrentEventMark} \tab Add user-specified intercurrent event marks at supplied times. \tab \code{FALSE} \cr
+   \code{addQuantileLine} \tab Add quantile line(s) via \code{add_quantile()} (\code{geom_segment()}). \tab \code{FALSE} \cr
+   \code{quantile} \tab Quantile for \code{addQuantileLine}. \tab \code{0.5} \cr
+}
+
+}
+
+\subsection{Time marks (inputs for optional layers)}{\tabular{lll}{
+   Argument \tab Description \tab Default \cr
+   \code{competing.risk.time} \tab \strong{Named list} of numeric vectors: per-stratum times for competing events (names must match legend strata). Typically created by \code{read_time_to_event()}. \tab \code{list()} \cr
+   \code{intercurrent.event.time} \tab \strong{Named list} of numeric vectors: per-stratum times for intercurrent events (names must match legend strata). Typically created by \code{read_time_to_event()}. \tab \code{list()} \cr
+}
+
+}
+
+\subsection{Appearance of marks (styling)}{\tabular{lll}{
+   Argument \tab Applies to \tab Default \cr
+   \code{shape.censor.mark} / \code{size.censor.mark} \tab Censor marks \tab \code{3} / \code{2} \cr
+   \code{shape.competing.risk.mark} / \code{size.competing.risk.mark} \tab Competing-risk marks \tab \code{16} / \code{2} \cr
+   \code{shape.intercurrent.event.mark} / \code{size.intercurrent.event.mark} \tab Intercurrent marks \tab \code{1} / \code{2} \cr
+}
+
+}
+
+\subsection{Axes, legend, and zoom}{\tabular{lll}{
+   Argument \tab Description \tab Default \cr
+   \code{limits.x}, \code{limits.y} \tab Axis limits (\code{c(min, max)}). \tab Auto \cr
+   \code{breaks.x}, \code{breaks.y} \tab Tick breaks for x/y axes. \tab Auto \cr
+   \code{use_coord_cartesian} \tab Use \code{coord_cartesian()} for zooming (no data drop). \tab \code{FALSE} \cr
+   \code{legend.position} \tab Legend placement: \code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, \code{"none"}. \tab \code{"top"} \cr
+}
+
+}
+
+\subsection{Export (optional convenience)}{\tabular{lll}{
+   Argument \tab Description \tab Default \cr
+   \code{filename.ggsave} \tab If non-\code{NULL}, save the plot with \code{ggsave()}. \tab \code{NULL} \cr
+   \code{width.ggsave}, \code{height.ggsave}, \code{dpi.ggsave} \tab Size/DPI passed to \code{ggsave()}. \tab \code{6}, \code{6}, \code{300} \cr
+}
+
+
+\strong{Notes.}
+\itemize{
+\item For CIF displays, set \code{type.y = "risk"}; for KM, use \code{type.y = NULL} (survival scale).
+\item Event coding can be controlled via \code{code.event1}, \code{code.event2}, \code{code.censoring}.
+For ADaM-style data, use \code{code.event1 = 0}, \code{code.censoring = 1}.
+\item Per-stratum time lists should have names identical to plotted strata labels.
+}
+}
+
+}
 }
 \examples{
 data(diabetes.complications)
-survfit_by_group <- cifcurve(Event(t,epsilon) ~ fruitq, data = diabetes.complications,
-                    outcome.type='COMPETING-RISK', error='delta')
-cifplot(survfit_by_group, type.y = 'risk', label.y = 'CIF of diabetic retinopathy', label.x = 'Years from registration', addConfidenceInterval=FALSE, style="MONOCHROME")
-out_readEventTime <- readEventTime(Event(t,epsilon) ~ fruitq, data = diabetes.complications, which_event = "event2")
-cifplot(survfit_by_group, type.y = 'risk', label.y = 'CIF of diabetic retinopathy', label.x = 'Years from registration',
-addCompetingRiskMark=TRUE, competing.risk.time=out_readEventTime)
+cifplot(Event(t,epsilon) ~ fruitq, data = diabetes.complications, addRiskTable = FALSE,
+        label.y = 'CIF of diabetic retinopathy', label.x = 'Years from registration')
 }
 \seealso{
 \code{\link{cifcurve}} for the estimators; \code{\link{cifpanel}} for display of multiple plots; \pkg{ggsurvfit} for plotting helpers; \code{\link{polyreg}} for log-odds product models of CIFs.

@@ -1,5 +1,5 @@
 #' @title Fit regression models of cumulative incidence functions based on polytomous
-#' log-odds products
+#' log-odds products and stratified IPCW estimator
 #' @description Fits regression models and estimates multiplicative effects of
 #' a categorical exposure under several outcome types, including competing risks,
 #' survival and binomial outcomes
@@ -93,9 +93,118 @@
 #'   of each exposure level. Defaults to \code{TRUE}.
 #' @param prob.bound Numeric lower bound used to truncate probabilities away
 #'   from 0 and 1. Defaults to \code{1e-5}.
+#'
+#' @details
+#'
+#' ### Overview
+#' `polyreg()` fits regression models for cumulative incidence (AJ), survival (KM),
+#' or binomial outcomes using **polytomous log-odds products**. Specify the outcome
+#' on the LHS of `nuisance.model` via `Event(time, status)` (competing risks/survival)
+#' or a 0/1 response (binomial). The categorical **exposure** is named with the
+#' `exposure` argument (levels are inferred from `data` and compared against
+#' `code.exposure.ref`).
+#'
+#' ### Outcome type and time point
+#'
+#' - `outcome.type`: `"COMPETING-RISK"` (Aalen–Johansen), `"SURVIVAL"` (Kaplan–Meier),
+#'   `"BINOMIAL"`, `"PROPORTIONAL"`, or `"POLY-PROPORTIONAL"`.
+#' - `time.point`: required for `"COMPETING-RISK"` and `"SURVIVAL"`; ignored for
+#'   `"BINOMIAL"`/`"PROPORTIONAL"` families.
+#'
+#' ### Event/status coding
+#'
+#' Use integer codes to map your data to analysis types:
+#'
+#' | Setting | Codes | Meaning |
+#' |---|---|---|
+#' | Competing risk | `code.event1`, `code.event2`, `code.censoring` | event of interest / competing event / censor |
+#' | Survival (KM)  | `code.event1`, `code.censoring`               | event / censor |
+#' | ADaM-ADTTE     | `code.event1 = 0`, `code.censoring = 1`       | set to match ADaM convention |
+#'
+#' The **stratification** variable `strata` (optional) adjusts for dependent
+#' censoring in IPCW-style steps when applicable.
+#'
+#' ### Effect measures (categorical exposure)
+#'
+#' Choose the effect scale for event 1 and (optionally) event 2:
+#'
+#' | Argument | Applies to | Choices | Default |
+#' |---|---|---|---|
+#' | `effect.measure1` | primary event | `"RR"`, `"OR"`, `"SHR"` | `"RR"` |
+#' | `effect.measure2` | competing event | `"RR"`, `"OR"`, `"SHR"` | `"RR"` |
+#'
+#' - `RR`: risk ratio at `time.point` (AJ/KM contexts).
+#' - `OR`: odds ratio on the log-odds-product parameterization.
+#' - `SHR`: subdistribution hazard ratio (interpreted in the log-odds-product model).
+#'
+#' ### Inference and intervals
+#'
+#' | Argument | Meaning | Default |
+#' |---|---|---|
+#' | `conf.level` | Wald-type CI level | `0.95` |
+#' | `report.sandwich.conf` | Sandwich variance CIs | `TRUE` |
+#' | `report.boot.conf` | Bootstrap CIs (if `TRUE` or `NULL` with suitable outcome) | `NULL` |
+#' | `boot.bca` | Use BCa intervals (else normal approx) | `FALSE` |
+#' | `boot.parameter1` | Bootstrap reps | `200` |
+#' | `boot.parameter2` | Seed for resampling | `46` |
+#'
+#' Notes:
+#' - If both sandwich and bootstrap are requested, results may be reported side by side.
+#' - For heavy data, prefer sandwich CIs; use bootstrap to probe small-sample robustness.
+#'
+#' ### Optimization & solver controls (advanced)
+#'
+#' `polyreg()` solves estimating equations with optional inner routines.
+#'
+#' | Argument | Role | Default |
+#' |---|---|---|
+#' | `nleqslv.method` | Root solver / optimizer backend | `"nleqslv"` |
+#' | `optim.parameter1` / `optim.parameter2` | Outer/inner convergence tolerances | `1e-6`, `1e-6` |
+#' | `optim.parameter3` | Parameter absolute bound | `100` |
+#' | `optim.parameter4` | Max outer iterations | `50` |
+#' | `optim.parameter5` | Max `nleqslv` iters per outer | `50` |
+#' | `optim.parameter6:13` | Levenberg–Marquardt controls (iters/tolerances/lambda) | see defaults |
+#'
+#' Tips:
+#' - If convergence warnings appear, relax/tighten tolerances or cap the parameter
+#'   bound (`optim.parameter3`). Inspect `report.optim.convergence = TRUE`.
+#'
+#' ### Data handling and stability
+#'
+#' | Argument | Meaning | Default |
+#' |---|---|---|
+#' | `subset.condition` | An expression (as character) to subset `data` | `NULL` |
+#' | `na.action` | NA handling function | `stats::na.omit` |
+#' | `should.normalize.covariate` | Center/scale nuisance covariates | `TRUE` |
+#' | `should.terminate.time.point` | Truncate support by exposure-wise follow-up maxima | `TRUE` |
+#' | `prob.bound` | Truncate probabilities away from 0/1 (numerical guard) | `1e-5` |
+#' | `data.initial.values` | Optional starting values data frame | `NULL` |
+#'
+#' ### Returned object and downstream use
+#'
+#' The result is a list containing:
+#' - `coefficient` and `cov`: estimates and variance–covariance matrix.
+#' - `summary`: a tidy data frame (ready for `modelsummary::msummary()`), with
+#'   effect sizes and intervals on the chosen scale (`RR`/`OR`/`SHR`).
+#' - `diagnosis.statistics`: IPCW weights, influence functions, and predicted
+#'   potential outcomes for diagnostics and sensitivity checks.
+#'
+#' You can visualize model-implied curves with `cifplot()` (by passing fitted
+#' objects or re-using the same `Event()`/`Surv()` specification).
+#'
+#' ### Reproducibility and conventions
+#'
+#' - Set `boot.parameter2` for reproducible bootstrap results.
+#' - Match CDISC ADaM conventions via `code.event1 = 0`, `code.censoring = 1`
+#'   (and, if applicable, `code.event2` for competing events).
+#' - Use `strata` when censoring may depend on baseline factors (IPCW stratification).
+
 #' @importFrom nleqslv nleqslv
 #' @importFrom boot boot boot.ci
 #' @importFrom Rcpp sourceCpp
+#' @importFrom stats IQR as.formula binomial coef glm mad median
+#' @importFrom stats model.extract model.frame model.matrix na.omit na.pass
+#' @importFrom stats pnorm qnorm rbinom reformulate rexp sd setNames terms time var
 #' @useDynLib cifmodeling, .registration = TRUE
 #'
 #' @return A list containing fitted exposure effects and supporting results. The

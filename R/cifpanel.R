@@ -1,4 +1,5 @@
-#' @title Arrange multiple survival/CIF plots into a panel (grid or inset)
+#' @title Generates a multi-panel figure for survival or cumulative incidence curves,
+#' arranged either in a grid layout or as an inset overlay
 #' @description
 #' Build a panel of publication-ready time-to-event plots by combining
 #' \code{\link{cifcurve}} (estimation) and \code{\link{cifplot}} (rendering).
@@ -41,7 +42,7 @@
 #' @param label.strata Optional list of character vectors for legend labels per panel
 #'   (passed to \code{\link{cifplot}}).
 #' @param limits.x,limits.y Optional vectors/lists of numeric length-2 axis limits per panel.
-#' @param break.x,break.y Optional vectors/lists of axis breaks per panel (forwarded to
+#' @param breaks.x,breaks.y Optional vectors/lists of axis breaks per panel (forwarded to
 #'   \code{breaks.x} / \code{breaks.y} in \code{\link{cifplot}}).
 #' @param addConfidenceInterval,addCensorMark,addCompetingRiskMark,addIntercurrentEventMark,addQuantileLine
 #'   Optional logical vectors/lists per panel to toggle features in \code{\link{cifplot}}.
@@ -59,16 +60,114 @@
 #' @param inset.align_to One of \code{"panel"}, \code{"plot"}, or \code{"full"}.
 #' @param inset.legend.position Legend position for the inset plot (e.g., \code{"none"}).
 #' @param print.panel If \code{TRUE}, print the composed panel.
-#' @param filename.ggsave Optional file path to save the composed panel.
-#' @param width.ggsave,height.ggsave,dpi.ggsave Size parameters for saving; if width/height
-#'   are \code{NULL}, defaults depend on grid size or inset mode.
+#' @param filename.ggsave Character save the composed panel with the path and name specified.
+#' @param width.ggsave Numeric specify width of the composed panel.
+#' @param height.ggsave Numeric specify height of the composed panel.
+#' @param dpi.ggsave Numeric specify dpi of the composed panel.
 #' @param ... Additional arguments forwarded to \code{\link{cifplot}} (e.g., \code{style},
 #'   \code{font.family}, \code{font.size}, etc.). Panel-wise overrides provided via explicit
 #'   arguments take precedence over \code{...}.
 #'
+#' @details
+#'
+#' ### Overview
+#' `cifpanel()` composes multiple survival/CIF plots into a single figure.
+#' For each panel, it estimates curves via `cifcurve()` and renders them with
+#' `cifplot()`. You can supply a single `formula` reused across panels or a
+#' list in `formulas` (one per panel). When both are provided, `formulas` wins.
+#'
+#' ### Outcome type & event coding
+#'
+#' - Use `outcome.type` to set per-panel estimator (`"SURVIVAL"`=KM, `"COMPETING-RISK"`=AJ).
+#' - Alternatively, pass `code.events` per panel to infer the type:
+#'   - length 2 = SURVIVAL: `c(event1, censor)`
+#'   - length 3 = COMPETING-RISK: `c(event1, event2, censor)`
+#' - If `outcome.type` is `NULL`, the function infers each panel from its
+#'   `code.events[[i]]` length. When both are given, `outcome.type` takes precedence.
+#'
+#' ### Panel-wise vs shared arguments
+#'
+#' Many arguments accept a **scalar** (recycled to all panels) or a **list/vector**
+#' (one entry per panel). Precedence: **panel-wise explicit values** >
+#' **shared scalar** > **internal defaults**. Length-1 inputs are recycled.
+#'
+#' ### Grid vs inset composition
+#'
+#' - **Grid mode** (`use_inset_element = FALSE`, default): plots are arranged with
+#'   `patchwork::wrap_plots()` and `plot_layout()`. If `legend.collect = TRUE`,
+#'   legends are collected across panels where possible.
+#' - **Inset mode** (`use_inset_element = TRUE`): the **second** plot is overlaid
+#'   into the **first** using `patchwork::inset_element()`. Only the first two
+#'   plots are used; extra plots are ignored. Control the inset box with
+#'   `inset.left`, `inset.bottom`, `inset.right`, `inset.top`, and its
+#'   reference frame via `inset.align_to` (`"panel"`, `"plot"`, or `"full"`).
+#'
+#' ### Advanced panel controls (forwarded to `cifplot()`)
+#'
+#' The following arguments allow **per-panel** control by supplying vectors/lists,
+#' or **shared** control by supplying scalars. They are forwarded to `cifplot()`.
+#'
+#' #### Scale & labels
+#'
+#' | Argument | Meaning | Default |
+#' |---|---|---|
+#' | `type.y` | `"risk"` (CIF y-axis) or `NULL` (survival). | inferred |
+#' | `label.x`, `label.y` | Axis labels per panel. | auto |
+#' | `label.strata` | Legend labels per panel. | from data |
+#' | `limits.x`, `limits.y` | Axis limits `c(min, max)`. | auto |
+#' | `breaks.x`, `breaks.y` | Axis breaks (forwarded to `breaks.x`/`breaks.y`). | auto |
+#'
+#' #### Plot layers (toggles)
+#'
+#' | Argument | Effect | Default |
+#' |---|---|---|
+#' | `addConfidenceInterval` | CI ribbon. | `TRUE` |
+#' | `addCensorMark` | Censor marks. | `TRUE` |
+#' | `addCompetingRiskMark` | Marks for event2 at supplied times. | `FALSE` |
+#' | `addIntercurrentEventMark` | User-specified intercurrent marks. | `FALSE` |
+#' | `addQuantileLine` | Quantile line(s). | `FALSE` |
+#'
+#' *(Time marks inputs such as `competing.risk.time` / `intercurrent.event.time`
+#' can be given via `...` if needed; names must match strata labels.)*
+#'
+#' ### Legend & annotations
+#'
+#' - `legend.position`: `"top"`, `"right"`, `"bottom"`, `"left"`, or `"none"` (applies to all panels).
+#' - Grid mode: `legend.collect = TRUE` attempts a shared legend.
+#' - Panel annotations: `title.panel`, `subtitle.panel`, `caption.panel`.
+#' - Tagging: `tag_levels.panel` is passed to `patchwork::plot_annotation()`.
+#' - In inset mode, `title.plot = c(title_base, title_inset)` labels the two plots.
+#'
+#' ### Export (optional)
+#'
+#' If `filename.ggsave` is non-`NULL`, the composed panel is saved with
+#' `ggplot2::ggsave()` using `width.ggsave`, `height.ggsave`, and `dpi.ggsave`.
+#' Otherwise, the function returns objects without saving.
+#'
+#' ### Value
+#'
+#' Returns **invisibly**:
+#' `list(plots = <list of ggplot objects>, out_patchwork = <patchwork object>)`.
+#' Print the latter to display the composed panel. If `print.panel = TRUE`,
+#' printing is done automatically.
+#'
+#' ### Notes & tips
+#'
+#' - Mixed panel types are supported (e.g., AJ in panel 1; KM in panel 2).
+#' - If `formulas` is shorter than the grid capacity, empty slots are ignored.
+#' - When supplying vectors/lists per panel, their lengths must match the number
+#'   of panels; length-1 inputs are recycled; otherwise an error is thrown.
+#' - For CIF displays, set `type.y = "risk"` in the relevant panels.
+#' - ADaM-style coding can be expressed via `code.events` (e.g., `c(0,1)` for KM:
+#'   `event1=0`, `censor=1`).
+#' - Additional graphical options (e.g., theme) can be added post-hoc to each
+#'   element of `plots` or to the composed `out_patchwork`.
+
+#' @importFrom patchwork wrap_plots plot_layout inset_element plot_annotation
 #' @return An invisible list: \code{list(plots = <list of ggplot objects>, out_patchwork = <patchwork object>)}.
 #'
 #' @examples
+#' data(diabetes.complications)
 #' cifpanel(
 #'   title.panel = "A comparison of cumulative incidence of competing events",
 #'   rows.columns.panel = c(1,2),
@@ -132,8 +231,8 @@ cifpanel <- function(
     label.strata = NULL,
     limits.x     = NULL,
     limits.y     = NULL,
-    break.x      = NULL,
-    break.y      = NULL,
+    breaks.x      = NULL,
+    breaks.y      = NULL,
     addConfidenceInterval   = NULL,
     addCensorMark           = NULL,
     addCompetingRiskMark    = NULL,
@@ -218,8 +317,8 @@ cifpanel <- function(
     }
   }
 
-  breakx.list <- toL(break.x); if (!is.null(breakx.list)) breakx.list <- rec(breakx.list, K)
-  breaky.list <- toL(break.y); if (!is.null(breaky.list)) breaky.list <- rec(breaky.list, K)
+  breakx.list <- toL(breaks.x); if (!is.null(breakx.list)) breakx.list <- rec(breakx.list, K)
+  breaky.list <- toL(breaks.y); if (!is.null(breaky.list)) breaky.list <- rec(breaky.list, K)
 
   addCI.list   <- toL(addConfidenceInterval);    if (!is.null(addCI.list))   addCI.list   <- rec(addCI.list, K)
   addCen.list  <- toL(addCensorMark);            if (!is.null(addCen.list))  addCen.list  <- rec(addCen.list, K)
@@ -247,8 +346,8 @@ cifpanel <- function(
   if (!is.null(typex.list))   kill_names <- c(kill_names, "type.x")
   if (!is.null(labelx.list))  kill_names <- c(kill_names, "label.x")
   if (!is.null(limsx.list))   kill_names <- c(kill_names, "limits.x")
-  if (!is.null(breakx.list))  kill_names <- c(kill_names, "breaks.x","break.x")
-  if (!is.null(breaky.list))  kill_names <- c(kill_names, "breaks.y","break.y")
+  if (!is.null(breakx.list))  kill_names <- c(kill_names, "breaks.x","breaks.x")
+  if (!is.null(breaky.list))  kill_names <- c(kill_names, "breaks.y","breaks.y")
   if (!is.null(addCI.list))   kill_names <- c(kill_names, "addConfidenceInterval")
   if (!is.null(addCen.list))  kill_names <- c(kill_names, "addCensorMark")
   if (!is.null(addCR.list))   kill_names <- c(kill_names, "addCompetingRiskMark")

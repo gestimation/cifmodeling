@@ -2,7 +2,8 @@
 % Please edit documentation in R/cifpanel.R
 \name{cifpanel}
 \alias{cifpanel}
-\title{Arrange multiple survival/CIF plots into a panel (grid or inset)}
+\title{Generates a multi-panel figure for survival or cumulative incidence curves,
+arranged either in a grid layout or as an inset overlay}
 \usage{
 cifpanel(
   formula = NULL,
@@ -17,8 +18,8 @@ cifpanel(
   label.strata = NULL,
   limits.x = NULL,
   limits.y = NULL,
-  break.x = NULL,
-  break.y = NULL,
+  breaks.x = NULL,
+  breaks.y = NULL,
   addConfidenceInterval = NULL,
   addCensorMark = NULL,
   addCompetingRiskMark = NULL,
@@ -74,7 +75,7 @@ for COMPETING-RISK: \code{c(event.code1, event.code2, censor.code)}.}
 
 \item{limits.x, limits.y}{Optional vectors/lists of numeric length-2 axis limits per panel.}
 
-\item{break.x, break.y}{Optional vectors/lists of axis breaks per panel (forwarded to
+\item{breaks.x, breaks.y}{Optional vectors/lists of axis breaks per panel (forwarded to
 \code{breaks.x} / \code{breaks.y} in \code{\link{cifplot}}).}
 
 \item{addConfidenceInterval, addCensorMark, addCompetingRiskMark, addIntercurrentEventMark, addQuantileLine}{Optional logical vectors/lists per panel to toggle features in \code{\link{cifplot}}.
@@ -104,10 +105,13 @@ If \code{NULL}, sensible defaults are used (CI/Censor on; others off).}
 
 \item{print.panel}{If \code{TRUE}, print the composed panel.}
 
-\item{filename.ggsave}{Optional file path to save the composed panel.}
+\item{filename.ggsave}{Character save the composed panel with the path and name specified.}
 
-\item{width.ggsave, height.ggsave, dpi.ggsave}{Size parameters for saving; if width/height
-are \code{NULL}, defaults depend on grid size or inset mode.}
+\item{width.ggsave}{Numeric specify width of the composed panel.}
+
+\item{height.ggsave}{Numeric specify height of the composed panel.}
+
+\item{dpi.ggsave}{Numeric specify dpi of the composed panel.}
 
 \item{...}{Additional arguments forwarded to \code{\link{cifplot}} (e.g., \code{style},
 \code{font.family}, \code{font.size}, etc.). Panel-wise overrides provided via explicit
@@ -145,8 +149,120 @@ collected across panels.
 \item \code{type.x} is reserved for future x-scale control (currently not applied).
 \item If both \code{formula} and \code{formulas} are provided, the latter takes precedence.
 }
+
+\subsection{Overview}{
+
+\code{cifpanel()} composes multiple survival/CIF plots into a single figure.
+For each panel, it estimates curves via \code{cifcurve()} and renders them with
+\code{cifplot()}. You can supply a single \code{formula} reused across panels or a
+list in \code{formulas} (one per panel). When both are provided, \code{formulas} wins.
+}
+
+\subsection{Outcome type & event coding}{
+\itemize{
+\item Use \code{outcome.type} to set per-panel estimator (\code{"SURVIVAL"}=KM, \code{"COMPETING-RISK"}=AJ).
+\item Alternatively, pass \code{code.events} per panel to infer the type:
+\itemize{
+\item length 2 = SURVIVAL: \code{c(event1, censor)}
+\item length 3 = COMPETING-RISK: \code{c(event1, event2, censor)}
+}
+\item If \code{outcome.type} is \code{NULL}, the function infers each panel from its
+\code{code.events[[i]]} length. When both are given, \code{outcome.type} takes precedence.
+}
+}
+
+\subsection{Panel-wise vs shared arguments}{
+
+Many arguments accept a \strong{scalar} (recycled to all panels) or a \strong{list/vector}
+(one entry per panel). Precedence: \strong{panel-wise explicit values} >
+\strong{shared scalar} > \strong{internal defaults}. Length-1 inputs are recycled.
+}
+
+\subsection{Grid vs inset composition}{
+\itemize{
+\item \strong{Grid mode} (\code{use_inset_element = FALSE}, default): plots are arranged with
+\code{patchwork::wrap_plots()} and \code{plot_layout()}. If \code{legend.collect = TRUE},
+legends are collected across panels where possible.
+\item \strong{Inset mode} (\code{use_inset_element = TRUE}): the \strong{second} plot is overlaid
+into the \strong{first} using \code{patchwork::inset_element()}. Only the first two
+plots are used; extra plots are ignored. Control the inset box with
+\code{inset.left}, \code{inset.bottom}, \code{inset.right}, \code{inset.top}, and its
+reference frame via \code{inset.align_to} (\code{"panel"}, \code{"plot"}, or \code{"full"}).
+}
+}
+
+\subsection{Advanced panel controls (forwarded to \code{cifplot()})}{
+
+The following arguments allow \strong{per-panel} control by supplying vectors/lists,
+or \strong{shared} control by supplying scalars. They are forwarded to \code{cifplot()}.
+\subsection{Scale & labels}{\tabular{lll}{
+   Argument \tab Meaning \tab Default \cr
+   \code{type.y} \tab \code{"risk"} (CIF y-axis) or \code{NULL} (survival). \tab inferred \cr
+   \code{label.x}, \code{label.y} \tab Axis labels per panel. \tab auto \cr
+   \code{label.strata} \tab Legend labels per panel. \tab from data \cr
+   \code{limits.x}, \code{limits.y} \tab Axis limits \code{c(min, max)}. \tab auto \cr
+   \code{breaks.x}, \code{breaks.y} \tab Axis breaks (forwarded to \code{breaks.x}/\code{breaks.y}). \tab auto \cr
+}
+
+}
+
+\subsection{Plot layers (toggles)}{\tabular{lll}{
+   Argument \tab Effect \tab Default \cr
+   \code{addConfidenceInterval} \tab CI ribbon. \tab \code{TRUE} \cr
+   \code{addCensorMark} \tab Censor marks. \tab \code{TRUE} \cr
+   \code{addCompetingRiskMark} \tab Marks for event2 at supplied times. \tab \code{FALSE} \cr
+   \code{addIntercurrentEventMark} \tab User-specified intercurrent marks. \tab \code{FALSE} \cr
+   \code{addQuantileLine} \tab Quantile line(s). \tab \code{FALSE} \cr
+}
+
+
+\emph{(Time marks inputs such as \code{competing.risk.time} / \code{intercurrent.event.time}
+can be given via \code{...} if needed; names must match strata labels.)}
+}
+
+}
+
+\subsection{Legend & annotations}{
+\itemize{
+\item \code{legend.position}: \code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, or \code{"none"} (applies to all panels).
+\item Grid mode: \code{legend.collect = TRUE} attempts a shared legend.
+\item Panel annotations: \code{title.panel}, \code{subtitle.panel}, \code{caption.panel}.
+\item Tagging: \code{tag_levels.panel} is passed to \code{patchwork::plot_annotation()}.
+\item In inset mode, \code{title.plot = c(title_base, title_inset)} labels the two plots.
+}
+}
+
+\subsection{Export (optional)}{
+
+If \code{filename.ggsave} is non-\code{NULL}, the composed panel is saved with
+\code{ggplot2::ggsave()} using \code{width.ggsave}, \code{height.ggsave}, and \code{dpi.ggsave}.
+Otherwise, the function returns objects without saving.
+}
+
+\subsection{Value}{
+
+Returns \strong{invisibly}:
+\verb{list(plots = <list of ggplot objects>, out_patchwork = <patchwork object>)}.
+Print the latter to display the composed panel. If \code{print.panel = TRUE},
+printing is done automatically.
+}
+
+\subsection{Notes & tips}{
+\itemize{
+\item Mixed panel types are supported (e.g., AJ in panel 1; KM in panel 2).
+\item If \code{formulas} is shorter than the grid capacity, empty slots are ignored.
+\item When supplying vectors/lists per panel, their lengths must match the number
+of panels; length-1 inputs are recycled; otherwise an error is thrown.
+\item For CIF displays, set \code{type.y = "risk"} in the relevant panels.
+\item ADaM-style coding can be expressed via \code{code.events} (e.g., \code{c(0,1)} for KM:
+\code{event1=0}, \code{censor=1}).
+\item Additional graphical options (e.g., theme) can be added post-hoc to each
+element of \code{plots} or to the composed \code{out_patchwork}.
+}
+}
 }
 \examples{
+data(diabetes.complications)
 cifpanel(
   title.panel = "A comparison of cumulative incidence of competing events",
   rows.columns.panel = c(1,2),
@@ -169,14 +285,15 @@ cifpanel(
   data = diabetes.complications,
   outcome.type = "COMPETING-RISK",
   code.events = list(c(2,1,0), c(2,1,0)),
-  label.y = c("Macrovascular complications", ""),
+  label.y = c("CIF of macrovascular complications", ""),
   label.x = c("Years from registration", ""),
   limits.y     = list(c(0,1), c(0,0.15)),
   inset.left   = 0.40, inset.bottom = 0.45,
   inset.right  = 1.00, inset.top    = 0.95,
   inset.align_to = "plot",
   inset.legend.position = "none",
-  legend.position = "bottom"
+  legend.position = "bottom",
+  addConfidenceInterval = FALSE
 )
 \dontrun{
 data(diabetes.complications)

@@ -84,10 +84,10 @@ applyStyle <- function(
 }
 
 drawMarks <- function(p, survfit_object, marks, type.y, shape, size) {
+  time <- y <- strata <- NULL
   if (is.null(marks) || !length(marks)) return(p)
   mark_df <- makeMarkDataFrame(survfit_object, marks, type.y, extend = TRUE)
   if (is.null(mark_df) || !nrow(mark_df)) return(p)
-
   if (is.null(survfit_object$strata)) {
     p + geom_point(
       data = mark_df,
@@ -238,32 +238,3 @@ theme_risktable_font <- function(
 
 
 
-
-
-
-check_breaks <- function(bk, nm, lims) {
-  if (is.null(bk) || is.function(bk)) return(invisible())
-  if (!is.numeric(bk)) {
-    warning(sprintf("`%s` should be numeric (or a function).", nm), call. = FALSE); return(invisible())
-  }
-  if (!is_nondec(bk)) {
-    warning(sprintf("`%s` must be non-decreasing.", nm), call. = FALSE)
-  }
-  if (!is.null(lims) && is_len2_num(lims)) {
-    if (any(bk < lims[1] | bk > lims[2], na.rm = TRUE)) {
-      warning(sprintf("Some `%s` are outside plotting range [%g, %g].", nm, lims[1], lims[2]), call. = FALSE)
-    }
-  }
-  invisible()
-}
-
-coerce_conf <- function(survfit_object, conf.type) {
-  if (!is.null(survfit_object$lower) && !is.null(survfit_object$upper)) return(survfit_object)
-  if (conf.type %in% c("none","n") || length(survfit_object$strata) > 2) {
-    x <- survfit_object
-    x$lower <- x$surv
-    x$upper <- x$surv
-    return(x)
-  }
-  return(survfit_object)
-}

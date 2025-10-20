@@ -1,5 +1,4 @@
-
-#' Extract per-stratum event times from (formula, data)
+#' Extract per-stratum event times from formula and data
 #'
 #' @description
 #' Build per-stratum event-time lists that you can pass to `competing.risk.time` or
@@ -7,35 +6,35 @@
 #'
 #' @param formula Event(time, status) ~ strata(...)
 #' @param data Data frame.
-#' @param which One of "event2", "event1", "censor", "code".
-#' @param event.code Used when which="code": status value to pick (e.g., 3 for an intercurrent event).
+#' @param which_event One of "event2", "event1", "censor", "code".
+#' @param user_specified_code Used when which="code": status value to pick (e.g., 3 for an intercurrent event).
 #' @param code.event1,code.event2,code.censoring Integers describing your coding (used to build d1/d2/d0 inside readSurv).
 #' @param subset.condition Optional character expression to subset `data`.
 #' @param na.action Function to handle NA (default na.omit).
 #' @param unique_times,drop_empty See `cif_event_times_from_frame()`.
 #' @return Named list of numeric vectors (times per stratum).
 #' @export
-readEventTime <- function(
+read_time_to_event <- function(
     formula, data,
     which_event = c("event2", "event1", "censor", "censoring", "user_specified"),
     code.event1 = 1, code.event2 = 2, code.censoring = 0, user_specified_code = NULL,
-    subset.condition = NULL, na.action = stats::na.omit,
+    subset.condition = NULL, na.action = na.omit,
     unique_times = TRUE, drop_empty = TRUE
 ){
   which_event <- match.arg(which_event)
   out_readSurv <- readSurv(
     formula = formula, data = data, weights = NULL,
     code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
-    subset.condition = subset.condition, na.action = na.action  # ← 修正：stats::na.action ではなく引数をそのまま
+    subset.condition = subset.condition, na.action = na.action
   )
-  getEventTime(
+  getTimeToEvent(
     out_readSurv = out_readSurv,
     which_event = which_event, user_specified_code = user_specified_code,
     unique_times = unique_times, drop_empty = drop_empty
   )
 }
 
-getEventTime <- function(
+getTimeToEvent <- function(
     out_readSurv,
     which_event = c("event2", "event1", "censor", "censoring", "user_specified"),
     user_specified_code = NULL,

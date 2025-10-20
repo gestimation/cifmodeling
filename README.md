@@ -9,27 +9,33 @@
 
 ## Overview
 
-The cifmodeling package provides a compact and unified toolkit for
-survival and competing risks analysis in R. It covers both nonparametric
+In medical research advanced statistical methods are often required to
+address censoring, competing risks, and other intercurrent events such
+as treatment switching that interfere with outcome assessments. The
+cifmodeling package provides a compact and unified toolkit for survival
+and competing risks analysis in R. It covers both nonparametric
 estimation and regression modeling of cumulative incidence functions
 (CIFs). It consists of four tightly connected R functions.
 
 - `cifcurve()` estimates Kaplan–Meier survival or Aalen–Johansen
-  cumulative incidence curves with a familiar survival::survfit object.
-  Various methods for standard error and confidence intervals are
-  available.
+  cumulative incidence curves and generates a familiar survival::survfit
+  object. Various methods for standard error and confidence intervals
+  are available.
 
-- `cifplot()` generates a survival curve or cumulative incidence curve
-  describing competing risks and intermediate events using marks.
-  Visualization relies on ggsurvfit/ggplot2.
+- `cifplot()` generates a survival or cumulative incidence curve with
+  marks that represent censoring, competing risks and intermediate
+  events. Visualization relies on ggsurvfit/ggplot2.
 
-- `cifpanel()` generates a multi-panel survival and cumulative incidence
-  figure for publication.
+- `cifpanel()` generates a multi-panel figure for survival or cumulative
+  incidence curves, arranged either in a grid layout or as an inset
+  overlay.
 
-- `polyreg()` performs regression modeling of CIFs based on polytomous
-  log-odds products and stratified IPCW estimator. This function is
-  useful to estimate risk ratios, odds ratios, or subdistribution hazard
-  ratios for a competing risks, survival, or binary outcome.
+- `polyreg()` fits regression models of cumulative incidence functions
+  based on polytomous log-odds products and stratified IPCW estimator.
+  This function is particularly suitable for causal inference in terms
+  of common effect measures, namely risk ratios, odds ratios, and
+  subdistribution hazard ratios, with competing risks, survival, or
+  binary data.
 
 These functions adopt a formula + data syntax, return tidy,
 publication-ready outputs, and integrate seamlessly with ggsurvfit and
@@ -47,13 +53,15 @@ cumulative incidence** functions using a unified formula interface
 - `summary()` — time-by-time estimates with standard errors and
   confidence intervals
 - `plot()` — base R stepwise survival or CIF curves
+- `mean()` — restricted mean survival estimates with confidence
+  intervals
 - `quantile()` — quantile estimates with confidence intervals
 
-When `ggsurvfit = TRUE`, the function also produces a **ggplot2-based
-visualization**, which can be modified like any `ggplot` object (e.g.,
-adding layers, themes, or labels).
+Furthermore, the cifmodeling package provides a workflow for a
+**ggplot2-based visualization** based on the survfit-compatible objects
+by passing them to `cifplot()` and `cifpanel`.
 
-**Key options**
+**Key arguments**
 
 - **Outcome type and estimator**
   - `outcome.type = "SURVIVAL"` → Kaplan–Meier estimator
@@ -65,15 +73,22 @@ adding layers, themes, or labels).
   - `error` chooses the estimator for standard error (`"greenwood"` or
     `"tsiatis"` for survival curves and `"delta"` or `"aalen"` for CIFs)
 
-These defaults mirror the behavior of **ggsurvfit**, allowing
-publication-quality plots with minimal code.
-
 **An example of usage**
+
+In competing risks data, censoring is often coded as 0, events of
+interest as 1, and competing risks as 2. The variable `epsilon` in
+`diabetes.complications` dataframe represents the occurrence of
+competing risks according to this coding scheme. Below is an example
+code snippet applying cifcurve() to a competing risks outcome and a
+survival time outcome, respectively.
 
 ``` r
 data(diabetes.complications)
 cifcurve(Event(t,epsilon) ~ fruitq, data=diabetes.complications, 
 outcome.type='COMPETING-RISK')
+diabetes.complications$d <- (diabetes.complications$epsilon>0)
+cifcurve(Event(t,d) ~ fruitq, data=diabetes.complications, 
+outcome.type='SURVIVAL')
 ```
 
 ### `cifplot()`
@@ -96,7 +111,7 @@ inputting the model formula and data frame.
 - Add a risk table to display the number at risk or the estimated values
   and 95% confidence intervals at each point in time.
 
-**Key options**
+**Key arguments**
 
 - **Data visualization**
   - `addConfidenceInterval` adds confidence intervals on the
@@ -110,7 +125,7 @@ inputting the model formula and data frame.
 - **Plot customization**
   - `type.y` chooses y-axis. (`"surv"` for survival curves and `"risk"`
     for CIFs)
-  - `limits.x`, `limits.y`, `break.x`, `break.y` — axis control
+  - `limits.x`, `limits.y`, `breaks.x`, `breaks.y` — axis control
   - `style` specifies the appearance of plot (`"CLASSIC"`,
     `"MONOCHROME"`, `"BOLD"` or `"FRAMED"`)
   - Standard `ggplot2` arguments such as `theme()`, `labs()`, and
@@ -119,7 +134,9 @@ inputting the model formula and data frame.
   - `formula`, `data` — same interface as `cifcurve()`
   - `outcome.type` — `"SURVIVAL"` or `"COMPETING-RISK"`
 
-**Return** - A **ggplot** object.
+**Return**
+
+- A **ggplot** object.
 
 **An example of usage**
 
@@ -145,18 +162,24 @@ layout. - Compare survival or CIF curves across strata with a shared
 legend and matched axes. - Display a plot with an enlarged y-axis within
 a plot scaled from 0 to 100%.
 
-**Key arguments** - `formula` or `formulas` — one formula or a list of
-formulas; each entry creates a panel. - `data`, `outcome.type`,
-`code.events`, `type.y` — recycled across panels unless a list is
-supplied for per-panel control. - `rows.columns.panel` — selects grid
-layout by c(rows, cols). - `use_inset_element` — selects inset layout. -
-`title.panel`, `subtitle.panel`, `caption.panel`, `title.plot` — overall
-titles and captions. - `tag_levels.panel` — panel tag style (e.g., “A”,
-“a”, “1”). - `label.x`, `label.y`, `label.strata`, `limits.x`,
-`limits.y`, `break.x`, `break.y` — shared axis control unless a list is
-supplied for per-panel control.
+**Key arguments**
 
-**Returns:** - A **patchwork** object (still ggplot-compatible).
+- `formula` or `formulas` — one formula or a list of formulas; each
+  entry creates a panel.
+- `data`, `outcome.type`, `code.events`, `type.y` — recycled across
+  panels unless a list is supplied for per-panel control.
+- `rows.columns.panel` — selects grid layout by c(rows, cols).
+- `use_inset_element` — selects inset layout.
+- `title.panel`, `subtitle.panel`, `caption.panel`, `title.plot` —
+  overall titles and captions.
+- `tag_levels.panel` — panel tag style (e.g., “A”, “a”, “1”).
+- `label.x`, `label.y`, `label.strata`, `limits.x`, `limits.y`,
+  `breaks.x`, `breaks.y` — shared axis control unless a list is supplied
+  for per-panel control.
+
+**Return**
+
+- A **patchwork** object (still ggplot-compatible).
 
 ``` r
 data(diabetes.complications)
@@ -202,17 +225,31 @@ estimates, standard errors, confidence intervals, and p-values. Its
 results can be easily summarized with `summary()` or combined with tools
 such as **modelsummary** or **broom** for reporting.
 
-**Key arguments** - `nuisance.model` — a formula describing the outcome
-and nuisance covariates, excluding the exposure of interest. -
-`exposure` — specifies the categorical exposure variable -
-`effect.measure1` and `effect.measure2` — specifies the effect measures
-for event1 and event2 (`"RR"`, `"OR"` or `"SHR"`). - `outcome.type`
-selects the outcome type (`"COMPETING-RISK"`, `"SURVIVAL"`,
-`"BINOMIAL"`, `"PROPORTIONAL"` or `"POLY-PROPORTIONAL"`). - `time.point`
-— specifies time point at which the exposure effect is evaluated.
-Required for `"COMPETING-RISK"` and `"SURVIVAL"` outcomes. - `strata` —
-specifies a stratification variable used to adjust for dependent
-censoring.
+**Key arguments**
+
+- `nuisance.model` — a formula describing the outcome and nuisance
+  covariates, excluding the exposure of interest.
+- `exposure` — specifies the categorical exposure variable
+- `effect.measure1` and `effect.measure2` — specifies the effect
+  measures for event1 and event2 (`"RR"`, `"OR"` or `"SHR"`).
+- `outcome.type` selects the outcome type (`"COMPETING-RISK"`,
+  `"SURVIVAL"`, `"BINOMIAL"`, `"PROPORTIONAL"` or
+  `"POLY-PROPORTIONAL"`).
+- `time.point` — specifies time point at which the exposure effect is
+  evaluated. Required for `"COMPETING-RISK"` and `"SURVIVAL"` outcomes.
+- `strata` — specifies a stratification variable used to adjust for
+  dependent censoring.
+
+**Return**
+
+- `coefficient` — regression coefficients
+
+- `cov` — variance-covariance matrix for regression coefficients
+
+- `diagnosis.statistics` — a data frame containing inverse probability
+  weights, influence functions, and predicted potential outcomes
+
+- `summary` — a summary of estimated exposure effects
 
 ### An example of usage
 
@@ -248,7 +285,7 @@ optional but recommended to reproduce the examples below.
 
 ## Model specification of polyreg()
 
-The model for polyreg() is specified by three main components:
+The model for `polyreg()` is specified by three main components:
 
 - Nuisance model: Describes the relationship between outcomes and
   covariates (excluding exposure).
@@ -261,39 +298,38 @@ The model for polyreg() is specified by three main components:
 
 ### 1. Nuisance Model
 
-The nuisance.model argument specifies the formula linking the outcome to
-covariates. Its format depends on the outcome type:
+The `nuisance.model` argument specifies the formula linking the outcome
+to covariates. Its format depends on the outcome type:
 
-- Competing risks or survival outcome: Use Surv() or Event() with time
-  and status variables.
+- Competing risks or survival outcome: Use `Surv()` or `Event()` with
+  time and status variables.
 
 - Binomial outcome: Use standard R formula notation.
 
 Default event codes:
 
-- Competing risks outcome: 1 and 2 for event types, 0 for censored
-  observations.
+- Competing risks outcome: 1 and 2 for event types, 0 for censoring.
 
-- Survival outcome: 1 for events, 0 for censored observations.
+- Survival outcome: 1 for events, 0 for censoring.
 
 - Binomial outcome: 0 and 1.
 
-Event codes can be customized using code.event1, code.event2, and
-code.censoring. The outcome.type argument must be set to:
+Event codes can be customized using `code.event1`, `code.event2`, and
+`code.censoring`. The `outcome.type` argument must be set to:
 
 - Effects on cumulative incidence probabilities at a specific time:
-  ‘COMPETING-RISK’
+  `"COMPETING-RISK"`
 
-- Effects on a risk at a specific time: ‘SURVIVAL’
+- Effects on a risk at a specific time: `"SURVIVAL"`
 
 - Common effects on cumulative incidence probabilities over time:
-  ‘POLY-PROPORTIONAL’
+  `"POLY-PROPORTIONAL"`
 
-- Common effects on a risk over time: ‘PROPORTIONAL’
+- Common effects on a risk over time: `"PROPORTIONAL"`
 
-- Effects on a risk of a binomial outcome: ‘BINOMIAL’
+- Effects on a risk of a binomial outcome: `"BINOMIAL"`
 
-Covariates included in nuisance.model should adjust for confounding
+Covariates included in `nuisance.model` should adjust for confounding
 factors to obtain unbiased exposure effect estimates.
 
 ### 2. Effect measures and time points
@@ -306,8 +342,8 @@ Three effect measures available:
 
 - Subdistribution Hazard Ratio (SHR)
 
-Set the desired measure using effect.measure1 and, for competing risks
-analysis, effect.measure2. The time.point argument specifies the
+Set the desired measure using `effect.measure1` and, for competing risks
+analysis, `effect.measure2`. The `time.point` argument specifies the
 follow-up time at which effects are estimated.
 
 ### 3. Censoring adjustment
@@ -316,9 +352,9 @@ Inverse probability weights adjust for dependent censoring. Use
 `strata=` to specify stratification variables. If no strata are
 specified, Kaplan-Meier weights are used.
 
-## Output
+## Return
 
-The main components of the output list include:
+This function return a list object that includes:
 
 - `coefficient` — regression coefficients
 
@@ -329,14 +365,14 @@ The main components of the output list include:
 
 - `summary` — a summary of estimated exposure effects
 
-Use the summary output with `msummary()` to display formatted results.
-The regression coefficients and their variance-covariance matrix are
-provided as coefficient and cov, respectively, with the first element
-corresponding to the intercept term, subsequent elements to the
-covariates in nuisance.model, and the last element to exposure. Finally,
-diagnosis.statistics is a dataset containing inverse probability
-weights, influence functions, and predicted values of the potential
-outcomes of individual observations.
+Use `summary` output with `msummary()` to display formatted results. The
+regression coefficients and their variance-covariance matrix are
+provided as `coefficient` and `cov`, respectively, with the first
+element corresponding to the intercept term, subsequent elements to the
+covariates in `nuisance.model`, and the last element to the variable
+specified by `exposure=`. Finally, `diagnosis.statistics` is a dataset
+containing inverse probability weights, influence functions, and
+predicted values of the potential outcomes of individual observations.
 
 ## Example 1. Unadjusted competing risks analysis
 
@@ -356,9 +392,9 @@ probabilities across exposure levels.
 
 ``` r
 data(diabetes.complications)
-output <- cifcurve(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, 
+output1 <- cifcurve(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, 
 outcome.type='COMPETING-RISK')
-cifplot(output, addConfidenceInterval=TRUE, addCensorMark=FALSE, addCompetingRiskMark=FALSE, 
+cifplot(output1, addConfidenceInterval=TRUE, addCensorMark=FALSE, addCompetingRiskMark=FALSE, 
 label.y='CIF of diabetic retinopathy', label.x='Years from registration', 
 label.strata=c('High intake','Low intake'))
 #> Scale for colour is already present.
@@ -370,13 +406,13 @@ label.strata=c('High intake','Low intake'))
 <img src="man/figures/README-example1-1-1.png" width="100%" />
 
 In the next figure, censoring marks are added along each curve
-(addCensorMark = TRUE) to indicate individuals who were censored before
-experiencing any event. These marks visualize the timing and frequency
-of censoring, allowing a clearer understanding of loss-to-censoring
-patterns over follow-up.
+(`addCensorMark = TRUE`) to indicate individuals who were censored
+before experiencing any event. These marks visualize the timing and
+frequency of censoring, allowing a clearer understanding of
+loss-to-censoring patterns over follow-up.
 
 ``` r
-cifplot(output, addConfidenceInterval=FALSE, addCensorMark=TRUE, addCompetingRiskMark=FALSE, 
+cifplot(output1, addConfidenceInterval=FALSE, addCensorMark=TRUE, addCompetingRiskMark=FALSE, 
 label.y='CIF of diabetic retinopathy', label.x='Years from registration', 
 label.strata=c('High intake','Low intake'))
 #> Scale for colour is already present.
@@ -388,17 +424,17 @@ label.strata=c('High intake','Low intake'))
 <img src="man/figures/README-example1-2-1.png" width="100%" />
 
 In the final figure, competing risk marks are added
-(addCompetingRiskMark = TRUE) to indicate individuals who experienced
+(`addCompetingRiskMark = TRUE`) to indicate individuals who experienced
 the competing event (macrovascular complications) before diabetic
 retinopathy. The time points at which the macrovascular complications
 occurred were obtained for each strata using a helper function
-`readEventTime()`. These symbols help distinguish between events due to
-the primary cause and those attributable to competing causes.
+`read_time_to_event()`. These symbols help distinguish between events
+due to the primary cause and those attributable to competing causes.
 
 ``` r
-out_readEventTime <- readEventTime(Event(t,epsilon) ~ fruitq1, data = diabetes.complications, which_event = "event2")
-cifplot(output, addConfidenceInterval=FALSE, addCensorMark=FALSE, addCompetingRiskMark=TRUE, 
-competing.risk.time=out_readEventTime, label.y='CIF of diabetic retinopathy',  
+output2 <- read_time_to_event(Event(t,epsilon) ~ fruitq1, data = diabetes.complications, which_event = "event2")
+cifplot(output1, addConfidenceInterval=FALSE, addCensorMark=FALSE, addCompetingRiskMark=TRUE, 
+competing.risk.time=output2, label.y='CIF of diabetic retinopathy',  
 label.x='Years from registration', label.strata=c('High intake','Low intake'))
 #> Scale for colour is already present.
 #> Adding another scale for colour, which will replace the existing scale.
@@ -412,18 +448,18 @@ An estimate of the unadjusted risk ratio for the risk of diabetic
 retinopathy at 8 years is obtained using `polyreg()` with
 `outcome.type='COMPETING-RISK'`. Here, no covariates are included in the
 nuisance model (intercept only). The effect of low fruit intake
-(fruitq1) is estimated as a risk ratio (effect.measure1=‘RR’) for
+`fruitq1` is estimated as a risk ratio (`effect.measure1='RR'`) for
 diabetic retinopathy (event 1) and macrovascular complications (event 2)
-at 8 years (time.point=8).
+at 8 years (`time.point=8`).
 
 ``` r
-output <- polyreg(nuisance.model=Event(t,epsilon) ~ +1, exposure='fruitq1', 
+output3 <- polyreg(nuisance.model=Event(t,epsilon) ~ +1, exposure='fruitq1', 
           data=diabetes.complications, effect.measure1='RR', effect.measure2='RR', 
           time.point=8, outcome.type='COMPETING-RISK', 
           report.nuisance.parameter=TRUE)
-print(output$coefficient)
+print(output3$coefficient)
 #> [1] -1.38313159  0.30043942 -3.99147405  0.07582595
-print(output$cov)
+print(output3$cov)
 #>              [,1]         [,2]         [,3]         [,4]
 #> [1,]  0.007132823 -0.004524224  0.002772872 -0.002210804
 #> [2,] -0.004524224  0.009639840 -0.001178880  0.004588230
@@ -432,19 +468,19 @@ print(output$cov)
 ```
 
 The summaries of analysis results in the list of outputs
-(e.g. output\$summary below) are compatible with the `modelsummary`
+(e.g. `output5$summary` below) are compatible with the `modelsummary`
 ecosystem, which makes it easy to create publication-ready tables in a
 variety of formats. A typical workflow is to pass the `summary` element
 of a `polyreg()` fit (or a list of such fits) to
 `modelsummary::msummary()`. In this case, all regression coefficients
 are included in summary by setting `report.nuisance.parameter = TRUE`.
 Model summaries can also be exponentiated to display risk ratios, odds
-ratios, or sub-distribution hazard ratios using the exponentiate option.
+ratios, or subdistribution hazard ratios using `exponentiate` option.
 The summaries can be displayed in the Viewer with customized statistics
 such as p-values or confidence intervals.
 
 ``` r
-msummary(output$summary, statistic = c("conf.int", "p.value"), exponentiate = TRUE)
+msummary(output3$summary, statistic = c("conf.int", "p.value"), exponentiate = TRUE)
 ```
 
 <table style="width:97%;">
@@ -570,10 +606,10 @@ exposure (e.g. intercept) are suppressed when
 `report.nuisance.parameter` is not specified.
 
 ``` r
-output <- polyreg(nuisance.model=Event(t,d) ~ +1, 
+output4 <- polyreg(nuisance.model=Event(t,d) ~ +1, 
           exposure='fruitq1', strata='strata', data=diabetes.complications,
           effect.measure1='RR', time.point=8, outcome.type='SURVIVAL')
-msummary(output$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
+msummary(output4$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
 ```
 
 |                  | event 1 (no competing risk)     |
@@ -592,11 +628,12 @@ msummary(output$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
 ## Example 3. Adjusted competing risks analysis
 
 The code below specifies polytomous log-odds models of both of competing
-events (outcome.type=‘COMPETING-RISK’). Here 15 covariates and censoring
-strata are specified in `nuisance.model=` and `strata=`, respectively.
+events (`outcome.type='COMPETING-RISK'`). Here 15 covariates and
+censoring strata are specified in `nuisance.model=` and `strata=`,
+respectively.
 
 ``` r
-output <- polyreg(nuisance.model = Event(t,epsilon) ~ age+sex+bmi+hba1c
+output5 <- polyreg(nuisance.model = Event(t,epsilon) ~ age+sex+bmi+hba1c
           +diabetes_duration+drug_oha+drug_insulin+sbp+ldl+hdl+tg
           +current_smoker+alcohol_drinker+ltpa, 
           exposure='fruitq1', strata='strata', data=diabetes.complications,
@@ -608,7 +645,7 @@ now model summary does not display parameters of the covariates other
 than exposure.
 
 ``` r
-msummary(output$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
+msummary(output5$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
 ```
 
 <table style="width:97%;">
@@ -701,19 +738,19 @@ each panel independently.
 This function accepts both shared and panel-specific arguments. When a
 single formula is provided, the same model structure is reused for each
 panel, and arguments supplied as lists are applied individually to each
-panel. Arguments such as code.events, label.strata, or addCensorMark can
-be given as lists, where each list element corresponds to one panel.
-This allows flexible configuration while maintaining a concise and
-readable syntax.
+panel. Arguments such as `code.events`, `label.strata`, or
+`addCensorMark` can be given as lists, where each list element
+corresponds to one panel. This allows flexible configuration while
+maintaining a concise and readable syntax.
 
-The example below creates a 1×2 panel (rows.columns.panel = c(1,2))
+The example below creates a 1×2 panel (`rows.columns.panel = c(1,2)`)
 comparing the cumulative incidence of two competing events in the same
 cohort, namely CIF of diabetic retinopathy in the left panel and CIF of
 macrovascular complications in the right panel. Both panels are
-stratified by fruit intake (fruitq1), and the legend is shared at the
-bottom. The pairs of `code.events` as a list instructs `cifpanel()` to
-display event 1 in the first panel and event 2 in the second panel, with
-event code 0 representing censoring.
+stratified by `fruitq1`, and the legend is shared at the bottom. The
+pairs of `code.events` as a list instructs `cifpanel()` to display event
+1 in the first panel and event 2 in the second panel, with event code 0
+representing censoring.
 
 ``` r
 cifpanel(
@@ -742,9 +779,10 @@ cifpanel(
 
 <img src="man/figures/README-example7-1.png" width="100%" />
 
-Arguments specified as scalars (for example, label.x = “Years from
-registration”) are applied uniformly to all panels. Character vectors of
-the same length as the number of panels (for example,
+Arguments specified as scalars (for example,
+`label.x = "Years from registration"`) are applied uniformly to all
+panels. Character vectors of the same length as the number of panels
+(for example,
 `label.y = c("Diabetic retinopathy", "Macrovascular complications")`)
 assign a different label to each panel in order. Lists provide the most
 flexibility, allowing each panel to have distinct settings that mirror
@@ -796,16 +834,40 @@ publication-ready.
   can infer all event time or a use-specified grid of time passing a
   vector using `time.point`.
 
-### Processing pipeline of`cifcurve()`
+### Event coding conventions in package cifmodeling and CDISC ADaM ADTTE
 
-A user-specified model formula is first parsed by `readSurv()` to
-extract the time-to-event, the event indicator, optional weights, and
-any strata variable. Those components are then passed to the back-end
-estimators implemented in `src/calculateKM.cpp`. The C++ routine
-supports both weighted and stratified data, so the heavy lifting for
-Kaplan–Meier estimates (and associated at-risk, event, and censor
-counts) happens efficiently regardless of how the input was specified.
-For competing-risks data, `cifcurve()` builds
+When working with survival data, one common source of confusion arises
+from inconsistent event coding conventions between the standard input of
+`Surv()`, provided by survival package, and the CDISC ADaM ADTTE
+(Analysis Data Model for Time-to-Event Endpoints) used in regulatory
+clinical trials. With `Surv()`, event is often coded as 1 and censoring
+is coded as 0. By contrast, the CDISC ADaM ADTTE (commonly used in
+pharmaceutical submissions and SDTM-based analyses) follows the opposite
+convention. `CNSR = 0` means that event occurred and `CNSR = 1`
+represents censoring, which ensures consistency across other ADaM
+domains (where `1 = TRUE`).
+
+To accommodate differences in coding conventions, one can explicitly
+specify event and censoring codes using the `code.event1` and
+`code.censoring` arguments in `cifcurve()`, `cifplot()`, `cifpanel()`
+and `polyreg()`. This allows users to perform accurate survival analysis
+using functions from the cifmodeling package while maintaining the CDISC
+ADaM ADTTE coding scheme.
+
+``` r
+polyreg(Event(AVAL, CNSR) ~ ARM, data = adtte, code.event1=0, code.censoring=1)
+```
+
+### Processing pipeline of `cifcurve()`
+
+A user-specified model formula in `Event()` or `Surv()` is first parsed
+by `readSurv()` to extract the time-to-event, the event indicator,
+optional weights, and any strata variable. Those components are then
+passed to the back-end estimators implemented in `src/calculateKM.cpp`.
+The C++ routine supports both weighted and stratified data, so the heavy
+lifting for Kaplan–Meier estimates (and associated at-risk, event, and
+censor counts) happens efficiently regardless of how the input was
+specified. For competing-risks data, `cifcurve()` builds
 inverse-probability-of-censoring weights to calculate Aalen–Johansen
 estimates by calling `calculateAJ()`, which reuses the Kaplan–Meier
 estimates for censoring from `calculateKM()`.
@@ -821,7 +883,7 @@ transformation-based confidence bounds.
 
 ### Variance and confidence interval options for `cifcurve()`
 
-**Standard errors.** For standard errors of Kaplan–Meier estimator, the
+**Standard errors** For standard errors of Kaplan–Meier estimator, the
 default is Greenwood estimator, with alternatives `"tsiatis"` for the
 Tsiatis estimator The Greenwood formula is a sum of terms d/(n(n-m)),
 where d is the number of events at a given time point, n is the number
@@ -836,7 +898,7 @@ Greenwood/Tsiatis quantities so that `std.err` is reported on the
 probability scale; set `report.survfit.std.err = TRUE` to return the
 conventional log-survival standard errors from `survfit`.
 
-**Confidence intervals.** `calculateCI()` constructs intervals on the
+**Confidence intervals** `calculateCI()` constructs intervals on the
 probability scale using the requested transformation:
 `"arcsine-square root"`/`"arcsine"`/`"a"` (default), `"plain`, `"log"`,
 `"log-log"`, or `"logit"`. Passing `"none"`/`"n"` skips interval
@@ -880,9 +942,11 @@ downstream diagnostics.
   `'results/cif_table.docx'`).
 - `coef_map` or `coef_rename` – renames model terms for
   interpretability.
-- `statistic` – specifies which uncertainty estimates to display. For
-  example, `statistic = "p.value"` shows p-values instead of standard
-  errors.
+- `statistic` – specifies which uncertainty estimates to display. Use
+  `statistic = "p.value"` for p-values, `statistic = "conf.int"` for
+  Wald confidence interval, `statistic = "t"` for t statistics,
+  `statistic = "z"` for z statistics, `statistic = "p.value"` for
+  p-values, instead of standard errors (default).
 
 You can also supply multiple model summaries as a named list to compare
 estimates across specifications in a single table. See

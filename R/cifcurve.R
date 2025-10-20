@@ -38,9 +38,10 @@
 #'
 #' @examples
 #' data(diabetes.complications)
-#' survfit_by_group <- cifcurve(Event(t,epsilon) ~ fruitq, data = diabetes.complications,
-#'                     outcome.type='COMPETING-RISK', error='delta')
-#' cifplot(survfit_by_group, type.y = 'risk', label.y = 'CIF of diabetic retinopathy', label.x = 'Years from registration')
+#' out_cifcurve <- cifcurve(Event(t,epsilon) ~ fruitq, data = diabetes.complications,
+#'                 outcome.type='COMPETING-RISK')
+#' cifplot(out_cifcurve, type.y = 'risk', addRiskTable = FALSE,
+#'                 label.y = 'CIF of diabetic retinopathy', label.x = 'Years from registration')
 #'
 #' @importFrom Rcpp sourceCpp
 #' @export

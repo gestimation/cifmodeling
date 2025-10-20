@@ -3,7 +3,7 @@
 \name{polyreg}
 \alias{polyreg}
 \title{Fit regression models of cumulative incidence functions based on polytomous
-log-odds products}
+log-odds products and stratified IPCW estimator}
 \usage{
 polyreg(
   nuisance.model,
@@ -52,7 +52,7 @@ polyreg(
 \item{nuisance.model}{A \code{\link[stats]{formula}} describing the outcome and
 nuisance covariates, excluding the exposure of interest.}
 
-\item{exposure}{A character string giving the name of the binary exposure
+\item{exposure}{A character string giving the name of the categorical exposure
 variable in \code{data}.}
 
 \item{strata}{Optional character string with the name of the stratification
@@ -192,6 +192,129 @@ outcomes).
 Fits regression models and estimates multiplicative effects of
 a categorical exposure under several outcome types, including competing risks,
 survival and binomial outcomes
+}
+\details{
+\subsection{Overview}{
+
+\code{polyreg()} fits regression models for cumulative incidence (AJ), survival (KM),
+or binomial outcomes using \strong{polytomous log-odds products}. Specify the outcome
+on the LHS of \code{nuisance.model} via \code{Event(time, status)} (competing risks/survival)
+or a 0/1 response (binomial). The categorical \strong{exposure} is named with the
+\code{exposure} argument (levels are inferred from \code{data} and compared against
+\code{code.exposure.ref}).
+}
+
+\subsection{Outcome type and time point}{
+\itemize{
+\item \code{outcome.type}: \code{"COMPETING-RISK"} (Aalen–Johansen), \code{"SURVIVAL"} (Kaplan–Meier),
+\code{"BINOMIAL"}, \code{"PROPORTIONAL"}, or \code{"POLY-PROPORTIONAL"}.
+\item \code{time.point}: required for \code{"COMPETING-RISK"} and \code{"SURVIVAL"}; ignored for
+\code{"BINOMIAL"}/\code{"PROPORTIONAL"} families.
+}
+}
+
+\subsection{Event/status coding}{
+
+Use integer codes to map your data to analysis types:\tabular{lll}{
+   Setting \tab Codes \tab Meaning \cr
+   Competing risk \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censor \cr
+   Survival (KM) \tab \code{code.event1}, \code{code.censoring} \tab event / censor \cr
+   ADaM-ADTTE \tab \code{code.event1 = 0}, \code{code.censoring = 1} \tab set to match ADaM convention \cr
+}
+
+
+The \strong{stratification} variable \code{strata} (optional) adjusts for dependent
+censoring in IPCW-style steps when applicable.
+}
+
+\subsection{Effect measures (categorical exposure)}{
+
+Choose the effect scale for event 1 and (optionally) event 2:\tabular{llll}{
+   Argument \tab Applies to \tab Choices \tab Default \cr
+   \code{effect.measure1} \tab primary event \tab \code{"RR"}, \code{"OR"}, \code{"SHR"} \tab \code{"RR"} \cr
+   \code{effect.measure2} \tab competing event \tab \code{"RR"}, \code{"OR"}, \code{"SHR"} \tab \code{"RR"} \cr
+}
+
+\itemize{
+\item \code{RR}: risk ratio at \code{time.point} (AJ/KM contexts).
+\item \code{OR}: odds ratio on the log-odds-product parameterization.
+\item \code{SHR}: subdistribution hazard ratio (interpreted in the log-odds-product model).
+}
+}
+
+\subsection{Inference and intervals}{\tabular{lll}{
+   Argument \tab Meaning \tab Default \cr
+   \code{conf.level} \tab Wald-type CI level \tab \code{0.95} \cr
+   \code{report.sandwich.conf} \tab Sandwich variance CIs \tab \code{TRUE} \cr
+   \code{report.boot.conf} \tab Bootstrap CIs (if \code{TRUE} or \code{NULL} with suitable outcome) \tab \code{NULL} \cr
+   \code{boot.bca} \tab Use BCa intervals (else normal approx) \tab \code{FALSE} \cr
+   \code{boot.parameter1} \tab Bootstrap reps \tab \code{200} \cr
+   \code{boot.parameter2} \tab Seed for resampling \tab \code{46} \cr
+}
+
+
+Notes:
+\itemize{
+\item If both sandwich and bootstrap are requested, results may be reported side by side.
+\item For heavy data, prefer sandwich CIs; use bootstrap to probe small-sample robustness.
+}
+}
+
+\subsection{Optimization & solver controls (advanced)}{
+
+\code{polyreg()} solves estimating equations with optional inner routines.\tabular{lll}{
+   Argument \tab Role \tab Default \cr
+   \code{nleqslv.method} \tab Root solver / optimizer backend \tab \code{"nleqslv"} \cr
+   \code{optim.parameter1} / \code{optim.parameter2} \tab Outer/inner convergence tolerances \tab \code{1e-6}, \code{1e-6} \cr
+   \code{optim.parameter3} \tab Parameter absolute bound \tab \code{100} \cr
+   \code{optim.parameter4} \tab Max outer iterations \tab \code{50} \cr
+   \code{optim.parameter5} \tab Max \code{nleqslv} iters per outer \tab \code{50} \cr
+   \code{optim.parameter6:13} \tab Levenberg–Marquardt controls (iters/tolerances/lambda) \tab see defaults \cr
+}
+
+
+Tips:
+\itemize{
+\item If convergence warnings appear, relax/tighten tolerances or cap the parameter
+bound (\code{optim.parameter3}). Inspect \code{report.optim.convergence = TRUE}.
+}
+}
+
+\subsection{Data handling and stability}{\tabular{lll}{
+   Argument \tab Meaning \tab Default \cr
+   \code{subset.condition} \tab An expression (as character) to subset \code{data} \tab \code{NULL} \cr
+   \code{na.action} \tab NA handling function \tab \code{stats::na.omit} \cr
+   \code{should.normalize.covariate} \tab Center/scale nuisance covariates \tab \code{TRUE} \cr
+   \code{should.terminate.time.point} \tab Truncate support by exposure-wise follow-up maxima \tab \code{TRUE} \cr
+   \code{prob.bound} \tab Truncate probabilities away from 0/1 (numerical guard) \tab \code{1e-5} \cr
+   \code{data.initial.values} \tab Optional starting values data frame \tab \code{NULL} \cr
+}
+
+}
+
+\subsection{Returned object and downstream use}{
+
+The result is a list containing:
+\itemize{
+\item \code{coefficient} and \code{cov}: estimates and variance–covariance matrix.
+\item \code{summary}: a tidy data frame (ready for \code{modelsummary::msummary()}), with
+effect sizes and intervals on the chosen scale (\code{RR}/\code{OR}/\code{SHR}).
+\item \code{diagnosis.statistics}: IPCW weights, influence functions, and predicted
+potential outcomes for diagnostics and sensitivity checks.
+}
+
+You can visualize model-implied curves with \code{cifplot()} (by passing fitted
+objects or re-using the same \code{Event()}/\code{Surv()} specification).
+}
+
+\subsection{Reproducibility and conventions}{
+\itemize{
+\item Set \code{boot.parameter2} for reproducible bootstrap results.
+\item Match CDISC ADaM conventions via \code{code.event1 = 0}, \code{code.censoring = 1}
+(and, if applicable, \code{code.event2} for competing events).
+\item Use \code{strata} when censoring may depend on baseline factors (IPCW stratification).
+}
+}
 }
 \examples{
 data(diabetes.complications)
