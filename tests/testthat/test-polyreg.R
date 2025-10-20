@@ -4,7 +4,7 @@ test_that("polyreg() produced expected coefficients and variance covariance matr
   tested_coefficient <- round(output$coefficient,digit=3)
   tested_cov <- round(output$cov[1,],digit=3)
   tested <- as.vector(cbind(tested_coefficient,tested_cov))
-  expected <- c(-1.383, -0.276, -0.067, -0.555, -3.991, -0.104, 0.045, -0.169, 0.018, -0.013, -0.013, -0.013, 0.011, -0.009, -0.009, -0.009)
+  expected <- c(-1.383, -0.276, -0.067, -0.555, -3.991, -0.104, 0.045, -0.169, 0.017, -0.012, -0.012, -0.013, 0.010, -0.008, -0.008, -0.008)
   expect_equal(tested, expected)
 })
 
@@ -14,7 +14,7 @@ test_that("polyreg() produced expected coefficients and variance covariance matr
   tested_coefficient <- round(output$coefficient,digit=3)
   tested_cov <- round(output$cov[1,],digit=3)
   tested <- as.vector(cbind(tested_coefficient,tested_cov))
-  expected <- c(-1.383, 0.363, -3.988, 0.081, 0.009, -0.006, 0.004, -0.003)
+  expected <- c(-1.383, 0.363, -3.988, 0.081, 0.009, -0.006, 0.003, -0.003)
   expect_equal(tested, expected)
 })
 

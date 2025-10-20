@@ -59,7 +59,7 @@ estimating_equation_ipcw <- function(
     potential.CIFs <- calculatePotentialRisk(alpha_beta, x_a, x_l, offset, estimand)
 
     one <- rep(1, nrow(x_l))
-    a <- as.vector(x_a)  # （注）多水準未対応の既存仕様のまま
+    a <- as.vector(x_a)  # Binary exposure
     ey_1 <- potential.CIFs[,2]*a + potential.CIFs[,1]*(one - a)
 
     ip.weight <- if (is.null(ip.weight.matrix)) rep(1, nrow(x_l)) else as.vector(ip.weight.matrix)
@@ -102,7 +102,7 @@ estimating_equation_ipcw <- function(
     y_1_ <- ifelse(epsilon == estimand$code.event1,   1, 0)
 
     one <- rep(1, nrow(x_l))
-    a <- as.vector(x_a)  # 二値曝露前提の既存仕様を踏襲
+    a <- as.vector(x_a)  # Binary exposure
     score_beta <- NULL
     score_alpha1 <- 0
     i_time <- 0
@@ -321,8 +321,8 @@ calculateCov <- function(objget_results, estimand, prob.bound)
   censoring_mkm <- censoring_martingale / censoring_km
   y_12 <- (y_1 + y_2 > 0)
   survival_km <- calculateKaplanMeier(t, y_12)
-  wy_1 <- w11 * (y_1 - ey_1) + w12 * (y_2 - ey_2)
-  wy_2 <- w12 * (y_1 - ey_1) + w22 * (y_2 - ey_2)
+  wy_1 <- w11 * y_1 + w12 * y_2
+  wy_2 <- w12 * y_1 + w22 * y_2
   x_la <- cbind(x_l, x_a)
   AB1 <- score[1:n, 1:iv[3]]
   AB2 <- score[(n + 1):(2 * n), iv[4]:iv[7]]
@@ -453,7 +453,7 @@ calculateCovSurvival <- function(objget_results, estimand, prob.bound)
   censoring_mkm <- censoring_martingale / censoring_km
   y_12 <- (y_1 > 0)
   survival_km <- calculateKaplanMeier(t, y_12)
-  wy_1 <- w11 * (y_1 - ey_1)
+  wy_1 <- w11 * y_1
   x_la <- cbind(x_l, x_a)
   AB1 <- score[1:n, 1:iv[3]]
   for (i_para in 1:iv[2]) {
