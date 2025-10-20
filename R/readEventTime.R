@@ -1,18 +1,51 @@
-#' Extract per-stratum event times from formula and data
+#' Extract per-stratum event times from a formula and data
 #'
 #' @description
-#' Build per-stratum event-time lists that you can pass to `competing.risk.time` or
-#' `intercurrent.event.time` in `cifplot()` / `cifpanel()`.
+#' Creates a list of event times that can be passed to downstream
+#' visualization or analysis functions such as `competing.risk.time` or
+#' `intercurrent.event.time` in \code{\link{cifplot}} and \code{\link{cifpanel}}.
+#' Event types are specified by event 1, event 2, censoring, or user-specified codes.
 #'
-#' @param formula Event(time, status) ~ strata(...)
-#' @param data Data frame.
-#' @param which_event One of "event2", "event1", "censor", "code".
-#' @param user_specified_code Used when which="code": status value to pick (e.g., 3 for an intercurrent event).
-#' @param code.event1,code.event2,code.censoring Integers describing your coding (used to build d1/d2/d0 inside readSurv).
-#' @param subset.condition Optional character expression to subset `data`.
-#' @param na.action Function to handle NA (default na.omit).
-#' @param unique_times,drop_empty See `cif_event_times_from_frame()`.
-#' @return Named list of numeric vectors (times per stratum).
+#' @param formula A model formula specifying the outcome and (optionally) \code{strata()}.
+#' @param data A data frame containing variables in \code{formula}.
+#' @param subset.condition Optional expression (as a character string) defining a
+#'   subset of \code{data} to analyse. Defaults to \code{NULL}.
+#' @param na.action A function specifying the action to take on missing values.
+#'   The default is \code{\link[stats]{na.omit}}.
+#' @param which_event One of \code{"event1"}, \code{"event2"}, \code{"censor"},
+#'   \code{"censoring"}, or \code{"user_specified"}, indicating which event type
+#'   to extract times for.
+#' @param code.event1,code.event2,code.censoring Integer codes representing the
+#'   event and censoring categories. Defaults are \code{1}, \code{2}, and
+#'   \code{0}, respectively.
+#' @param user_specified_code When \code{which_event = "user_specified"},
+#'   the integer event code to extract (e.g., 3 for an intercurrent event).
+#' @param unique_times Logical if \code{TRUE}, only unique and sorted time points
+#'   are returned for each stratum.
+#' @param dropEmpty Logical if \code{TRUE} (default), strata with no events are
+#'   dropped from the returned list. Set to \code{FALSE} to retain empty strata
+#'   as \code{numeric(0)} vectors (useful for diagnostics or consistent list length).
+#'
+#' @return
+#' A named list of numeric vectors, where each element corresponds to a stratum
+#' and contains the event times of the selected type.
+#'
+#' @details
+#' This function is typically used internally by plotting and model functions,
+#' but can also be called directly to inspect the per-stratum event-time
+#' structure of a dataset:
+#'
+#' ```r
+#' read_time_to_event(
+#'   formula = Event(time, status) ~ strata(group),
+#'   data = df, which_event = "event1"
+#' )
+#' ```
+#'
+#' @seealso
+#' \code{\link{readSurv}}, \code{\link{getTimeToEvent}},
+#' \code{\link{cifplot}}, \code{\link{cifpanel}}
+#'
 #' @export
 read_time_to_event <- function(
     formula, data,
@@ -30,7 +63,7 @@ read_time_to_event <- function(
   getTimeToEvent(
     out_readSurv = out_readSurv,
     which_event = which_event, user_specified_code = user_specified_code,
-    unique_times = unique_times, drop_empty = drop_empty
+    readUniqueTime = readUniqueTime, dropEmpty = dropEmpty
   )
 }
 
@@ -38,8 +71,8 @@ getTimeToEvent <- function(
     out_readSurv,
     which_event = c("event2", "event1", "censor", "censoring", "user_specified"),
     user_specified_code = NULL,
-    unique_times = TRUE,
-    drop_empty = TRUE
+    readUniqueTime = TRUE,
+    dropEmpty = TRUE
 ){
   which_event <- match.arg(which_event)
 
@@ -73,9 +106,9 @@ getTimeToEvent <- function(
   for (s in labs) {
     idx <- (strata == s) & (pick > 0L) & is.finite(tvec)
     tt  <- tvec[idx]
-    if (isTRUE(unique_times)) tt <- sort(unique(tt)) else tt <- sort(tt)
-    if (length(tt) > 0L || !isTRUE(drop_empty)) out[[s]] <- tt
+    if (isTRUE(readUniqueTime)) tt <- sort(unique(tt)) else tt <- sort(tt)
+    if (length(tt) > 0 || !isTRUE(dropEmpty)) out[[s]] <- tt
   }
-  if (isTRUE(drop_empty)) out <- out[vapply(out, length, integer(1)) > 0L]
+  if (isTRUE(dropEmpty)) out <- out[vapply(out, length, integer(1)) > 0]
   return(out)
 }
