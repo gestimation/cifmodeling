@@ -155,59 +155,62 @@ It calls geom_point() (default \code{TRUE}).}
 }
 \value{
 A \code{ggplot} object.
-For \code{outcome.type="COMPETING-RISK"}, \code{$surv} equals \code{1 - CIF} for \code{code.event1}.
-Standard error and CIs are provided per \code{conf.type}. Note that some methods for \code{survfit} (e.g., \code{residuals.survfit}) may not be supported.
 }
 \description{
-Draw a publication-ready plot. Accepts a \code{survfit} object or a \code{formula+data}
-(in which case it computes a \code{survfit} via \code{cifcurve()} first).
+This function produces the Kaplan–Meier survival or Aalen–Johansen cumulative
+incidence curve from a unified formula + data interface (\code{Event()} or \code{Surv()} on
+the left-hand side). It auto-labels axes based on `\code{outcome.type} and \code{type.y}, can
+add censoring/competing-risk/intercurrent-event marks, and returns a regular \code{ggplot}
+object (compatible with \code{+} and \code{\%+\%}). You may also pass a survfit-compatible object directly.
 }
 \details{
 \strong{Plotting:}
-This function calls an internal helper \code{call_ggsurvfit()} which adds confidence bands,
+This function calls an internal helper \code{call_ggsurvfit()} which adds confidence intervals,
 risk table, censoring marks, and optional competing-risk and intercurrent-event marks.
 For CIF display, set \code{type.y = "risk"}.
-
-\subsection{Advanced control (not required for typical use)}{
+\subsection{Advanced control not required for typical use}{
 
 The arguments below fine-tune internal estimation and figure appearance.
 \strong{Most users do not need to change these defaults.}
-\subsection{Variance & confidence intervals}{\tabular{lll}{
+}
+
+\subsection{Standard error and confidence intervals}{\tabular{lll}{
    Argument \tab Description \tab Default \cr
-   \code{error} \tab Variance method. For KM: \code{"greenwood"}, \code{"tsiatis"}. For CIF: \code{"aalen"}, \code{"delta"}, \code{"none"}. \tab \code{NULL} (internally chosen: KM→\code{"greenwood"}, CIF→\code{"delta"}) \cr
-   \code{conf.type} \tab CI transformation on probability scale: \code{"plain"}, \code{"log"}, \code{"log-log"}, \code{"arcsin"}, \code{"logit"}, or \code{"none"}. \tab \code{"arcsine-square root"} \cr
-   \code{conf.int} \tab Two-sided CI level. \tab \code{0.95} \cr
+   \code{error} \tab Standard error for KM: \code{"greenwood"}, \code{"tsiatis"}. For CIF: \code{"aalen"}, \code{"delta"}, \code{"none"}. \tab Automatically chosen \code{"greenwood"} or \code{"delta"} \cr
+   \code{conf.type} \tab Transformation for confidence intervals: \code{"plain"}, \code{"log"}, \code{"log-log"}, \code{"arcsin"}, \code{"logit"}, or \code{"none"}. \tab \code{"arcsin"} \cr
+   \code{conf.int} \tab Two-sided confidence intervals level. \tab \code{0.95} \cr
 }
 
-}
-
-\subsection{Graphical layers (toggle on/off)}{\tabular{lll}{
+\subsection{Graphical layers}{\tabular{lll}{
    Argument \tab Effect \tab Default \cr
-   \code{addConfidenceInterval} \tab Add CI ribbon (\code{geom_ribbon()}). \tab \code{TRUE} \cr
+   \code{addConfidenceInterval} \tab Add confidence interval ribbon. \tab \code{TRUE} \cr
    \code{addRiskTable} \tab Add numbers-at-risk table below the plot. \tab \code{TRUE} \cr
    \code{addEstimateTable} \tab Add estimates & CIs table. \tab \code{FALSE} \cr
-   \code{addCensorMark} \tab Add censoring marks (\code{geom_point()}). \tab \code{TRUE} \cr
-   \code{addCompetingRiskMark} \tab Add marks for Event2 (competing events) at supplied times. \tab \code{FALSE} \cr
-   \code{addIntercurrentEventMark} \tab Add user-specified intercurrent event marks at supplied times. \tab \code{FALSE} \cr
-   \code{addQuantileLine} \tab Add quantile line(s) via \code{add_quantile()} (\code{geom_segment()}). \tab \code{FALSE} \cr
+   \code{addCensorMark} \tab Add censoring marks. \tab \code{TRUE} \cr
+   \code{addCompetingRiskMark} \tab Add marks for event2 of "COMPETING-RISK" outcome. \tab \code{FALSE} \cr
+   \code{addIntercurrentEventMark} \tab Add intercurrent event marks at user-specified times. \tab \code{FALSE} \cr
+   \code{addQuantileLine} \tab Add quantile lines. \tab \code{FALSE} \cr
    \code{quantile} \tab Quantile for \code{addQuantileLine}. \tab \code{0.5} \cr
 }
 
 }
 
-\subsection{Time marks (inputs for optional layers)}{\tabular{lll}{
+\subsection{Time for marks}{\tabular{lll}{
    Argument \tab Description \tab Default \cr
-   \code{competing.risk.time} \tab \strong{Named list} of numeric vectors: per-stratum times for competing events (names must match legend strata). Typically created by \code{extract_time_to_event()}. \tab \code{list()} \cr
-   \code{intercurrent.event.time} \tab \strong{Named list} of numeric vectors: per-stratum times for intercurrent events (names must match legend strata). Typically created by \code{extract_time_to_event()}. \tab \code{list()} \cr
+   \code{competing.risk.time} \tab \strong{Named list} of numeric vectors that contains times of competing risks. Names must match strata labels. Typically created internally. \tab \code{list()} \cr
+   \code{intercurrent.event.time} \tab \strong{Named list} of numeric vectors that contains times of intercurrent events. Names must match strata labels. Typically created by \code{extract_time_to_event()}. \tab \code{list()} \cr
 }
 
 }
 
-\subsection{Appearance of marks (styling)}{\tabular{lll}{
+\subsection{Appearance of marks}{\tabular{lll}{
    Argument \tab Applies to \tab Default \cr
-   \code{shape.censor.mark} / \code{size.censor.mark} \tab Censor marks \tab \code{3} / \code{2} \cr
-   \code{shape.competing.risk.mark} / \code{size.competing.risk.mark} \tab Competing-risk marks \tab \code{16} / \code{2} \cr
-   \code{shape.intercurrent.event.mark} / \code{size.intercurrent.event.mark} \tab Intercurrent marks \tab \code{1} / \code{2} \cr
+   \code{shape.censor.mark} \tab Censoring marks \tab \code{3} (cross) \cr
+   \code{size.censor.mark} \tab Censoring marks \tab \code{2} \cr
+   \code{shape.competing.risk.mark} \tab Competing-risk marks \tab \code{16} (filled circle) \cr
+   \code{size.competing.risk.mark} \tab Competing-risk marks \tab \code{2} \cr
+   \code{shape.intercurrent.event.mark} \tab Intercurrent marks \tab \code{1} (circle) \cr
+   \code{size.intercurrent.event.mark} \tab Intercurrent marks \tab \code{2} \cr
 }
 
 }
@@ -224,14 +227,15 @@ The arguments below fine-tune internal estimation and figure appearance.
 
 \subsection{Export (optional convenience)}{\tabular{lll}{
    Argument \tab Description \tab Default \cr
-   \code{filename.ggsave} \tab If non-\code{NULL}, save the plot with \code{ggsave()}. \tab \code{NULL} \cr
-   \code{width.ggsave}, \code{height.ggsave}, \code{dpi.ggsave} \tab Size/DPI passed to \code{ggsave()}. \tab \code{6}, \code{6}, \code{300} \cr
+   \code{filename.ggsave} \tab If non-\code{NULL}, save the plot using \code{ggsave()}. \tab \code{NULL} \cr
+   \code{width.ggsave}, \code{height.ggsave} \tab Size passed to \code{ggsave()}. \tab \code{6}, \code{6} \cr
+   \code{dpi.ggsave} \tab DPI passed to \code{ggsave()}. \tab \code{300} \cr
 }
 
 
 \strong{Notes.}
 \itemize{
-\item For CIF displays, set \code{type.y = "risk"}; for KM, use \code{type.y = NULL} (survival scale).
+\item For CIF displays, set \code{type.y = "risk"}. For survival scale, use \code{type.y = NULL} or \verb{= "surv"}.
 \item Event coding can be controlled via \code{code.event1}, \code{code.event2}, \code{code.censoring}.
 For ADaM-style data, use \code{code.event1 = 0}, \code{code.censoring = 1}.
 \item Per-stratum time lists should have names identical to plotted strata labels.

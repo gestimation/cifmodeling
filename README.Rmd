@@ -400,7 +400,7 @@ The `legend.collect = TRUE` option merges legends from all panels into a single 
 
 ## Additional information
 
-### Comparison of `model formula` and `outcome.type` across `cifcurve()` and `polyreg()`
+### Comparison of model formula and outcome.type across cifcurve() and polyreg()
 
 **Common ground**
 
@@ -424,28 +424,170 @@ polyreg(Event(AVAL, CNSR) ~ ARM, data = adtte,
         outcome.type = "SURVIVAL", code.event1=0, code.censoring=1)
 ```
 
-### Processing pipeline of `cifcurve()`
+### Processing pipeline of cifcurve()
 
 A user-specified model formula in `Event()` or `Surv()` is first parsed by `readSurv()` to extract the time-to-event, the event indicator, optional weights, and any strata variable. Those components are then passed to the back-end estimators implemented in `src/calculateKM.cpp`. The C++ routine supports both weighted and stratified data, so the heavy lifting for Kaplan–Meier estimates (and associated at-risk, event, and censor counts) happens efficiently regardless of how the input was specified. For competing-risks data, `cifcurve()` builds inverse-probability-of-censoring weights to calculate Aalen–Johansen estimates by calling `calculateAJ()`, which reuses the Kaplan–Meier estimates for censoring from `calculateKM()`.
 
 The `error` argument determines how standard errors are computed. For survival data (`outcome.type = "SURVIVAL"`) it maps to Greenwood or Tsiatis estimators inside `calculateKM()`, while competing-risks data (`outcome.type = "COMPETING-RISK"`) delegates to `calculateAalenDeltaSE()` where `"aalen"` reproduces the classic Aalen variance and `"delta"` implements the delta method. Standard errors are passed to `calculateCI()`, which also provides the requested transformation-based confidence bounds.
 
-### Variance and confidence interval options for `cifcurve()`
+### Variance and confidence interval options for cifcurve()
 
 **Standard errors** For standard errors of Kaplan–Meier estimator, the default is Greenwood estimator, with alternatives `"tsiatis"` for the Tsiatis estimator The Greenwood formula is a sum of terms d/(n(n-m)), where d is the number of events at a given time point, n is the number at risk, and m is the cumulative sum of events at that time. This formula is derived from a binomial argument, so extension to the weighted case is ad hoc. Tsiatis (1981) proposes a sum of terms d/(n\*n), based on a counting process argument which includes the weighted case. For confidence intervals of cumulative incidence curves, the default `"delta"` applies the delta-method, while `"aalen"` uses the Aalen variance decomposition. By default `cifcurve()` rescales the Greenwood/Tsiatis quantities so that `std.err` is reported on the probability scale; set `report.survfit.std.err = TRUE` to return the conventional log-survival standard errors from `survfit`.
 
 **Confidence intervals** `calculateCI()` constructs intervals on the probability scale using the requested transformation: `"arcsine-square root"`/`"arcsine"`/`"a"` (default), `"plain`, `"log"`, `"log-log"`, or `"logit"`. Passing `"none"`/`"n"` skips interval computation entirely. The function exponentiates back to the probability scale, clips bounds to [0, 1], and replaces undefined values with `NA` so that interval endpoints remain well behaved in plots and summaries.
 
-### Processing pipeline of `polyreg()`
+### Processing pipeline of polyreg()
 
 Input pre-processing mirrors the survival workflow by calling `checkInput()` to parse event codes, exposure levels, and requested estimands before `createAnalysisDataset()` builds the modelling frame and `normalizeCovariate()` rescales covariates by default. Starting values are obtained from the nuisance model fits via `getInitialValues()` or `getInitialValuesProportional()`, or, when necessary, from user-supplied data frame of starting values. Inverse-probability-of-censoring weights for survival and competing-risks outcomes are calculated by `calculateIPCW()`, which in turn wraps the `calculateKM()` C++ routine to obtain Kaplan-Meier estimates of censoring, while time-constant effects assemble matrices through `calculateIPCWMatrix()`.
 
 The weighted estimating equations are then solved by `solveEstimatingEquation()`, which dispatches to specific score functions such as `estimating_equation_ipcw()`, `estimating_equation_survival()`, and `estimating_equation_proportional()` and iterates with `nleqslv`/Levenberg–Marquardt updates until the convergence criteria in `assessConvergence()` are met. Sandwich variances come from `calculateCov()` or `calculateCovSurvival()` and are rescaled back to the original covariate scale by `normalizeEstimate()`, while optional bootstrap intervals reuse the same solver inside the `boot` resampling loop. The resulting influence functions, weights, and fitted cumulative incidence probabilities are retained in `diagnostic.statistics` for downstream diagnostics.
 
-### Key arguments of `msummary()` that are helpful when reporting `polyreg()` results
+### Key arguments of msummary() that are helpful when reporting polyreg() results
 
 -   `output` – controls the destination of the table (e.g., `"markdown"`, `"latex"`, `"html"`, or a file path such as `'results/cif_table.docx'`).
 -   `coef_map` or `coef_rename` – renames model terms for interpretability.
 -   `statistic` – specifies which uncertainty estimates to display. Use `statistic = "p.value"` for p-values, `statistic = "conf.int"` for Wald confidence interval, `statistic = "t"` for t statistics, `statistic = "z"` for z statistics, `statistic = "p.value"` for p-values, instead of standard errors (default).
 
 You can also supply multiple model summaries as a named list to compare estimates across specifications in a single table. See `vignette('modelsummary')` for a comprehensive overview of additional layout and styling options.
+
+## Full lists of arguments
+
+### cifcurve()
+
+-   `formula` A model formula specifying the outcome and (optionally) `strata()`.
+-   `data` A data frame containing variables in `formula`.
+-   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative; strictly positive is recommended.
+-   `subset.condition` Optional character expression to subset `data` before analysis.
+-   `na.action` Function to handle missing values (default: `na.omit`).
+-   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"SURVIVAL"` (Kaplan–Meier type) or `"COMPETING-RISK"` (Aalen–Johansen type). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"COMPETING-RISK"` is assumed; otherwise, `"SURVIVAL"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
+-   `code.event1` Integer code of the event of interest (default `1`).
+-   `code.event2` Integer code of the competing event (default `2`).
+-   `code.censoring` Integer code of censoring (default `0`).
+-   `error` Character specifying variance type used internally. For `"SURVIVAL"` typically `"greenwood"`. For `"COMPETING-RISK"` pass options supported by `calculateAalenDeltaSE()` (`"aalen"`, `"delta"`, `"none"`).
+-   `conf.type` Character transformation for CI on the probability scale (default `"arcsine-square root"`).
+-   `conf.int` numeric two-sided confidence level (default `0.95`).
+-   `report.survfit.std.err` If `TRUE`, report SE on the log-survival scale (survfit's convention). Otherwise SE is on the probability scale.
+
+### cifplot()
+
+-   `x` A model formula or a survfit object.
+-   `data` A data frame containing variables in `formula`.
+-   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative; strictly positive is recommended.
+-   `subset.condition` Optional character expression to subset `data` before analysis.
+-   `na.action` Function to handle missing values (default: `na.omit`).
+-   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"SURVIVAL"` (Kaplan–Meier type) or `"COMPETING-RISK"` (Aalen–Johansen type). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"COMPETING-RISK"` is assumed; otherwise, `"SURVIVAL"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
+-   `code.event1` Integer code of the event of interest (default `1`).
+-   `code.event2` Integer code of the competing event (default `2`).
+-   `code.censoring` Integer code of censoring (default `0`).
+-   `error` Character specifying variance type used internally. For `"SURVIVAL"` typically `"greenwood"`. For `"COMPETING-RISK"` pass options supported by `calculateAalenDeltaSE()` (`"aalen"`, `"delta"`, `"none"`).
+-   `conf.type` Character transformation for CI on the probability scale (default `"arcsine-square root"`).
+-   `conf.int` numeric two-sided confidence level (default `0.95`).
+-   `type.y` `NULL` (survival) or `"risk"` (display `1 - survival` i.e. CIF).
+-   `label.x` Character x-axis labels (default `"Time"`).
+-   `label.y` Character y-axis labels (default internally set to `"Survival"` or `"Cumulative incidence"`).
+-   `label.strata` Character vector of labels for strata.
+-   `limits.x` Numeric length-2 vectors for axis limits. If `NULL` it is internally set to `c(0,max(out_readSurv$t))`.
+-   `limits.y` Numeric length-2 vectors for axis limits. If `NULL` it is internally set to `c(0,1)`.
+-   `breaks.x` Numeric vectors for axis breaks (default `NULL`).
+-   `breaks.y` Numeric vectors for axis breaks (default `NULL`).
+-   `use_coord_cartesian` Logical specify use of `coord_cartesian()` (default `FALSE`).
+-   `addConfidenceInterval` Logical add `add_confidence_interval()` to plot. It calls `geom_ribbon()` (default `TRUE`).
+-   `addRiskTable` Logical add `add_risktable(risktable_stats="n.risk")` to plot (default `TRUE`).
+-   `addEstimateTable` Logical add `add_risktable(risktable_stats="estimate (conf.low, conf.high)")` to plot (default `FALSE`).
+-   `addCensorMark` Logical add `add_censor_mark()` to plot. It calls `geom_point()` (default `TRUE`).
+-   `shape.censor.mark` Integer point shape for censor marks (default `3`).
+-   `size.censor.mark` Numeric point size for censor marks (default `2`).
+-   `addCompetingRiskMark` Logical add time marks to describe event2 specified by `Event()`, usually the competing events. It calls `geom_point()` (default `TRUE`).
+-   `competing.risk.time` Named list of numeric vectors (names must be mapped to strata labels).
+-   `shape.competing.risk.mark` Integer point shape for competing-risk marks (default `16`).
+-   `size.competing.risk.mark` Numeric point size for competing-risk marks (default `2`).
+-   `addIntercurrentEventMark` Logical overlay user-specified time marks per strata calls `geom_point()` (default `TRUE`).
+-   `intercurrent.event.time` Named list of numeric vectors (names must be mapped to strata labels).
+-   `shape.intercurrent.event.mark` Integer point shape for intercurrent-event marks (default `1`).
+-   `size.intercurrent.event.mark` Numeric point size for intercurrent-event marks (default `2`).
+-   `addQuantileLine` Logical add `add_quantile()}` to plot. It calls `geom_segment()` (default `TRUE`).
+-   `quantile` Numeric specify quantile for `add_quantile()` (default `0.5`).
+
+-   `style` Character plot theme controls (default `"CLASSIC"`).
+-   `font.family` Character plot theme controls (e.g. `"sans"`, `"serif"`, and `"mono"`. default `"sans"`).
+-   `font.size` Integer plot theme controls (default `12`).
+-   `legend.position` Character specify position of legend: `"top"`, `"right"`, `"bottom"`, `"left"`, or `"none"` (default `"top"`).
+-   `filename.ggsave` Character save the `ggsurvfit`}` plot with the path and name specified.
+-   `width.ggsave` Numeric specify width of the `ggsurvfit` plot.
+-   `height.ggsave` Numeric specify height of the `ggsurvfit` plot.
+-   `dpi.ggsave` Numeric specify dpi of the `ggsurvfit` plot.
+
+### cifpanel()
+
+-   `formula` A single model formula evaluated in `data`, used for all panels when `formulas` is not provided.
+-   `formulas` A list of formulas (one per panel). If provided, overrides `formula`.
+-   `data` A data.frame containing variables used in the formula(s).
+-   `outcome.type` Optional vector/list of outcome types per panel. One of `"SURVIVAL"` or `"COMPETING-RISK"`. If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"COMPETING-RISK"` is assumed; otherwise, `"SURVIVAL"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
+-   `code.events` A list of numeric vectors per panel. For `SURVIVAL`: `c(code.event1, code.censoring)`. For `COMPETING-RISK`: `c(code.event1, code.event2, code.censoring)`.
+-   `type.y` Optional vector/list per panel: `"surv"` or `"risk"`.
+-   `label.x`, `label.y` Optional vectors/lists of axis labels per panel.
+-   `label.strata` Optional list of character vectors for legend labels per panel (passed to `cifplot()`).
+-   `limits.x`, `limits.y` Optional vectors/lists of numeric length-2 axis limits per panel.
+-   `breaks.x`, `breaks.y` Optional vectors/lists of axis breaks per panel (forwarded to `breaks.x` / `breaks.y` in `cifplot()`).
+-   `addConfidenceInterval`, `addCensorMark`, `addCompetingRiskMark`, `addIntercurrentEventMark`, `addQuantileLine` Optional logical vectors/lists per panel to toggle features in `cifplot()`. If `NULL`, sensible defaults are used (CI/Censor on; others off).
+-   `rows.columns.panel` Integer vector `c(nrow, ncol)` specifying the grid size.
+-   `title.panel`, `subtitle.panel`, `caption.panel` Optional strings for panel annotation.
+-   `tag_levels.panel` Passed to `patchwork::plot_annotation(tag_levels = ...)`.
+-   `title.plot` Optional length-2 character vector, titles for base/inset plots when `use_inset_element = TRUE`.
+-   `legend.position` Position of legends: `"top"`, `"right"`, `"bottom"`, `"left"`, or `"none"`.
+-   `legend.collect` If `TRUE` (grid mode), collect legends across subplots.
+-   `use_inset_element` If `TRUE`, place the second plot as an inset over the first.
+-   `inset.left`, `inset.bottom`, `inset.right`, `inset.top` Numeric positions (0–1) of the inset box.
+-   `inset.align_to` One of `"panel"`, `"plot"`, or `"full"`.
+-   `inset.legend.position` Legend position for the inset plot (e.g., `"none"`).
+-   `print.panel` If `TRUE`, print the composed panel.
+-   `filename.ggsave` Character save the composed panel with the path and name specified.
+-   `width.ggsave` Numeric specify width of the composed panel.
+-   `height.ggsave` Numeric specify height of the composed panel.
+-   `dpi.ggsave` Numeric specify dpi of the composed panel.
+-   `...` Additional arguments forwarded to `cifplot` (e.g., `style`, `font.family`, `font.size`, etc.). Panel-wise overrides provided via explicit arguments take precedence over `...`.
+
+
+### polyreg()
+
+-   `nuisance.model` A `formula` describing the outcome and nuisance covariates, excluding the exposure of interest.
+-   `exposure` A character string giving the name of the categorical exposure variable in `data`.
+-   `strata` Optional character string with the name of the stratification variable used to adjust for dependent censoring. Defaults to `NULL`.
+-   `data` A data frame containing the outcome, exposure and nuisance covariates referenced by `nuisance.model`.
+-   `subset.condition` Optional expression (as a character string) defining a subset of `data` to analyse. Defaults to `NULL`.
+-   `na.action` A function specifying the action to take on missing values. The default is `na.omit`.
+-   `code.event1` Integer code corresponding to the first event of interest. Defaults to `1`.
+-   `code.event2` Integer code corresponding to the competing event. Defaults to `2`.
+-   `code.censoring` Integer code representing censoring. Defaults to `0`.
+-   `code.exposure.ref` Integer code identifying the reference exposure category. Defaults to `0`.
+-   `effect.measure1` Character string specifying the effect measure for the primary event. Supported values are `"RR"`, `"OR"` and `"SHR"`.
+-   `effect.measure2` Character string specifying the effect measure for the competing event. Supported values are `"RR"`, `"OR"` and `"SHR"`.
+-   `time.point` Numeric time point at which the exposure effect is evaluated. Required for survival and competing risk analyses.
+-   `outcome.type` Character string selecting the outcome type. Valid values are `"COMPETING-RISK"`, `"SURVIVAL"`, `"BINOMIAL"`, `"PROPORTIONAL"` and `"POLY-PROPORTIONAL"`. Defaults to `"COMPETING-RISK"`. If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels,
+`"COMPETING-RISK"` is assumed; otherwise, `"SURVIVAL"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
+-   `conf.level` Confidence level for Wald-type intervals. Defaults to `0.95`.
+-   `report.nuisance.parameter` Logical if `TRUE`, the returned object includes estimates of the nuisance model parameters. Defaults to `FALSE`.
+-   `report.optim.convergence` Logical if `TRUE`, optimisation convergence summaries are returned. Defaults to `FALSE`.
+-   `report.sandwich.conf` Logical or `NULL`. When `TRUE`, confidence intervals based on sandwich variance are computed. When `FALSE`, they are omitted. Defaults to `TRUE`.
+-   `report.boot.conf` Logical or `NULL`. When `TRUE`, bootstrap confidence intervals are computed. When `FALSE`, they are omitted. If `NULL`, the function chooses based on `outcome.type`.
+-   ` boot.bca` Logical indicating the bootstrap confidence interval method. Use `TRUE` for bias-corrected and accelerated intervals or `FALSE` for the normal approximation. Defaults to `FALSE`.
+-   `boot.parameter1` Integer giving the number of bootstrap replications. Defaults to `200`.
+-   `boot.parameter2 Numeric seed used for resampling of bootstrap.
+-   `nleqslv.method Character string defining the solver used by `nleqslv}`. Available choices include `"nleqslv"`, `"Broyden"`, `"Newton"`, `"optim"`, `"BFGS"` and `"SANN"`.
+-   `optim.parameter1` Numeric tolerance for convergence of the outer loop. Defaults to `1e-6`.
+-   `optim.parameter2` Numeric tolerance for convergence of the inner loop. Defaults to `1e-6`.
+-   `optim.parameter3` Numeric constraint on the absolute value of parameters. Defaults to `100`.
+-   `optim.parameter4` Integer maximum number of outer loop iterations. Defaults to `50`.
+-   `optim.parameter5` Integer maximum number of `nleqslv} iterations per outer iteration. Defaults to `50`.
+-   `optim.parameter6` Integer maximum number of iterations for the Levenberg-Marquardt routine. Defaults to `50`.
+-   `optim.parameter7` Numeric convergence tolerance for the Levenberg-Marquardt routine. Defaults to `1e-10`.
+-   `optim.parameter8` Numeric tolerance for updating the Hessian in the Levenberg-Marquardt routine. Defaults to `1e-6`.
+-   `optim.parameter9` Numeric starting value for the Levenberg-Marquardt damping parameter lambda. Defaults to `1e-6`.
+-   `optim.parameter10` Numeric upper bound for lambda in the Levenberg-Marquardt routine. Defaults to `40`.
+-   `optim.parameter11` Numeric lower bound for lambda in the Levenberg-Marquardt routine. Defaults to `0.025`.
+-   `optim.parameter12` Numeric multiplicative increment applied to lambda when the Levenberg-Marquardt step is successful. Defaults to `2`.
+-   `optim.parameter13` Numeric multiplicative decrement applied to lambda when the Levenberg-Marquardt step is unsuccessful. Defaults to `0.5`.
+-   `data.initial.values` Optional data frame providing starting values for the optimisation. Defaults to `NULL`.
+-   `should.normalize.covariate` Logical indicating whether covariates should be centred and scaled prior to optimization. Defaults to `TRUE`.
+-   `should.terminate.time.point` Logical indicating whether time points that contribute estimation are terminated by min of max follow-up times of each exposure level. Defaults to `TRUE`.
+-   `prob.bound` Numeric lower bound used to truncate probabilities away from 0 and 1. Defaults to `1e-5`.

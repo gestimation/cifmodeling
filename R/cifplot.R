@@ -1,13 +1,11 @@
 #' @title Generate a survival or cumulative incidence curve with marks that represent
 #' censoring, competing risks and intermediate events
 #' @description
-#' Draw a publication-ready plot. Accepts a \code{survfit} object or a \code{formula+data}
-#' (in which case it computes a \code{survfit} via \code{cifcurve()} first).
-#' @details
-#' \strong{Plotting:}
-#' This function calls an internal helper \code{call_ggsurvfit()} which adds confidence bands,
-#' risk table, censoring marks, and optional competing-risk and intercurrent-event marks.
-#' For CIF display, set \code{type.y = "risk"}.
+#' This function produces the Kaplan–Meier survival or Aalen–Johansen cumulative
+#' incidence curve from a unified formula + data interface (\code{Event()} or \code{Surv()} on
+#' the left-hand side). It auto-labels axes based on `\code{outcome.type} and \code{type.y}, can
+#' add censoring/competing-risk/intercurrent-event marks, and returns a regular \code{ggplot}
+#' object (compatible with \code{+} and \code{%+%}). You may also pass a survfit-compatible object directly.
 #'
 #' @param x A model formula or a survfit object.
 #' @param data A data frame containing variables in \code{formula}.
@@ -67,76 +65,80 @@
 #' @param height.ggsave Numeric specify height of the \pkg{ggsurvfit} plot.
 #' @param dpi.ggsave Numeric specify dpi of the \pkg{ggsurvfit} plot.
 
-
 #' @details
+#' This function calls an internal helper \code{call_ggsurvfit()} which adds confidence intervals,
+#' risk table, censoring marks, and optional competing-risk and intercurrent-event marks.
 #'
-#' ### Advanced control (not required for typical use)
+#' ### Advanced control not required for typical use
 #'
 #' The arguments below fine-tune internal estimation and figure appearance.
 #' **Most users do not need to change these defaults.**
 #'
-#' #### Variance & confidence intervals
+#' ### Standard error and confidence intervals
 #'
 #' | Argument | Description | Default |
 #' |---|---|---|
-#' | `error` | Variance method. For KM: `"greenwood"`, `"tsiatis"`. For CIF: `"aalen"`, `"delta"`, `"none"`. | `NULL` (internally chosen: KM→`"greenwood"`, CIF→`"delta"`) |
-#' | `conf.type` | CI transformation on probability scale: `"plain"`, `"log"`, `"log-log"`, `"arcsin"`, `"logit"`, or `"none"`. | `"arcsine-square root"` |
-#' | `conf.int` | Two-sided CI level. | `0.95` |
+#' | `error` | Standard error for KM: `"greenwood"`, `"tsiatis"`. For CIF: `"aalen"`, `"delta"`, `"none"`. | Automatically chosen `"greenwood"` or `"delta"` |
+#' | `conf.type` | Transformation for confidence intervals: `"plain"`, `"log"`, `"log-log"`, `"arcsin"`, `"logit"`, or `"none"`. | `"arcsin"` |
+#' | `conf.int` | Two-sided confidence intervals level. | `0.95` |
 #'
-#' #### Graphical layers (toggle on/off)
+#' #### Graphical layers
 #'
-#' | Argument | Effect | Default |
+#' | Argument | Description | Default |
 #' |---|---|---|
-#' | `addConfidenceInterval` | Add CI ribbon (`geom_ribbon()`). | `TRUE` |
+#' | `addConfidenceInterval` | Add confidence interval ribbon. | `TRUE` |
 #' | `addRiskTable` | Add numbers-at-risk table below the plot. | `TRUE` |
 #' | `addEstimateTable` | Add estimates & CIs table. | `FALSE` |
-#' | `addCensorMark` | Add censoring marks (`geom_point()`). | `TRUE` |
-#' | `addCompetingRiskMark` | Add marks for Event2 (competing events) at supplied times. | `FALSE` |
-#' | `addIntercurrentEventMark` | Add user-specified intercurrent event marks at supplied times. | `FALSE` |
-#' | `addQuantileLine` | Add quantile line(s) via `add_quantile()` (`geom_segment()`). | `FALSE` |
+#' | `addCensorMark` | Add censoring marks. | `TRUE` |
+#' | `addCompetingRiskMark` | Add marks for event2 of "COMPETING-RISK" outcome. | `FALSE` |
+#' | `addIntercurrentEventMark` | Add intercurrent event marks at user-specified times. | `FALSE` |
+#' | `addQuantileLine` | Add quantile lines. | `FALSE` |
 #' | `quantile` | Quantile for `addQuantileLine`. | `0.5` |
 #'
-#' #### Time marks (inputs for optional layers)
+#' #### Time for marks
 #'
 #' | Argument | Description | Default |
 #' |---|---|---|
-#' | `competing.risk.time` | **Named list** of numeric vectors: per-stratum times for competing events (names must match legend strata). Typically created by `extract_time_to_event()`. | `list()` |
-#' | `intercurrent.event.time` | **Named list** of numeric vectors: per-stratum times for intercurrent events (names must match legend strata). Typically created by `extract_time_to_event()`. | `list()` |
+#' | `competing.risk.time` | **Named list** of numeric vectors that contains times of competing risks. Names must match strata labels. Typically created internally. | `list()` |
+#' | `intercurrent.event.time` | **Named list** of numeric vectors that contains times of intercurrent events. Names must match strata labels. Typically created by `extract_time_to_event()`. | `list()` |
 #'
-#' #### Appearance of marks (styling)
+#' #### Appearance of marks
 #'
 #' | Argument | Applies to | Default |
 #' |---|---|---|
-#' | `shape.censor.mark` / `size.censor.mark` | Censor marks | `3` / `2` |
-#' | `shape.competing.risk.mark` / `size.competing.risk.mark` | Competing-risk marks | `16` / `2` |
-#' | `shape.intercurrent.event.mark` / `size.intercurrent.event.mark` | Intercurrent marks | `1` / `2` |
+#' | `shape.censor.mark` | Censoring marks | `3` (cross) |
+#' | `size.censor.mark` | Censoring marks | `2` |
+#' | `shape.competing.risk.mark` | Competing-risk marks | `16` (filled circle) |
+#' | `size.competing.risk.mark` | Competing-risk marks | `2` |
+#' | `shape.intercurrent.event.mark` | Intercurrent marks | `1` (circle) |
+#' | `size.intercurrent.event.mark` | Intercurrent marks | `2` |
 #'
-#' #### Axes, legend, and zoom
+#' #### Axes and legend
 #'
 #' | Argument | Description | Default |
 #' |---|---|---|
 #' | `limits.x`, `limits.y` | Axis limits (`c(min, max)`). | Auto |
-#' | `breaks.x`, `breaks.y` | Tick breaks for x/y axes. | Auto |
-#' | `use_coord_cartesian` | Use `coord_cartesian()` for zooming (no data drop). | `FALSE` |
-#' | `legend.position` | Legend placement: `"top"`, `"right"`, `"bottom"`, `"left"`, `"none"`. | `"top"` |
+#' | `breaks.x`, `breaks.y` | Tick breaks for x and y axes. | Auto |
+#' | `use_coord_cartesian` | For zooming use `coord_cartesian()`. | `FALSE` |
+#' | `legend.position` |`"top"`, `"right"`, `"bottom"`, `"left"`, `"none"`. | `"top"` |
 #'
 #' #### Export (optional convenience)
 #'
 #' | Argument | Description | Default |
 #' |---|---|---|
-#' | `filename.ggsave` | If non-`NULL`, save the plot with `ggsave()`. | `NULL` |
-#' | `width.ggsave`, `height.ggsave`, `dpi.ggsave` | Size/DPI passed to `ggsave()`. | `6`, `6`, `300` |
+#' | `filename.ggsave` | If non-`NULL`, save the plot using `ggsave()`. | `NULL` |
+#' | `width.ggsave` | Size passed to `ggsave()`. | `6`|
+#' | `height.ggsave` | Size passed to `ggsave()`. | `6`|
+#' | `dpi.ggsave` | DPI passed to `ggsave()`. | `300` |
 #'
 #' **Notes.**
-#' - For CIF displays, set `type.y = "risk"`; for KM, use `type.y = NULL` (survival scale).
+#' - For CIF displays, set `type.y = "risk"`. For survival scale, use `type.y = NULL` or `= "surv"`.
 #' - Event coding can be controlled via `code.event1`, `code.event2`, `code.censoring`.
 #'   For ADaM-style data, use `code.event1 = 0`, `code.censoring = 1`.
 #' - Per-stratum time lists should have names identical to plotted strata labels.
 
 #' @return A \code{ggplot} object.
-#' For \code{outcome.type="COMPETING-RISK"}, \code{$surv} equals \code{1 - CIF} for \code{code.event1}.
-#' Standard error and CIs are provided per \code{conf.type}. Note that some methods for \code{survfit} (e.g., \code{residuals.survfit}) may not be supported.
-
+#'
 #' @examples
 #' data(diabetes.complications)
 #' cifplot(Event(t,epsilon) ~ fruitq,

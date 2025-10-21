@@ -2,7 +2,7 @@
 % Please edit documentation in R/polyreg.R
 \name{polyreg}
 \alias{polyreg}
-\title{Fit regression models of cumulative incidence functions based on polytomous
+\title{Fits regression models of cumulative incidence functions based on polytomous
 log-odds products and stratified IPCW estimator}
 \usage{
 polyreg(
@@ -195,82 +195,103 @@ covariate effects), \code{cov} (their variance-covariance matrix),
 outcomes).
 }
 \description{
-Fits regression models and estimates multiplicative effects of
-a categorical exposure under several outcome types, including competing risks,
-survival and binomial outcomes
+The direct polytomous regression enables coherent modeling and
+estimation of a variety of multiplicative effects of a categorical exposure under
+several outcome types, including competing risks, survival and binomial outcomes.
 }
 \details{
 \subsection{Overview}{
 
-\code{polyreg()} fits regression models for cumulative incidence (AJ), survival (KM),
-or binomial outcomes using \strong{polytomous log-odds products}. Specify the outcome
-on the LHS of \code{nuisance.model} via \code{Event(time, status)} (competing risks/survival)
-or a 0/1 response (binomial). The categorical \strong{exposure} is named with the
-\code{exposure} argument (levels are inferred from \code{data} and compared against
-\code{code.exposure.ref}).
+\code{polyreg()} implements \strong{log-odds product modeling} for CIFs at user-specified
+time points, focusing on multiplicative effects of a categorical exposure, or
+constant effects over time like Cox regression and Fine-Gray models. It estimates
+multiplicative effects such as \strong{risk ratios}, \strong{odds ratios}, or
+\strong{subdistribution hazard ratios}, while ensuring that the probabilities across
+competing events sum to one. This is achieved through
+\strong{reparameterization using polytomous log-odds products}, which fits so-called
+effect-measure models and nuisance models on multiple competing events
+simultaneously. Additionally, \code{polyreg()} supports direct binomial regression
+for survival outcomes and the Richardson model for binomial outcomes,
+both of which use log-odds products.
+
+The function follows the familiar \strong{formula + data} syntax with \code{Event()} or
+\code{Surv()} and outputs tidy results, including point estimates, standard errors,
+confidence intervals, and p-values. Its results can be easily summarized with
+\code{summary()} or combined with tools such as \strong{modelsummary} or \strong{broom} for reporting.
 }
 
-\subsection{Outcome type and time point}{
+\subsection{Key arguments}{
 \itemize{
-\item \code{outcome.type}: \code{"COMPETING-RISK"} (Aalen–Johansen), \code{"SURVIVAL"} (Kaplan–Meier),
-\code{"BINOMIAL"}, \code{"PROPORTIONAL"}, or \code{"POLY-PROPORTIONAL"}.
-\item \code{time.point}: required for \code{"COMPETING-RISK"} and \code{"SURVIVAL"}; ignored for
-\code{"BINOMIAL"}/\code{"PROPORTIONAL"} families.
+\item \code{nuisance.model} — a formula describing the outcome and nuisance covariates,
+excluding the exposure of interest.
+\item \code{exposure} — specifies the categorical exposure variable
+\item \code{effect.measure1} and \code{effect.measure2} — specifies the effect measures
+for event1 and event2 (\code{"RR"}, \code{"OR"} or \code{"SHR"}).
+\item \code{outcome.type} selects the outcome type (\code{"COMPETING-RISK"}, \code{"SURVIVAL"},
+\code{"BINOMIAL"}, \code{"PROPORTIONAL"} or \code{"POLY-PROPORTIONAL"}).
+\item \code{time.point} — specifies time point at which the exposure effect is evaluated.
+Required for \code{"COMPETING-RISK"} and \code{"SURVIVAL"} outcomes.
+\item \code{strata} — specifies a stratification variable used to adjust for dependent censoring.
 }
 }
 
-\subsection{Event/status coding}{
+\subsection{Outcome type and event status coding}{
 
-Use integer codes to map your data to analysis types:\tabular{lll}{
+The \code{outcome.type} argument must be set to:
+\itemize{
+\item Effects on cumulative incidence probabilities at a specific time: \code{"COMPETING-RISK"}
+\item Effects on a risk at a specific time: \code{"SURVIVAL"}
+\item Common effects on cumulative incidence probabilities over time: \code{"POLY-PROPORTIONAL"}
+\item Common effects on a risk over time: \code{"PROPORTIONAL"}
+\item Effects on a risk of a binomial outcome: \code{"BINOMIAL"}
+}\tabular{lll}{
    Setting \tab Codes \tab Meaning \cr
-   Competing risk \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censor \cr
-   Survival (KM) \tab \code{code.event1}, \code{code.censoring} \tab event / censor \cr
-   ADaM-ADTTE \tab \code{code.event1 = 0}, \code{code.censoring = 1} \tab set to match ADaM convention \cr
+   COMPETING-RISK \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censoring \cr
+   COMPETING-RISK (default) \tab \code{code.event1=1}, \code{code.event2=2}, \code{code.censoring1} \tab event of interest / competing event / censoring \cr
+   SURVIVAL \tab \code{code.event1}, \code{code.censoring} \tab event / censoring \cr
+   SURVIVAL  (default) \tab \code{code.event1=1}, \code{code.censoring=0} \tab event / censoring \cr
+   SURVIVAL (ADaM-ADTTE) \tab \code{code.event1=0}, \code{code.censoring=1} \tab set to match ADaM convention \cr
+   PROPORTIONAL \tab \code{code.event1}, \code{code.censoring} \tab event / censoring \cr
+   PROPORTIONAL  (default) \tab \code{code.event1=1}, \code{code.censoring=0} \tab event / censoring \cr
+   PROPORTIONAL (ADaM-ADTTE) \tab \code{code.event1=0}, \code{code.censoring=1} \tab set to match ADaM convention \cr
+   POLY-PROPORTIONAL \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censoring \cr
+   POLY-PROPORTIONAL (default) \tab \code{code.event1=1}, \code{code.event2=2}, \code{code.censoring1} \tab event of interest / competing event / censoring \cr
 }
 
-
-The \strong{stratification} variable \code{strata} (optional) adjusts for dependent
-censoring in IPCW-style steps when applicable.
 }
 
-\subsection{Effect measures (categorical exposure)}{
+\subsection{Effect measures for categorical exposure}{
 
 Choose the effect scale for event 1 and (optionally) event 2:\tabular{llll}{
    Argument \tab Applies to \tab Choices \tab Default \cr
-   \code{effect.measure1} \tab primary event \tab \code{"RR"}, \code{"OR"}, \code{"SHR"} \tab \code{"RR"} \cr
+   \code{effect.measure1} \tab event of interest \tab \code{"RR"}, \code{"OR"}, \code{"SHR"} \tab \code{"RR"} \cr
    \code{effect.measure2} \tab competing event \tab \code{"RR"}, \code{"OR"}, \code{"SHR"} \tab \code{"RR"} \cr
 }
 
 \itemize{
-\item \code{RR}: risk ratio at \code{time.point} (AJ/KM contexts).
-\item \code{OR}: odds ratio on the log-odds-product parameterization.
-\item \code{SHR}: subdistribution hazard ratio (interpreted in the log-odds-product model).
+\item \code{RR}: risk ratio at \code{time.point} or common over time.
+\item \code{OR}: odds ratio at \code{time.point} or common over time.
+\item \code{SHR}: subdistribution hazard ratio  or common over time.
 }
 }
 
-\subsection{Inference and intervals}{\tabular{lll}{
+\subsection{Inference and intervals (advanced)}{\tabular{lll}{
    Argument \tab Meaning \tab Default \cr
    \code{conf.level} \tab Wald-type CI level \tab \code{0.95} \cr
    \code{report.sandwich.conf} \tab Sandwich variance CIs \tab \code{TRUE} \cr
-   \code{report.boot.conf} \tab Bootstrap CIs (if \code{TRUE} or \code{NULL} with suitable outcome) \tab \code{NULL} \cr
-   \code{boot.bca} \tab Use BCa intervals (else normal approx) \tab \code{FALSE} \cr
+   \code{report.boot.conf} \tab Bootstrap CIs (use if \code{"PROPORTIONAL"} or \code{"POLY-PROPORTIONAL"}) \tab \code{NULL} \cr
+   \code{boot.bca} \tab Use BCa intervals (else normal approximation) \tab \code{FALSE} \cr
    \code{boot.parameter1} \tab Bootstrap reps \tab \code{200} \cr
    \code{boot.parameter2} \tab Seed for resampling \tab \code{46} \cr
 }
 
-
-Notes:
-\itemize{
-\item If both sandwich and bootstrap are requested, results may be reported side by side.
-\item For heavy data, prefer sandwich CIs; use bootstrap to probe small-sample robustness.
-}
 }
 
 \subsection{Optimization & solver controls (advanced)}{
 
 \code{polyreg()} solves estimating equations with optional inner routines.\tabular{lll}{
    Argument \tab Role \tab Default \cr
-   \code{nleqslv.method} \tab Root solver / optimizer backend \tab \code{"nleqslv"} \cr
+   \code{nleqslv.method} \tab Root solver \tab \code{"nleqslv"} \cr
    \code{optim.parameter1} / \code{optim.parameter2} \tab Outer/inner convergence tolerances \tab \code{1e-6}, \code{1e-6} \cr
    \code{optim.parameter3} \tab Parameter absolute bound \tab \code{100} \cr
    \code{optim.parameter4} \tab Max outer iterations \tab \code{50} \cr
@@ -300,17 +321,22 @@ bound (\code{optim.parameter3}). Inspect \code{report.optim.convergence = TRUE}.
 
 \subsection{Returned object and downstream use}{
 
-The result is a list containing:
+This function returns a list object that includes:
 \itemize{
-\item \code{coefficient} and \code{cov}: estimates and variance–covariance matrix.
-\item \code{summary}: a tidy data frame (ready for \code{modelsummary::msummary()}), with
-effect sizes and intervals on the chosen scale (\code{RR}/\code{OR}/\code{SHR}).
-\item \code{diagnostic.statistics}: IPCW weights, influence functions, and predicted
-potential outcomes for diagnostics and sensitivity checks.
+\item \code{coefficient} — regression coefficients
+\item \code{cov} — variance-covariance matrix for regression coefficients
+\item \code{diagnostic.statistics} — a data frame containing inverse probability weights,
+influence functions, and predicted potential outcomes
+\item \code{summary} — a summary of estimated exposure effects
 }
 
-You can visualize model-implied curves with \code{cifplot()} (by passing fitted
-objects or re-using the same \code{Event()}/\code{Surv()} specification).
+Use \code{summary} output with \code{msummary()} to display formatted results. The regression
+coefficients and their variance-covariance matrix are provided as \code{coefficient}
+and \code{cov}, respectively, with the first element corresponding to the intercept term,
+subsequent elements to the covariates in \code{nuisance.model}, and the last element
+to the variable specified by \verb{exposure=}. Finally, \code{diagnostic.statistics} is
+a data frame containing inverse probability weights, influence functions, and
+predicted values of the potential outcomes of individual observations.
 }
 
 \subsection{Reproducibility and conventions}{
@@ -318,7 +344,7 @@ objects or re-using the same \code{Event()}/\code{Surv()} specification).
 \item Set \code{boot.parameter2} for reproducible bootstrap results.
 \item Match CDISC ADaM conventions via \code{code.event1 = 0}, \code{code.censoring = 1}
 (and, if applicable, \code{code.event2} for competing events).
-\item Use \code{strata} when censoring may depend on baseline factors (IPCW stratification).
+\item Use \code{strata} when censoring may depend on baseline covariates (IPCW stratification).
 }
 }
 }

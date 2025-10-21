@@ -1,8 +1,8 @@
-#' @title Fit regression models of cumulative incidence functions based on polytomous
+#' @title Fits regression models of cumulative incidence functions based on polytomous
 #' log-odds products and stratified IPCW estimator
-#' @description Fits regression models and estimates multiplicative effects of
-#' a categorical exposure under several outcome types, including competing risks,
-#' survival and binomial outcomes
+#' @description The direct polytomous regression enables coherent modeling and
+#' estimation of a variety of multiplicative effects of a categorical exposure under
+#' several outcome types, including competing risks, survival and binomial outcomes.
 #' @param nuisance.model A \code{\link[stats]{formula}} describing the outcome and
 #'   nuisance covariates, excluding the exposure of interest.
 #' @param exposure A character string giving the name of the categorical exposure
@@ -103,60 +103,80 @@
 #' @details
 #'
 #' ### Overview
-#' `polyreg()` fits regression models for cumulative incidence (AJ), survival (KM),
-#' or binomial outcomes using **polytomous log-odds products**. Specify the outcome
-#' on the LHS of `nuisance.model` via `Event(time, status)` (competing risks/survival)
-#' or a 0/1 response (binomial). The categorical **exposure** is named with the
-#' `exposure` argument (levels are inferred from `data` and compared against
-#' `code.exposure.ref`).
+#' `polyreg()` implements **log-odds product modeling** for CIFs at user-specified
+#' time points, focusing on multiplicative effects of a categorical exposure, or
+#' constant effects over time like Cox regression and Fine-Gray models. It estimates
+#' multiplicative effects such as **risk ratios**, **odds ratios**, or
+#' **subdistribution hazard ratios**, while ensuring that the probabilities across
+#' competing events sum to one. This is achieved through
+#' **reparameterization using polytomous log-odds products**, which fits so-called
+#' effect-measure models and nuisance models on multiple competing events
+#' simultaneously. Additionally, `polyreg()` supports direct binomial regression
+#' for survival outcomes and the Richardson model for binomial outcomes,
+#' both of which use log-odds products.
 #'
-#' ### Outcome type and time point
+#' The function follows the familiar **formula + data** syntax with `Event()` or
+#' `Surv()` and outputs tidy results, including point estimates, standard errors,
+#' confidence intervals, and p-values. Its results can be easily summarized with
+#' `summary()` or combined with tools such as **modelsummary** or **broom** for reporting.
 #'
-#' - `outcome.type`: `"COMPETING-RISK"` (Aalen–Johansen), `"SURVIVAL"` (Kaplan–Meier),
-#'   `"BINOMIAL"`, `"PROPORTIONAL"`, or `"POLY-PROPORTIONAL"`.
-#' - `time.point`: required for `"COMPETING-RISK"` and `"SURVIVAL"`; ignored for
-#'   `"BINOMIAL"`/`"PROPORTIONAL"` families.
+#' ### Key arguments
+#' -   `nuisance.model` — a formula describing the outcome and nuisance covariates,
+#' excluding the exposure of interest.
+#' -   `exposure` — specifies the categorical exposure variable
+#' -   `effect.measure1` and `effect.measure2` — specifies the effect measures
+#' for event1 and event2 (`"RR"`, `"OR"` or `"SHR"`).
+#' -   `outcome.type` selects the outcome type (`"COMPETING-RISK"`, `"SURVIVAL"`,
+#' `"BINOMIAL"`, `"PROPORTIONAL"` or `"POLY-PROPORTIONAL"`).
+#' -   `time.point` — specifies time point at which the exposure effect is evaluated.
+#' Required for `"COMPETING-RISK"` and `"SURVIVAL"` outcomes.
+#' -   `strata` — specifies a stratification variable used to adjust for dependent censoring.
 #'
-#' ### Event/status coding
+#' ### Outcome type and event status coding
 #'
-#' Use integer codes to map your data to analysis types:
+#' The `outcome.type` argument must be set to:
+#' -   Effects on cumulative incidence probabilities at a specific time: `"COMPETING-RISK"`
+#' -   Effects on a risk at a specific time: `"SURVIVAL"`
+#' -   Common effects on cumulative incidence probabilities over time: `"POLY-PROPORTIONAL"`
+#' -   Common effects on a risk over time: `"PROPORTIONAL"`
+#' -   Effects on a risk of a binomial outcome: `"BINOMIAL"`
 #'
 #' | Setting | Codes | Meaning |
 #' |---|---|---|
-#' | Competing risk | `code.event1`, `code.event2`, `code.censoring` | event of interest / competing event / censor |
-#' | Survival (KM)  | `code.event1`, `code.censoring`               | event / censor |
-#' | ADaM-ADTTE     | `code.event1 = 0`, `code.censoring = 1`       | set to match ADaM convention |
+#' | COMPETING-RISK | `code.event1`, `code.event2`, `code.censoring` | event of interest / competing event / censoring |
+#' | COMPETING-RISK (default)| `code.event1=1`, `code.event2=2`, `code.censoring1` | event of interest / competing event / censoring |
+#' | SURVIVAL | `code.event1`, `code.censoring`                   | event / censoring |
+#' | SURVIVAL  (default)| `code.event1=1`, `code.censoring=0`     | event / censoring |
+#' | SURVIVAL (ADaM-ADTTE) | `code.event1=0`, `code.censoring=1` | set to match ADaM convention |
+#' | PROPORTIONAL | `code.event1`, `code.censoring`                   | event / censoring |
+#' | PROPORTIONAL  (default)| `code.event1=1`, `code.censoring=0`     | event / censoring |
+#' | PROPORTIONAL (ADaM-ADTTE) | `code.event1=0`, `code.censoring=1` | set to match ADaM convention |
+#' | POLY-PROPORTIONAL | `code.event1`, `code.event2`, `code.censoring` | event of interest / competing event / censoring |
+#' | POLY-PROPORTIONAL (default)| `code.event1=1`, `code.event2=2`, `code.censoring1` | event of interest / competing event / censoring |
 #'
-#' The **stratification** variable `strata` (optional) adjusts for dependent
-#' censoring in IPCW-style steps when applicable.
-#'
-#' ### Effect measures (categorical exposure)
+#' ### Effect measures for categorical exposure
 #'
 #' Choose the effect scale for event 1 and (optionally) event 2:
 #'
 #' | Argument | Applies to | Choices | Default |
 #' |---|---|---|---|
-#' | `effect.measure1` | primary event | `"RR"`, `"OR"`, `"SHR"` | `"RR"` |
+#' | `effect.measure1` |event of interest | `"RR"`, `"OR"`, `"SHR"` | `"RR"` |
 #' | `effect.measure2` | competing event | `"RR"`, `"OR"`, `"SHR"` | `"RR"` |
 #'
-#' - `RR`: risk ratio at `time.point` (AJ/KM contexts).
-#' - `OR`: odds ratio on the log-odds-product parameterization.
-#' - `SHR`: subdistribution hazard ratio (interpreted in the log-odds-product model).
+#' - `RR`: risk ratio at `time.point` or common over time.
+#' - `OR`: odds ratio at `time.point` or common over time.
+#' - `SHR`: subdistribution hazard ratio  or common over time.
 #'
-#' ### Inference and intervals
+#' ### Inference and intervals (advanced)
 #'
 #' | Argument | Meaning | Default |
 #' |---|---|---|
 #' | `conf.level` | Wald-type CI level | `0.95` |
 #' | `report.sandwich.conf` | Sandwich variance CIs | `TRUE` |
-#' | `report.boot.conf` | Bootstrap CIs (if `TRUE` or `NULL` with suitable outcome) | `NULL` |
-#' | `boot.bca` | Use BCa intervals (else normal approx) | `FALSE` |
+#' | `report.boot.conf` | Bootstrap CIs (use if `"PROPORTIONAL"` or `"POLY-PROPORTIONAL"`) | `NULL` |
+#' | `boot.bca` | Use BCa intervals (else normal approximation) | `FALSE` |
 #' | `boot.parameter1` | Bootstrap reps | `200` |
 #' | `boot.parameter2` | Seed for resampling | `46` |
-#'
-#' Notes:
-#' - If both sandwich and bootstrap are requested, results may be reported side by side.
-#' - For heavy data, prefer sandwich CIs; use bootstrap to probe small-sample robustness.
 #'
 #' ### Optimization & solver controls (advanced)
 #'
@@ -164,7 +184,7 @@
 #'
 #' | Argument | Role | Default |
 #' |---|---|---|
-#' | `nleqslv.method` | Root solver / optimizer backend | `"nleqslv"` |
+#' | `nleqslv.method` | Root solver | `"nleqslv"` |
 #' | `optim.parameter1` / `optim.parameter2` | Outer/inner convergence tolerances | `1e-6`, `1e-6` |
 #' | `optim.parameter3` | Parameter absolute bound | `100` |
 #' | `optim.parameter4` | Max outer iterations | `50` |
@@ -188,23 +208,28 @@
 #'
 #' ### Returned object and downstream use
 #'
-#' The result is a list containing:
-#' - `coefficient` and `cov`: estimates and variance–covariance matrix.
-#' - `summary`: a tidy data frame (ready for `modelsummary::msummary()`), with
-#'   effect sizes and intervals on the chosen scale (`RR`/`OR`/`SHR`).
-#' - `diagnostic.statistics`: IPCW weights, influence functions, and predicted
-#'   potential outcomes for diagnostics and sensitivity checks.
+#' This function returns a list object that includes:
+#' -   `coefficient` — regression coefficients
+#' -   `cov` — variance-covariance matrix for regression coefficients
+#' -   `diagnostic.statistics` — a data frame containing inverse probability weights,
+#' influence functions, and predicted potential outcomes
+#' -   `summary` — a summary of estimated exposure effects
 #'
-#' You can visualize model-implied curves with `cifplot()` (by passing fitted
-#' objects or re-using the same `Event()`/`Surv()` specification).
+#' Use `summary` output with `msummary()` to display formatted results. The regression
+#' coefficients and their variance-covariance matrix are provided as `coefficient`
+#' and `cov`, respectively, with the first element corresponding to the intercept term,
+#' subsequent elements to the covariates in `nuisance.model`, and the last element
+#' to the variable specified by `exposure=`. Finally, `diagnostic.statistics` is
+#' a data frame containing inverse probability weights, influence functions, and
+#' predicted values of the potential outcomes of individual observations.
 #'
 #' ### Reproducibility and conventions
 #'
 #' - Set `boot.parameter2` for reproducible bootstrap results.
 #' - Match CDISC ADaM conventions via `code.event1 = 0`, `code.censoring = 1`
 #'   (and, if applicable, `code.event2` for competing events).
-#' - Use `strata` when censoring may depend on baseline factors (IPCW stratification).
-
+#' - Use `strata` when censoring may depend on baseline covariates (IPCW stratification).
+#'
 #' @importFrom nleqslv nleqslv
 #' @importFrom boot boot boot.ci
 #' @importFrom Rcpp sourceCpp

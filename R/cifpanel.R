@@ -40,8 +40,8 @@
 #' detection based on the event coding in \code{data}.
 
 #' @param code.events A list of numeric vectors per panel.
-#'   For SURVIVAL: \code{c(event.code1, censor.code)};
-#'   for COMPETING-RISK: \code{c(event.code1, event.code2, censor.code)}.
+#'   For SURVIVAL: \code{c(code.event1, code.censoring)};
+#'   for COMPETING-RISK: \code{c(code.event1, code.event2, code.censoring)}.
 #' @param type.x Reserved for future x-scale control (currently ignored).
 #' @param type.y Optional vector/list per panel: \code{NULL} (survival) or \code{"risk"} (1-survival).
 #' @param label.x,label.y Optional vectors/lists of axis labels per panel.
@@ -51,7 +51,7 @@
 #' @param breaks.x,breaks.y Optional vectors/lists of axis breaks per panel (forwarded to
 #'   \code{breaks.x} / \code{breaks.y} in \code{\link{cifplot}}).
 #' @param addConfidenceInterval,addCensorMark,addCompetingRiskMark,addIntercurrentEventMark,addQuantileLine
-#'   Optional logical vectors/lists per panel to toggle features in \code{\link{cifplot}}.
+#'   Optional logical vectors/lists per panel to toggle features in \code{\link{cifplot()}}.
 #'   If \code{NULL}, sensible defaults are used (CI/Censor on; others off).
 #' @param rows.columns.panel Integer vector \code{c(nrow, ncol)} specifying the grid size.
 #' @param title.panel,subtitle.panel,caption.panel Optional strings for panel annotation.
