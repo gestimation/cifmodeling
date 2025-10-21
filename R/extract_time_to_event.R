@@ -20,7 +20,7 @@
 #'   \code{0}, respectively.
 #' @param user_specified_code When \code{which_event = "user_specified"},
 #'   the integer event code to extract (e.g., 3 for an intercurrent event).
-#' @param unique_times Logical if \code{TRUE}, only unique and sorted time points
+#' @param readUniqueTime Logical if \code{TRUE}, only unique and sorted time points
 #'   are returned for each stratum.
 #' @param dropEmpty Logical if \code{TRUE} (default), strata with no events are
 #'   dropped from the returned list. Set to \code{FALSE} to retain empty strata
@@ -50,10 +50,6 @@
 #'         competing.risk.time=output,
 #'         label.y='CIF of diabetic retinopathy',
 #'         label.x='Years from registration')
-#'
-#' @seealso
-#' \code{\link{readSurv}}, \code{\link{getTimeToEvent}},
-#' \code{\link{cifplot}}, \code{\link{cifpanel}}
 #'
 #' @export
 extract_time_to_event <- function(

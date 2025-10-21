@@ -164,10 +164,8 @@ add censoring/competing-risk/intercurrent-event marks, and returns a regular \co
 object (compatible with \code{+} and \code{\%+\%}). You may also pass a survfit-compatible object directly.
 }
 \details{
-\strong{Plotting:}
 This function calls an internal helper \code{call_ggsurvfit()} which adds confidence intervals,
 risk table, censoring marks, and optional competing-risk and intercurrent-event marks.
-For CIF display, set \code{type.y = "risk"}.
 \subsection{Advanced control not required for typical use}{
 
 The arguments below fine-tune internal estimation and figure appearance.
@@ -182,7 +180,7 @@ The arguments below fine-tune internal estimation and figure appearance.
 }
 
 \subsection{Graphical layers}{\tabular{lll}{
-   Argument \tab Effect \tab Default \cr
+   Argument \tab Description \tab Default \cr
    \code{addConfidenceInterval} \tab Add confidence interval ribbon. \tab \code{TRUE} \cr
    \code{addRiskTable} \tab Add numbers-at-risk table below the plot. \tab \code{TRUE} \cr
    \code{addEstimateTable} \tab Add estimates & CIs table. \tab \code{FALSE} \cr
@@ -215,12 +213,12 @@ The arguments below fine-tune internal estimation and figure appearance.
 
 }
 
-\subsection{Axes, legend, and zoom}{\tabular{lll}{
+\subsection{Axes and legend}{\tabular{lll}{
    Argument \tab Description \tab Default \cr
    \code{limits.x}, \code{limits.y} \tab Axis limits (\code{c(min, max)}). \tab Auto \cr
-   \code{breaks.x}, \code{breaks.y} \tab Tick breaks for x/y axes. \tab Auto \cr
-   \code{use_coord_cartesian} \tab Use \code{coord_cartesian()} for zooming (no data drop). \tab \code{FALSE} \cr
-   \code{legend.position} \tab Legend placement: \code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, \code{"none"}. \tab \code{"top"} \cr
+   \code{breaks.x}, \code{breaks.y} \tab Tick breaks for x and y axes. \tab Auto \cr
+   \code{use_coord_cartesian} \tab For zooming use \code{coord_cartesian()}. \tab \code{FALSE} \cr
+   \code{legend.position} \tab \code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, \code{"none"}. \tab \code{"top"} \cr
 }
 
 }
@@ -228,7 +226,8 @@ The arguments below fine-tune internal estimation and figure appearance.
 \subsection{Export (optional convenience)}{\tabular{lll}{
    Argument \tab Description \tab Default \cr
    \code{filename.ggsave} \tab If non-\code{NULL}, save the plot using \code{ggsave()}. \tab \code{NULL} \cr
-   \code{width.ggsave}, \code{height.ggsave} \tab Size passed to \code{ggsave()}. \tab \code{6}, \code{6} \cr
+   \code{width.ggsave} \tab Size passed to \code{ggsave()}. \tab \code{6} \cr
+   \code{height.ggsave} \tab Size passed to \code{ggsave()}. \tab \code{6} \cr
    \code{dpi.ggsave} \tab DPI passed to \code{ggsave()}. \tab \code{300} \cr
 }
 

@@ -40,12 +40,12 @@ event and censoring categories. Defaults are \code{1}, \code{2}, and
 \item{user_specified_code}{When \code{which_event = "user_specified"},
 the integer event code to extract (e.g., 3 for an intercurrent event).}
 
+\item{readUniqueTime}{Logical if \code{TRUE}, only unique and sorted time points
+are returned for each stratum.}
+
 \item{dropEmpty}{Logical if \code{TRUE} (default), strata with no events are
 dropped from the returned list. Set to \code{FALSE} to retain empty strata
 as \code{numeric(0)} vectors (useful for diagnostics or consistent list length).}
-
-\item{unique_times}{Logical if \code{TRUE}, only unique and sorted time points
-are returned for each stratum.}
 }
 \value{
 A named list of numeric vectors, where each element corresponds to a stratum
@@ -78,8 +78,4 @@ cifplot(Event(t,epsilon) ~ fruitq,
         label.y='CIF of diabetic retinopathy',
         label.x='Years from registration')
 
-}
-\seealso{
-\code{\link{readSurv}}, \code{\link{getTimeToEvent}},
-\code{\link{cifplot}}, \code{\link{cifpanel}}
 }

@@ -30,8 +30,8 @@ tightly connected functions.
   based on polytomous log-odds products and stratified IPCW estimator.
   This function is particularly suitable for causal inference in terms
   of common effect measures, namely risk ratios, odds ratios, and
-  subdistribution hazard ratios, with competing risks, survival, or
-  binary data.
+  subdistribution hazard ratios, with a competing risks, survival, or
+  binary dataset.
 
 These functions adopt a formula + data syntax, return tidy,
 publication-ready outputs, and integrate seamlessly with `ggsurvfit` and

@@ -314,6 +314,3 @@ cifpanel(
 }
 
 }
-\seealso{
-\code{\link{cifcurve}}, \code{\link{cifplot}}
-}

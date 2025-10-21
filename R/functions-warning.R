@@ -1,4 +1,3 @@
-
 .msg <- list(
   req           = "`{arg}` is required.",
   numeric       = "`{arg}` must be numeric.",
@@ -143,7 +142,7 @@ check_outcome.type <- function(
     if (isTRUE(auto_message)) message("Detected >2 status levels; outcome.type set to 'COMPETING-RISK'.")
     return("COMPETING-RISK")
   } else {
-    if (isTRUE(auto_message)) message("Detected ≤2 status levels; outcome.type set to 'SURVIVAL'.")
+    if (isTRUE(auto_message)) message("Detected <= 2 status levels; outcome.type set to 'SURVIVAL'.")
     return("SURVIVAL")
   }
 }

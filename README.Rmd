@@ -22,7 +22,6 @@ knitr::opts_chunk$set(
 ```{r setup, include=FALSE, warning=FALSE, message=FALSE}
 #devtools::install_github("gestimation/cifmodeling") 
 #install.packages(c("Rcpp","nleqslv","boot","ggplot2","ggsurvfit","patchwork","modelsummary"))
-
 #library(cifmodeling)
 if (requireNamespace("devtools", quietly = TRUE)) {
   devtools::load_all(".",
@@ -47,7 +46,7 @@ In medical research, advanced statistical methods are often required to address 
 
 -   `cifpanel()` generates a multi-panel figure for survival or cumulative incidence curves, arranged either in a grid layout or as an inset overlay.
 
--   `polyreg()` fits regression models of cumulative incidence functions based on polytomous log-odds products and stratified IPCW estimator. This function is particularly suitable for causal inference in terms of common effect measures, namely risk ratios, odds ratios, and subdistribution hazard ratios, with competing risks, survival, or binary data. 
+-   `polyreg()` fits regression models of cumulative incidence functions based on polytomous log-odds products and stratified IPCW estimator. This function is particularly suitable for causal inference in terms of common effect measures, namely risk ratios, odds ratios, and subdistribution hazard ratios, with a competing risks, survival, or binary dataset. 
 
 These functions adopt a formula + data syntax, return tidy, publication-ready outputs, and integrate seamlessly with `ggsurvfit` and `modelsummary` for visualization.
 

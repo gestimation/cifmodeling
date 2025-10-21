@@ -222,7 +222,6 @@
 #'
 #' @importFrom ggplot2 ggplot theme_void ggsave theme element_text labs
 #' @importFrom patchwork wrap_plots plot_layout inset_element plot_annotation
-#' @seealso \code{\link{cifcurve}}, \code{\link{cifplot}}
 #' @export
 cifpanel <- function(
     formula = NULL,

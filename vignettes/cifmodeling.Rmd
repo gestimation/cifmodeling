@@ -30,7 +30,14 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 
-library(cifmodeling)
+#library(cifmodeling)
+if (requireNamespace("devtools", quietly = TRUE)) {
+  devtools::load_all(".",
+                     export_all = TRUE,
+                     helpers    = TRUE,
+                     quiet      = TRUE,
+                     warn_conflicts = FALSE)
+}
 ```
 
 <!-- badges: start --> <!-- badges: end -->
@@ -38,7 +45,7 @@ library(cifmodeling)
 ```{r setup, include=FALSE, warning=FALSE}
 #pak::pak("gestimation/cifmodeling")
 #devtools::install_github("gestimation/cifmodeling") 
-library(cifmodeling)
+#library(cifmodeling)
 library(nleqslv)
 library(boot)
 library(ggplot2)
