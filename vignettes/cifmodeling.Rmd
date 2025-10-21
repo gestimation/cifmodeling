@@ -204,7 +204,7 @@ The function follows the familiar **formula + data** syntax with `Event()` or `S
 
 -   `cov` — variance-covariance matrix for regression coefficients
 
--   `diagnosis.statistics` — a data frame containing inverse probability weights, influence functions, and predicted potential outcomes
+-   `diagnostic.statistics` — a data frame containing inverse probability weights, influence functions, and predicted potential outcomes
 
 -   `summary` — a summary of estimated exposure effects
 
@@ -298,7 +298,7 @@ This function return a list object that includes:
 
 -   `cov` — variance-covariance matrix for regression coefficients
 
--   `diagnosis.statistics` — a data frame containing inverse probability weights, influence functions, and predicted potential outcomes
+-   `diagnostic.statistics` — a data frame containing inverse probability weights, influence functions, and predicted potential outcomes
 
 -   `summary` — a summary of estimated exposure effects
 

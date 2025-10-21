@@ -192,7 +192,7 @@
 #' - `coefficient` and `cov`: estimates and variance–covariance matrix.
 #' - `summary`: a tidy data frame (ready for `modelsummary::msummary()`), with
 #'   effect sizes and intervals on the chosen scale (`RR`/`OR`/`SHR`).
-#' - `diagnosis.statistics`: IPCW weights, influence functions, and predicted
+#' - `diagnostic.statistics`: IPCW weights, influence functions, and predicted
 #'   potential outcomes for diagnostics and sensitivity checks.
 #'
 #' You can visualize model-implied curves with `cifplot()` (by passing fitted
@@ -217,7 +217,7 @@
 #'   main components include \code{coefficient} (estimated exposure and
 #'   covariate effects), \code{cov} (their variance-covariance matrix),
 #'   \code{summary} (a tidy summary table compatible with
-#'   \code{\link[modelsummary]{msummary}}) and \code{diagnosis.statistics}
+#'   \code{\link[modelsummary]{msummary}}) and \code{diagnostic.statistics}
 #'   (inverse probability weights, influence functions and predicted potential
 #'   outcomes).
 #'
@@ -577,6 +577,6 @@ polyreg <- function(
     data$potential.CIFs <- out_getResults$potential.CIFs
   }
   out_data <- data
-  out <- list(summary=out_summary, coefficient=alpha_beta_estimated, cov=cov_estimated, bootstrap=out_bootstrap, diagnosis.statistics=out_data, optimization.info=trace_df)
+  out <- list(summary=out_summary, coefficient=alpha_beta_estimated, cov=cov_estimated, bootstrap=out_bootstrap, diagnostic.statistics=out_data, optimization.info=trace_df)
   return(out)
 }

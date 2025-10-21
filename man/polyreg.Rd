@@ -190,7 +190,7 @@ A list containing fitted exposure effects and supporting results. The
 main components include \code{coefficient} (estimated exposure and
 covariate effects), \code{cov} (their variance-covariance matrix),
 \code{summary} (a tidy summary table compatible with
-\code{\link[modelsummary]{msummary}}) and \code{diagnosis.statistics}
+\code{\link[modelsummary]{msummary}}) and \code{diagnostic.statistics}
 (inverse probability weights, influence functions and predicted potential
 outcomes).
 }
@@ -305,7 +305,7 @@ The result is a list containing:
 \item \code{coefficient} and \code{cov}: estimates and variance–covariance matrix.
 \item \code{summary}: a tidy data frame (ready for \code{modelsummary::msummary()}), with
 effect sizes and intervals on the chosen scale (\code{RR}/\code{OR}/\code{SHR}).
-\item \code{diagnosis.statistics}: IPCW weights, influence functions, and predicted
+\item \code{diagnostic.statistics}: IPCW weights, influence functions, and predicted
 potential outcomes for diagnostics and sensitivity checks.
 }
 
