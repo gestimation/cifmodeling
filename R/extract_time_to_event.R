@@ -33,26 +33,35 @@
 #' @details
 #' This function is typically used internally by plotting and model functions,
 #' but can also be called directly to inspect the per-stratum event-time
-#' structure of a dataset:
+#' structure of a dataset.
 #'
-#' ```r
-#' read_time_to_event(
-#'   formula = Event(time, status) ~ strata(group),
-#'   data = df, which_event = "event1"
-#' )
-#' ```
+#' @examples
+#' data(diabetes.complications)
+#' output <- extract_time_to_event(Event(t,epsilon) ~ fruitq,
+#'                                 data = diabetes.complications,
+#'                                 which_event = "event2")
+#' cifplot(Event(t,epsilon) ~ fruitq,
+#'         data = diabetes.complications,
+#'         outcome.type="COMPETING-RISK",
+#'         addConfidenceInterval=FALSE,
+#'         addRiskTable=FALSE,
+#'         addCensorMark=FALSE,
+#'         addCompetingRiskMark=TRUE,
+#'         competing.risk.time=output,
+#'         label.y='CIF of diabetic retinopathy',
+#'         label.x='Years from registration')
 #'
 #' @seealso
 #' \code{\link{readSurv}}, \code{\link{getTimeToEvent}},
 #' \code{\link{cifplot}}, \code{\link{cifpanel}}
 #'
 #' @export
-read_time_to_event <- function(
+extract_time_to_event <- function(
     formula, data,
+    subset.condition = NULL, na.action = na.omit,
     which_event = c("event2", "event1", "censor", "censoring", "user_specified"),
     code.event1 = 1, code.event2 = 2, code.censoring = 0, user_specified_code = NULL,
-    subset.condition = NULL, na.action = na.omit,
-    unique_times = TRUE, drop_empty = TRUE
+    readUniqueTime = TRUE, dropEmpty = TRUE
 ){
   which_event <- match.arg(which_event)
   out_readSurv <- readSurv(

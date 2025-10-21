@@ -35,6 +35,12 @@
 #'   are \code{"COMPETING-RISK"}, \code{"SURVIVAL"}, \code{"BINOMIAL"},
 #'   \code{"PROPORTIONAL"} and \code{"POLY-PROPORTIONAL"}. Defaults to
 #'   \code{"COMPETING-RISK"}.
+#' If \code{NULL} (default), the function automatically infers the outcome type
+#' from the data: if the event variable has more than two unique levels,
+#' \code{"COMPETING-RISK"} is assumed; otherwise, \code{"SURVIVAL"} is used.
+#' You can also use abbreviations such as \code{"S"} or \code{"C"}.
+#' Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic
+#' detection based on the event coding in \code{data}.
 #' @param conf.level Confidence level for Wald-type intervals. Defaults to
 #'   \code{0.95}.
 #' @param report.nuisance.parameter Logical; if \code{TRUE}, the returned object
@@ -214,7 +220,6 @@
 #'   \code{\link[modelsummary]{msummary}}) and \code{diagnosis.statistics}
 #'   (inverse probability weights, influence functions and predicted potential
 #'   outcomes).
-#' @export
 #'
 #' @examples
 #' data(diabetes.complications)
@@ -230,6 +235,7 @@
 #' if (requireNamespace("modelsummary", quietly = TRUE)) {
 #' modelsummary::msummary(output$summary, statistic = c("conf.int", "p.value"), exponentiate = TRUE)
 #' }
+#' @export
 polyreg <- function(
     nuisance.model,
     exposure,
@@ -277,7 +283,7 @@ polyreg <- function(
   # 1. Pre-processing (function: checkSpell, checkInput, normalizeCovariate, sortByCovariate)
   #######################################################################################################
   computation.time0 <- proc.time()
-  outcome.type <- check_outcome.type(outcome.type)
+  outcome.type  <- check_outcome.type(outcome.type, formula=formula, data=data)
   ce <- check_effect.measure(effect.measure1, effect.measure2)
   ci <- check_input_polyreg(data, nuisance.model, exposure, code.event1, code.event2, code.censoring, code.exposure.ref, outcome.type, conf.level, report.sandwich.conf, report.boot.conf, nleqslv.method, should.normalize.covariate)
   should.normalize.covariate <- ci$should.normalize.covariate

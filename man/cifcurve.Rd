@@ -31,7 +31,14 @@ cifcurve(
 
 \item{na.action}{Function to handle missing values (default: \code{\link[stats]{na.omit}}).}
 
-\item{outcome.type}{\code{"SURVIVAL"} (KM) or \code{"COMPETING-RISK"} (AJ).}
+\item{outcome.type}{Character string specifying the type of time-to-event outcome.
+One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
+If \code{NULL} (default), the function automatically infers the outcome type
+from the data: if the event variable has more than two unique levels,
+\code{"COMPETING-RISK"} is assumed; otherwise, \code{"SURVIVAL"} is used.
+You can also use abbreviations such as \code{"S"} or \code{"C"}.
+Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic
+detection based on the event coding in \code{data}.}
 
 \item{code.event1}{Integer code of the event of interest (default \code{1}).}
 
@@ -71,10 +78,14 @@ If \code{conf.type \%in\% c("none","n")}, the plot suppresses CI bands.
 }
 \examples{
 data(diabetes.complications)
-out_cifcurve <- cifcurve(Event(t,epsilon) ~ fruitq, data = diabetes.complications,
-                outcome.type='COMPETING-RISK')
-cifplot(out_cifcurve, type.y = 'risk', addRiskTable = FALSE,
-                label.y = 'CIF of diabetic retinopathy', label.x = 'Years from registration')
+out_cifcurve <- cifcurve(Event(t,epsilon) ~ fruitq,
+                         data = diabetes.complications,
+                         outcome.type='COMPETING-RISK')
+cifplot(out_cifcurve,
+        type.y = 'risk',
+        addRiskTable = FALSE,
+        label.y = 'CIF of diabetic retinopathy',
+        label.x = 'Years from registration')
 
 }
 \seealso{

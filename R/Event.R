@@ -10,7 +10,16 @@
 #' @return An object of class \code{"Event"} (a 2-column matrix) with columns \code{time}, \code{event}.
 #' @examples
 #' ## event: 0=censor, 1=primary, 2=competing
-#' # polyreg(nuisance.model = Event(t, epsilon) ~ 1, data = df, outcome.type="COMPETING-RISK")
+#' data(diabetes.complications)
+#' output <- polyreg(
+#'   nuisance.model = Event(t, epsilon) ~ +1,
+#'   exposure = "fruitq1",
+#'   data = diabetes.complications,
+#'   effect.measure1 = "RR",
+#'   effect.measure2 = "RR",
+#'   time.point = 8,
+#'   outcome.type = "COMPETING-RISK"
+#' )
 #'
 #' @export
 Event <- function(time, event) {

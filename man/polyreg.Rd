@@ -93,7 +93,13 @@ evaluated. Required for survival and competing risk analyses.}
 \item{outcome.type}{Character string selecting the outcome type. Valid values
 are \code{"COMPETING-RISK"}, \code{"SURVIVAL"}, \code{"BINOMIAL"},
 \code{"PROPORTIONAL"} and \code{"POLY-PROPORTIONAL"}. Defaults to
-\code{"COMPETING-RISK"}.}
+\code{"COMPETING-RISK"}.
+If \code{NULL} (default), the function automatically infers the outcome type
+from the data: if the event variable has more than two unique levels,
+\code{"COMPETING-RISK"} is assumed; otherwise, \code{"SURVIVAL"} is used.
+You can also use abbreviations such as \code{"S"} or \code{"C"}.
+Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic
+detection based on the event coding in \code{data}.}
 
 \item{conf.level}{Confidence level for Wald-type intervals. Defaults to
 \code{0.95}.}

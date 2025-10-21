@@ -56,9 +56,14 @@ when \code{formulas} is not provided.}
 
 \item{data}{A data.frame containing variables used in the formula(s).}
 
-\item{outcome.type}{Optional vector/list of outcome types per panel:
-\code{"SURVIVAL"} or \code{"COMPETING-RISK"}. If \code{NULL}, each panel is inferred from
-its \code{code.events} length (2 = SURVIVAL; 3 = COMPETING-RISK).}
+\item{outcome.type}{Optional vector/list of outcome types per panel.
+One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
+If \code{NULL} (default), the function automatically infers the outcome type
+from the data: if the event variable has more than two unique levels,
+\code{"COMPETING-RISK"} is assumed; otherwise, \code{"SURVIVAL"} is used.
+You can also use abbreviations such as \code{"S"} or \code{"C"}.
+Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic
+detection based on the event coding in \code{data}.}
 
 \item{code.events}{A list of numeric vectors per panel.
 For SURVIVAL: \code{c(event.code1, censor.code)};

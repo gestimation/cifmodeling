@@ -20,7 +20,15 @@
 #' @param weights Optional name of the weight variable in \code{data}. Weights must be nonnegative; strictly positive is recommended.
 #' @param subset.condition Optional character expression to subset \code{data} before analysis.
 #' @param na.action Function to handle missing values (default: \code{\link[stats]{na.omit}}).
-#' @param outcome.type \code{"SURVIVAL"} (KM) or \code{"COMPETING-RISK"} (AJ).
+#' @param outcome.type
+#' Character string specifying the type of time-to-event outcome.
+#' One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
+#' If \code{NULL} (default), the function automatically infers the outcome type
+#' from the data: if the event variable has more than two unique levels,
+#' \code{"COMPETING-RISK"} is assumed; otherwise, \code{"SURVIVAL"} is used.
+#' You can also use abbreviations such as \code{"S"} or \code{"C"}.
+#' Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic
+#' detection based on the event coding in \code{data}.
 #' @param code.event1 Integer code of the event of interest (default \code{1}).
 #' @param code.event2 Integer code of the competing event (default \code{2}).
 #' @param code.censoring Integer code of censoring (default \code{0}).
@@ -38,10 +46,14 @@
 #'
 #' @examples
 #' data(diabetes.complications)
-#' out_cifcurve <- cifcurve(Event(t,epsilon) ~ fruitq, data = diabetes.complications,
-#'                 outcome.type='COMPETING-RISK')
-#' cifplot(out_cifcurve, type.y = 'risk', addRiskTable = FALSE,
-#'                 label.y = 'CIF of diabetic retinopathy', label.x = 'Years from registration')
+#' out_cifcurve <- cifcurve(Event(t,epsilon) ~ fruitq,
+#'                          data = diabetes.complications,
+#'                          outcome.type='COMPETING-RISK')
+#' cifplot(out_cifcurve,
+#'         type.y = 'risk',
+#'         addRiskTable = FALSE,
+#'         label.y = 'CIF of diabetic retinopathy',
+#'         label.x = 'Years from registration')
 #'
 #' @importFrom Rcpp sourceCpp
 #' @export
@@ -60,7 +72,7 @@ cifcurve <- function(
     conf.int = 0.95,
     report.survfit.std.err = FALSE
 ) {
-  outcome.type  <- check_outcome.type(match.arg(outcome.type))
+  outcome.type  <- check_outcome.type(outcome.type, formula=formula, data=data)
   out_readSurv  <- readSurv(formula, data, weights, code.event1, code.event2, code.censoring, subset.condition, na.action)
   error <- check_error(error, outcome.type)
 

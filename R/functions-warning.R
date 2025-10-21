@@ -87,26 +87,65 @@
   stop(cond)
 }
 
-#.chk_numeric_nonneg <- function(x, name) {
-#  if (!is.numeric(x)) .err("numeric", arg = name)
-#  if (anyNA(x))       .err("na",      arg = name)
-#  if (any(x < 0))     .err("nonneg",  arg = name)
-#  invisible(TRUE)
-#}
+check_outcome.type <- function(
+    x = NULL,
+    formula = NULL,
+    data = NULL,
+    na.action = stats::na.omit,
+    auto_message = TRUE
+) {
+  if (!is.null(x)) {
+    map <- list(
+      "COMPETING-RISK"    = c("competing-risk","competing risk","competingrisks","competing-risks","cr","c"),
+      "SURVIVAL"          = c("survival","s"),
+      "POLY-PROPORTIONAL" = c("poly-proportional","pp"),
+      "PROPORTIONAL"      = c("proportional","p"),
+      "BINOMIAL"          = c("binomial","b")
+    )
+    alias_rev <- {
+      ali <- lapply(map, toupper)
+      stats::setNames(rep(names(ali), lengths(ali)), unlist(ali, use.names = FALSE))
+    }
 
-check_outcome.type <- function(x) {
-  map <- list(
-    "COMPETING-RISK"   = c("competing-risk","competing risk","competingrisks","competing-risks","cr","c"),
-    "SURVIVAL"         = c("survival","s"),
-    "POLY-PROPORTIONAL"= c("poly-proportional","pp"),
-    "PROPORTIONAL"     = c("proportional","p"),
-    "BINOMIAL"         = c("binomial","b")
-  )
-  ux <- toupper(gsub("[[:space:]]+", " ", x))
-  for (k in names(map)) {
-    if (ux == k || tolower(ux) %in% tolower(map[[k]])) return(k)
+    ux <- toupper(trimws(as.character(x)))
+    ux <- ux[!is.na(ux) & nzchar(ux)]
+
+    canon <- unique(stats::na.omit(vapply(
+      ux,
+      function(u) {
+        if (u %in% names(map)) return(u)
+        cn <- alias_rev[[u]]
+        if (is.null(cn)) NA_character_ else cn
+      },
+      FUN.VALUE = character(1)
+    )))
+
+    if (length(canon) == 1L) {
+      return(canon)
+    } else {
+      x <- NULL
+    }
   }
-  .err("outcome_type", choices = paste(names(map), collapse = ", "))
+
+  if (is.null(formula) || is.null(data))
+    .err("req", arg = "formula and data (for automatic detection)")
+
+  Terms <- stats::terms(formula, specials = c("strata","offset","cluster"), data = data)
+  mf    <- stats::model.frame(Terms, data = data, na.action = na.action)
+
+  Y <- stats::model.extract(mf, "response")
+  if (!inherits(Y, c("Event","Surv"))) .err("surv_expected")
+
+  status <- suppressWarnings(as.numeric(Y[, 2]))
+  n_levels <- length(unique(stats::na.omit(status)))
+
+  if (n_levels > 2L) {
+    if (isTRUE(auto_message)) message("Detected >2 status levels; outcome.type set to 'COMPETING-RISK'.")
+    return("COMPETING-RISK")
+  } else {
+    if (isTRUE(auto_message)) message("Detected ≤2 status levels; outcome.type set to 'SURVIVAL'.")
+    return("SURVIVAL")
+  }
 }
 
 check_weights <- function(w) {

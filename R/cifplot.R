@@ -14,7 +14,15 @@
 #' @param weights Optional name of the weight variable in \code{data}. Weights must be nonnegative; strictly positive is recommended.
 #' @param subset.condition Optional character expression to subset \code{data} before analysis.
 #' @param na.action Function to handle missing values (default: \code{\link[stats]{na.omit}}).
-#' @param outcome.type \code{"SURVIVAL"} (KM) or \code{"COMPETING-RISK"} (AJ).
+#' @param outcome.type
+#' Character string specifying the type of time-to-event outcome.
+#' One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
+#' If \code{NULL} (default), the function automatically infers the outcome type
+#' from the data: if the event variable has more than two unique levels,
+#' \code{"COMPETING-RISK"} is assumed; otherwise, \code{"SURVIVAL"} is used.
+#' You can also use abbreviations such as \code{"S"} or \code{"C"}.
+#' Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic
+#' detection based on the event coding in \code{data}.
 #' @param code.event1 Integer code of the event of interest (default \code{1}).
 #' @param code.event2 Integer code of the competing event (default \code{2}).
 #' @param code.censoring Integer code of censoring (default \code{0}).
@@ -92,8 +100,8 @@
 #'
 #' | Argument | Description | Default |
 #' |---|---|---|
-#' | `competing.risk.time` | **Named list** of numeric vectors: per-stratum times for competing events (names must match legend strata). Typically created by `read_time_to_event()`. | `list()` |
-#' | `intercurrent.event.time` | **Named list** of numeric vectors: per-stratum times for intercurrent events (names must match legend strata). Typically created by `read_time_to_event()`. | `list()` |
+#' | `competing.risk.time` | **Named list** of numeric vectors: per-stratum times for competing events (names must match legend strata). Typically created by `extract_time_to_event()`. | `list()` |
+#' | `intercurrent.event.time` | **Named list** of numeric vectors: per-stratum times for intercurrent events (names must match legend strata). Typically created by `extract_time_to_event()`. | `list()` |
 #'
 #' #### Appearance of marks (styling)
 #'
@@ -131,8 +139,12 @@
 
 #' @examples
 #' data(diabetes.complications)
-#' cifplot(Event(t,epsilon) ~ fruitq, data = diabetes.complications, addRiskTable = FALSE,
-#'         label.y = 'CIF of diabetic retinopathy', label.x = 'Years from registration')
+#' cifplot(Event(t,epsilon) ~ fruitq,
+#'         data = diabetes.complications,
+#'         outcome.type="COMPETING-RISK",
+#'         addRiskTable = FALSE,
+#'         label.y='CIF of diabetic retinopathy',
+#'         label.x='Years from registration')
 
 #' @importFrom ggsurvfit ggsurvfit add_confidence_interval add_risktable add_risktable_strata_symbol add_censor_mark add_quantile
 #' @importFrom ggplot2 theme_classic theme_bw element_text labs lims geom_point aes ggsave scale_color_discrete scale_fill_discrete element_text element_rect element_blank scale_color_manual scale_fill_manual scale_linetype_manual scale_shape_manual
@@ -190,7 +202,7 @@ cifplot <- function(
   if (!inherits(x, "survfit")) {
     if (is.null(data)) stop("When `x` is a formula, `data` must be provided.")
     if (addCompetingRiskMark==TRUE && length(competing.risk.time)==0) {
-      competing.risk.time <- read_time_to_event(x, data=data, which_event = "event2", code.event1=code.event1, code.event2=code.event2, code.censoring=code.censoring)
+      competing.risk.time <- extract_time_to_event(x, data=data, which_event = "event2", code.event1=code.event1, code.event2=code.event2, code.censoring=code.censoring)
     }
     x <- cifcurve(x, data = data, weights=weights, subset.condition=subset.condition, na.action=na.action,
                   outcome.type=outcome.type, code.event1=code.event1, code.event2=code.event2, code.censoring=code.censoring,

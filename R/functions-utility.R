@@ -127,7 +127,6 @@ get_surv <- function(
 readSurv <- function(formula, data, weights = NULL,
                      code.event1 = 1, code.event2 = 2, code.censoring = 0,
                      subset.condition = NULL, na.action = na.omit) {
-  stopifnot(is.data.frame(data))
   allowed <- c(code.censoring, code.event1, code.event2)
   data <- createAnalysisDataset(formula, data, weights, subset.condition, na.action)
 

@@ -428,11 +428,11 @@ In the final figure, competing risk marks are added
 the competing event (macrovascular complications) before diabetic
 retinopathy. The time points at which the macrovascular complications
 occurred were obtained for each strata using a helper function
-`read_time_to_event()`. These symbols help distinguish between events
+`extract_time_to_event()`. These symbols help distinguish between events
 due to the primary cause and those attributable to competing causes.
 
 ``` r
-output2 <- read_time_to_event(Event(t,epsilon) ~ fruitq1, data = diabetes.complications, which_event = "event2")
+output2 <- extract_time_to_event(Event(t,epsilon) ~ fruitq1, data = diabetes.complications, which_event = "event2")
 cifplot(output1, addConfidenceInterval=FALSE, addCensorMark=FALSE, addCompetingRiskMark=TRUE, 
 competing.risk.time=output2, label.y='CIF of diabetic retinopathy',  
 label.x='Years from registration', label.strata=c('High intake','Low intake'))

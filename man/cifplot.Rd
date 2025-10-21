@@ -64,7 +64,14 @@ cifplot(
 
 \item{na.action}{Function to handle missing values (default: \code{\link[stats]{na.omit}}).}
 
-\item{outcome.type}{\code{"SURVIVAL"} (KM) or \code{"COMPETING-RISK"} (AJ).}
+\item{outcome.type}{Character string specifying the type of time-to-event outcome.
+One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
+If \code{NULL} (default), the function automatically infers the outcome type
+from the data: if the event variable has more than two unique levels,
+\code{"COMPETING-RISK"} is assumed; otherwise, \code{"SURVIVAL"} is used.
+You can also use abbreviations such as \code{"S"} or \code{"C"}.
+Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic
+detection based on the event coding in \code{data}.}
 
 \item{code.event1}{Integer code of the event of interest (default \code{1}).}
 
@@ -190,8 +197,8 @@ The arguments below fine-tune internal estimation and figure appearance.
 
 \subsection{Time marks (inputs for optional layers)}{\tabular{lll}{
    Argument \tab Description \tab Default \cr
-   \code{competing.risk.time} \tab \strong{Named list} of numeric vectors: per-stratum times for competing events (names must match legend strata). Typically created by \code{read_time_to_event()}. \tab \code{list()} \cr
-   \code{intercurrent.event.time} \tab \strong{Named list} of numeric vectors: per-stratum times for intercurrent events (names must match legend strata). Typically created by \code{read_time_to_event()}. \tab \code{list()} \cr
+   \code{competing.risk.time} \tab \strong{Named list} of numeric vectors: per-stratum times for competing events (names must match legend strata). Typically created by \code{extract_time_to_event()}. \tab \code{list()} \cr
+   \code{intercurrent.event.time} \tab \strong{Named list} of numeric vectors: per-stratum times for intercurrent events (names must match legend strata). Typically created by \code{extract_time_to_event()}. \tab \code{list()} \cr
 }
 
 }
@@ -235,8 +242,12 @@ For ADaM-style data, use \code{code.event1 = 0}, \code{code.censoring = 1}.
 }
 \examples{
 data(diabetes.complications)
-cifplot(Event(t,epsilon) ~ fruitq, data = diabetes.complications, addRiskTable = FALSE,
-        label.y = 'CIF of diabetic retinopathy', label.x = 'Years from registration')
+cifplot(Event(t,epsilon) ~ fruitq,
+        data = diabetes.complications,
+        outcome.type="COMPETING-RISK",
+        addRiskTable = FALSE,
+        label.y='CIF of diabetic retinopathy',
+        label.x='Years from registration')
 }
 \seealso{
 \code{\link{cifcurve}} for the estimators; \code{\link{cifpanel}} for display of multiple plots; \pkg{ggsurvfit} for plotting helpers; \code{\link{polyreg}} for log-odds product models of CIFs.
