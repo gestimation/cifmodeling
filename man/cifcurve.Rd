@@ -29,7 +29,7 @@ cifcurve(
 
 \item{subset.condition}{Optional character expression to subset \code{data} before analysis.}
 
-\item{na.action}{Function to handle missing values (default: \code{\link[stats]{na.omit}}).}
+\item{na.action}{Function to handle missing values (default: \code{na.omit} in \pkg{stats}).}
 
 \item{outcome.type}{Character string specifying the type of time-to-event outcome.
 One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
@@ -89,5 +89,5 @@ cifplot(out_cifcurve,
 
 }
 \seealso{
-\code{\link{cifplot}} for display of a plot; \code{\link{cifpanel}} for display of multiple plots; \pkg{ggsurvfit} for plotting helpers; \code{\link{polyreg}} for log-odds product models of CIFs.
+\code{\link[=polyreg]{polyreg()}} for log-odds product modeling of CIFs; \code{\link[=cifplot]{cifplot()}} for display of a CIF; \code{\link[=cifpanel]{cifpanel()}} for display of multiple CIFs; \link[ggsurvfit:ggsurvfit]{ggsurvfit::ggsurvfit}, \link[patchwork:patchwork-package]{patchwork::patchwork} and \link[modelsummary:modelsummary]{modelsummary::modelsummary} for display helpers.
 }

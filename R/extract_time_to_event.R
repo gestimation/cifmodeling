@@ -3,15 +3,14 @@
 #' @description
 #' Creates a list of event times that can be passed to downstream
 #' visualization or analysis functions such as `competing.risk.time` or
-#' `intercurrent.event.time` in \code{{cifplot}} and \code{{cifpanel}}.
+#' `intercurrent.event.time` in [cifplot()] and [cifpanel()].
 #' Event types are specified by event 1, event 2, censoring, or user-specified codes.
 #'
 #' @param formula A model formula specifying the outcome and (optionally) \code{strata()}.
 #' @param data A data frame containing variables in \code{formula}.
 #' @param subset.condition Optional expression (as a character string) defining a
 #'   subset of \code{data} to analyse. Defaults to \code{NULL}.
-#' @param na.action A function specifying the action to take on missing values.
-#'   The default is \code{\link[stats]{na.omit}}.
+#' @param na.action Function to handle missing values (default: \code{na.omit} in \pkg{stats}).
 #' @param which_event One of \code{"event1"}, \code{"event2"}, \code{"censor"},
 #'   \code{"censoring"}, or \code{"user_specified"}, indicating which event type
 #'   to extract times for.
@@ -50,7 +49,8 @@
 #'         competing.risk.time=output,
 #'         label.y='CIF of diabetic retinopathy',
 #'         label.x='Years from registration')
-#'
+#' @name extract_time_to_event
+#' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifplot()] for display of a CIF; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 extract_time_to_event <- function(
     formula, data,

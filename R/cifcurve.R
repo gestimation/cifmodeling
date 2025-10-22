@@ -19,7 +19,7 @@
 #' @param data A data frame containing variables in \code{formula}.
 #' @param weights Optional name of the weight variable in \code{data}. Weights must be nonnegative; strictly positive is recommended.
 #' @param subset.condition Optional character expression to subset \code{data} before analysis.
-#' @param na.action Function to handle missing values (default: \code{\link[stats]{na.omit}}).
+#' @param na.action Function to handle missing values (default: \code{na.omit} in \pkg{stats}).
 #' @param outcome.type
 #' Character string specifying the type of time-to-event outcome.
 #' One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
@@ -42,7 +42,6 @@
 #' For \code{outcome.type="COMPETING-RISK"}, \code{$surv} equals \code{1 - CIF} for \code{code.event1}.
 #' Standard error and CIs are provided per \code{conf.type}. Note that some methods for \code{survfit} (e.g., \code{residuals.survfit}) may not be supported.
 #'
-#'
 #' @examples
 #' data(diabetes.complications)
 #' out_cifcurve <- cifcurve(Event(t,epsilon) ~ fruitq,
@@ -56,6 +55,9 @@
 #'
 #' @importFrom Rcpp sourceCpp
 #' @importFrom stats formula
+
+#' @name cifcurve
+#' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifplot()] for display of a CIF; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 cifcurve <- function(
     formula,

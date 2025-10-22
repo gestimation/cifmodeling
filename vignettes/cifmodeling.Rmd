@@ -63,7 +63,7 @@ In medical research advanced statistical methods are often required to address c
 
 -   `cifpanel()` generates a multi-panel survival and cumulative incidence figure for publication. 
 
--   `polyreg()` performs regression modeling of CIFs based on polytomous log-odds products and stratified IPCW estimator. This function is particularly suitable for causal inference in terms of common effect measures, namely risk ratios, odds ratios, and subdistribution hazard ratios, with competing risks, survival, or binary data. 
+-   `polyreg()` performs regression modeling of CIFs based on polytomous log odds products and stratified IPCW estimator. This function is particularly suitable for causal inference in terms of common effect measures, namely risk ratios, odds ratios, and subdistribution hazard ratios, with competing risks, survival, or binary data. 
 
 These functions adopt a formula + data syntax, return tidy, publication-ready outputs, and integrate seamlessly with ggsurvfit and modelsummary for visualization.
 
@@ -192,7 +192,7 @@ cifpanel(
 
 ### `polyreg()`
 
-`polyreg()` implements **log-odds product modeling** for CIFs at user-specified time points, focusing on multiplicative effects of a categorical exposure, or constant effects over time like Cox regression and Fine-Gray models. It estimates multiplicative effects such as **risk ratios**, **odds ratios**, or **subdistribution hazard ratios**, while ensuring that the probabilities across competing events sum to one. This is achieved through **reparameterization using polytomous log-odds products**, which fits so-called effect-measure models and nuisance models on multiple competing events simultaneously. Additionally, `polyreg()` supports direct binomial regression for survival outcomes and the Richardson model for binomial outcomes, both of which use log odds products.
+`polyreg()` implements **log odds product modeling** for CIFs at user-specified time points, focusing on multiplicative effects of a categorical exposure, or constant effects over time like Cox regression and Fine-Gray models. It estimates multiplicative effects such as **risk ratios**, **odds ratios**, or **subdistribution hazard ratios**, while ensuring that the probabilities across competing events sum to one. This is achieved through **reparameterization using polytomous log-odds products**, which fits so-called effect-measure models and nuisance models on multiple competing events simultaneously. Additionally, `polyreg()` supports direct binomial regression for survival outcomes and the Richardson model for binomial outcomes, both of which use log odds products.
 
 The function follows the familiar **formula + data** syntax with `Event()` or `Surv()` and outputs tidy results, including point estimates, standard errors, confidence intervals, and p-values. Its results can be easily summarized with `summary()` or combined with tools such as **modelsummary** or **broom** for reporting.
 

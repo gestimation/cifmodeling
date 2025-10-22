@@ -1,9 +1,9 @@
 #' @title Fits regression models of cumulative incidence functions based on polytomous
-#' log-odds products and stratified IPCW estimator
+#' log odds products and stratified IPCW estimator
 #' @description The direct polytomous regression enables coherent modeling and
 #' estimation of a variety of multiplicative effects of a categorical exposure under
 #' several outcome types, including competing risks, survival and binomial outcomes.
-#' @param nuisance.model A \code{\link[stats]{formula}} describing the outcome and
+#' @param nuisance.model A \code{formula} describing the outcome and
 #'   nuisance covariates, excluding the exposure of interest.
 #' @param exposure A character string giving the name of the categorical exposure
 #'   variable in \code{data}.
@@ -13,8 +13,7 @@
 #'   covariates referenced by \code{nuisance.model}.
 #' @param subset.condition Optional expression (as a character string) defining a
 #'   subset of \code{data} to analyse. Defaults to \code{NULL}.
-#' @param na.action A function specifying the action to take on missing values.
-#'   The default is \code{\link[stats]{na.omit}}.
+#' @param na.action Function to handle missing values (default: \code{na.omit} in \pkg{stats}).
 #' @param code.event1 Integer code corresponding to the first event of interest.
 #'   Defaults to \code{1}.
 #' @param code.event2 Integer code corresponding to the competing event. Defaults
@@ -61,7 +60,7 @@
 #'   Defaults to \code{200}.
 #' @param boot.parameter2 Numeric seed used for resampling of bootstrap.
 #' @param nleqslv.method Character string defining the solver used by
-#'   \code{\link[nleqslv]{nleqslv}}. Available choices include \code{"nleqslv"},
+#'   \pkg{nleqslv}. Available choices include \code{"nleqslv"},
 #'   \code{"Broyden"}, \code{"Newton"}, \code{"optim"}, \code{"BFGS"} and
 #'   \code{"SANN"}.
 #' @param optim.parameter1 Numeric tolerance for convergence of the outer loop.
@@ -103,17 +102,17 @@
 #' @details
 #'
 #' ### Overview
-#' `polyreg()` implements **log-odds product modeling** for CIFs at user-specified
+#' `polyreg()` implements **log odds product modeling** for CIFs at user-specified
 #' time points, focusing on multiplicative effects of a categorical exposure, or
 #' constant effects over time like Cox regression and Fine-Gray models. It estimates
 #' multiplicative effects such as **risk ratios**, **odds ratios**, or
 #' **subdistribution hazard ratios**, while ensuring that the probabilities across
 #' competing events sum to one. This is achieved through
-#' **reparameterization using polytomous log-odds products**, which fits so-called
+#' **reparameterization using polytomous log odds products**, which fits so-called
 #' effect-measure models and nuisance models on multiple competing events
 #' simultaneously. Additionally, `polyreg()` supports direct binomial regression
 #' for survival outcomes and the Richardson model for binomial outcomes,
-#' both of which use log-odds products.
+#' both of which use log odds products.
 #'
 #' The function follows the familiar **formula + data** syntax with `Event()` or
 #' `Surv()` and outputs tidy results, including point estimates, standard errors,
@@ -241,8 +240,8 @@
 #' @return A list containing fitted exposure effects and supporting results. The
 #'   main components include \code{coefficient} (estimated exposure and
 #'   covariate effects), \code{cov} (their variance-covariance matrix),
-#'   \code{summary} (a tidy summary table compatible with
-#'   \code{\link[modelsummary]{msummary}}) and \code{diagnostic.statistics}
+#'   \code{summary} (a tidy summary table compatible with \pkg{modelsummary}) and
+#'   \code{diagnostic.statistics}
 #'   (inverse probability weights, influence functions and predicted potential
 #'   outcomes).
 #'
@@ -260,6 +259,9 @@
 #' if (requireNamespace("modelsummary", quietly = TRUE)) {
 #' modelsummary::msummary(output$summary, statistic = c("conf.int", "p.value"), exponentiate = TRUE)
 #' }
+
+#' @name polyreg
+#' @seealso [cifcurve()] for KM/AJ estimators; [cifplot()] for display of a CIF; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 polyreg <- function(
     nuisance.model,

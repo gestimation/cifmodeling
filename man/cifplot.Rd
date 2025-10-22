@@ -62,7 +62,7 @@ cifplot(
 
 \item{subset.condition}{Optional character expression to subset \code{data} before analysis.}
 
-\item{na.action}{Function to handle missing values (default: \code{\link[stats]{na.omit}}).}
+\item{na.action}{Function to handle missing values (default: \code{na.omit} in \pkg{stats}).}
 
 \item{outcome.type}{Character string specifying the type of time-to-event outcome.
 One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
@@ -253,5 +253,5 @@ cifplot(Event(t,epsilon) ~ fruitq,
         label.x='Years from registration')
 }
 \seealso{
-\code{\link{cifcurve}} for the estimators; \code{\link{cifpanel}} for display of multiple plots; \pkg{ggsurvfit} for plotting helpers; \code{\link{polyreg}} for log-odds product models of CIFs.
+\code{\link[=polyreg]{polyreg()}} for log-odds product modeling of CIFs; \code{\link[=cifcurve]{cifcurve()}} for KM/AJ estimators; \code{\link[=cifpanel]{cifpanel()}} for display of multiple CIFs; \link[ggsurvfit:ggsurvfit]{ggsurvfit::ggsurvfit}, \link[patchwork:patchwork-package]{patchwork::patchwork} and \link[modelsummary:modelsummary]{modelsummary::modelsummary} for display helpers.
 }

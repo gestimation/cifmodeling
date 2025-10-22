@@ -20,7 +20,9 @@
 #'   time.point = 8,
 #'   outcome.type = "COMPETING-RISK"
 #' )
-#'
+
+#' @name Event
+#' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifplot()] for display of a CIF; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 Event <- function(time, event) {
   te <- normalize_time_event(time, event)
@@ -28,7 +30,6 @@ Event <- function(time, event) {
   dimnames(ss) <- list(NULL, c("time","event"))
   attr(ss, "type") <- "right"
   class(ss) <- c("Event", class(ss))
-  print("test")
   ss
 }
 

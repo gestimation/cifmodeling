@@ -3,7 +3,7 @@
 \name{polyreg}
 \alias{polyreg}
 \title{Fits regression models of cumulative incidence functions based on polytomous
-log-odds products and stratified IPCW estimator}
+log odds products and stratified IPCW estimator}
 \usage{
 polyreg(
   nuisance.model,
@@ -49,7 +49,7 @@ polyreg(
 )
 }
 \arguments{
-\item{nuisance.model}{A \code{\link[stats]{formula}} describing the outcome and
+\item{nuisance.model}{A \code{formula} describing the outcome and
 nuisance covariates, excluding the exposure of interest.}
 
 \item{exposure}{A character string giving the name of the categorical exposure
@@ -64,8 +64,7 @@ covariates referenced by \code{nuisance.model}.}
 \item{subset.condition}{Optional expression (as a character string) defining a
 subset of \code{data} to analyse. Defaults to \code{NULL}.}
 
-\item{na.action}{A function specifying the action to take on missing values.
-The default is \code{\link[stats]{na.omit}}.}
+\item{na.action}{Function to handle missing values (default: \code{na.omit} in \pkg{stats}).}
 
 \item{code.event1}{Integer code corresponding to the first event of interest.
 Defaults to \code{1}.}
@@ -129,7 +128,7 @@ Defaults to \code{200}.}
 \item{boot.parameter2}{Numeric seed used for resampling of bootstrap.}
 
 \item{nleqslv.method}{Character string defining the solver used by
-\code{\link[nleqslv]{nleqslv}}. Available choices include \code{"nleqslv"},
+\pkg{nleqslv}. Available choices include \code{"nleqslv"},
 \code{"Broyden"}, \code{"Newton"}, \code{"optim"}, \code{"BFGS"} and
 \code{"SANN"}.}
 
@@ -189,8 +188,8 @@ from 0 and 1. Defaults to \code{1e-5}.}
 A list containing fitted exposure effects and supporting results. The
 main components include \code{coefficient} (estimated exposure and
 covariate effects), \code{cov} (their variance-covariance matrix),
-\code{summary} (a tidy summary table compatible with
-\code{\link[modelsummary]{msummary}}) and \code{diagnostic.statistics}
+\code{summary} (a tidy summary table compatible with \pkg{modelsummary}) and
+\code{diagnostic.statistics}
 (inverse probability weights, influence functions and predicted potential
 outcomes).
 }
@@ -202,17 +201,17 @@ several outcome types, including competing risks, survival and binomial outcomes
 \details{
 \subsection{Overview}{
 
-\code{polyreg()} implements \strong{log-odds product modeling} for CIFs at user-specified
+\code{polyreg()} implements \strong{log odds product modeling} for CIFs at user-specified
 time points, focusing on multiplicative effects of a categorical exposure, or
 constant effects over time like Cox regression and Fine-Gray models. It estimates
 multiplicative effects such as \strong{risk ratios}, \strong{odds ratios}, or
 \strong{subdistribution hazard ratios}, while ensuring that the probabilities across
 competing events sum to one. This is achieved through
-\strong{reparameterization using polytomous log-odds products}, which fits so-called
+\strong{reparameterization using polytomous log odds products}, which fits so-called
 effect-measure models and nuisance models on multiple competing events
 simultaneously. Additionally, \code{polyreg()} supports direct binomial regression
 for survival outcomes and the Richardson model for binomial outcomes,
-both of which use log-odds products.
+both of which use log odds products.
 
 The function follows the familiar \strong{formula + data} syntax with \code{Event()} or
 \code{Surv()} and outputs tidy results, including point estimates, standard errors,
@@ -362,4 +361,7 @@ output <- polyreg(
 if (requireNamespace("modelsummary", quietly = TRUE)) {
 modelsummary::msummary(output$summary, statistic = c("conf.int", "p.value"), exponentiate = TRUE)
 }
+}
+\seealso{
+\code{\link[=cifcurve]{cifcurve()}} for KM/AJ estimators; \code{\link[=cifplot]{cifplot()}} for display of a CIF; \code{\link[=cifpanel]{cifpanel()}} for display of multiple CIFs; \link[ggsurvfit:ggsurvfit]{ggsurvfit::ggsurvfit}, \link[patchwork:patchwork-package]{patchwork::patchwork} and \link[modelsummary:modelsummary]{modelsummary::modelsummary} for display helpers.
 }

@@ -76,14 +76,14 @@ for COMPETING-RISK: \code{c(code.event1, code.event2, code.censoring)}.}
 \item{label.x, label.y}{Optional vectors/lists of axis labels per panel.}
 
 \item{label.strata}{Optional list of character vectors for legend labels per panel
-(passed to \code{\link{cifplot}}).}
+(passed to \code{\link[=cifplot]{cifplot()}}).}
 
 \item{limits.x, limits.y}{Optional vectors/lists of numeric length-2 axis limits per panel.}
 
 \item{breaks.x, breaks.y}{Optional vectors/lists of axis breaks per panel (forwarded to
-\code{breaks.x} / \code{breaks.y} in \code{\link{cifplot}}).}
+\code{breaks.x} / \code{breaks.y} in \code{\link[=cifplot]{cifplot()}}).}
 
-\item{addConfidenceInterval, addCensorMark, addCompetingRiskMark, addIntercurrentEventMark, addQuantileLine}{Optional logical vectors/lists per panel to toggle features in \code{\link{cifplot()}}.
+\item{addConfidenceInterval, addCensorMark, addCompetingRiskMark, addIntercurrentEventMark, addQuantileLine}{Optional logical vectors/lists per panel to toggle features in \code{\link[=cifplot]{cifplot()}}.
 If \code{NULL}, sensible defaults are used (CI/Censor on; others off).}
 
 \item{rows.columns.panel}{Integer vector \code{c(nrow, ncol)} specifying the grid size.}
@@ -118,7 +118,7 @@ If \code{NULL}, sensible defaults are used (CI/Censor on; others off).}
 
 \item{dpi.ggsave}{Numeric specify dpi of the composed panel.}
 
-\item{...}{Additional arguments forwarded to \code{\link{cifplot}} (e.g., \code{style},
+\item{...}{Additional arguments forwarded to \code{{cifplot}} (e.g., \code{style},
 \code{font.family}, \code{font.size}, etc.). Panel-wise overrides provided via explicit
 arguments take precedence over \code{...}.}
 }
@@ -127,14 +127,14 @@ An invisible list: \code{list(plots = <list of ggplot objects>, out_patchwork = 
 }
 \description{
 Build a panel of publication-ready time-to-event plots by combining
-\code{\link{cifcurve}} (estimation) and \code{\link{cifplot}} (rendering).
+\code{{cifcurve}} (estimation) and \code{{cifplot}} (rendering).
 Supports grid layout or an inset plot overlay. Panel-wise overrides for
 y-scale type, labels, limits, and various plot decorations are supported.
 }
 \details{
 \strong{How it works:}
-For each panel slot, the function first calls \code{\link{cifcurve}} to obtain
-a \code{survfit}-like object, and then calls \code{\link{cifplot}} to render it.
+For each panel slot, the function first calls \code{{cifcurve}} to obtain
+a \code{survfit}-like object, and then calls \code{{cifplot}} to render it.
 You can pass \code{code.events = list(c(e1, e2, c), ...)} for competing risks
 (Aalen–Johansen), or \code{code.events = list(c(e1, c), ...)} for standard
 survival (Kaplan–Meier). If \code{outcome.type} is not specified, each panel's
@@ -313,4 +313,7 @@ cifpanel(
 )
 }
 
+}
+\seealso{
+\code{\link[=polyreg]{polyreg()}} for log-odds product modeling of CIFs; \code{\link[=cifcurve]{cifcurve()}} for KM/AJ estimators; \code{\link[=cifplot]{cifplot()}} for display of a CIF; \link[ggsurvfit:ggsurvfit]{ggsurvfit::ggsurvfit}, \link[patchwork:patchwork-package]{patchwork::patchwork} and \link[modelsummary:modelsummary]{modelsummary::modelsummary} for display helpers.
 }

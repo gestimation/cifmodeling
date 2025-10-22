@@ -27,7 +27,7 @@ tightly connected functions.
   overlay.
 
 - `polyreg()` fits regression models of cumulative incidence functions
-  based on polytomous log-odds products and stratified IPCW estimator.
+  based on polytomous log odds products and stratified IPCW estimator.
   This function is particularly suitable for causal inference in terms
   of common effect measures, namely risk ratios, odds ratios, and
   subdistribution hazard ratios, with a competing risks, survival, or
@@ -185,7 +185,7 @@ cifpanel(
 
 ### polyreg()
 
-`polyreg()` implements **log-odds product modeling** for CIFs at
+`polyreg()` implements **log odds product modeling** for CIFs at
 user-specified time points, focusing on multiplicative effects of a
 categorical exposure, or constant effects over time like Cox regression
 and Fine-Gray models. It estimates multiplicative effects such as **risk

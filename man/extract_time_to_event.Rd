@@ -26,8 +26,7 @@ extract_time_to_event(
 \item{subset.condition}{Optional expression (as a character string) defining a
 subset of \code{data} to analyse. Defaults to \code{NULL}.}
 
-\item{na.action}{A function specifying the action to take on missing values.
-The default is \code{\link[stats]{na.omit}}.}
+\item{na.action}{Function to handle missing values (default: \code{na.omit} in \pkg{stats}).}
 
 \item{which_event}{One of \code{"event1"}, \code{"event2"}, \code{"censor"},
 \code{"censoring"}, or \code{"user_specified"}, indicating which event type
@@ -54,7 +53,7 @@ and contains the event times of the selected type.
 \description{
 Creates a list of event times that can be passed to downstream
 visualization or analysis functions such as \code{competing.risk.time} or
-\code{intercurrent.event.time} in \code{\link{cifplot}} and \code{\link{cifpanel}}.
+\code{intercurrent.event.time} in \code{\link[=cifplot]{cifplot()}} and \code{\link[=cifpanel]{cifpanel()}}.
 Event types are specified by event 1, event 2, censoring, or user-specified codes.
 }
 \details{
@@ -77,5 +76,7 @@ cifplot(Event(t,epsilon) ~ fruitq,
         competing.risk.time=output,
         label.y='CIF of diabetic retinopathy',
         label.x='Years from registration')
-
+}
+\seealso{
+\code{\link[=polyreg]{polyreg()}} for log-odds product modeling of CIFs; \code{\link[=cifcurve]{cifcurve()}} for KM/AJ estimators; \code{\link[=cifplot]{cifplot()}} for display of a CIF; \code{\link[=cifpanel]{cifpanel()}} for display of multiple CIFs; \link[ggsurvfit:ggsurvfit]{ggsurvfit::ggsurvfit}, \link[patchwork:patchwork-package]{patchwork::patchwork} and \link[modelsummary:modelsummary]{modelsummary::modelsummary} for display helpers.
 }

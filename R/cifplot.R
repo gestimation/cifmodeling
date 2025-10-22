@@ -11,7 +11,7 @@
 #' @param data A data frame containing variables in \code{formula}.
 #' @param weights Optional name of the weight variable in \code{data}. Weights must be nonnegative; strictly positive is recommended.
 #' @param subset.condition Optional character expression to subset \code{data} before analysis.
-#' @param na.action Function to handle missing values (default: \code{\link[stats]{na.omit}}).
+#' @param na.action Function to handle missing values (default: \code{na.omit} in \pkg{stats}).
 #' @param outcome.type
 #' Character string specifying the type of time-to-event outcome.
 #' One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
@@ -151,8 +151,9 @@
 #' @importFrom ggsurvfit ggsurvfit add_confidence_interval add_risktable add_risktable_strata_symbol add_censor_mark add_quantile
 #' @importFrom ggplot2 theme_classic theme_bw element_text labs lims geom_point aes ggsave scale_color_discrete scale_fill_discrete element_text element_rect element_blank scale_color_manual scale_fill_manual scale_linetype_manual scale_shape_manual
 #' @importFrom grDevices gray
-#' @seealso \code{\link{cifcurve}} for the estimators; \code{\link{cifpanel}} for display of multiple plots; \pkg{ggsurvfit} for plotting helpers; \code{\link{polyreg}} for log-odds product models of CIFs.
 
+#' @name cifplot
+#' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 cifplot <- function(
     x,

@@ -46,12 +46,12 @@
 #' @param type.y Optional vector/list per panel: \code{NULL} (survival) or \code{"risk"} (1-survival).
 #' @param label.x,label.y Optional vectors/lists of axis labels per panel.
 #' @param label.strata Optional list of character vectors for legend labels per panel
-#'   (passed to \code{\link{cifplot}}).
+#'   (passed to [cifplot()]).
 #' @param limits.x,limits.y Optional vectors/lists of numeric length-2 axis limits per panel.
 #' @param breaks.x,breaks.y Optional vectors/lists of axis breaks per panel (forwarded to
-#'   \code{breaks.x} / \code{breaks.y} in \code{cifplot}).
+#'   \code{breaks.x} / \code{breaks.y} in [cifplot()]).
 #' @param addConfidenceInterval,addCensorMark,addCompetingRiskMark,addIntercurrentEventMark,addQuantileLine
-#'   Optional logical vectors/lists per panel to toggle features in \code{{cifplot()}}.
+#'   Optional logical vectors/lists per panel to toggle features in [cifplot()].
 #'   If \code{NULL}, sensible defaults are used (CI/Censor on; others off).
 #' @param rows.columns.panel Integer vector \code{c(nrow, ncol)} specifying the grid size.
 #' @param title.panel,subtitle.panel,caption.panel Optional strings for panel annotation.
@@ -222,6 +222,9 @@
 #'
 #' @importFrom ggplot2 ggplot theme_void ggsave theme element_text labs
 #' @importFrom patchwork wrap_plots plot_layout inset_element plot_annotation
+
+#' @name cifpanel
+#' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifplot()] for display of a CIF; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 cifpanel <- function(
     formula = NULL,
