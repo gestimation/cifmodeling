@@ -31,6 +31,7 @@ Event <- function(time, event) {
   ss
 }
 
+
 normalize_time_event <- function(time, event, allowed = NULL) {
   if (missing(time))  .err("req", arg = "time")
   if (missing(event)) .err("req", arg = "event")
