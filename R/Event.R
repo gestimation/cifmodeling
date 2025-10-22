@@ -28,6 +28,7 @@ Event <- function(time, event) {
   dimnames(ss) <- list(NULL, c("time","event"))
   attr(ss, "type") <- "right"
   class(ss) <- c("Event", class(ss))
+  print("test")
   ss
 }
 
