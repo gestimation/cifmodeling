@@ -36,6 +36,7 @@ make_min_inputs <- function() {
 
 test_that("panel_prepare returns curves and plot args", {
   skip_on_cran()
+  skip_if_not_installed("survival")
   inputs <- make_min_inputs()
   prep <- do.call(cifmodeling:::panel_prepare, inputs)
 
