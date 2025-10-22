@@ -42,7 +42,6 @@
 #' For \code{outcome.type="COMPETING-RISK"}, \code{$surv} equals \code{1 - CIF} for \code{code.event1}.
 #' Standard error and CIs are provided per \code{conf.type}. Note that some methods for \code{survfit} (e.g., \code{residuals.survfit}) may not be supported.
 #'
-#' @seealso \code{\link{cifplot}} for display of a plot; \code{\link{cifpanel}} for display of multiple plots; \pkg{ggsurvfit} for plotting helpers; \code{\link{polyreg}} for log-odds product models of CIFs.
 #'
 #' @examples
 #' data(diabetes.complications)
@@ -56,6 +55,7 @@
 #'         label.x = 'Years from registration')
 #'
 #' @importFrom Rcpp sourceCpp
+#' @importFrom stats formula
 #' @export
 cifcurve <- function(
     formula,

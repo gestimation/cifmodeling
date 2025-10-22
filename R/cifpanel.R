@@ -2,14 +2,14 @@
 #' arranged either in a grid layout or as an inset overlay
 #' @description
 #' Build a panel of publication-ready time-to-event plots by combining
-#' \code{\link{cifcurve}} (estimation) and \code{\link{cifplot}} (rendering).
+#' \code{{cifcurve}} (estimation) and \code{{cifplot}} (rendering).
 #' Supports grid layout or an inset plot overlay. Panel-wise overrides for
 #' y-scale type, labels, limits, and various plot decorations are supported.
 #'
 #' @details
 #' \strong{How it works:}
-#' For each panel slot, the function first calls \code{\link{cifcurve}} to obtain
-#' a \code{survfit}-like object, and then calls \code{\link{cifplot}} to render it.
+#' For each panel slot, the function first calls \code{{cifcurve}} to obtain
+#' a \code{survfit}-like object, and then calls \code{{cifplot}} to render it.
 #' You can pass \code{code.events = list(c(e1, e2, c), ...)} for competing risks
 #' (Aalen–Johansen), or \code{code.events = list(c(e1, c), ...)} for standard
 #' survival (Kaplan–Meier). If \code{outcome.type} is not specified, each panel's
@@ -49,9 +49,9 @@
 #'   (passed to \code{\link{cifplot}}).
 #' @param limits.x,limits.y Optional vectors/lists of numeric length-2 axis limits per panel.
 #' @param breaks.x,breaks.y Optional vectors/lists of axis breaks per panel (forwarded to
-#'   \code{breaks.x} / \code{breaks.y} in \code{\link{cifplot}}).
+#'   \code{breaks.x} / \code{breaks.y} in \code{cifplot}).
 #' @param addConfidenceInterval,addCensorMark,addCompetingRiskMark,addIntercurrentEventMark,addQuantileLine
-#'   Optional logical vectors/lists per panel to toggle features in \code{\link{cifplot()}}.
+#'   Optional logical vectors/lists per panel to toggle features in \code{{cifplot()}}.
 #'   If \code{NULL}, sensible defaults are used (CI/Censor on; others off).
 #' @param rows.columns.panel Integer vector \code{c(nrow, ncol)} specifying the grid size.
 #' @param title.panel,subtitle.panel,caption.panel Optional strings for panel annotation.
@@ -70,7 +70,7 @@
 #' @param width.ggsave Numeric specify width of the composed panel.
 #' @param height.ggsave Numeric specify height of the composed panel.
 #' @param dpi.ggsave Numeric specify dpi of the composed panel.
-#' @param ... Additional arguments forwarded to \code{\link{cifplot}} (e.g., \code{style},
+#' @param ... Additional arguments forwarded to \code{{cifplot}} (e.g., \code{style},
 #'   \code{font.family}, \code{font.size}, etc.). Panel-wise overrides provided via explicit
 #'   arguments take precedence over \code{...}.
 #'

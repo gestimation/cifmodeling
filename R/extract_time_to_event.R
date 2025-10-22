@@ -3,7 +3,7 @@
 #' @description
 #' Creates a list of event times that can be passed to downstream
 #' visualization or analysis functions such as `competing.risk.time` or
-#' `intercurrent.event.time` in \code{\link{cifplot}} and \code{\link{cifpanel}}.
+#' `intercurrent.event.time` in \code{{cifplot}} and \code{{cifpanel}}.
 #' Event types are specified by event 1, event 2, censoring, or user-specified codes.
 #'
 #' @param formula A model formula specifying the outcome and (optionally) \code{strata()}.
