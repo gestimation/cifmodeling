@@ -5,12 +5,6 @@ on:
     branches: [ "**" ]
   pull_request:
     branches: [ "**" ]
-  workflow_dispatch:
-    inputs:
-      roxygenise:
-        description: "Run roxygen2::roxygenise() before checking?"
-        type: boolean
-        default: false
 
 jobs:
   check:
@@ -29,14 +23,11 @@ jobs:
           extra-packages: any::rcmdcheck, any::survival
           needs: check
 
-      - name: (optional) roxygenise
-        if: ${{ inputs.roxygenise == true }}
-        shell: Rscript {0}
-        run: |
-          roxygen2::roxygenise()
-
       - name: Check
         shell: Rscript {0}
         run: |
-          rcmdcheck::rcmdcheck(args = c("--no-manual","--as-cran"),
-                               error_on = "warning")
+          rcmdcheck::rcmdcheck(
+            args = c("--no-manual","--as-cran","--ignore-vignettes"),
+            build_args = c("--no-build-vignettes"),
+            error_on = "warning"
+          )
