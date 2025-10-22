@@ -364,46 +364,32 @@ cifpanel <- function(
   fonts <- .panel_extract_fonts(dots)
   theme.panel.unified <- .panel_build_theme(font.family = fonts$family, font.size = fonts$size)
 
-  plots <- lapply(seq_len(K), function(i) {
-    pair <- code.events[[i]]
-    if (outcome.flags[i] == "S") {
-      ce1 <- pair[1]; ce2 <- NULL; cc <- pair[2]
-    } else {
-      ce1 <- pair[1]; ce2 <- pair[2]; cc <- pair[3]
-    }
-
-    args_est <- .panel_drop_nulls(list(
-      formula        = formulas[[i]],
-      data           = data,
-      outcome.type   = if (!is.null(outcome.list)) outcome.list[[i]] else NULL,
-      code.event1    = ce1,
-      code.event2    = ce2,
-      code.censoring = cc
-    ))
-    fit_i <- do.call(cifcurve, args_est)
-
-    args_plot <- .panel_drop_nulls(list(
-      x = fit_i,
-      type.y         = if (!is.null(typey.list))   typey.list[[i]]   else NULL,
-      label.y        = if (!is.null(labely.list))  labely.list[[i]]  else NULL,
-      label.x        = if (!is.null(labelx.list))  labelx.list[[i]]  else NULL,
-      limits.y       = if (!is.null(limsy.list))   limsy.list[[i]]   else NULL,
-      limits.x       = if (!is.null(limsx.list))   limsx.list[[i]]   else NULL,
-      breaks.x       = if (!is.null(breakx.list))  breakx.list[[i]]  else NULL,
-      breaks.y       = if (!is.null(breaky.list))  breaky.list[[i]]  else NULL,
-      addConfidenceInterval    = if (!is.null(addCI.list))  addCI.list[[i]]   else TRUE,
-      addCensorMark            = if (!is.null(addCen.list)) addCen.list[[i]]  else TRUE,
-      addCompetingRiskMark     = if (!is.null(addCR.list))  addCR.list[[i]]   else FALSE,
-      addIntercurrentEventMark = if (!is.null(addIC.list))  addIC.list[[i]]   else FALSE,
-      addQuantileLine          = if (!is.null(addQ.list))   addQ.list[[i]]    else FALSE,
-      label.strata             = if (!is.null(strata.list)) strata.list[[i]]  else NULL,
-      style                    = dots$style %||% "CLASSIC",
-      font.family              = fonts$family,
-      font.size                = fonts$size,
-      legend.position          = legend.position
-    ))
-    do.call(cifplot, args_plot)
-  })
+  prep <- panel_prepare(
+    K = K,
+    formulas = formulas,
+    data = data,
+    code.events = code.events,
+    outcome.flags = outcome.flags,
+    outcome.list = outcome.list,
+    typey.list = typey.list,
+    labely.list = labely.list,
+    typex.list = typex.list,
+    labelx.list = labelx.list,
+    limsx.list = limsx.list,
+    limsy.list = limsy.list,
+    breakx.list = breakx.list,
+    breaky.list = breaky.list,
+    addCI.list = addCI.list,
+    addCen.list = addCen.list,
+    addCR.list = addCR.list,
+    addIC.list = addIC.list,
+    addQ.list = addQ.list,
+    strata.list = strata.list,
+    legend.position = legend.position,
+    dots = dots,
+    fonts = fonts
+  )
+  plots <- lapply(seq_len(prep$K), function(i) do.call(cifplot, prep$plot_args[[i]]))
 
   if (isTRUE(use_inset_element)) {
     if (length(plots) < 2L) .err("inset_need_two")
