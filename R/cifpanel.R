@@ -268,7 +268,7 @@ cifpanel <- function(
     dpi.ggsave = 300,
     ...
 ){
-  stopifnot(is.numeric(rows.columns.panel), length(rows.columns.panel) == 2, all(rows.columns.panel >= 1))
+#  stopifnot(is.numeric(rows.columns.panel), length(rows.columns.panel) == 2, all(rows.columns.panel >= 1))
   nrow <- as.integer(rows.columns.panel[1]); ncol <- as.integer(rows.columns.panel[2])
   n_slots <- nrow * ncol
 
