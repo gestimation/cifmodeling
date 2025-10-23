@@ -126,8 +126,25 @@ data(diabetes.complications)
 cifplot(Event(t,epsilon) ~ fruitq, data=diabetes.complications, 
         outcome.type="COMPETING-RISK")
 diabetes.complications$d <- (diabetes.complications$epsilon>0)
-cifplot(Event(t,d) ~ fruitq, data=diabetes.complications, 
+cifplot(Event(t,d) ~ fruitq, data=diabetes.complications,
         outcome.type="SURVIVAL")
+```
+
+**Show both event-specific CIFs side-by-side**
+
+``` r
+data(diabetes.complications)
+cifplot(
+  Event(t, epsilon) ~ fruitq1,
+  data = diabetes.complications,
+  outcome.type = "COMPETING-RISK",
+  code.events  = c(1, 2, 0),
+  printBoth    = TRUE,
+  title.plot   = c("Diabetic retinopathy", "Macrovascular complications"),
+  label.x      = "Years from registration",
+  label.y      = "Cumulative incidence",
+  legend.collect = TRUE
+)
 ```
 
 ### cifpanel()
