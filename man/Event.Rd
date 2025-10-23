@@ -11,6 +11,8 @@ Event(time, event, allowed = getOption("cifmodeling.allowed", c(0, 1, 2)))
 
 \item{event}{Integer (0=censor, 1,2,...) or a character/factor vector whose levels
 are numeric codes "0","1","2",... for competing events.}
+
+\item{allowed}{Numeric vector of acceptable event codes.}
 }
 \value{
 An object of class \code{"Event"} (a 2-column matrix) with columns \code{time}, \code{event}.

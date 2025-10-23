@@ -15,10 +15,12 @@ cifplot(
   code.event1 = 1,
   code.event2 = 2,
   code.censoring = 0,
+  code.events = NULL,
   error = NULL,
   conf.type = "arcsine-square root",
   conf.int = 0.95,
   type.y = NULL,
+  printBoth = FALSE,
   label.x = "Time",
   label.y = NULL,
   label.strata = NULL,
@@ -50,7 +52,8 @@ cifplot(
   filename.ggsave = NULL,
   width.ggsave = 6,
   height.ggsave = 6,
-  dpi.ggsave = 300
+  dpi.ggsave = 300,
+  ...
 )
 }
 \arguments{
@@ -162,7 +165,7 @@ It calls geom_point() (default \code{TRUE}).}
 
 \item{dpi.ggsave}{Numeric specify dpi of the \pkg{ggsurvfit} plot.}
 
-\item{\dots}{Additional arguments forwarded to \code{cifpanel()} when \code{printBoth = TRUE}.}
+\item{...}{Additional arguments forwarded to \code{cifpanel()} when \code{printBoth = TRUE}.}
 }
 \value{
 A \code{ggplot} object.

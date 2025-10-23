@@ -295,6 +295,31 @@ cifplot <- function(
         if (is.null(dots$font.size)) dots$font.size <- font.size
         if (is.null(dots$print.panel)) dots$print.panel <- FALSE
         panel_out <- do.call(cifpanel, c(panel_args, dots))
+        if (is.list(panel_out) && !is.null(panel_out$plots)) {
+          # title vector (may be NULL)
+          titles <- dots$title.plot
+          # y label vector (already normalized above)
+          ylabs  <- panel_label_y
+
+          n <- length(panel_out$plots)
+          for (i in seq_len(n)) {
+            p_i <- panel_out$plots[[i]]
+
+            # apply title if provided / normalized
+            if (!is.null(titles)) {
+              ti <- titles[pmin(i, length(titles))]
+              if (!is.na(ti)) p_i <- p_i + ggplot2::labs(title = ti)
+            }
+
+            # apply y label (always set for printBoth path)
+            if (!is.null(ylabs)) {
+              yi <- ylabs[pmin(i, length(ylabs))]
+              if (!is.na(yi)) p_i <- p_i + ggplot2::labs(y = yi)
+            }
+
+            panel_out$plots[[i]] <- p_i
+          }
+        }
         if (is.list(panel_out) && !is.null(panel_out$out_patchwork)) {
           attr(panel_out$out_patchwork, "plots") <- panel_out$plots
           return(panel_out$out_patchwork)
@@ -374,7 +399,7 @@ is_competing_outcome <- function(outcome_type) {
 
 
 #' Plot survival or cumulative incidence curves with ggsurvfit
-#' 
+#'
 #' @param survfit_object A \code{survfit} object.
 #' @param out_readSurv (optional) List returned by your \code{readSurv()} to auto-set x limits.
 #' @param conf.type Character transformation for CI on the probability scale (default \code{"arcsine-square root"}).

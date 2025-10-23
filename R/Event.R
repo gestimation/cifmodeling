@@ -6,6 +6,7 @@
 #' @param time Numeric vector of follow-up times (non-negative).
 #' @param event Integer (0=censor, 1,2,...) or a character/factor vector whose levels
 #'   are numeric codes "0","1","2",... for competing events.
+#' @param allowed Numeric vector of acceptable event codes.
 #'
 #' @return An object of class \code{"Event"} (a 2-column matrix) with columns \code{time}, \code{event}.
 #' @examples
