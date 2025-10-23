@@ -321,8 +321,8 @@ calculateCov_old <- function(objget_results, estimand, prob.bound)
   censoring_mkm <- censoring_martingale / censoring_km
   y_12 <- (y_1 + y_2 > 0)
   survival_km <- calculateKaplanMeier(t, y_12)
-  wy_1 <- w11 * (y_1 - ey_1) + w12 * (y_2 - ey_2)
-  wy_2 <- w12 * (y_1 - ey_1) + w22 * (y_2 - ey_2)
+  wy_1 <- w11 * y_1 + w12 * y_2
+  wy_2 <- w12 * y_1 + w22 * y_2
   x_la <- cbind(x_l, x_a)
   AB1 <- score[1:n, 1:iv[3]]
   AB2 <- score[(n + 1):(2 * n), iv[4]:iv[7]]
@@ -707,7 +707,7 @@ calculateCovSurvival2 <- function(objget_results, estimand, prob.bound)
   censoring_mkm <- censoring_martingale / censoring_km
   y_12 <- (y_1 > 0)
   survival_km <- calculateKaplanMeier(t, y_12)
-  wy_1 <- w11 * (y_1 - ey_1)
+  wy_1 <- w11 * y_1
   x_la <- cbind(x_l, x_a)
   AB1 <- score[1:n, 1:iv[3]]
   for (i_para in 1:iv[2]) {
@@ -819,6 +819,17 @@ solveEstimatingEquation <- function(
   }
 
   assessConvergence <- function(new_params, current_params, current_obj_value, optim.parameter1, optim.parameter2, optim.parameter3) {
+    assessRelativeDifference <- function(new, old) {
+      max(abs(new - old) / pmax(1, abs(old)))
+    }
+    is_stalled <- function(x, stall_patience = 3, stall_eps = 1e-3) {
+      n <- length(x)
+      if (n < stall_patience) return(FALSE)
+      recent <- x[(n - stall_patience + 1L):n]
+      rng <- range(recent)
+      rel_diff <- (diff(rng) / max(1e-12, mean(recent)))
+      rel_diff <= stall_eps
+    }
     if (any(abs(new_params) > optim.parameter3)) {
       stop("Estimates are either too large or too small, and convergence might not be achieved.")
     }
@@ -826,38 +837,18 @@ solveEstimatingEquation <- function(
     max.absolute.difference <- max(param_diff)
     relative.difference <- assessRelativeDifference(new_params, current_params)
     obj_value <- drop(crossprod(obj$estimating_equation_i(new_params)))
-    converged <- (relative.difference <= optim.parameter1) || (obj_value <= optim.parameter2) || is_stalled(c(current_obj_value, obj_value))
 
+    converged <- (relative.difference <= optim.parameter1) || (obj_value <= optim.parameter2) || is_stalled(c(current_obj_value, obj_value))
     criteria1 <- (relative.difference <= optim.parameter1)
     criteria2 <- (obj_value <= optim.parameter2)
     criteria3 <- is_stalled(c(current_obj_value, obj_value))
     converged  <- (criteria1 || criteria2 || criteria3)
     converged.by <- if (!converged) NA_character_
-    else if (criteria1)   "Converged in relative difference"
+    else if (criteria1) "Converged in relative difference"
     else if (criteria2) "Converged in objective function"
     else "Stalled"
 
     list(converged = converged, converged.by=converged.by, relative.difference = relative.difference, max.absolute.difference = max.absolute.difference, obj_value = obj_value)
-  }
-
-  assessRelativeDifference <- function(new, old) {
-    max(abs(new - old) / pmax(1, abs(old)))
-  }
-
-  is_stalled <- function(x, stall_patience=3, stall_eps=1e-3) {
-    if (length(x) < stall_patience) return(FALSE)
-    recent <- tail(x, stall_patience)
-    (diff(range(recent)) / max(1e-12, mean(recent))) <= stall_eps
-  }
-
-  choose_nleqslv_method <- function(nleqslv.method) {
-    if (nleqslv.method %in% c("nleqslv", "Broyden")) {
-      "Broyden"
-    } else if (nleqslv.method == "Newton") {
-      "Newton"
-    } else {
-      stop("Unsupported nleqslv.method without optim(): ", nleqslv.method)
-    }
   }
 
   obj <- makeObjectiveFunction()

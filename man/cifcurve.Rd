@@ -2,7 +2,7 @@
 % Please edit documentation in R/cifcurve.R
 \name{cifcurve}
 \alias{cifcurve}
-\title{Visualize time-to-event outcomes and intercurrent events}
+\title{Calculate the Kaplan–Meier estimator and the Aalen–Johansen estimator with various SE and CI methods.}
 \usage{
 cifcurve(
   formula,
@@ -10,37 +10,14 @@ cifcurve(
   weights = NULL,
   subset.condition = NULL,
   na.action = na.omit,
+  outcome.type = c("SURVIVAL", "COMPETING-RISK"),
   code.event1 = 1,
   code.event2 = 2,
   code.censoring = 0,
-  outcome.type = "SURVIVAL",
-  conf.int = 0.95,
-  error = "greenwood",
+  error = NULL,
   conf.type = "arcsine-square root",
-  report.survfit.std.err = FALSE,
-  report.ggsurvfit = TRUE,
-  ggsurvfit.type = NULL,
-  addConfidenceInterval = FALSE,
-  addRiskTable = TRUE,
-  addCensorMark = TRUE,
-  addCompetingRiskMark = FALSE,
-  addIntercurrentEventMark = FALSE,
-  label.x = "Time",
-  label.y = "Survival probability",
-  label.strata = NULL,
-  lims.x = NULL,
-  lims.y = c(0, 1),
-  shape.censor.mark = 3,
-  size.censor.mark = 2,
-  shape.competing.risk.mark = 16,
-  size.competing.risk.mark = 2,
-  intercurrent.event.time = NULL,
-  shape.intercurrent.event.mark = 1,
-  size.intercurrent.event.mark = 2,
-  font.family = "sans",
-  font.size = 14,
-  legend.position = "top",
-  filename = NULL
+  conf.int = 0.95,
+  report.survfit.std.err = FALSE
 )
 }
 \arguments{
@@ -52,7 +29,16 @@ cifcurve(
 
 \item{subset.condition}{Optional character expression to subset \code{data} before analysis.}
 
-\item{na.action}{Function to handle missing values (default: \code{\link[stats]{na.omit}}).}
+\item{na.action}{Function to handle missing values (default: \code{na.omit} in \pkg{stats}).}
+
+\item{outcome.type}{Character string specifying the type of time-to-event outcome.
+One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
+If \code{NULL} (default), the function automatically infers the outcome type
+from the data: if the event variable has more than two unique levels,
+\code{"COMPETING-RISK"} is assumed; otherwise, \code{"SURVIVAL"} is used.
+You can also use abbreviations such as \code{"S"} or \code{"C"}.
+Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic
+detection based on the event coding in \code{data}.}
 
 \item{code.event1}{Integer code of the event of interest (default \code{1}).}
 
@@ -60,63 +46,14 @@ cifcurve(
 
 \item{code.censoring}{Integer code of censoring (default \code{0}).}
 
-\item{outcome.type}{\code{"SURVIVAL"} (KM) or \code{"COMPETING-RISK"} (AJ).}
+\item{error}{Character specifying variance type used internally. For \code{"SURVIVAL"} typically \code{"greenwood"}.
+For \code{"COMPETING-RISK"} pass options supported by \code{calculateAalenDeltaSE()} (\code{"aalen"}, \code{"delta"}, \code{"none"}).}
 
-\item{conf.int}{Two-sided confidence level (default \code{0.95}).}
+\item{conf.type}{Character transformation for CI on the probability scale (default \code{"arcsine-square root"}).}
 
-\item{error}{Character specifying variance type used internally.
-For \code{"SURVIVAL"} typically \code{"greenwood"}; for \code{"COMPETING-RISK"} pass options supported by \code{calculateAalenDeltaSE()} (e.g., \code{"aalen"}, \code{"delta"}, \code{"none"}).}
-
-\item{conf.type}{Transformation for CI on the probability scale (default \code{"arcsine-square root"}).}
+\item{conf.int}{numeric two-sided confidence level (default \code{0.95}).}
 
 \item{report.survfit.std.err}{If \code{TRUE}, report SE on the log-survival scale (survfit's convention). Otherwise SE is on the probability scale.}
-
-\item{report.ggsurvfit}{If \code{TRUE} (default), draw a \pkg{ggsurvfit} plot.}
-
-\item{ggsurvfit.type}{\code{NULL} (survival) or \code{"risk"} (display \code{1 - survival} i.e. CIF).}
-
-\item{addConfidenceInterval}{Logical add \code{add_confidence_interval()} to plot (default \code{TRUE}).}
-
-\item{addRiskTable}{Logical add \code{add_risktable(risktable_stats="n.risk")} to plot (default \code{TRUE}).}
-
-\item{addCensorMark}{Logical add \code{add_censor_mark()} to plot (default \code{TRUE}).}
-
-\item{addCompetingRiskMark}{Logical add time marks to describe event2 specified by Event(), usually the competing events (default \code{TRUE}).}
-
-\item{addIntercurrentEventMark}{Logical overlay user-specified time marks per strata (default \code{TRUE}).}
-
-\item{label.x}{Axis labels (defaults: \code{"Time"}).}
-
-\item{label.y}{Axis labels (defaults: \code{"Survival probability"}).
-If \code{ggsurvfit.type="risk"} and \code{label.y} is unchanged, it is internally set to \code{"1 - survival probability"}.}
-
-\item{label.strata}{Character vector of labels for strata.}
-
-\item{lims.x}{Numeric length-2 vectors for axis limits (defaults: \code{NULL}, \code{c(0,1)}).}
-
-\item{lims.y}{Numeric length-2 vectors for axis limits (defaults: \code{NULL}, \code{c(0,1)}).}
-
-\item{shape.censor.mark}{Integer point shape for censor marks (default \code{3}).}
-
-\item{size.censor.mark}{Numeric point size for censor marks (default \code{2}).}
-
-\item{shape.competing.risk.mark}{Integer point shape for competing-risk marks (default \code{16}).}
-
-\item{size.competing.risk.mark}{Numeric point size for competing-risk marks (default \code{2}).}
-
-\item{intercurrent.event.time}{Named list of numeric vectors (names must match or be mapped to strata labels).}
-
-\item{shape.intercurrent.event.mark}{Integer point shape for intercurrent-event marks (default \code{1}).}
-
-\item{size.intercurrent.event.mark}{Numeric point size for intercurrent-event marks (default \code{2}).}
-
-\item{font.family}{Character plot theme controls (defaults: \code{"sans"}).}
-
-\item{font.size}{Integer plot theme controls (defaults: \code{14}).}
-
-\item{legend.position}{Legend position: \code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, or \code{"none"} (default \code{"top"}).}
-
-\item{filename}{Character specify the name of the graph output.}
 }
 \value{
 A \code{survfit} object. For \code{outcome.type="SURVIVAL"}, \code{$surv} is the survival function.
@@ -138,19 +75,19 @@ using IPCW for the censoring distribution. The returned \code{surv} corresponds 
 \strong{Confidence intervals:}
 Constructed on the probability scale with the specified \code{conf.type}.
 If \code{conf.type \%in\% c("none","n")}, the plot suppresses CI bands.
-
-\strong{Plotting:}
-By default, the function calls an internal helper \code{call_ggsurvfit()} which adds
-confidence bands, risk table, censoring marks, and optional intercurrent-event marks.
-For CIF display, set \code{ggsurvfit.type = "risk"}.
 }
 \examples{
 data(diabetes.complications)
-survfit_by_group <- cifcurve(Event(t,epsilon) ~ fruitq, data = diabetes.complications,
-                    outcome.type='COMPETING-RISK', error='delta', ggsurvfit.type = 'risk',
-                    label.y = 'CIF of diabetic retinopathy', label.x = 'Years from registration')
+out_cifcurve <- cifcurve(Event(t,epsilon) ~ fruitq,
+                         data = diabetes.complications,
+                         outcome.type='COMPETING-RISK')
+cifplot(out_cifcurve,
+        type.y = 'risk',
+        addRiskTable = FALSE,
+        label.y = 'CIF of diabetic retinopathy',
+        label.x = 'Years from registration')
 
 }
 \seealso{
-\code{\link{polyreg}} for log-odds product models of CIFs; \pkg{ggsurvfit} for plotting helpers.
+\code{\link[=polyreg]{polyreg()}} for log-odds product modeling of CIFs; \code{\link[=cifplot]{cifplot()}} for display of a CIF; \code{\link[=cifpanel]{cifpanel()}} for display of multiple CIFs; \link[ggsurvfit:ggsurvfit]{ggsurvfit::ggsurvfit}, \link[patchwork:patchwork-package]{patchwork::patchwork} and \link[modelsummary:modelsummary]{modelsummary::modelsummary} for display helpers.
 }

@@ -1,4 +1,4 @@
-calculateCI <- function(survfit_object, conf.int, conf.type, conf.lower) {
+calculateCI <- function(survfit_object, conf.int, conf.type, conf.lower=NULL) {
   if (conf.int <= 0 | conf.int >= 1)
     stop("Confidence level must be between 0 and 1")
   alpha <- 1 - conf.int
@@ -29,43 +29,6 @@ calculateCI <- function(survfit_object, conf.int, conf.type, conf.lower) {
   } else if (conf.type == "logit") {
     #    se <- survfit_object$std.err/(1 - survfit_object$surv)
     se <- survfit_object$std.err/survfit_object$surv/(1 - survfit_object$surv)
-    lower <- survfit_object$surv / (survfit_object$surv + (1 - survfit_object$surv)*exp(critical_value*se))
-    upper <- survfit_object$surv / (survfit_object$surv + (1 - survfit_object$surv)*exp(-critical_value*se))
-  }
-  lower <- sapply(lower, function(x) ifelse(is.nan(x), NA, x))
-  upper <- sapply(upper, function(x) ifelse(is.nan(x), NA, x))
-  lower <- sapply(lower, function(x) ifelse(x>=1, 1, x))
-  upper <- sapply(upper, function(x) ifelse(x>=1, 1, x))
-  lower <- sapply(lower, function(x) ifelse(x<=0, 0, x))
-  upper <- sapply(upper, function(x) ifelse(x<=0, 0, x))
-  return(list(upper=upper, lower=lower))
-}
-
-calculateCI_old <- function(survfit_object, conf.int, conf.type, conf.lower) {
-  if (conf.int <= 0 | conf.int >= 1)
-    stop("Confidence level must be between 0 and 1")
-  alpha <- 1 - conf.int
-  critical_value <- qnorm(1 - alpha / 2)
-  if (is.null(conf.type) | conf.type == "none" | conf.type == "n") {
-    lower <- NULL
-    upper <- NULL
-  } else if (conf.type == "arcsine-square root" | conf.type == "arcsin" | conf.type == "a") {
-    se <- survfit_object$surv*survfit_object$std.err/2/sqrt(survfit_object$surv * (1 - survfit_object$surv))
-    lower <- sin(pmax(asin(sqrt(survfit_object$surv)) - critical_value*se, 0))^2
-    upper <- sin(pmin(asin(sqrt(survfit_object$surv)) + critical_value*se, pi/2))^2
-  } else if (conf.type == "plain" | conf.type == "p" | conf.type == "linear") {
-    lower <- pmax(survfit_object$surv - critical_value*survfit_object$surv*survfit_object$std.err, 0)
-    upper <- pmin(survfit_object$surv + critical_value*survfit_object$surv*survfit_object$std.err, 1)
-  } else if (conf.type == "log") {
-    se <- survfit_object$std.err
-    lower <- survfit_object$surv * exp(-critical_value*se)
-    upper <- pmin(survfit_object$surv * exp(critical_value*se), 1)
-  } else if (conf.type == "log-log") {
-    se <- survfit_object$std.err / log(survfit_object$surv)
-    lower <- survfit_object$surv^exp(-critical_value*se)
-    upper <- survfit_object$surv^exp(critical_value*se)
-  } else if (conf.type == "logit") {
-    se <- survfit_object$std.err/(1 - survfit_object$surv)
     lower <- survfit_object$surv / (survfit_object$surv + (1 - survfit_object$surv)*exp(critical_value*se))
     upper <- survfit_object$surv / (survfit_object$surv + (1 - survfit_object$surv)*exp(-critical_value*se))
   }
@@ -177,71 +140,6 @@ calculateAalenDeltaSE <- function(
     }
   }
   return(sqrt(CIF2_var_0))
-}
-
-
-calculateAalenDeltaSE_old <- function(
-    CIF_time,
-    CIF_value,
-    n.event1,
-    n.event2,
-    n.atrisk,
-    km_time,
-    km_value,
-    strata,
-    error = c("aalen","delta")
-){
-#  if (!all(lengths(list(CIF_time, CIF_value, n.event1, n.event2, n.atrisk, km_time, km_value, strata)) ==length(CIF_time))) {
-#    stop("All inputs must have the same length.")
-#  }
-  idx_by_stratum <- split(seq_along(CIF_time), as.integer(strata))
-  CIF2_var_0 <- numeric(length(CIF_time))
-
-  for (ix in idx_by_stratum) {
-    if(error == "aalen"){
-      CIF2_var_0[ix] <- calcAalenVariance(
-        CIF_time = CIF_time[ix],
-        CIF_value = CIF_value[ix],
-        n.event1 = n.event1[ix],
-        n.event2 = n.event2[ix],
-        n.atrisk = n.atrisk[ix],
-        km_time  = km_time[ix],
-        km_value = km_value[ix]
-      )
-    }
-    else if(error == "delta"){
-      CIF2_var_0[ix] <- calcDeltaVariance(
-        CIF_time = CIF_time[ix],
-        CIF_value = CIF_value[ix],
-        n.event1 = n.event1[ix],
-        n.event2 = n.event2[ix],
-        n.atrisk = n.atrisk[ix],
-        km_time  = km_time[ix],
-        km_value = km_value[ix]
-      )
-    }
-  }
-  return(sqrt(CIF2_var_0))
-}
-
-calculateAalenDeltaSE_old <- function(
-    CIF_time,
-    CIF_value,
-    n.event1,
-    n.event2,
-    n.atrisk,
-    km_time,
-    km_value,
-    error
-){
-  if(error == "aalen"){
-    CIF2_var_0 <- calcAalenVariance(CIF_time, CIF_value, n.event1, n.event2, n.atrisk, km_time, km_value)
-    return(sqrt(CIF2_var_0))
-  }
-  else if(error == "delta"){
-    CIF2_var_0 <- calcDeltaVariance(CIF_time, CIF_value, n.event1, n.event2, n.atrisk, km_time, km_value)
-    return(sqrt(CIF2_var_0))
-  }
 }
 
 calcAalenVariance <- function(

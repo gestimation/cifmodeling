@@ -95,10 +95,10 @@ test_that("read_time.point() yields expected outputs according to outcome.type",
   df <- mkdf()
   expect_error(read_time.point(Event(t,d)~1, df, matrix(1, nrow(df), 1),
                                "SURVIVAL", code.censoring = 0,
-                               should.terminate.time.point = TRUE,
-                               time.point = NULL),
-               "time.point is required")
-
+                    should.terminate.time.point = TRUE,
+                    time.point = NULL),
+    "`?time\\.point`?\\s+is\\s+required"
+  )
   tp <- read_time.point(Event(t,d)~1, df, matrix(1, nrow(df), 1),
                         "BINOMIAL", code.censoring = 0,
                         should.terminate.time.point = TRUE,
@@ -114,10 +114,10 @@ test_that("read_time.point() yields expected outputs according to outcome.type",
   expect_true(is.unsorted(tp2, strictly = FALSE) == FALSE)
 })
 
-test_that("checkInput() handles NA as expected", {
+test_that("check_input_polyreg() handles NA as expected", {
   df <- mkdf()
   df$t[1] <- NA; df$d[2] <- NA; df$sex[3] <- NA; df$fruitq1[4] <- NA
-  out <- checkInput(
+  out <- check_input_polyreg(
     data = df,
     formula = Event(t,d) ~ sex,
     exposure = "fruitq1",
