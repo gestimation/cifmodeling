@@ -246,9 +246,9 @@
 #' @export
 cifpanel <- function(
     plots        = NULL,
-    formula = NULL,
-    formulas = NULL,
-    data = NULL,
+    formula      = NULL,
+    formulas     = NULL,
+    data         = NULL,
     outcome.type = NULL,
     code.events  = NULL,
     type.x       = NULL,

@@ -44,7 +44,8 @@
   code_events_len_surv = "`code.events[[{i}]]` must be c(event.code1, censoring) for SURVIVAL.",
   code_events_len_cr = "`code.events[[{i}]]` must be c(event.code1, event.code2, censoring) for COMPETING-RISK.",
   infer_outcome_fail = "Failed to infer outcome.type from code.events; each must be length 2 (S) or 3 (C).",
-  shape_identical = "`{a}` and `{b}` specify an identical type of symbol."
+  shape_identical = "`{a}` and `{b}` specify an identical type of symbol.",
+  finite = "`{arg}` must be finite."
 )
 
 .warn <- function(key, ..., .messages = .msg) {

@@ -136,3 +136,82 @@ test_that("check_input_polyreg() handles NA as expected", {
   expect_true(is.matrix(out$x_a))
   expect_true(ncol(out$x_l) >= 1)
 })
+
+# test-Event.R
+testthat::skip_on_cran()
+
+testthat::test_that("Event() constructs a Surv-like 2-column object", {
+  df <- data.frame(
+    t       = c(5,  7,  7,  9, 10, 12, NA,  4),
+    status  = c(1,  0,  2,  0,  1,  2,  1,  0),
+    x       = c(0,  1,  1,  0,  0,  1,  1,  0),
+    strata  = factor(c("A","A","B","B","A","B","A","B")),
+    w       = c(1,  2,  1,  1,  0.5, 1,  1,  1),
+    stringsAsFactors = FALSE
+  )
+  y  <- Event(df$t, df$status)
+
+  # Basic structure
+  testthat::expect_true(is.matrix(y) || is.data.frame(y))
+  testthat::expect_equal(ncol(y), 2)
+  testthat::expect_true(inherits(y, "Event"))
+  testthat::expect_true(is.numeric(y[,1]))
+  testthat::expect_true(is.numeric(y[,2]) || is.integer(y[,2]))
+
+  # Allowed codes (0,1,2) present as given
+  testthat::expect_true(all(na.omit(unique(y[,2])) %in% c(0,1,2)))
+})
+
+testthat::test_that("Event() works inside model.frame and terms", {
+  df <- data.frame(
+      t       = c(5,  7,  7,  9, 10, 12, NA,  4),
+      status  = c(1,  0,  2,  0,  1,  2,  1,  0),
+      x       = c(0,  1,  1,  0,  0,  1,  1,  0),
+      strata  = factor(c("A","A","B","B","A","B","A","B")),
+      w       = c(1,  2,  1,  1,  0.5, 1,  1,  1),
+      stringsAsFactors = FALSE
+    )
+  f  <- Event(t, status) ~ x + strata(strata)
+
+  Terms <- stats::terms(f, specials = c("strata","offset","cluster"), data = df)
+  mf    <- stats::model.frame(Terms, data = df, na.action = stats::na.omit)
+
+  y <- stats::model.extract(mf, "response")
+  testthat::expect_true(inherits(y, "Event"))
+  testthat::expect_equal(ncol(y), 2)
+  testthat::expect_equal(nrow(y), sum(stats::complete.cases(df[c("t","status","x","strata")])))
+})
+
+testthat::test_that("Event(): NA handling and non-finite times raise as expected", {
+  df <- data.frame(
+    t       = c(5,  7,  7,  9, 10, 12, NA,  4),
+    status  = c(1,  0,  2,  0,  1,  2,  1,  0),
+    x       = c(0,  1,  1,  0,  0,  1,  1,  0),
+    strata  = factor(c("A","A","B","B","A","B","A","B")),
+    w       = c(1,  2,  1,  1,  0.5, 1,  1,  1),
+    stringsAsFactors = FALSE
+  )
+
+  # NA in time/status should pass through to NA rows; model.frame(..., na.omit) will drop
+  y <- Event(df$t, df$status)
+  testthat::expect_true(any(is.na(y[,1])))
+
+  # Non-finite time should error at normalization stage (if implemented)
+  df2 <- df
+  df2$t[1] <- Inf
+  testthat::expect_error(Event(df2$t, df2$status), regexp = "finite|non[- ]?finite|NA", ignore.case = TRUE)
+})
+
+testthat::test_that("Event(): invalid status codes are caught", {
+  df <- data.frame(
+    t       = c(5,  7,  7,  9, 10, 12, NA,  4),
+    status  = c(1,  0,  2,  0,  1,  2,  1,  0),
+    x       = c(0,  1,  1,  0,  0,  1,  1,  0),
+    strata  = factor(c("A","A","B","B","A","B","A","B")),
+    w       = c(1,  2,  1,  1,  0.5, 1,  1,  1),
+    stringsAsFactors = FALSE
+  )
+  df$status[2] <- 9
+  testthat::expect_error(Event(df$t, df$status), regexp = "code|allowed|invalid", ignore.case = TRUE)
+})
+

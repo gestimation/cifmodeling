@@ -124,11 +124,15 @@ get_surv <- function(
   predicted.surv
 }
 
+
 readSurv <- function(formula, data, weights = NULL,
                      code.event1 = 1, code.event2 = 2, code.censoring = 0,
-                     subset.condition = NULL, na.action = na.omit) {
-  allowed <- c(code.censoring, code.event1, code.event2)
+                     subset.condition = NULL, na.action = stats::na.omit) {
   data <- createAnalysisDataset(formula, data, weights, subset.condition, na.action)
+  allowed <- c(code.censoring, code.event1, code.event2)
+  old_opt <- getOption("cifmodeling.allowed", NULL)
+  on.exit(options(cifmodeling.allowed = old_opt), add = TRUE)
+  options(cifmodeling.allowed = allowed)
 
   Terms <- terms(formula, specials = c("strata","offset","cluster"), data = data)
   mf    <- model.frame(Terms, data = data, na.action = na.action)

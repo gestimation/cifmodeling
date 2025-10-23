@@ -81,9 +81,7 @@ getTimeToEvent <- function(
 ){
   which_event <- match.arg(which_event)
 
-  if (is.null(out_readSurv) || !is.list(out_readSurv)) {
-    .err("req", arg = "out_readSurv (list)")
-  }
+  if (is.null(out_readSurv) || !is.list(out_readSurv)) .err("req", arg = "out_readSurv (list)")
 
   strata <- out_readSurv$strata
   if (is.null(strata)) strata <- factor(rep("all", length(out_readSurv$t)))
@@ -91,8 +89,8 @@ getTimeToEvent <- function(
 
   tvec    <- suppressWarnings(as.numeric(out_readSurv$t))
   epsilon <- suppressWarnings(as.numeric(out_readSurv$epsilon))
-  if (anyNA(tvec))       .err("na", arg = "out_readSurv$t")
-  if (any(tvec < 0))     .err("time_nonneg", arg = "out_readSurv$t")
+  if (anyNA(tvec))   .err("na",          arg = "out_readSurv$t")
+  if (any(tvec < 0)) .err("nonneg",      arg = "out_readSurv$t")  # 既存の .msg$nonneg を使用
 
   pick <- switch(
     which_event,
@@ -107,13 +105,24 @@ getTimeToEvent <- function(
   )
 
   labs <- unique(strata)
+
+  # --- 単一ストラタなら numeric を返す ---
+  if (length(labs) == 1L) {
+    idx <- (strata == labs[[1L]]) & (pick > 0L) & is.finite(tvec)
+    tt  <- tvec[idx]
+    tt  <- if (isTRUE(readUniqueTime)) sort(unique(tt)) else sort(tt)
+    if (length(tt) == 0L && isTRUE(dropEmpty)) return(numeric(0))
+    return(tt)
+  }
+
+  # --- 複数ストラタなら list を返す（従来挙動） ---
   out  <- stats::setNames(vector("list", length(labs)), labs)
   for (s in labs) {
     idx <- (strata == s) & (pick > 0L) & is.finite(tvec)
     tt  <- tvec[idx]
-    if (isTRUE(readUniqueTime)) tt <- sort(unique(tt)) else tt <- sort(tt)
+    tt  <- if (isTRUE(readUniqueTime)) sort(unique(tt)) else sort(tt)
     if (length(tt) > 0 || !isTRUE(dropEmpty)) out[[s]] <- tt
   }
   if (isTRUE(dropEmpty)) out <- out[vapply(out, length, integer(1)) > 0]
-  return(out)
+  out
 }
