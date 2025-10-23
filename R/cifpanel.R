@@ -26,6 +26,8 @@
 #' - \code{type.x} is reserved for future x-scale control (currently not applied).
 #' - If both \code{formula} and \code{formulas} are provided, the latter takes precedence.
 #'
+#' @param plots list of ggplot objects. If supplied, \code{cifpanel()} will skip
+#'   estimation/plotting and only compose the provided plots.
 #' @param formula A single model formula evaluated in \code{data}, used for all panels
 #'   when \code{formulas} is not provided.
 #' @param formulas A list of formulas (one per panel). If provided, overrides \code{formula}.
@@ -189,6 +191,7 @@
 #'   legend.position = "bottom",
 #'   legend.collect=TRUE
 #' )
+#'
 #' cifpanel(
 #'   title.plot = c("Associations between fruit intake and macrovascular complications", "Details"),
 #'   use_inset_element = TRUE,
@@ -206,19 +209,34 @@
 #'   legend.position = "bottom",
 #'   addConfidenceInterval = FALSE
 #' )
-
-#' \dontrun{
-#' data(diabetes.complications)
-#' ce <- list(c(1, 2, 0), c(1, 2, 0), c(1, 0)) # 2 AJ panels + 1 KM panel
-#' cifpanel(
-#'   formulas = list(Event(t,epsilon)~fruitq, Event(t,epsilon)~sex, Surv(t, epsilon==1)~fruitq),
-#'   data = diabetes.complications,
-#'   code.events = ce,
-#'   rows.columns.panel = c(1, 3),
-#'   legend.collect = TRUE,
-#'   title.panel = "CIF and survival panels"
-#' )
-#' }
+#'
+#' output1 <- cifplot(Event(t,epsilon) ~ fruitq,
+#'                    data = diabetes.complications,
+#'                    outcome.type="COMPETING-RISK",
+#'                    code.event1=2,
+#'                    code.event2=1,
+#'                    addConfidenceInterval = FALSE,
+#'                    addRiskTable = FALSE,
+#'                    label.y='CIF of macrovascular complications',
+#'                    label.x='Years from registration')
+#' output2 <- cifplot(Event(t,epsilon) ~ fruitq,
+#'                    data = diabetes.complications,
+#'                    outcome.type="COMPETING-RISK",
+#'                    code.event1=2,
+#'                    code.event2=1,
+#'                    addConfidenceInterval = FALSE,
+#'                    addRiskTable = FALSE,
+#'                    label.y='CIF of macrovascular complications',
+#'                    label.x='Years from registration',
+#'                    limits.y=c(0,0.15))
+#' output3 <- list(a=output1, b=output2)
+#' cifpanel(plots = output3,
+#'          use_inset_element = TRUE,
+#'          inset.left   = 0.40, inset.bottom = 0.45,
+#'          inset.right  = 1.00, inset.top    = 0.95,
+#'          inset.align_to = "plot",
+#'          inset.legend.position = "none",
+#'          legend.position = "bottom")
 #'
 #' @importFrom ggplot2 ggplot theme_void ggsave theme element_text labs
 #' @importFrom patchwork wrap_plots plot_layout inset_element plot_annotation
@@ -227,11 +245,12 @@
 #' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifplot()] for display of a CIF; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 cifpanel <- function(
+    plots        = NULL,
     formula = NULL,
     formulas = NULL,
     data = NULL,
     outcome.type = NULL,
-    code.events = NULL,
+    code.events  = NULL,
     type.x       = NULL,
     type.y       = NULL,
     label.x      = NULL,
@@ -268,9 +287,83 @@ cifpanel <- function(
     dpi.ggsave = 300,
     ...
 ){
-#  stopifnot(is.numeric(rows.columns.panel), length(rows.columns.panel) == 2, all(rows.columns.panel >= 1))
+  inset.align_to <- match.arg(inset.align_to)
+  dots <- list(...)
   nrow <- as.integer(rows.columns.panel[1]); ncol <- as.integer(rows.columns.panel[2])
   n_slots <- nrow * ncol
+
+  if (!is.null(plots)) {
+    fonts <- .panel_extract_fonts(dots)
+    theme.panel.unified <- .panel_build_theme(font.family = fonts$family, font.size = fonts$size)
+    if (!is.list(plots)) {
+      stop("`plots` must be a list of ggplot objects.")
+    }
+    if (length(plots) && !all(vapply(plots, function(p) inherits(p, "ggplot"), logical(1)))) {
+      stop("All elements of `plots` must inherit from 'ggplot'.")
+    }
+
+    plots_out <- plots
+    if (isTRUE(use_inset_element)) {
+      if (length(plots) < 2L) .err("inset_need_two")
+      if (length(plots) > 2L) .warn("inset_extra_drop")
+      p_base  <- plots[[1]] + ggplot2::theme(legend.position = legend.position)
+      if (!is.null(title.plot) && length(title.plot) >= 1L) {
+        p_base <- p_base + ggplot2::labs(title = title.plot[[1]])
+      }
+      p_inset <- plots[[2]] + ggplot2::theme(legend.position = inset.legend.position)
+      if (!is.null(title.plot) && length(title.plot) >= 2L) {
+        p_inset <- p_inset + ggplot2::labs(title = title.plot[[2]])
+      }
+      out_patchwork <- p_base +
+        patchwork::inset_element(
+          p_inset,
+          left = inset.left,
+          bottom = inset.bottom,
+          right = inset.right,
+          top = inset.top,
+          align_to = inset.align_to
+        )
+    } else {
+      plots2 <- plots
+      if (length(plots2) < n_slots) {
+        plots2 <- c(
+          plots2,
+          rep(list(ggplot2::ggplot() + ggplot2::theme_void()), n_slots - length(plots2))
+        )
+      } else if (length(plots2) > n_slots) {
+        .warn("plots_extra_dropped", n_plots = length(plots2), n_slots = n_slots)
+        plots2 <- plots2[seq_len(n_slots)]
+      }
+      out_patchwork <- patchwork::wrap_plots(plots2, nrow = nrow, ncol = ncol)
+      if (isTRUE(legend.collect)) {
+        out_patchwork <- out_patchwork +
+          patchwork::plot_layout(guides = "collect") &
+          ggplot2::theme(legend.position = legend.position)
+      } else {
+        out_patchwork <- out_patchwork &
+          ggplot2::theme(legend.position = legend.position)
+      }
+      plots_out <- plots2
+    }
+
+    out_patchwork <- out_patchwork + patchwork::plot_annotation(
+      title      = title.panel,
+      subtitle   = subtitle.panel,
+      caption    = caption.panel,
+      tag_levels = tag_levels.panel,
+      theme      = theme.panel.unified
+    )
+
+    if (isTRUE(print.panel)) print(out_patchwork)
+    if (!is.null(filename.ggsave)) {
+      if (is.null(width.ggsave))  width.ggsave  <- if (isTRUE(use_inset_element)) 6 else max(6, 5 * rows.columns.panel[2])
+      if (is.null(height.ggsave)) height.ggsave <- if (isTRUE(use_inset_element)) 6 else max(6, 5 * rows.columns.panel[1])
+      ggplot2::ggsave(filename.ggsave, plot = out_patchwork, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave)
+    }
+
+    return(invisible(list(plots = plots_out, out_patchwork = out_patchwork)))
+  }
+
 
 #  .req(data, "data")  # -> .err("req", arg="data")
   if (is.null(data)) stop("data must be provided.")
@@ -281,7 +374,6 @@ cifpanel <- function(
   if (is.null(formulas) && is.null(formula))
     .err("need_formula_or_formulas")
 
-  inset.align_to <- match.arg(inset.align_to)
   K <- max(n_slots, length(code.events))
   code.events <- .panel_recycle_to(code.events, K)
 
@@ -345,7 +437,6 @@ cifpanel <- function(
   }
   .panel_validate_code_events(code.events, outcome.flags)
 
-  dots <- list(...)
   kill_names <- c()
   if (!is.null(outcome.list)) kill_names <- c(kill_names, "outcome.type")
   if (!is.null(typey.list))   kill_names <- c(kill_names, "type.y")

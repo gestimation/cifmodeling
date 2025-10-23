@@ -80,8 +80,6 @@ test_that("panel_prepare returns curves and plot args", {
   expect_identical(prep$K, inputs$K)
 })
 
-
-
 testthat::test_that("cifpanel() smoke test with competing risks (no plotting)", {
   testthat::skip_on_cran()
   testthat::skip_if_not_installed("survival")
