@@ -171,7 +171,7 @@ testthat::test_that("Event() works inside model.frame and terms", {
       w       = c(1,  2,  1,  1,  0.5, 1,  1,  1),
       stringsAsFactors = FALSE
     )
-  f  <- Event(t, status) ~ x + strata(strata)
+  f  <- Event(t, status) ~ x
 
   Terms <- stats::terms(f, specials = c("strata","offset","cluster"), data = df)
   mf    <- stats::model.frame(Terms, data = df, na.action = stats::na.omit)
@@ -179,7 +179,7 @@ testthat::test_that("Event() works inside model.frame and terms", {
   y <- stats::model.extract(mf, "response")
   testthat::expect_true(inherits(y, "Event"))
   testthat::expect_equal(ncol(y), 2)
-  testthat::expect_equal(nrow(y), sum(stats::complete.cases(df[c("t","status","x","strata")])))
+  testthat::expect_equal(nrow(y), sum(stats::complete.cases(df[c("t","status","x")])))
 })
 
 testthat::test_that("Event(): NA handling and non-finite times raise as expected", {

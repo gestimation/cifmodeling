@@ -4,7 +4,7 @@
 \alias{Event}
 \title{Create a survival or competing-risks response}
 \usage{
-Event(time, event)
+Event(time, event, allowed = getOption("cifmodeling.allowed", c(0, 1, 2)))
 }
 \arguments{
 \item{time}{Numeric vector of follow-up times (non-negative).}
