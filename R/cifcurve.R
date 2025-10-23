@@ -74,8 +74,8 @@ cifcurve <- function(
     conf.int = 0.95,
     report.survfit.std.err = FALSE
 ) {
-  outcome.type  <- check_outcome.type(outcome.type, formula=formula, data=data)
-  out_readSurv  <- readSurv(formula, data, weights, code.event1, code.event2, code.censoring, subset.condition, na.action)
+  outcome.type  <- util_check_outcome_type(outcome.type, formula=formula, data=data)
+  out_readSurv  <- curve_read_surv(formula, data, weights, code.event1, code.event2, code.censoring, subset.condition, na.action)
   error <- check_error(error, outcome.type)
 
   if (identical(outcome.type, "SURVIVAL")) {

@@ -1,0 +1,10 @@
+{
+  "normalize_time_event": "util_normalize_time_event",
+  "getEventTime": "util_get_event_time",
+  "check_outcome.type": "util_check_outcome_type",
+  "calculateIndexForParameter": "reg_index_for_param",
+  "safe_glm": "reg_safe_glm",
+  "readSurv": "curve_read_surv",
+  "panel_prepare": "panel_prepare_layout",
+  "panel_combine": "panel_combine_plots"
+}

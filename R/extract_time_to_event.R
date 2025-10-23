@@ -60,7 +60,7 @@ extract_time_to_event <- function(
     readUniqueTime = TRUE, dropEmpty = TRUE
 ){
   which_event <- match.arg(which_event)
-  out_readSurv <- readSurv(
+  out_readSurv <- curve_read_surv(
     formula = formula, data = data, weights = NULL,
     code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
     subset.condition = subset.condition, na.action = na.action

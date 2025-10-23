@@ -835,7 +835,7 @@ polyreg(Event(AVAL, CNSR) ~ ARM, data = adtte,
 ### Processing pipeline of cifcurve()
 
 A user-specified model formula in `Event()` or `Surv()` is first parsed
-by `readSurv()` to extract the time-to-event, the event indicator,
+by `curve_read_surv()` to extract the time-to-event, the event indicator,
 optional weights, and any strata variable. Those components are then
 passed to the back-end estimators implemented in `src/calculateKM.cpp`.
 The C++ routine supports both weighted and stratified data, so the heavy

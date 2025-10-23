@@ -310,7 +310,7 @@ polyreg <- function(
   # 1. Pre-processing (function: checkSpell, checkInput, normalizeCovariate, sortByCovariate)
   #######################################################################################################
 #  computation.time0 <- proc.time()
-  outcome.type  <- check_outcome.type(outcome.type, formula=formula, data=data)
+  outcome.type  <- util_check_outcome_type(outcome.type, formula=formula, data=data)
   ce <- check_effect.measure(effect.measure1, effect.measure2)
   ci <- check_input_polyreg(data, nuisance.model, exposure, code.event1, code.event2, code.censoring, code.exposure.ref, outcome.type, conf.level, report.sandwich.conf, report.boot.conf, nleqslv.method, should.normalize.covariate)
   should.normalize.covariate <- ci$should.normalize.covariate
@@ -321,7 +321,7 @@ polyreg <- function(
   out_normalizeCovariate <- normalizeCovariate(nuisance.model, data, should.normalize.covariate, outcome.type, ci$out_readExposureDesign$exposure.levels)
   normalized_data <- out_normalizeCovariate$normalized_data
   tp <- read_time.point(nuisance.model, normalized_data, ci$out_readExposureDesign$x_a, outcome.type, code.censoring, should.terminate.time.point, time.point)
-  index.vector <- calculateIndexForParameter(NA, ci$x_l, ci$x_a, length(tp))
+  index.vector <- reg_index_for_param(NA, ci$x_l, ci$x_a, length(tp))
 
   estimand <- list(
     effect.measure1=ce$effect.measure1,

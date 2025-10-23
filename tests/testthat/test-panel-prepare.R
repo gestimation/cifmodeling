@@ -62,11 +62,11 @@ make_inputs_2panel <- function(df) {
 }
 
 
-test_that("panel_prepare returns curves and plot args", {
+test_that("panel_prepare_layout returns curves and plot args", {
   skip_on_cran()
   skip_if_not_installed("survival")
   inputs <- make_min_inputs()
-  prep <- do.call(cifmodeling:::panel_prepare, inputs)
+  prep <- do.call(cifmodeling:::panel_prepare_layout, inputs)
 
   expect_true(is.list(prep$curves))
   expect_equal(length(prep$curves), inputs$K)
@@ -112,7 +112,7 @@ testthat::test_that("cifpanel() smoke test with competing risks (no plotting)", 
 
 # tests/testthat/test-panel-prepare.R
 
-testthat::test_that("panel_prepare() returns per-panel objects with expected structure", {
+testthat::test_that("panel_prepare_layout() returns per-panel objects with expected structure", {
   testthat::skip_on_cran()
   testthat::skip_if_not_installed("survival")
   testthat::skip_if_not_installed("ggsurvfit")
@@ -120,7 +120,7 @@ testthat::test_that("panel_prepare() returns per-panel objects with expected str
   data(diabetes.complications, package = "cifmodeling")
 
   inputs <- make_inputs_2panel(diabetes.complications)
-  prep <- do.call(cifmodeling:::panel_prepare, inputs)
+  prep <- do.call(cifmodeling:::panel_prepare_layout, inputs)
 
   # 構造チェック
   testthat::expect_true(is.list(prep))

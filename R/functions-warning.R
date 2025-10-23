@@ -90,7 +90,7 @@
   stop(cond)
 }
 
-check_outcome.type <- function(
+util_check_outcome_type <- function(
     x = NULL,
     formula = NULL,
     data = NULL,

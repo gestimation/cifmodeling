@@ -28,7 +28,7 @@
 #' @return A list with elements `curves`, `plot_args`, and `K`.
 #' @keywords internal
 #' @noRd
-panel_prepare <- function(
+panel_prepare_layout <- function(
     K,
     formulas,
     data,

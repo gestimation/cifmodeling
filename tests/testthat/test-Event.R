@@ -29,30 +29,30 @@ test_that("Event() allowed NA and retained length; use na.omit as necessary", {
   expect_false(any(is.na(y)))
 })
 
-test_that("normalize_time_event() allowed only expected codes for events", {
+test_that("util_normalize_time_event() allowed only expected codes for events", {
   df <- mkdf(6)
-  res <- normalize_time_event(df$t, c(0L,1L,NA,0L,1L,2L), allowed = c(0,1,2))
+  res <- util_normalize_time_event(df$t, c(0L,1L,NA,0L,1L,2L), allowed = c(0,1,2))
   expect_equal(length(res$event), 6L)
 
   expect_error(
-    normalize_time_event(df$t, c(0,-1,1,0,1,0)),
+    util_normalize_time_event(df$t, c(0,-1,1,0,1,0)),
     class = "cifmodeling_ev_codes"
   )
 
   expect_error(
-    normalize_time_event(df$t, c(0, 1.2, 1, 0, 1, 0)),
+    util_normalize_time_event(df$t, c(0, 1.2, 1, 0, 1, 0)),
     class = "cifmodeling_ev_codes"
   )
 })
 
-test_that("readSurv() handled strata/weights as expected", {
+test_that("curve_read_surv() handled strata/weights as expected", {
   df <- mkdf()
   df$t[1] <- NA
   df$d[2] <- NA
   df$sex[3] <- NA
   df$w[4] <- NA
 
-  out <- readSurv(Event(t, d) ~ sex, data = df, weights = "w", na.action = na.omit)
+  out <- curve_read_surv(Event(t, d) ~ sex, data = df, weights = "w", na.action = na.omit)
   k <- length(out$t)
   expect_equal(unname(lengths(out[c("epsilon","d","d0","d1","d2","w","strata")])), rep(k, 7))
   expect_false(any(is.na(out$t)))
@@ -70,9 +70,9 @@ test_that("readExposureDesign() allowed only expected codes for exposure", {
   expect_error(readExposureDesign(df, "fruitq1"), "only one level")
 })
 
-test_that("check_outcome.type() / check_effect.measure() / check_error()", {
-  expect_equal(check_outcome.type("s"), "SURVIVAL")
-  expect_equal(check_outcome.type("competing risk"), "COMPETING-RISK")
+test_that("util_check_outcome_type() / check_effect.measure() / check_error()", {
+  expect_equal(util_check_outcome_type("s"), "SURVIVAL")
+  expect_equal(util_check_outcome_type("competing risk"), "COMPETING-RISK")
 
   em <- check_effect.measure("rr", "Or")
   expect_equal(em$effect.measure1, "RR")

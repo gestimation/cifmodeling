@@ -125,9 +125,9 @@ get_surv <- function(
 }
 
 
-readSurv <- function(formula, data, weights = NULL,
-                     code.event1 = 1, code.event2 = 2, code.censoring = 0,
-                     subset.condition = NULL, na.action = stats::na.omit) {
+curve_read_surv <- function(formula, data, weights = NULL,
+                            code.event1 = 1, code.event2 = 2, code.censoring = 0,
+                            subset.condition = NULL, na.action = stats::na.omit) {
   data <- createAnalysisDataset(formula, data, weights, subset.condition, na.action)
   allowed <- c(code.censoring, code.event1, code.event2)
   old_opt <- getOption("cifmodeling.allowed", NULL)
@@ -140,7 +140,7 @@ readSurv <- function(formula, data, weights = NULL,
   Y <- model.extract(mf, "response")
   if (!inherits(Y, c("Event","Surv"))) .err("surv_expected")
 
-  te <- normalize_time_event(Y[,1], Y[,2], allowed = allowed)
+  te <- util_normalize_time_event(Y[,1], Y[,2], allowed = allowed)
   t <- te$time
   epsilon <- te$event
   if (any(t < 0, na.rm = TRUE)) .err("time_nonneg", arg = "time")

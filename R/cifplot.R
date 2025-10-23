@@ -233,7 +233,7 @@ cifplot <- function(
     } else {
       outcome_effective <- outcome.type
       if (is.null(outcome_effective)) {
-        outcome_effective <- check_outcome.type(
+        outcome_effective <- util_check_outcome_type(
           formula = x,
           data = data,
           na.action = na.action,
@@ -401,7 +401,7 @@ is_competing_outcome <- function(outcome_type) {
 #' Plot survival or cumulative incidence curves with ggsurvfit
 #'
 #' @param survfit_object A \code{survfit} object.
-#' @param out_readSurv (optional) List returned by your \code{readSurv()} to auto-set x limits.
+#' @param out_readSurv (optional) List returned by your \code{curve_read_surv()} to auto-set x limits.
 #' @param conf.type Character transformation for CI on the probability scale (default \code{"arcsine-square root"}).
 
 #' @param addConfidenceInterval Logical add \code{add_confidence_interval()} to plot. It calls geom_ribbon() (default \code{TRUE}).

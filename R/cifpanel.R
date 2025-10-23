@@ -458,7 +458,7 @@ cifpanel <- function(
   fonts <- .panel_extract_fonts(dots)
   theme.panel.unified <- .panel_build_theme(font.family = fonts$family, font.size = fonts$size)
 
-  prep <- panel_prepare(
+  prep <- panel_prepare_layout(
     K = K,
     formulas = formulas,
     data = data,
