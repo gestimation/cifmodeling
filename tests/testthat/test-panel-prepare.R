@@ -33,6 +33,34 @@ make_min_inputs <- function() {
   )
 }
 
+make_inputs_2panel <- function(df) {
+  K <- 2L
+  list(
+    K = K,
+    formulas = rep(list(Event(t, epsilon) ~ fruitq), K),
+    data = df,
+    code.events = list(c(1, 2, 0), c(2, 1, 0)),
+    outcome.flags = c("C", "C"),
+    outcome.list = list("COMPETING-RISK", "COMPETING-RISK"),
+    typey.list = list("risk", "risk"),
+    labely.list = list("Diabetic retinopathy", "Macrovascular complications"),
+    typex.list = list(NULL, NULL),
+    labelx.list = list("Years from registration", "Years from registration"),
+    limsx.list = NULL,
+    limsy.list = NULL,
+    breakx.list = NULL,
+    breaky.list = NULL,
+    addCI.list = list(TRUE, TRUE),
+    addCen.list = list(TRUE, TRUE),
+    addCR.list = list(FALSE, FALSE),
+    addIC.list = list(FALSE, FALSE),
+    addQ.list = list(FALSE, FALSE),
+    strata.list = NULL,
+    legend.position = "top",
+    dots = list(style = "CLASSIC", font.family = NULL, font.size = NULL)
+  )
+}
+
 
 test_that("panel_prepare returns curves and plot args", {
   skip_on_cran()
@@ -53,52 +81,6 @@ test_that("panel_prepare returns curves and plot args", {
 })
 
 
-# tests/testthat/test-panel-prepare.R
-testthat::test_that("panel_prepare() returns per-panel objects with expected structure", {
-  testthat::skip_on_cran()
-  testthat::skip_if_not_installed("survival")
-  testthat::skip_if_not_installed("ggsurvfit")  # cifplot/cifcurve の内部で利用している場合に備えて
-
-  data(diabetes.complications, package = "cifmodeling")
-
-  # 2パネル（event1 / event2）を作る想定
-  code.events <- list(c(1, 2, 0), c(2, 1, 0))
-
-  # 内部ヘルパを直接呼ぶ
-  out <- cifmodeling:::panel_prepare(
-    formula              = Event(t, epsilon) ~ fruitq,
-    data                 = diabetes.complications,
-    outcome.type         = "COMPETING-RISK",
-    code.events          = code.events,
-    # 以下は panel_prepare が引き継ぐはずの代表的な引数（存在すれば pass-through を確認）
-    label.y              = c("Diabetic retinopathy", "Macrovascular complications"),
-    label.x              = "Years from registration",
-    title.plot           = c("Diabetic retinopathy", "Macrovascular complications")
-  )
-
-  # --- 形の検証（実装が少し変わっても壊れにくいチェック） ---
-  testthat::expect_true(is.list(out))
-  testthat::expect_equal(length(out), length(code.events))  # パネル数
-
-  # 各パネル要素は list であること
-  lapply(out, function(p) testthat::expect_true(is.list(p)))
-
-  # 各パネルに「推定カーブ（survfit 由来 or ggsurvfit 由来）っぽいオブジェクト」が最低1つ含まれる
-  has_curve <- vapply(
-    out,
-    function(p) {
-      any(vapply(p, function(x) inherits(x, c("survfit", "ggsurvfit", "tbl_survfit")), logical(1)))
-    },
-    logical(1)
-  )
-  testthat::expect_true(all(has_curve))
-
-  # パネルごとのメタ情報（ラベル等）が pass-through されているなら存在をゆるく確認
-  # （実装により格納先キーが異なる可能性があるため、キー名は緩めにチェック）
-  maybe_label_keys <- c("label.y", "label_x", "label.x", "title.plot", "plot_args", "args")
-  testthat::expect_true(any(names(out[[1]]) %in% maybe_label_keys))
-  testthat::expect_true(any(names(out[[2]]) %in% maybe_label_keys))
-})
 
 testthat::test_that("cifpanel() smoke test with competing risks (no plotting)", {
   testthat::skip_on_cran()
@@ -127,4 +109,39 @@ testthat::test_that("cifpanel() smoke test with competing risks (no plotting)", 
   testthat::expect_true(is.list(out))
   # 以前の実装メモに合わせて、代表キーの存在を穏当チェック
   testthat::expect_true(any(c("plots", "out_patchwork") %in% names(out)))
+})
+
+
+# tests/testthat/test-panel-prepare.R
+
+testthat::test_that("panel_prepare() returns per-panel objects with expected structure", {
+  testthat::skip_on_cran()
+  testthat::skip_if_not_installed("survival")
+  testthat::skip_if_not_installed("ggsurvfit")
+
+  data(diabetes.complications, package = "cifmodeling")
+
+  inputs <- make_inputs_2panel(diabetes.complications)
+  prep <- do.call(cifmodeling:::panel_prepare, inputs)
+
+  # 構造チェック
+  testthat::expect_true(is.list(prep))
+  testthat::expect_identical(prep$K, inputs$K)
+
+  # curves: K 個、各要素は survfit 由来
+  testthat::expect_true(is.list(prep$curves))
+  testthat::expect_equal(length(prep$curves), inputs$K)
+  testthat::expect_true(all(vapply(prep$curves, inherits, logical(1), what = "survfit")))
+
+  # plot_args: K 個、各要素は list
+  testthat::expect_true(is.list(prep$plot_args))
+  testthat::expect_equal(length(prep$plot_args), inputs$K)
+  testthat::expect_true(all(vapply(prep$plot_args, is.list, logical(1))))
+
+  # pass-through 確認（代表：legend.position / label.x / label.y）
+  testthat::expect_true(all(vapply(prep$plot_args, function(x) identical(x$legend.position, inputs$legend.position), logical(1))))
+  testthat::expect_true(identical(prep$plot_args[[1]]$label.x, inputs$labelx.list[[1]]))
+  testthat::expect_true(identical(prep$plot_args[[1]]$label.y, inputs$labely.list[[1]]))
+  testthat::expect_true(identical(prep$plot_args[[2]]$label.x, inputs$labelx.list[[2]]))
+  testthat::expect_true(identical(prep$plot_args[[2]]$label.y, inputs$labely.list[[2]]))
 })

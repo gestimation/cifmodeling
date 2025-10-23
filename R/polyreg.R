@@ -604,10 +604,6 @@ polyreg <- function(
     data$potential.CIFs <- out_getResults$potential.CIFs
   }
   out_data <- data
-<<<<<<< HEAD
-  out <- list(summary=out_summary, coefficient=alpha_beta_estimated, cov=cov_estimated, cov1=out_normalizeEstimate$v1, cov2=out_normalizeEstimate$v2, cov3=out_normalizeEstimate$v3, bootstrap=out_bootstrap, diagnosis.statistics=out_data, optimization.info=trace_df)
-=======
   out <- list(summary=out_summary, coefficient=alpha_beta_estimated, cov=cov_estimated, bootstrap=out_bootstrap, diagnostic.statistics=out_data, optimization.info=trace_df)
->>>>>>> 3eb6817ec1a947dacc67f33e5e70683658bf359f
   return(out)
 }
