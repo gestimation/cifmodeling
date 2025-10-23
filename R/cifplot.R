@@ -24,11 +24,18 @@
 #' @param code.event1 Integer code of the event of interest (default \code{1}).
 #' @param code.event2 Integer code of the competing event (default \code{2}).
 #' @param code.censoring Integer code of censoring (default \code{0}).
+#' @param code.events Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
+#'   When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
+#'   (primarily used when \code{printBoth = TRUE}).
 #' @param error Character specifying variance type used internally. For \code{"SURVIVAL"} typically \code{"greenwood"}.
 #'   For \code{"COMPETING-RISK"} pass options supported by \code{calculateAalenDeltaSE()} (\code{"aalen"}, \code{"delta"}, \code{"none"}).
 #' @param conf.type Character transformation for CI on the probability scale (default \code{"arcsine-square root"}).
 #' @param conf.int numeric two-sided confidence level (default \code{0.95}).
 #' @param type.y \code{NULL} (survival) or \code{"risk"} (display \code{1 - survival} i.e. CIF).
+#' @param printBoth Logical. If \code{TRUE} and \code{outcome.type == "COMPETING-RISK"},
+#'   \code{cifplot()} internally calls \code{\link{cifpanel}} to display both event-specific
+#'   cumulative incidence curves side-by-side (event 1 and event 2). Defaults to \code{FALSE}.
+#'   Ignored for non-competing-risk outcomes.
 #' @param label.x Character x-axis labels (default \code{"Time"}).
 #' @param label.y Character y-axis labels (default internally set to \code{"Survival"} or \code{"Cumulative incidence"}).
 #' @param label.strata Character vector of labels for strata.
@@ -64,10 +71,16 @@
 #' @param width.ggsave Numeric specify width of the \pkg{ggsurvfit} plot.
 #' @param height.ggsave Numeric specify height of the \pkg{ggsurvfit} plot.
 #' @param dpi.ggsave Numeric specify dpi of the \pkg{ggsurvfit} plot.
+#' @param ... Additional arguments forwarded to \code{cifpanel()} when \code{printBoth = TRUE}.
 
 #' @details
 #' This function calls an internal helper \code{call_ggsurvfit()} which adds confidence intervals,
 #' risk table, censoring marks, and optional competing-risk and intercurrent-event marks.
+#'
+#' When \code{printBoth = TRUE}, two panels are created with
+#' \code{code.events = list(c(e1, e2, c), c(e2, e1, c))}, where
+#' \code{code.events = c(e1, e2, c)} is the input coding for event1, event2, and censoring.
+#' Common legend is collected by default (\code{legend.collect = TRUE}).
 #'
 #' ### Advanced control not required for typical use
 #'
@@ -165,10 +178,12 @@ cifplot <- function(
     code.event1 = 1,
     code.event2 = 2,
     code.censoring = 0,
+    code.events = NULL,
     error = NULL,
     conf.type = "arcsine-square root",
     conf.int = 0.95,
     type.y = NULL,
+    printBoth = FALSE,
     label.x = "Time",
     label.y = NULL,
     label.strata = NULL,
@@ -200,8 +215,95 @@ cifplot <- function(
     filename.ggsave = NULL,
     width.ggsave = 6,
     height.ggsave = 6,
-    dpi.ggsave = 300
+    dpi.ggsave = 300,
+    ...
 ) {
+  dots <- list(...)
+
+  if (!is.null(code.events)) {
+    ce_vec <- normalize_code_events(code.events)
+    code.event1 <- ce_vec[1L]
+    code.event2 <- ce_vec[2L]
+    code.censoring <- ce_vec[3L]
+  }
+
+  if (isTRUE(printBoth)) {
+    if (inherits(x, "survfit")) {
+      warning("printBoth=TRUE requires a formula interface; falling back to single-plot.")
+    } else {
+      outcome_effective <- outcome.type
+      if (is.null(outcome_effective)) {
+        outcome_effective <- check_outcome.type(
+          formula = x,
+          data = data,
+          na.action = na.action,
+          auto_message = FALSE
+        )
+      }
+      if (!is_competing_outcome(outcome_effective)) {
+        warning("printBoth=TRUE is only for COMPETING-RISK; falling back to single-plot.")
+      } else {
+        ce_panel <- normalize_code_events(c(code.event1, code.event2, code.censoring))
+        panel_label_y <- label.y
+        if (is.null(panel_label_y) && !is.null(dots$label.y)) {
+          panel_label_y <- dots$label.y
+        }
+        if (is.null(panel_label_y)) {
+          panel_label_y <- c(
+            "Cumulative incidence of interest",
+            "Cumulative incidence of competing risk"
+          )
+        } else {
+          if (length(panel_label_y) == 1L) panel_label_y <- rep(panel_label_y, 2L)
+          if (length(panel_label_y) > 2L) panel_label_y <- panel_label_y[1:2]
+        }
+        panel_args <- list(
+          formula                 = x,
+          data                    = data,
+          outcome.type            = "COMPETING-RISK",
+          code.events             = list(ce_panel, c(ce_panel[2L], ce_panel[1L], ce_panel[3L])),
+          type.y                  = type.y,
+          label.x                 = label.x,
+          label.y                 = panel_label_y,
+          label.strata            = label.strata,
+          limits.x                = limits.x,
+          limits.y                = limits.y,
+          breaks.x                = breaks.x,
+          breaks.y                = breaks.y,
+          addConfidenceInterval   = addConfidenceInterval,
+          addRiskTable            = addRiskTable,
+          addEstimateTable        = addEstimateTable,
+          addCensorMark           = addCensorMark,
+          addCompetingRiskMark    = addCompetingRiskMark,
+          addIntercurrentEventMark= addIntercurrentEventMark,
+          addQuantileLine         = addQuantileLine,
+          legend.position         = legend.position,
+          filename.ggsave         = filename.ggsave,
+          width.ggsave            = width.ggsave,
+          height.ggsave           = height.ggsave,
+          dpi.ggsave              = dpi.ggsave
+        )
+        if (!is.null(dots$label.y)) dots$label.y <- NULL
+        if (!is.null(dots$title.plot)) {
+          if (length(dots$title.plot) == 1L) dots$title.plot <- rep(dots$title.plot, 2L)
+          if (length(dots$title.plot) > 2L) dots$title.plot <- dots$title.plot[1:2]
+        }
+        if (is.null(dots$rows.columns.panel)) dots$rows.columns.panel <- c(1L, 2L)
+        if (is.null(dots$legend.collect)) dots$legend.collect <- TRUE
+        if (is.null(dots$style)) dots$style <- style
+        if (is.null(dots$font.family)) dots$font.family <- font.family
+        if (is.null(dots$font.size)) dots$font.size <- font.size
+        if (is.null(dots$print.panel)) dots$print.panel <- FALSE
+        panel_out <- do.call(cifpanel, c(panel_args, dots))
+        if (is.list(panel_out) && !is.null(panel_out$out_patchwork)) {
+          attr(panel_out$out_patchwork, "plots") <- panel_out$plots
+          return(panel_out$out_patchwork)
+        }
+        return(panel_out)
+      }
+    }
+  }
+
   if (!inherits(x, "survfit")) {
     if (is.null(data)) stop("When `x` is a formula, `data` must be provided.")
     if (addCompetingRiskMark==TRUE && length(competing.risk.time)==0) {
@@ -250,9 +352,29 @@ cifplot <- function(
   return(p)
 }
 
+normalize_code_events <- function(code_events) {
+  if (!(is.numeric(code_events) && length(code_events) == 3L)) {
+    .err("code_events_len_vec")
+  }
+  if (anyNA(code_events)) .err("na", arg = "code.events")
+  if (any(!is.finite(code_events))) .err("finite", arg = "code.events")
+  ce_int <- as.integer(code_events)
+  if (any(abs(code_events - ce_int) > .Machine$double.eps^0.5)) {
+    .err("code_events_integer")
+  }
+  if (ce_int[1L] == ce_int[2L]) .err("code_events_distinct")
+  ce_int
+}
+
+is_competing_outcome <- function(outcome_type) {
+  if (is.null(outcome_type)) return(FALSE)
+  ux <- toupper(as.character(outcome_type))
+  any(ux %in% c("C", "COMPETING-RISK", "COMPETING_RISK", "COMPETINGRISK"))
+}
+
 
 #' Plot survival or cumulative incidence curves with ggsurvfit
-#'
+#' 
 #' @param survfit_object A \code{survfit} object.
 #' @param out_readSurv (optional) List returned by your \code{readSurv()} to auto-set x limits.
 #' @param conf.type Character transformation for CI on the probability scale (default \code{"arcsine-square root"}).

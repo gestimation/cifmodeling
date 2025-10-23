@@ -79,6 +79,10 @@ detection based on the event coding in \code{data}.}
 
 \item{code.censoring}{Integer code of censoring (default \code{0}).}
 
+\item{code.events}{Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
+When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
+(primarily used when \code{printBoth = TRUE}).}
+
 \item{error}{Character specifying variance type used internally. For \code{"SURVIVAL"} typically \code{"greenwood"}.
 For \code{"COMPETING-RISK"} pass options supported by \code{calculateAalenDeltaSE()} (\code{"aalen"}, \code{"delta"}, \code{"none"}).}
 
@@ -87,6 +91,11 @@ For \code{"COMPETING-RISK"} pass options supported by \code{calculateAalenDeltaS
 \item{conf.int}{numeric two-sided confidence level (default \code{0.95}).}
 
 \item{type.y}{\code{NULL} (survival) or \code{"risk"} (display \code{1 - survival} i.e. CIF).}
+
+\item{printBoth}{Logical. If \code{TRUE} and \code{outcome.type == "COMPETING-RISK"},
+\code{cifplot()} internally calls \code{\link{cifpanel}} to display both event-specific
+cumulative incidence curves side-by-side (event 1 and event 2). Defaults to \code{FALSE}.
+Ignored for non-competing-risk outcomes.}
 
 \item{label.x}{Character x-axis labels (default \code{"Time"}).}
 
@@ -152,6 +161,8 @@ It calls geom_point() (default \code{TRUE}).}
 \item{height.ggsave}{Numeric specify height of the \pkg{ggsurvfit} plot.}
 
 \item{dpi.ggsave}{Numeric specify dpi of the \pkg{ggsurvfit} plot.}
+
+\item{\dots}{Additional arguments forwarded to \code{cifpanel()} when \code{printBoth = TRUE}.}
 }
 \value{
 A \code{ggplot} object.
@@ -166,6 +177,11 @@ object (compatible with \code{+} and \code{\%+\%}). You may also pass a survfit-
 \details{
 This function calls an internal helper \code{call_ggsurvfit()} which adds confidence intervals,
 risk table, censoring marks, and optional competing-risk and intercurrent-event marks.
+
+When \code{printBoth = TRUE}, two panels are created with
+\code{code.events = list(c(e1, e2, c), c(e2, e1, c))}, where
+\code{code.events = c(e1, e2, c)} is the input coding for event1, event2, and censoring.
+Common legend is collected by default (\code{legend.collect = TRUE}).
 \subsection{Advanced control not required for typical use}{
 
 The arguments below fine-tune internal estimation and figure appearance.
