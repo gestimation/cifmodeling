@@ -208,6 +208,11 @@ When \code{printEachEvent = TRUE}, two panels are created with
 \code{code.events = list(c(e1, e2, c), c(e2, e1, c))}, where
 \code{code.events = c(e1, e2, c)} is the input coding for event1, event2, and censoring.
 Common legend is collected by default (\code{legend.collect = TRUE}).
+
+Numeric stratification variables are normalized automatically. Columns with
+fewer than nine distinct numeric values are coerced to factors; columns with
+nine or more distinct numeric values are split at the median into
+\dQuote{Below median} and \dQuote{Above median} strata.
 \subsection{Advanced control not required for typical use}{
 
 The arguments below fine-tune internal estimation and figure appearance.

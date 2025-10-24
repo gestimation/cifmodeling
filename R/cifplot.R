@@ -96,6 +96,11 @@
 #' \code{code.events = c(e1, e2, c)} is the input coding for event1, event2, and censoring.
 #' Common legend is collected by default (\code{legend.collect = TRUE}).
 #'
+#' Numeric stratification variables are normalized automatically. Columns with
+#' fewer than nine distinct numeric values are coerced to factors; columns with
+#' nine or more distinct numeric values are split at the median into
+#' \dQuote{Below median} and \dQuote{Above median} strata.
+#'
 #' ### Advanced control not required for typical use
 #'
 #' The arguments below fine-tune internal estimation and figure appearance.
@@ -358,21 +363,8 @@ cifplot <- function(
     original_vec <- dv[[var_name]]
     strata_var_name <- paste0(var_name, "_strata")
 
-    if (is.numeric(original_vec) && !is.factor(original_vec)) {
-      unique_vals <- unique(stats::na.omit(original_vec))
-      n_unique <- length(unique_vals)
-      if (n_unique < 8L) {
-        strata_vec <- factor(original_vec)
-      } else {
-        med <- stats::median(original_vec, na.rm = TRUE)
-        strata_vec <- factor(
-          ifelse(original_vec > med, "Above median", "Below median"),
-          levels = c("Below median", "Above median")
-          )
-      }
-    } else {
-      strata_vec <- factor(original_vec)
-    }
+    norm_res <- cifplot_normalize_strata_var(original_vec)
+    strata_vec <- norm_res$values
 
     dv[[strata_var_name]] <- strata_vec
 
@@ -614,8 +606,7 @@ cifplot_single <- function(
         ylabs_vec <- label.y
         if (is.null(ylabs_vec) && !is.null(dots$label.y)) ylabs_vec <- dots$label.y
         if (is.null(ylabs_vec)) {
-          ylabs_vec <- c("Cumulative incidence of interest",
-                         "Cumulative incidence of competing risk")
+          ylabs_vec <- cifplot_default_event_y_labels()
         } else {
           if (length(ylabs_vec) == 1L) ylabs_vec <- rep(ylabs_vec, 2L)
           if (length(ylabs_vec)  > 2L) ylabs_vec <- ylabs_vec[1:2]
@@ -667,10 +658,12 @@ cifplot_single <- function(
 
   if (!inherits(formula_or_fit, "survfit")) {
     if (is.null(data)) stop("When `formula` is a formula, `data` must be provided.")
+    norm_inputs <- cifplot_normalize_formula_data(formula_or_fit, data)
+    data_working <- norm_inputs$data
     if (isTRUE(addCompetingRiskMark) && length(competing.risk.time) == 0) {
-      competing.risk.time <- extract_time_to_event(formula_or_fit, data = data, which_event = "event2", code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring)
+      competing.risk.time <- extract_time_to_event(formula_or_fit, data = data_working, which_event = "event2", code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring)
     }
-    formula_or_fit <- cifcurve(formula_or_fit, data = data, weights = weights, subset.condition = subset.condition, na.action = na.action,
+    formula_or_fit <- cifcurve(formula_or_fit, data = data_working, weights = weights, subset.condition = subset.condition, na.action = na.action,
                                outcome.type = outcome.type, code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
                                error = error, conf.type = conf.type, conf.int = conf.int)
   }
@@ -1092,17 +1085,12 @@ check_ggsurvfit <- function(
   check_breaks(breaks.x, "breaks.x", limits.x)
   check_breaks(breaks.y, "breaks.y", limits.y)
 
-  type.y <- if (identical(tolower(type.y), "risk")) "risk"
-  else if (identical(tolower(type.y), "r")) "risk"
-  else if (identical(tolower(type.y), "survival")) "survival"
-  else if (identical(tolower(type.y), "s")) "survival"
-  else type.y
+  type.y <- cifplot_normalize_type_y(type.y)
 
-  label.y <- if (is.null(label.y) && !identical(type.y, "risk") && identical(survfit_object$type, "kaplan-meier")) "Survival"
-  else if (is.null(label.y) && identical(type.y, "risk") && identical(survfit_object$type, "kaplan-meier")) "Risk"
-  else if (is.null(label.y) && !identical(type.y, "survival") && identical(survfit_object$type, "aalen-johansen")) "Cumulative incidence"
-  else if (is.null(label.y) && identical(type.y, "survival") && identical(survfit_object$type, "aalen-johansen")) "1 - cumulative incidence"
-  else label.y
+  if (is.null(label.y)) {
+    auto_label <- cifplot_default_y_label(survfit_object$type, type.y)
+    if (!is.null(auto_label)) label.y <- auto_label
+  }
 
   coerce_conf <- function(survfit_object, conf.type) {
     if (!is.null(survfit_object$lower) && !is.null(survfit_object$upper)) return(survfit_object)

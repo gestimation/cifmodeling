@@ -1,3 +1,105 @@
+.cifplot_labels <- list(
+  strata = list(
+    below_median = "Below median",
+    above_median = "Above median"
+  ),
+  y_axis = list(
+    survival = "Survival",
+    survival_risk = "Risk",
+    cif = "Cumulative incidence",
+    cif_survival = "1 - cumulative incidence"
+  ),
+  event_panels = list(
+    interest = "Cumulative incidence of interest",
+    competing = "Cumulative incidence of competing risk"
+  )
+)
+
+cifplot_normalize_type_y <- function(type.y) {
+  if (is.null(type.y) || length(type.y) == 0L) return(NULL)
+  ty <- tolower(as.character(type.y[1L]))
+  if (is.na(ty) || !nzchar(ty)) return(NULL)
+  if (ty %in% c("risk", "r")) return("risk")
+  if (ty %in% c("survival", "s")) return("survival")
+  type.y
+}
+
+cifplot_default_y_label <- function(fit_type, type.y = NULL) {
+  ft <- tolower(as.character(fit_type %||% ""))
+  ty <- cifplot_normalize_type_y(type.y)
+  if (ft %in% c("kaplan-meier", "kaplan_meier", "km")) {
+    if (identical(ty, "risk")) return(.cifplot_labels$y_axis$survival_risk)
+    return(.cifplot_labels$y_axis$survival)
+  }
+  if (ft %in% c("aalen-johansen", "aalen_johansen", "aj")) {
+    if (identical(ty, "survival")) return(.cifplot_labels$y_axis$cif_survival)
+    return(.cifplot_labels$y_axis$cif)
+  }
+  NULL
+}
+
+cifplot_default_event_y_labels <- function() {
+  unname(unlist(.cifplot_labels$event_panels, use.names = FALSE))
+}
+
+cifplot_normalize_strata_var <- function(x, median_threshold = 9L) {
+  res <- list(strategy = "factor", threshold = median_threshold)
+  if (is.factor(x)) {
+    vals <- droplevels(x)
+    res$values <- vals
+    res$levels <- levels(vals)
+    return(res)
+  }
+
+  is_datetime <- inherits(x, c("Date", "POSIXt", "POSIXct", "POSIXlt"))
+  if (is.numeric(x) && !is_datetime) {
+    uniq_vals <- unique(x[!is.na(x) & is.finite(x)])
+    if (length(uniq_vals) >= median_threshold) {
+      med <- stats::median(x, na.rm = TRUE)
+      if (is.finite(med)) {
+        below <- .cifplot_labels$strata$below_median
+        above <- .cifplot_labels$strata$above_median
+        vals <- ifelse(x > med, above, below)
+        vals[is.na(x)] <- NA_character_
+        fac <- factor(vals, levels = c(below, above))
+        res$strategy <- "median"
+        res$cutpoint <- med
+        res$values <- fac
+        res$levels <- levels(fac)
+        return(res)
+      }
+    }
+  }
+
+  fac <- factor(x)
+  res$values <- fac
+  res$levels <- levels(fac)
+  res
+}
+
+cifplot_normalize_formula_data <- function(formula, data, median_threshold = 9L) {
+  if (!inherits(formula, "formula")) {
+    return(list(data = data, info = list()))
+  }
+
+  Terms <- stats::terms(formula, data = data)
+  rhs_vars <- attr(Terms, "term.labels")
+  if (length(rhs_vars) == 0L) {
+    return(list(data = data, info = list()))
+  }
+
+  out_data <- data
+  info <- list()
+  for (var_name in rhs_vars) {
+    if (!nzchar(var_name) || grepl("\\(", var_name, fixed = FALSE)) next
+    if (!var_name %in% names(out_data)) next
+    norm <- cifplot_normalize_strata_var(out_data[[var_name]], median_threshold = median_threshold)
+    out_data[[var_name]] <- norm$values
+    info[[var_name]] <- norm
+  }
+  list(data = out_data, info = info)
+}
+
 plot_style_classic <- function(font.family = "sans", font.size = 14, legend.position = "top") {
   ggplot2::theme_classic(base_size = font.size, base_family = font.family) +
     ggplot2::theme(
