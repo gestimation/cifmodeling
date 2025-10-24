@@ -115,6 +115,12 @@ Levels not listed are dropped.
 If \code{label.strata} is a named vector, its names must match the (re-ordered) levels.
 }}
 
+\item{palette}{Colors for strata lines/fills. Accepts: (i) character color names (e.g., "red", "blue"), (ii) a named vector mapping final strata labels to colors (e.g., \code{c("Low intake" = "red", "High intake" = "blue")}), (iii) a preset key among \code{c("basic", "pastel", "bw")}. If \code{NULL}, a default palette (Okabe-Ito if available) is used.}
+
+\item{color}{Single-layer line color (when there is one stratum).}
+
+\item{fill}{Single-layer ribbon fill (when there is one stratum).}
+
 \item{limits.x}{Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,max(out_readSurv$t))}.}
 
 \item{limits.y}{Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,1)}.}

@@ -82,6 +82,12 @@ for COMPETING-RISK: \code{c(code.event1, code.event2, code.censoring)}.}
 \item{label.strata}{Optional list of character vectors for legend labels per panel
 (passed to \code{\link[=cifplot]{cifplot()}}).}
 
+\item{palette}{Optional palette specification forwarded to each \code{\link[=cifplot]{cifplot()}} call.}
+
+\item{color}{Single-stratum line color forwarded to \code{\link[=cifplot]{cifplot()}} when applicable.}
+
+\item{fill}{Single-stratum ribbon fill forwarded to \code{\link[=cifplot]{cifplot()}} when applicable.}
+
 \item{limits.x, limits.y}{Optional vectors/lists of numeric length-2 axis limits per panel.}
 
 \item{breaks.x, breaks.y}{Optional vectors/lists of axis breaks per panel (forwarded to

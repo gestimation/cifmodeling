@@ -43,6 +43,14 @@
 #'     that specifies the display order (legend/risktable) of the single stratification factor.
 #'     Levels not listed are dropped.
 #'   If \code{label.strata} is a named vector, its names must match the (re-ordered) levels.
+#' @param palette Colors for strata lines/fills. Accepts:
+#'   (i) character color names (e.g., "red", "blue"),
+#'   (ii) a named vector mapping final strata labels to colors
+#'       (e.g., \code{c("Low intake" = "red", "High intake" = "blue")}),
+#'   (iii) a preset key among \code{c("basic", "pastel", "bw")}. If \code{NULL}, a default
+#'   palette (Okabe-Ito if available) is used.
+#' @param color Single-layer line color (when there is one stratum).
+#' @param fill  Single-layer ribbon fill (when there is one stratum).
 #' @param limits.x Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,max(out_readSurv$t))}.
 #' @param limits.y Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,1)}.
 #' @param breaks.x Numeric vectors for axis breaks (default \code{NULL}).
@@ -209,6 +217,9 @@ cifplot <- function(
     label.y = NULL,
     label.strata = NULL,
     order.strata = NULL,
+    palette = NULL,
+    color = NULL,
+    fill = NULL,
     limits.x = NULL,
     limits.y = NULL,
     breaks.x = NULL,
@@ -287,6 +298,9 @@ cifplot <- function(
         label.y                  = label.y,
         label.strata             = label.strata,
         order.strata             = order.strata,
+        palette                  = palette,
+        color                    = color,
+        fill                     = fill,
         limits.x                 = limits.x,
         limits.y                 = limits.y,
         breaks.x                 = breaks.x,
@@ -466,6 +480,9 @@ cifplot <- function(
         label.y                    = label.y,
         label.strata               = lab_vec,
         order.strata               = ord_vec,
+        palette                    = palette,
+        color                      = color,
+        fill                       = fill,
         limits.x                   = limits.x,
         limits.y                   = limits.y,
         breaks.x                   = breaks.x,
@@ -537,6 +554,9 @@ cifplot_single <- function(
     label.y = NULL,
     label.strata = NULL,
     order.strata = NULL,
+    palette = NULL,
+    color = NULL,
+    fill = NULL,
     limits.x = NULL,
     limits.y = NULL,
     breaks.x = NULL,
@@ -601,6 +621,9 @@ cifplot_single <- function(
 
         # cifplot()では title.plot を受け付けない仕様：あっても捨てる
         if (!is.null(dots$title.plot)) dots$title.plot <- NULL
+        if (!is.null(dots$palette)) dots$palette <- NULL
+        if (!is.null(dots$color))   dots$color   <- NULL
+        if (!is.null(dots$fill))    dots$fill    <- NULL
 
         # y軸ラベルは長さ2に整形して cifpanel に渡す（これは仕様維持）
         ylabs_vec <- label.y
@@ -622,6 +645,9 @@ cifplot_single <- function(
           label.x                 = label.x,
           label.y                 = ylabs_vec,
           label.strata            = label.strata,
+          palette                 = palette,
+          color                   = color,
+          fill                    = fill,
           limits.x                = limits.x,
           limits.y                = limits.y,
           breaks.x                = breaks.x,
@@ -693,6 +719,9 @@ cifplot_single <- function(
     label.y                       = label.y,
     label.strata                  = label.strata,
     order.strata                  = order.strata,
+    palette                       = palette,
+    color                         = color,
+    fill                          = fill,
     limits.x                      = limits.x,
     limits.y                      = limits.y,
     breaks.x                      = breaks.x,
@@ -755,6 +784,9 @@ is_competing_outcome <- function(outcome_type) {
 #' @param label.x Character x-axis labels (default \code{"Time"}).
 #' @param label.y Character y-axis labels (default internally set to \code{"Survival"} or \code{"Cumulative incidence"}).
 #' @param label.strata Character vector of labels for strata.
+#' @param palette Optional palette specification passed from [cifplot()].
+#' @param color Single-stratum line color (when only one stratum is present).
+#' @param fill  Single-stratum ribbon fill (when only one stratum is present).
 
 #' @param limits.x Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,max(out_readSurv$t))}.
 #' @param limits.y Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,1)}.
@@ -828,9 +860,15 @@ call_ggsurvfit <- function(
 
   label.strata.map <- plot_make_label.strata.map(survfit_object, label.strata)
 
-  cur_lvls <- NULL
+  strata_names_raw <- NULL
   if (!is.null(survfit_object$strata)) {
-    cur_lvls <- unique(sub(".*=", "", names(survfit_object$strata)))
+    strata_names_raw <- names(survfit_object$strata)
+  }
+  n_strata <- if (is.null(strata_names_raw)) 1L else length(strata_names_raw)
+
+  cur_lvls <- NULL
+  if (!is.null(strata_names_raw)) {
+    cur_lvls <- unique(sub(".*=", "", strata_names_raw))
   }
 
   if (!is.null(order.strata)) {
@@ -853,16 +891,35 @@ call_ggsurvfit <- function(
     }
   }
 
+  label_for_key <- NULL
+  if (!is.null(strata_names_raw)) {
+    default_labels <- if (!is.null(cur_lvls)) cur_lvls else strata_names_raw
+    label_for_key <- stats::setNames(default_labels, strata_names_raw)
+  }
+  if (!is.null(label.strata.map)) {
+    label_for_key <- label.strata.map
+  }
+  key_levels <- if (!is.null(strata_names_raw)) strata_names_raw else names(label_for_key)
+  if (is.null(key_levels) && n_strata <= 1L) {
+    key_levels <- if (!is.null(names(label_for_key))) names(label_for_key) else "1"
+  }
+  legend_labels <- NULL
+  if (!is.null(label_for_key)) {
+    legend_labels <- unname(label_for_key)
+  } else if (!is.null(cur_lvls)) {
+    legend_labels <- cur_lvls
+  } else if (!is.null(key_levels)) {
+    legend_labels <- key_levels
+  }
+
   p <- out_cg$out_survfit_object +
     ggplot2::labs(x = label.x, y = out_cg$label.y)
 
-  if (!is.null(label.strata.map)) {
-    p <- p +
-      ggplot2::scale_color_discrete(limits = names(label.strata.map), labels = unname(label.strata.map)) +
-      ggplot2::scale_fill_discrete (limits = names(label.strata.map), labels = unname(label.strata.map))
+  if (isTRUE(addConfidenceInterval)) {
+    ci_args <- list()
+    if (n_strata <= 1L && !is.null(fill)) ci_args$fill <- fill
+    p <- p + do.call(add_confidence_interval, ci_args)
   }
-
-  if (isTRUE(addConfidenceInterval)) p <- p + add_confidence_interval()
   if (isTRUE(addCensorMark))         p <- p + add_censor_mark(shape = shape.censor.mark, size = size.censor.mark)
   if (isTRUE(addQuantileLine))       p <- p + ggsurvfit::add_quantile(y_value=quantile)
 
@@ -923,31 +980,56 @@ call_ggsurvfit <- function(
     p <- plot_apply_style(p, style = style, font.family, font.size, legend.position)
   }
 
-  if (!is.null(label.strata.map)) {
-    lvls   <- names(label.strata.map)
-    labs   <- unname(label.strata.map)
-    n      <- length(lvls)
-
+  if (n_strata <= 1L) {
+    lvls_single <- key_levels %||% if (!is.null(strata_names_raw)) strata_names_raw else "1"
+    labs_single <- legend_labels %||% lvls_single
+    col_value   <- color %||% get_default_palette(1L)
+    fill_value  <- fill  %||% col_value
+    vals_col  <- rep(col_value, length.out = length(lvls_single))
+    vals_fill <- rep(fill_value, length.out = length(lvls_single))
+    names(vals_col)  <- lvls_single
+    names(vals_fill) <- lvls_single
+    p <- p +
+      ggplot2::scale_color_manual(values = vals_col, limits = lvls_single, labels = labs_single) +
+      ggplot2::scale_fill_manual (values = vals_fill, limits = lvls_single, labels = labs_single)
+  } else {
+    lvls <- key_levels %||% strata_names_raw
+    labs <- if (!is.null(label_for_key)) {
+      unname(label_for_key[lvls])
+    } else {
+      legend_labels %||% lvls
+    }
+    if (anyNA(labs)) {
+      labs[is.na(labs)] <- lvls[is.na(labs)]
+    }
+    n <- length(lvls)
     if (identical(style, "MONOCHROME")) {
       ltys_all   <- c("dashed","solid","dotted","longdash","dotdash","twodash",
                       "dashed","solid","dotted","longdash","dotdash","twodash")
       shapes_all <- c(16, 1, 3, 4, 15, 17, 16, 1, 3, 4, 15, 17)
-      ltys   <- ltys_all[seq_len(n)]
-      shps   <- shapes_all[seq_len(n)]
-      fills  <- gray(seq(0.85, 0.30, length.out = n))
-
+      ltys <- ltys_all[seq_len(n)]
+      shps <- shapes_all[seq_len(n)]
+      fills <- gray(seq(0.85, 0.30, length.out = n))
       p <- p +
         ggplot2::scale_color_manual   (values = rep("black", n), limits = lvls, labels = labs) +
         ggplot2::scale_fill_manual    (values = fills,           limits = lvls, labels = labs) +
         ggplot2::scale_linetype_manual(values = ltys,            limits = lvls, labels = labs) +
         ggplot2::scale_shape_manual   (values = shps,            limits = lvls, labels = labs)
-
     } else {
+      levels_for_palette <- legend_labels %||% labs %||% lvls
+      pal_resolved <- resolve_palette(levels_for_palette, palette)
+      fallback_pal <- get_default_palette(n)
+      pal_scale <- vapply(seq_along(lvls), function(i) {
+        lbl <- labs[[i]]
+        col_val <- pal_resolved[[lbl]]
+        if (is.null(col_val) || is.na(col_val)) fallback_pal[[i]] else col_val
+      }, character(1))
+      names(pal_scale) <- lvls
       p <- p +
-        ggplot2::scale_color_discrete  (limits =  lvls, labels = labs) +
-        ggplot2::scale_fill_discrete   (limits =  lvls, labels = labs) +
+        ggplot2::scale_color_manual  (values = pal_scale, limits = lvls, labels = labs) +
+        ggplot2::scale_fill_manual   (values = pal_scale, limits = lvls, labels = labs) +
         ggplot2::scale_linetype_discrete(limits = lvls, labels = labs) +
-        ggplot2::scale_shape_discrete  (limits =  lvls, labels = labs)
+        ggplot2::scale_shape_discrete  (limits = lvls, labels = labs)
     }
   }
 

@@ -49,6 +49,9 @@
 #' @param label.x,label.y Optional vectors/lists of axis labels per panel.
 #' @param label.strata Optional list of character vectors for legend labels per panel
 #'   (passed to [cifplot()]).
+#' @param palette Optional palette specification forwarded to each [cifplot()] call.
+#' @param color Single-stratum line color forwarded to [cifplot()] when applicable.
+#' @param fill  Single-stratum ribbon fill forwarded to [cifplot()] when applicable.
 #' @param limits.x,limits.y Optional vectors/lists of numeric length-2 axis limits per panel.
 #' @param breaks.x,breaks.y Optional vectors/lists of axis breaks per panel (forwarded to
 #'   \code{breaks.x} / \code{breaks.y} in [cifplot()]).
@@ -256,6 +259,9 @@ cifpanel <- function(
     label.x      = NULL,
     label.y      = NULL,
     label.strata = NULL,
+    palette = NULL,
+    color = NULL,
+    fill = NULL,
     limits.x     = NULL,
     limits.y     = NULL,
     breaks.x      = NULL,
@@ -289,6 +295,9 @@ cifpanel <- function(
 ){
   inset.align_to <- match.arg(inset.align_to)
   dots <- list(...)
+  if (is.null(dots$palette)) dots$palette <- palette
+  if (is.null(dots$color))   dots$color   <- color
+  if (is.null(dots$fill))    dots$fill    <- fill
   nrow <- as.integer(rows.columns.panel[1]); ncol <- as.integer(rows.columns.panel[2])
   n_slots <- nrow * ncol
 
