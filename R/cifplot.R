@@ -355,20 +355,26 @@ cifplot <- function(
       stop(sprintf("Variable '%s' not found in data.", var_name))
     }
     dv <- data
-    strata_vec <- dv[[var_name]]
+    original_vec <- dv[[var_name]]
+    strata_var_name <- paste0(var_name, "_strata")
 
-    if (is.numeric(strata_vec) && !is.factor(strata_vec)) {
-      stop(
-        sprintf(
-          "Variable '%s' is numeric. Please discretize (e.g., cut/factor) before calling cifplot().",
-          var_name
-        )
-      )
+    if (is.numeric(original_vec) && !is.factor(original_vec)) {
+      unique_vals <- unique(stats::na.omit(original_vec))
+      n_unique <- length(unique_vals)
+      if (n_unique < 8L) {
+        strata_vec <- factor(original_vec)
+      } else {
+        med <- stats::median(original_vec, na.rm = TRUE)
+        strata_vec <- factor(
+          ifelse(original_vec > med, "Above median", "Below median"),
+          levels = c("Below median", "Above median")
+          )
+      }
+    } else {
+      strata_vec <- factor(original_vec)
     }
 
-    if (!is.factor(strata_vec)) {
-      strata_vec <- factor(strata_vec)
-    }
+    dv[[strata_var_name]] <- strata_vec
 
     ord_vec <- NULL
     if (!is.null(order.strata)) {
@@ -382,7 +388,7 @@ cifplot <- function(
       if (!is.character(ord_vec)) {
         stop(sprintf("order.strata[['%s']] must be a character vector.", var_name))
       }
-      current_levels <- levels(strata_vec)
+      current_levels <- levels(dv[[strata_var_name]])
       keep_levels <- ord_vec[ord_vec %in% current_levels]
       if (length(keep_levels) == 0L) {
         stop(
@@ -393,15 +399,14 @@ cifplot <- function(
           )
         )
       }
-      strata_vec <- factor(as.character(strata_vec), levels = keep_levels)
-      keep_idx <- !is.na(strata_vec)
+      strata_factor <- factor(as.character(dv[[strata_var_name]]), levels = keep_levels)
+      keep_idx <- !is.na(strata_factor)
       dv <- dv[keep_idx, , drop = FALSE]
       strata_vec <- droplevels(strata_vec[keep_idx])
     }
 
-    dv[[var_name]] <- strata_vec
-    dv <- dv[!is.na(dv[[var_name]]), , drop = FALSE]
-    dv[[var_name]] <- droplevels(dv[[var_name]])
+    dv <- dv[!is.na(dv[[strata_var_name]]), , drop = FALSE]
+    dv[[strata_var_name]] <- droplevels(dv[[strata_var_name]])
 
     lab_vec <- NULL
     if (!is.null(label.strata)) {
@@ -413,7 +418,7 @@ cifplot <- function(
     }
 
     if (!is.null(lab_vec)) {
-      lv <- levels(dv[[var_name]])
+      lv <- levels(dv[[strata_var_name]])
       if (!is.null(names(lab_vec)) && any(nzchar(names(lab_vec)))) {
         if (!setequal(names(lab_vec), lv)) {
           missing <- setdiff(lv, names(lab_vec))
@@ -443,7 +448,10 @@ cifplot <- function(
       }
     }
 
-    single_formula <- stats::as.formula(sprintf("%s ~ %s", response_str, var_name))
+    if (is.null(lab_vec)) {
+      lab_vec <- levels(dv[[strata_var_name]])
+    }
+    single_formula <- stats::as.formula(sprintf("%s ~ %s", response_str, strata_var_name))
 
     args_var <- c(
       list(
@@ -500,7 +508,8 @@ cifplot <- function(
     )
 
     plot_i <- do.call(cifplot_single, args_var)
-    plot_i + ggplot2::ggtitle(var_name)
+    plot_i + ggplot2::ggtitle(var_name) +
+      ggplot2::labs(color = var_name, fill = var_name, linetype = var_name, shape = var_name)
   })
 
   nrow <- ncol <- NULL
@@ -826,15 +835,12 @@ call_ggsurvfit <- function(
 
   label.strata.map <- plot_make_label.strata.map(survfit_object, label.strata)
 
-  # ==== 新規: order.strata からマップを起こす/絞り込む ====
-  # 現在のレベル（例: names(survfit_object$strata) = "fruitq=Q1", ... → 右側だけ抜く）
   cur_lvls <- NULL
   if (!is.null(survfit_object$strata)) {
     cur_lvls <- unique(sub(".*=", "", names(survfit_object$strata)))
   }
 
   if (!is.null(order.strata)) {
-    # label.strata.map が未指定なら、order に基づく既定マップを作る
     if (is.null(label.strata.map)) {
       if (!is.null(cur_lvls)) {
         keep <- order.strata[order.strata %in% cur_lvls]
@@ -845,7 +851,6 @@ call_ggsurvfit <- function(
         }
       }
     } else {
-      # 既存マップを order の順で並べ替え＆間引き
       keep <- order.strata[order.strata %in% names(label.strata.map)]
       if (length(keep) == 0L) {
         warning("`order.strata` has no overlap with strata labels; ignoring.", call. = FALSE)

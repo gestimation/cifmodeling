@@ -46,21 +46,6 @@ test_that("label.strata named mapping works with order.strata", {
   expect_true(inherits(plt, "patchwork") || inherits(plt, "ggplot"))
 })
 
-test_that("numeric RHS var errors under printEachVar", {
-  data(diabetes.complications)
-  expect_error(
-    cifplot(
-      Event(t, epsilon) ~ age,
-      data = diabetes.complications,
-      outcome.type = "COMPETING-RISK",
-      code.event1 = 1, code.event2 = 2, code.censoring = 0,
-      printEachVar = TRUE
-    ),
-    "numeric.*discretize",
-    ignore.case = TRUE
-  )
-})
-
 test_that("order.strata works per-variable when printEachVar = TRUE", {
   skip_on_cran()
   skip_if_not_installed("ggplot2")
@@ -143,3 +128,6 @@ test_that("order.strata with no overlap issues a warning and is ignored", {
     expect_true(is.null(sc_fil$limits) || identical(sc_fil$limits, character()))
   }
 })
+
+
+
