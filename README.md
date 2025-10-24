@@ -11,27 +11,26 @@
 
 In medical research, advanced statistical methods are often required to
 address censoring, competing risks, and intercurrent events (e.g.,
-treatment switching) that interfere with outcome assessment. cifmodeling
-provides a compact, unified toolkit for survival and competing-risks
-analysis in R. It covers both nonparametric estimation and regression
-modeling of cumulative incidence functions (CIFs), centered around three
-tightly connected functions.
+treatment switching) that interfere with outcome assessment.
+`cifmodeling` provides a compact, unified toolkit for survival and
+competing risks analysis in R. It covers both nonparametric estimation
+and regression modeling of cumulative incidence functions (CIFs),
+centered around three tightly connected functions.
 
 - `cifplot()` generates a survival or cumulative incidence curve with
   marks that represent censoring, competing risks and intercurrent
   events. Various methods for standard error and confidence intervals
   are available. Visualization relies on `ggsurvfit/ggplot2`.
 
-- `cifpanel()` generates a multi-panel figure for survival or cumulative
-  incidence curves, arranged either in a grid layout or as an inset
-  overlay.
+- `cifpanel()` generates a multi-panel figure for survival/CIF curves,
+  arranged either in a grid layout or as an inset overlay.
 
 - `polyreg()` fits regression models of cumulative incidence functions
   based on polytomous log odds products and stratified IPCW estimator.
   This function is particularly suitable for causal inference in terms
   of common effect measures, namely risk ratios, odds ratios, and
   subdistribution hazard ratios, with a competing risks, survival, or
-  binary dataset.
+  binary outcome.
 
 These functions adopt a formula + data syntax, return tidy,
 publication-ready outputs, and integrate seamlessly with `ggsurvfit` and
@@ -53,10 +52,14 @@ survfit-compatible object directly.
 
 - Draw one survival/CIF curve set by groups (e.g., treatment vs
   control).
+- Call `cifpanel()` with a simplified code to create a panel displaying
+  plots of multiple stratified survival/CIF curves or CIF curves for
+  each event type.
 - Add confidence intervals and censor/competing-risk/intercurrent-event
-  marks with one or two flags.
-- Add a risk table to display the number at risk or the estimated values
-  and 95% confidence intervals at each point in time.
+  marks.
+- Add a risk table to display the number at risk or the estimated
+  survival probabilities or CIFs and 95% confidence intervals at each
+  point in time.
 
 **Key arguments shared with cifcurve()**
 
@@ -89,6 +92,11 @@ survfit-compatible object directly.
     `"MONOCHROME"`, `"BOLD"` or `"FRAMED"`)
   - Standard `ggplot2` arguments such as `theme()`, `labs()`, and
     `scale_y_continuous()` apply
+- **Panel**
+  - `printEachVar` automatically produces multiple survival/CIF curves
+    per stratification variable specified in the formula
+  - `printEachEvent` automatically produces CIF curves for each event
+    type
 
 **Return**
 
@@ -98,12 +106,12 @@ survfit-compatible object directly.
 
 `cifplot()` is a streamlined, opinionated wrapper around `cifcurve()`,
 which calculate the Kaplan–Meier estimator and the Aalen–Johansen
-estimator. It returns a survfit-compatible object, enabling use of
-standard methods such as:
+estimator. `cifcurve()` returns a survfit-compatible object, enabling
+use of standard methods such as:
 
 - `summary()` — time-by-time estimates with standard errors and
   confidence intervals
-- `plot()` — base R stepwise survival or CIF curves
+- `plot()` — base R stepwise survival/CIF curves
 - `mean()` — restricted mean survival estimates with confidence
   intervals
 - `quantile()` — quantile estimates with confidence intervals
@@ -118,34 +126,19 @@ In competing risks data, censoring is often coded as 0, events of
 interest as 1, and competing risks as 2. The variable `epsilon` in
 `diabetes.complications` dataframe represents the occurrence of
 competing risks according to this coding scheme. Below is an example
-code snippet applying cifplot() to a competing risks outcome (`t` and
-`epsilon`) and a survival outcome (`t` and `d`), respectively.
+code snippet applying `cifplot()` to create CIF curves. By specifying
+`printEachEvent=`, the CIF curve for diabetic retinopathy (`epsilon=1`)
+is output on the left, and the CIF curve for macrovascular complications
+(`epsilon=2`) is output on the right.
 
 ``` r
 data(diabetes.complications)
 cifplot(Event(t,epsilon) ~ fruitq, data=diabetes.complications, 
-        outcome.type="COMPETING-RISK")
-diabetes.complications$d <- (diabetes.complications$epsilon>0)
-cifplot(Event(t,d) ~ fruitq, data=diabetes.complications,
-        outcome.type="SURVIVAL")
+        outcome.type="COMPETING-RISK", printEachEvent=TRUE,
+        label.x      = "Years from registration")
 ```
 
-**Show both event-specific CIFs side-by-side**
-
-``` r
-data(diabetes.complications)
-cifplot(
-  Event(t, epsilon) ~ fruitq1,
-  data = diabetes.complications,
-  outcome.type = "COMPETING-RISK",
-  code.events  = c(1, 2, 0),
-  printEachEvent= TRUE,
-  title.plot   = c("Diabetic retinopathy", "Macrovascular complications"),
-  label.x      = "Years from registration",
-  label.y      = "Cumulative incidence",
-  legend.collect = TRUE
-)
-```
+<img src="man/figures/README-syntax1-1.png" width="100%" />
 
 ### cifpanel()
 
@@ -156,9 +149,9 @@ time scales, or strata. The inset feature also allows you to display
 another plot within a plot.
 
 **Typical use cases** - Compare CIF (event 1) vs CIF (event 2) in a 1×2
-layout. - Compare survival or CIF curves across strata with a shared
-legend and matched axes. - Display a plot with an enlarged y-axis within
-a plot scaled from 0 to 100%.
+layout. - Compare survival/CIF curves across strata with a shared legend
+and matched axes. - Display a plot with an enlarged y-axis within a plot
+scaled from 0 to 100%.
 
 **Key arguments**
 
@@ -178,6 +171,52 @@ a plot scaled from 0 to 100%.
 **Return**
 
 - A **patchwork** object (still ggplot-compatible).
+
+**An example of usage**
+
+In the first example, `cifplot()` called `cifpanel()` to combine
+multiple plots. `cifpanel()` is a function for creating a panel with
+multiple plots like this. `cifpanel()` can also display one plot inside
+another. The cumulative incidence probability for macrovascular
+complications is low, making it difficult to discern differences between
+groups. The following code uses `use_inset_element=` to display plot
+`output2`, with an enlarged vertical axis, inside plot `output1`.
+
+``` r
+output1 <- cifplot(Event(t,epsilon) ~ fruitq,
+                   data = diabetes.complications,
+                   outcome.type="COMPETING-RISK",
+                   code.event1=2,
+                   code.event2=1,
+                   addConfidenceInterval = FALSE,
+                   addRiskTable = FALSE,
+                   label.y='CIF of macrovascular complications',
+                   label.x='Years from registration')
+output2 <- cifplot(Event(t,epsilon) ~ fruitq,
+                   data = diabetes.complications,
+                   outcome.type="COMPETING-RISK",
+                   code.event1=2,
+                   code.event2=1,
+                   addConfidenceInterval = FALSE,
+                   addRiskTable = FALSE,
+                   label.y='CIF of macrovascular complications',
+                   label.x='Years from registration',
+                   limits.y=c(0,0.15))
+output3 <- list(a=output1, b=output2)
+cifpanel(plots = output3,
+         title.plot = c("Associations between fruit intake and macrovascular complications", "Zoomed-in view"),
+         use_inset_element = TRUE,
+         inset.left   = 0.40, inset.bottom = 0.45,
+         inset.right  = 1.00, inset.top    = 0.95,
+         inset.align_to = "plot",
+         inset.legend.position = "none",
+         legend.position = "bottom")
+```
+
+<img src="man/figures/README-syntax2-1.png" width="100%" />
+
+The code below, in which a formula and data is given directly, produces
+the same output as above.
 
 ``` r
 data(diabetes.complications)
@@ -208,12 +247,12 @@ categorical exposure, or constant effects over time like Cox regression
 and Fine-Gray models. It estimates multiplicative effects such as **risk
 ratios**, **odds ratios**, or **subdistribution hazard ratios**, while
 ensuring that the probabilities across competing events sum to one. This
-is achieved through **reparameterization using polytomous log-odds
+is achieved through **reparameterization using polytomous log odds
 products**, which fits so-called effect-measure models and nuisance
 models on multiple competing events simultaneously. Additionally,
 `polyreg()` supports direct binomial regression for survival outcomes
-and the Richardson model for binomial outcomes, both of which use
-log-odds products.
+and the Richardson model for binomial outcomes, both of which use log
+odds products.
 
 The function follows the familiar **formula + data** syntax with
 `Event()` or `Surv()` and outputs tidy results, including point
@@ -374,51 +413,33 @@ predicted values of the potential outcomes of individual observations.
 
 For the initial illustration, unadjusted analysis focusing on cumulative
 incidence of diabetic retinopathy (event 1) and macrovascular
-complications (event 2) at 8 years of follow-up is demonstrated. The
-figure below is the cumulative incidence curves of diabetic retinopathy
-for a binary exposure `fruitq1`, low (Q1) and high (Q2 to 4) intake of
-fruit, generated by `cifplot()`. The `label.x` and `label.y` arguments
-customize the axis labels, and `label.strata` provides custom labels for
-the strata in the legend. The `addConfidenceInterval=TRUE` argument adds
-confidence intervals to the plot. This helps visualize the statistical
-uncertainty of estimated probabilities across exposure levels.
+complications (event 2) at 8 years of follow-up is demonstrated. To
+visualize each covariate separately when multiple strata are supplied,
+set `printEachVar = TRUE`. Each variable on the right-hand side is
+plotted in its own panel, and the layout can be controlled with
+`rows.columns.panel`. The figure below contrasts the cumulative
+incidence curves of diabetic retinopathy for quartile `fruitq1` and a
+binary exposure `fruitq1`, low (Q1) and high (Q2 to 4) intake of fruit,
+generated by `cifplot()`. The `label.x` and `label.y` arguments
+customize the axis labels. The `addConfidenceInterval=TRUE` argument
+adds confidence intervals to the plot. This helps visualize the
+statistical uncertainty of estimated probabilities across exposure
+levels. When using numeric variables for stratification, discretize them
+beforehand with `cut()` or `factor()`.
 
 ``` r
 data(diabetes.complications)
-cifplot(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, outcome.type="COMPETING-RISK",
-        addConfidenceInterval=TRUE, addCensorMark=FALSE, addCompetingRiskMark=FALSE,
-        label.y="CIF of diabetic retinopathy", label.x="Years from registration",
-        label.strata=c("High intake","Low intake"))
+diabetes.complications$fruitq1 <- ifelse(
+  diabetes.complications$fruitq == "Q1",
+  "Q1",
+  "Q2 to Q4"
+)
+cifplot(Event(t,epsilon) ~ fruitq+fruitq1, data=diabetes.complications, outcome.type="COMPETING-RISK",
+        addConfidenceInterval=TRUE, addCensorMark=FALSE, addCompetingRiskMark=FALSE,printEachVar = TRUE,
+        label.y="CIF of diabetic retinopathy", label.x="Years from registration")
 ```
 
 <img src="man/figures/README-example1-1-1.png" width="100%" />
-
-To visualize each covariate separately when multiple strata are
-supplied, set `printEachVar = TRUE`. Each variable on the right-hand
-side is plotted in its own panel, and the layout can be controlled with
-`rows.columns.panel`. The example below contrasts cumulative incidence
-functions for sex and fruit intake side-by-side. When using numeric
-variables for stratification, discretize them beforehand with `cut()` or
-`factor()`.
-
-``` r
-diabetes.complications$use_insulin <- factor(
-  diabetes.complications$drug_insulin,
-  levels = c(0, 1),
-  labels = c("Not use", "Use")
-)
-cifplot(
-  Event(t, epsilon) ~ fruitq + use_insulin,
-  data = diabetes.complications,
-  outcome.type = "COMPETING-RISK",
-  printEachVar = TRUE,
-  rows.columns.panel = c(1, 2),
-  label.y="CIF of diabetic retinopathy", 
-  label.x="Years from registration"
-)
-```
-
-<img src="man/figures/README-example1-1a-1.png" width="100%" />
 
 In the next figure, censoring marks are added along each curve
 (`addCensorMark = TRUE`) to indicate individuals who were censored
@@ -472,13 +493,13 @@ output3 <- polyreg(nuisance.model=Event(t,epsilon) ~ +1, exposure="fruitq1",
           time.point=8, outcome.type="COMPETING-RISK", 
           report.nuisance.parameter=TRUE)
 print(output3$coefficient)
-#> [1] -1.38313159  0.30043942 -3.99147405  0.07582595
+#> [1] -1.38313159 -0.30043942 -3.99147405 -0.07582595
 print(output3$cov)
 #>              [,1]         [,2]         [,3]         [,4]
-#> [1,]  0.007132823 -0.004524224  0.002772872 -0.002210804
-#> [2,] -0.004524224  0.009639840 -0.001178880  0.004588230
-#> [3,]  0.002772872 -0.001178880  0.018638168 -0.016918563
-#> [4,] -0.002210804  0.004588230 -0.016918563  0.054838177
+#> [1,]  0.017018160 -0.012351309  0.009609321 -0.008372500
+#> [2,] -0.012351309  0.012789187 -0.006012254  0.006540183
+#> [3,]  0.009609321 -0.006012254  0.048161715 -0.044070501
+#> [4,] -0.008372500  0.006540183 -0.044070501  0.055992232
 ```
 
 The summaries of analysis results in the list of outputs
@@ -497,11 +518,11 @@ such as p-values or confidence intervals.
 msummary(output3$summary, statistic = c("conf.int", "p.value"), exponentiate = TRUE)
 ```
 
-<table style="width:97%;">
+<table style="width:99%;">
 <colgroup>
-<col style="width: 26%" />
-<col style="width: 47%" />
-<col style="width: 23%" />
+<col style="width: 32%" />
+<col style="width: 44%" />
+<col style="width: 22%" />
 </colgroup>
 <thead>
 <tr>
@@ -518,8 +539,8 @@ msummary(output3$summary, statistic = c("conf.int", "p.value"), exponentiate = T
 </tr>
 <tr>
 <td></td>
-<td>[0.213, 0.296]</td>
-<td>[0.014, 0.024]</td>
+<td>[0.194, 0.324]</td>
+<td>[0.012, 0.028]</td>
 </tr>
 <tr>
 <td></td>
@@ -527,19 +548,19 @@ msummary(output3$summary, statistic = c("conf.int", "p.value"), exponentiate = T
 <td>(&lt;0.001)</td>
 </tr>
 <tr>
-<td>fruitq1, 1 vs 0</td>
-<td>1.350</td>
-<td>1.079</td>
+<td>fruitq1, Q2 to Q4 vs 0</td>
+<td>0.740</td>
+<td>0.927</td>
 </tr>
 <tr>
 <td></td>
-<td>[1.114, 1.637]</td>
-<td>[0.682, 1.707]</td>
+<td>[0.593, 0.924]</td>
+<td>[0.583, 1.474]</td>
 </tr>
 <tr>
 <td></td>
-<td>(0.002)</td>
-<td>(0.746)</td>
+<td>(0.008)</td>
+<td>(0.749)</td>
 </tr>
 <tr>
 <td>effect.measure</td>
@@ -622,18 +643,18 @@ output4 <- polyreg(nuisance.model=Event(t,d) ~ +1,
 msummary(output4$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
 ```
 
-|                  | event 1 (no competing risk)     |
-|------------------|---------------------------------|
-| fruitq1, 1 vs 0  | 1.288                           |
-|                  | \[1.085, 1.529\]                |
-|                  | (0.004)                         |
-| effect.measure   | RR at 8                         |
-| n.events         | 358 in N = 978                  |
-| median.follow.up | 8                               |
-| range.follow.up  | \[ 0.05 , 11 \]                 |
-| n.parameters     | 2                               |
-| converged.by     | Converged in objective function |
-| nleqslv.message  | Function criterion near zero    |
+|                        | event 1 (no competing risk)     |
+|------------------------|---------------------------------|
+| fruitq1, Q2 to Q4 vs 0 | 0.777                           |
+|                        | \[0.654, 0.922\]                |
+|                        | (0.004)                         |
+| effect.measure         | RR at 8                         |
+| n.events               | 358 in N = 978                  |
+| median.follow.up       | 8                               |
+| range.follow.up        | \[ 0.05 , 11 \]                 |
+| n.parameters           | 2                               |
+| converged.by           | Converged in objective function |
+| nleqslv.message        | Function criterion near zero    |
 
 ## Example 3. Adjusted competing risks analysis
 
@@ -658,11 +679,11 @@ than exposure.
 msummary(output5$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
 ```
 
-<table style="width:97%;">
+<table style="width:99%;">
 <colgroup>
-<col style="width: 26%" />
-<col style="width: 47%" />
-<col style="width: 23%" />
+<col style="width: 21%" />
+<col style="width: 62%" />
+<col style="width: 14%" />
 </colgroup>
 <thead>
 <tr>
@@ -673,19 +694,19 @@ msummary(output5$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
 </thead>
 <tbody>
 <tr>
-<td>fruitq1, 1 vs 0</td>
-<td>1.552</td>
-<td>0.909</td>
+<td>fruitq1, Q2 to Q4 vs 0</td>
+<td>0.645</td>
+<td>1.107</td>
 </tr>
 <tr>
 <td></td>
-<td>[1.331, 1.810]</td>
-<td>[0.493, 1.676]</td>
+<td>[0.490, 0.848]</td>
+<td>[0.600, 2.042]</td>
 </tr>
 <tr>
 <td></td>
-<td>(&lt;0.001)</td>
-<td>(0.761)</td>
+<td>(0.002)</td>
+<td>(0.745)</td>
 </tr>
 <tr>
 <td>effect.measure</td>
@@ -720,14 +741,15 @@ msummary(output5$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
 </tr>
 <tr>
 <td>converged.by</td>
-<td>Converged in objective function</td>
+<td>Converged in relative difference</td>
 <td><ul>
 <li></li>
 </ul></td>
 </tr>
 <tr>
 <td>nleqslv.message</td>
-<td>Function criterion near zero</td>
+<td>Jacobian is singular (1/condition=0.0e+00) (see allowSingular
+option)</td>
 <td><ul>
 <li></li>
 </ul></td>
@@ -862,7 +884,7 @@ polyreg(Event(AVAL, CNSR) ~ ARM, data = adtte,
 ### Processing pipeline of cifcurve()
 
 A user-specified model formula in `Event()` or `Surv()` is first parsed
-by `readSurv()` to extract the time-to-event, the event indicator,
+by `util_read_surv()` to extract the time-to-event, the event indicator,
 optional weights, and any strata variable. Those components are then
 passed to the back-end estimators implemented in `src/calculateKM.cpp`.
 The C++ routine supports both weighted and stratified data, so the heavy
@@ -912,7 +934,7 @@ so that interval endpoints remain well behaved in plots and summaries.
 Input pre-processing mirrors the survival workflow by calling
 `checkInput()` to parse event codes, exposure levels, and requested
 estimands before `createAnalysisDataset()` builds the modelling frame
-and `normalizeCovariate()` rescales covariates by default. Starting
+and `reg_normalize_covariate()` rescales covariates by default. Starting
 values are obtained from the nuisance model fits via
 `getInitialValues()` or `getInitialValuesProportional()`, or, when
 necessary, from user-supplied data frame of starting values.
@@ -930,11 +952,11 @@ functions such as `estimating_equation_ipcw()`,
 `nleqslv`/Levenberg–Marquardt updates until the convergence criteria in
 `assessConvergence()` are met. Sandwich variances come from
 `calculateCov()` or `calculateCovSurvival()` and are rescaled back to
-the original covariate scale by `normalizeEstimate()`, while optional
-bootstrap intervals reuse the same solver inside the `boot` resampling
-loop. The resulting influence functions, weights, and fitted cumulative
-incidence probabilities are retained in `diagnostic.statistics` for
-downstream diagnostics.
+the original covariate scale by `reg_normalize_estimate()`, while
+optional bootstrap intervals reuse the same solver inside the `boot`
+resampling loop. The resulting influence functions, weights, and fitted
+cumulative incidence probabilities are retained in
+`diagnostic.statistics` for downstream diagnostics.
 
 ### Key arguments of msummary() that are helpful when reporting polyreg() results
 

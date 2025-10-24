@@ -65,14 +65,14 @@ extract_time_to_event <- function(
     code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
     subset.condition = subset.condition, na.action = na.action
   )
-  util_get_event_time(
+  getTimeToEvent(
     out_readSurv = out_readSurv,
     which_event = which_event, user_specified_code = user_specified_code,
     readUniqueTime = readUniqueTime, dropEmpty = dropEmpty
   )
 }
 
-util_get_event_time <- function(
+getTimeToEvent <- function(
     out_readSurv,
     which_event = c("event2", "event1", "censor", "censoring", "user_specified"),
     user_specified_code = NULL,

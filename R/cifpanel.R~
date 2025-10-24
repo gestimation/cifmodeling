@@ -293,8 +293,8 @@ cifpanel <- function(
   n_slots <- nrow * ncol
 
   if (!is.null(plots)) {
-    fonts <- panel_extract_fonts(dots)
-    theme.panel.unified <- panel_build_theme(font.family = fonts$family, font.size = fonts$size)
+    fonts <- .panel_extract_fonts(dots)
+    theme.panel.unified <- .panel_build_theme(font.family = fonts$family, font.size = fonts$size)
     if (!is.list(plots)) {
       stop("`plots` must be a list of ggplot objects.")
     }
@@ -364,6 +364,8 @@ cifpanel <- function(
     return(invisible(list(plots = plots_out, out_patchwork = out_patchwork)))
   }
 
+
+#  .req(data, "data")  # -> .err("req", arg="data")
   if (is.null(data)) stop("data must be provided.")
   if (is.null(code.events) || !is.list(code.events) || length(code.events) == 0)
     .err("need_code_events")
@@ -373,19 +375,19 @@ cifpanel <- function(
     .err("need_formula_or_formulas")
 
   K <- max(n_slots, length(code.events))
-  code.events <- panel_recycle_to(code.events, K)
+  code.events <- .panel_recycle_to(code.events, K)
 
   use_formula_list <- !is.null(formulas)
   if (use_formula_list) {
     stopifnot(is.list(formulas))
-    formulas <- lapply(formulas, panel_as_formula_global)
-    formulas <- panel_recycle_to(formulas, K)
+    formulas <- lapply(formulas, .panel_as_formula_global)
+    formulas <- .panel_recycle_to(formulas, K)
   } else {
-    formula  <- panel_as_formula_global(formula)
+    formula  <- .panel_as_formula_global(formula)
     formulas <- rep(list(formula), K)
   }
 
-  toL <- panel_to_list; rec <- panel_recycle_to
+  toL <- .panel_to_list; rec <- .panel_recycle_to
 
   outcome.list <- toL(outcome.type); if (!is.null(outcome.list)) outcome.list <- rec(outcome.list, K)
   typey.list   <- toL(type.y);       if (!is.null(typey.list))   typey.list   <- rec(typey.list, K)
@@ -428,12 +430,12 @@ cifpanel <- function(
 
   infer_flag_by_codes <- function(v) if (length(v) == 2L) "S" else if (length(v) == 3L) "C" else NA_character_
   if (!is.null(outcome.list)) {
-    outcome.flags <- vapply(outcome.list, panel_norm_outcome, character(1))
+    outcome.flags <- vapply(outcome.list, .panel_norm_outcome, character(1))
   } else {
     outcome.flags <- vapply(code.events, infer_flag_by_codes, character(1))
     if (anyNA(outcome.flags)) .err("infer_outcome_fail")
   }
-  panel_validate_code_events(code.events, outcome.flags)
+  .panel_validate_code_events(code.events, outcome.flags)
 
   kill_names <- c()
   if (!is.null(outcome.list)) kill_names <- c(kill_names, "outcome.type")
@@ -451,10 +453,10 @@ cifpanel <- function(
   if (!is.null(addIC.list))   kill_names <- c(kill_names, "addIntercurrentEventMark")
   if (!is.null(addQ.list))    kill_names <- c(kill_names, "addQuantileLine")
   if (!is.null(strata.list))  kill_names <- c(kill_names, "label.strata")
-  dots <- panel_strip_overrides_from_dots(dots, unique(kill_names))
+  dots <- .panel_strip_overrides_from_dots(dots, unique(kill_names))
 
-  fonts <- panel_extract_fonts(dots)
-  theme.panel.unified <- panel_build_theme(font.family = fonts$family, font.size = fonts$size)
+  fonts <- .panel_extract_fonts(dots)
+  theme.panel.unified <- .panel_build_theme(font.family = fonts$family, font.size = fonts$size)
 
   prep <- panel_prepare(
     K = K,

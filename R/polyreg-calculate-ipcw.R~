@@ -22,8 +22,8 @@ calculateIPCW <- function(formula, data, code.censoring, strata_name, specific.t
 
   out_km <- calculateKM(t=t, d=d, strata=strata, error="none")
   s <- rep(specific.time, length(t))
-  km1 <- util_get_surv(t, out_km$surv, out_km$time, strata, out_km$strata, out_km$strata.levels)
-  km2 <- util_get_surv(s, out_km$surv, out_km$time, strata, out_km$strata, out_km$strata.levels)
+  km1 <- get_surv(t, out_km$surv, out_km$time, strata, out_km$strata, out_km$strata.levels)
+  km2 <- get_surv(s, out_km$surv, out_km$time, strata, out_km$strata, out_km$strata.levels)
 
   tmp1 <- ifelse(km1 > 0, 1 / km1, 0)
   tmp2 <- ifelse(km2 > 0, 1 / km2, 0)

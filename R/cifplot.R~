@@ -32,16 +32,14 @@
 #' @param conf.type Character transformation for CI on the probability scale (default \code{"arcsine-square root"}).
 #' @param conf.int numeric two-sided confidence level (default \code{0.95}).
 #' @param type.y \code{NULL} (survival) or \code{"risk"} (display \code{1 - survival} i.e. CIF).
+#' @param printEachEvent Logical. If \code{TRUE} and \code{outcome.type == "COMPETING-RISK"},
+#'   \code{cifplot()} internally calls \code{\link{cifpanel}} to display both event-specific
+#'   cumulative incidence curves side-by-side (event 1 and event 2). Defaults to \code{FALSE}.
+#'   Ignored for non-competing-risk outcomes.
 #' @param label.x Character x-axis labels (default \code{"Time"}).
 #' @param label.y Character y-axis labels (default internally set to \code{"Survival"} or \code{"Cumulative incidence"}).
 #' @param label.strata Character vector of labels for strata. When \code{printEachVar = TRUE}, you may
 #'   also supply a named list \code{list(var = c("L1","L2", ...))}.
-#' @param order.strata Optional \code{list} to control the display order of strata levels
-#'   when \code{printEachVar = TRUE}. Supply as \code{list(var = c("L1","L2",...))}.
-#'   Levels not listed are dropped. Must be consistent with \code{label.strata}:
-#'   if \code{label.strata[[var]]} is a named character vector, names are matched to
-#'   levels; otherwise labels are matched by position and must have the same length as
-#'   the (possibly re-ordered) levels.
 #' @param limits.x Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,max(out_readSurv$t))}.
 #' @param limits.y Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,1)}.
 #' @param breaks.x Numeric vectors for axis breaks (default \code{NULL}).
@@ -66,16 +64,6 @@
 #' @param addQuantileLine Logical add \code{add_quantile()} to plot. It calls geom_segment() (default \code{TRUE}).
 #' @param quantile Numeric specify quantile for \code{add_quantile()} (default \code{0.5}).
 
-#' @param printEachEvent Logical. If \code{TRUE} and \code{outcome.type == "COMPETING-RISK"},
-#'   \code{cifplot()} internally calls \code{\link{cifpanel}} to display both event-specific
-#'   cumulative incidence curves side-by-side (event 1 and event 2). Defaults to \code{FALSE}.
-#'   Ignored for non-competing-risk outcomes.
-#' @param printEachVar Logical. If \code{TRUE}, when multiple covariates are listed
-#'   on the right-hand side (e.g., \code{~ a + b + c}), the function produces
-#'   a panel of CIF plots, each stratified by one variable at a time.
-#' @param rows.columns.panel Optional integer vector \code{c(nrow, ncol)} controlling
-#'   the panel layout. If \code{NULL}, an automatic layout is used.
-
 #' @param style Character plot theme controls (default \code{"CLASSIC"}).
 #' @param font.family Character plot theme controls (e.g. "sans", "serif", and "mono". default \code{"sans"}).
 #' @param font.size Integer plot theme controls (default \code{12}).
@@ -84,6 +72,17 @@
 #' @param width.ggsave Numeric specify width of the \pkg{ggsurvfit} plot.
 #' @param height.ggsave Numeric specify height of the \pkg{ggsurvfit} plot.
 #' @param dpi.ggsave Numeric specify dpi of the \pkg{ggsurvfit} plot.
+#' @param printEachVar Logical. If \code{TRUE}, when multiple covariates are listed
+#'   on the right-hand side (e.g., \code{~ a + b + c}), the function produces
+#'   a panel of CIF plots, each stratified by one variable at a time.
+#' @param rows.columns.panel Optional integer vector \code{c(nrow, ncol)} controlling
+#'   the panel layout. If \code{NULL}, an automatic layout is used.
+#' @param order.strata Optional \code{list} to control the display order of strata levels
+#'   when \code{printEachVar = TRUE}. Supply as \code{list(var = c("L1","L2",...))}.
+#'   Levels not listed are dropped. Must be consistent with \code{label.strata}:
+#'   if \code{label.strata[[var]]} is a named character vector, names are matched to
+#'   levels; otherwise labels are matched by position and must have the same length as
+#'   the (possibly re-ordered) levels.
 #' @param ... Additional arguments forwarded to \code{cifpanel()} when \code{printEachEvent = TRUE}.
 
 #' @details
@@ -199,10 +198,10 @@ cifplot <- function(
     conf.type = "arcsine-square root",
     conf.int = 0.95,
     type.y = NULL,
+    printEachEvent = FALSE,
     label.x = "Time",
     label.y = NULL,
     label.strata = NULL,
-    order.strata = NULL,
     limits.x = NULL,
     limits.y = NULL,
     breaks.x = NULL,
@@ -224,9 +223,6 @@ cifplot <- function(
     size.intercurrent.event.mark = 2,
     addQuantileLine = FALSE,
     quantile = 0.5,
-    printEachEvent = FALSE,
-    printEachVar = FALSE,
-    rows.columns.panel = NULL,
     style = "CLASSIC",
     font.family = "sans",
     font.size = 12,
@@ -235,6 +231,9 @@ cifplot <- function(
     width.ggsave = 6,
     height.ggsave = 6,
     dpi.ggsave = 300,
+    printEachVar = FALSE,
+    rows.columns.panel = NULL,
+    order.strata = NULL,
     ...
 ) {
   dots <- list(...)
@@ -593,7 +592,7 @@ cifplot_single <- function(
     } else {
       outcome_effective <- outcome.type
       if (is.null(outcome_effective)) {
-        outcome_effective <- util_check_outcome_type(
+        outcome_effective <- check_outcome.type(
           formula = formula_or_fit, data = data, na.action = na.action, auto_message = FALSE
         )
       }
@@ -732,7 +731,7 @@ is_competing_outcome <- function(outcome_type) {
 #' Plot survival or cumulative incidence curves with ggsurvfit
 #'
 #' @param survfit_object A \code{survfit} object.
-#' @param out_readSurv (optional) List returned by your \code{util_read_surv()} to auto-set x limits.
+#' @param out_readSurv (optional) List returned by your \code{readSurv()} to auto-set x limits.
 #' @param conf.type Character transformation for CI on the probability scale (default \code{"arcsine-square root"}).
 
 #' @param addConfidenceInterval Logical add \code{add_confidence_interval()} to plot. It calls geom_ribbon() (default \code{TRUE}).
@@ -826,7 +825,7 @@ call_ggsurvfit <- function(
     style = style
   )
 
-  label.strata.map <- plot_make_label.strata.map(survfit_object, label.strata)
+  label.strata.map <- .plot_make_label.strata.map(survfit_object, label.strata)
 
   p <- out_cg$out_survfit_object +
     ggplot2::labs(x = label.x, y = out_cg$label.y)
@@ -842,29 +841,29 @@ call_ggsurvfit <- function(
   if (isTRUE(addQuantileLine))       p <- p + ggsurvfit::add_quantile(y_value=quantile)
 
   if (isTRUE(addEstimateTable) && isTRUE(addRiskTable)) {
-    p <- p + add_risktable(risktable_stats = c("n.risk", "{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"), stats_label=c("No. at risk", "Estimate (95% CI)"), theme=plot_theme_risktable_font(font.family=font.family, plot.title.size=font.size), risktable_group = "risktable_stats")
+    p <- p + add_risktable(risktable_stats = c("n.risk", "{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"), stats_label=c("No. at risk", "Estimate (95% CI)"), theme=theme_risktable_font(font.family=font.family, plot.title.size=font.size), risktable_group = "risktable_stats")
     if (!identical(style, "MONOCHROME")) {
       p <- p + ggsurvfit::add_risktable_strata_symbol()
     }
   } else if (isTRUE(addEstimateTable)) {
-    p <- p + add_risktable(risktable_stats = c("{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"), stats_label=c("Estimate (95% CI)"), theme=plot_theme_risktable_font(font.family=font.family, plot.title.size=font.size), )
+    p <- p + add_risktable(risktable_stats = c("{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"), stats_label=c("Estimate (95% CI)"), theme=theme_risktable_font(font.family=font.family, plot.title.size=font.size), )
     if (!identical(style, "MONOCHROME")) {
       p <- p + ggsurvfit::add_risktable_strata_symbol()
     }
   } else if (isTRUE(addRiskTable)) {
-    p <- p + add_risktable(risktable_stats = c("n.risk"), stats_label=c("No. at risk"), theme=plot_theme_risktable_font(font.family=font.family, plot.title.size=font.size))
+    p <- p + add_risktable(risktable_stats = c("n.risk"), stats_label=c("No. at risk"), theme=theme_risktable_font(font.family=font.family, plot.title.size=font.size))
     if (!identical(style, "MONOCHROME")) {
       p <- p + ggsurvfit::add_risktable_strata_symbol()
     }
   }
   if (isTRUE(addCompetingRiskMark) && length(competing.risk.time)) {
-    p <- plot_draw_marks(p, survfit_object, competing.risk.time, out_cg$type.y, shape = shape.competing.risk.mark, size = size.competing.risk.mark)
+    p <- drawMarks(p, survfit_object, competing.risk.time, out_cg$type.y, shape = shape.competing.risk.mark, size = size.competing.risk.mark)
   }
   if (isTRUE(addIntercurrentEventMark) && length(intercurrent.event.time)) {
-    p <- plot_draw_marks(p, survfit_object, intercurrent.event.time, out_cg$type.y, shape = shape.intercurrent.event.mark, size = size.intercurrent.event.mark)
+    p <- drawMarks(p, survfit_object, intercurrent.event.time, out_cg$type.y, shape = shape.intercurrent.event.mark, size = size.intercurrent.event.mark)
   }
 
-  x_max <- plot_make_x_max(survfit_object)
+  x_max <- .plot_make_x_max(survfit_object)
   if (isTRUE(use_coord_cartesian)) {
     if (!is.null(breaks.x)) p <- p + ggplot2::scale_x_continuous(breaks = breaks.x)
     if (!is.null(breaks.y)) p <- p + ggplot2::scale_y_continuous(breaks = breaks.y)
@@ -895,7 +894,7 @@ call_ggsurvfit <- function(
   }
 
   if (!identical(style, "GGSURVFIT")) {
-    p <- plot_apply_style(p, style = style, font.family, font.size, legend.position)
+    p <- applyStyle(p, style = style, font.family, font.size, legend.position)
   }
 
   if (!is.null(label.strata.map)) {

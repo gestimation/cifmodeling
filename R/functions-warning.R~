@@ -173,7 +173,7 @@ reg_check_effect.measure <- function(effect.measure1, effect.measure2) {
   )
 }
 
-plot_check_style <- function(x) {
+check_style <- function(x) {
   map <- list(
     "CLASSIC"     = c("classic","c"),
     "BOLD"        = c("bold","b"),

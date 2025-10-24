@@ -20,10 +20,10 @@ cifplot(
   conf.type = "arcsine-square root",
   conf.int = 0.95,
   type.y = NULL,
-  printEachEvent = FALSE,
   label.x = "Time",
   label.y = NULL,
   label.strata = NULL,
+  order.strata = NULL,
   limits.x = NULL,
   limits.y = NULL,
   breaks.x = NULL,
@@ -45,6 +45,9 @@ cifplot(
   size.intercurrent.event.mark = 2,
   addQuantileLine = FALSE,
   quantile = 0.5,
+  printEachEvent = FALSE,
+  printEachVar = FALSE,
+  rows.columns.panel = NULL,
   style = "CLASSIC",
   font.family = "sans",
   font.size = 12,
@@ -53,9 +56,6 @@ cifplot(
   width.ggsave = 6,
   height.ggsave = 6,
   dpi.ggsave = 300,
-  printEachVar = FALSE,
-  rows.columns.panel = NULL,
-  order.strata = NULL,
   ...
 )
 }
@@ -98,17 +98,19 @@ For \code{"COMPETING-RISK"} pass options supported by \code{calculateAalenDeltaS
 
 \item{type.y}{\code{NULL} (survival) or \code{"risk"} (display \code{1 - survival} i.e. CIF).}
 
-\item{printEachEvent}{Logical. If \code{TRUE} and \code{outcome.type == "COMPETING-RISK"},
-\code{cifplot()} internally calls \code{\link{cifpanel}} to display both event-specific
-cumulative incidence curves side-by-side (event 1 and event 2). Defaults to \code{FALSE}.
-Ignored for non-competing-risk outcomes.}
-
 \item{label.x}{Character x-axis labels (default \code{"Time"}).}
 
 \item{label.y}{Character y-axis labels (default internally set to \code{"Survival"} or \code{"Cumulative incidence"}).}
 
 \item{label.strata}{Character vector of labels for strata. When \code{printEachVar = TRUE}, you may
 also supply a named list \code{list(var = c("L1","L2", ...))}.}
+
+\item{order.strata}{Optional \code{list} to control the display order of strata levels
+when \code{printEachVar = TRUE}. Supply as \code{list(var = c("L1","L2",...))}.
+Levels not listed are dropped. Must be consistent with \code{label.strata}:
+if \code{label.strata[[var]]} is a named character vector, names are matched to
+levels; otherwise labels are matched by position and must have the same length as
+the (possibly re-ordered) levels.}
 
 \item{limits.x}{Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,max(out_readSurv$t))}.}
 
@@ -153,6 +155,18 @@ It calls geom_point() (default \code{TRUE}).}
 
 \item{quantile}{Numeric specify quantile for \code{add_quantile()} (default \code{0.5}).}
 
+\item{printEachEvent}{Logical. If \code{TRUE} and \code{outcome.type == "COMPETING-RISK"},
+\code{cifplot()} internally calls \code{\link{cifpanel}} to display both event-specific
+cumulative incidence curves side-by-side (event 1 and event 2). Defaults to \code{FALSE}.
+Ignored for non-competing-risk outcomes.}
+
+\item{printEachVar}{Logical. If \code{TRUE}, when multiple covariates are listed
+on the right-hand side (e.g., \code{~ a + b + c}), the function produces
+a panel of CIF plots, each stratified by one variable at a time.}
+
+\item{rows.columns.panel}{Optional integer vector \code{c(nrow, ncol)} controlling
+the panel layout. If \code{NULL}, an automatic layout is used.}
+
 \item{style}{Character plot theme controls (default \code{"CLASSIC"}).}
 
 \item{font.family}{Character plot theme controls (e.g. "sans", "serif", and "mono". default \code{"sans"}).}
@@ -168,20 +182,6 @@ It calls geom_point() (default \code{TRUE}).}
 \item{height.ggsave}{Numeric specify height of the \pkg{ggsurvfit} plot.}
 
 \item{dpi.ggsave}{Numeric specify dpi of the \pkg{ggsurvfit} plot.}
-
-\item{printEachVar}{Logical. If \code{TRUE}, when multiple covariates are listed
-on the right-hand side (e.g., \code{~ a + b + c}), the function produces
-a panel of CIF plots, each stratified by one variable at a time.}
-
-\item{rows.columns.panel}{Optional integer vector \code{c(nrow, ncol)} controlling
-the panel layout. If \code{NULL}, an automatic layout is used.}
-
-\item{order.strata}{Optional \code{list} to control the display order of strata levels
-when \code{printEachVar = TRUE}. Supply as \code{list(var = c("L1","L2",...))}.
-Levels not listed are dropped. Must be consistent with \code{label.strata}:
-if \code{label.strata[[var]]} is a named character vector, names are matched to
-levels; otherwise labels are matched by position and must have the same length as
-the (possibly re-ordered) levels.}
 
 \item{...}{Additional arguments forwarded to \code{cifpanel()} when \code{printEachEvent = TRUE}.}
 }

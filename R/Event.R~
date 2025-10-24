@@ -26,7 +26,7 @@
 #' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifplot()] for display of a CIF; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 Event <- function(time, event, allowed = getOption("cifmodeling.allowed", c(0, 1, 2))) {
-  te <- util_normalize_time_event(time, event, allowed = allowed)
+  te <- normalize_time_event(time, event, allowed = allowed)
   ss <- cbind(time = te$time, event = te$event)
   dimnames(ss) <- list(NULL, c("time","event"))
   attr(ss, "type") <- "right"
@@ -34,7 +34,7 @@ Event <- function(time, event, allowed = getOption("cifmodeling.allowed", c(0, 1
   ss
 }
 
-util_normalize_time_event <- function(time, event, allowed = c(0, 1, 2)) {
+normalize_time_event <- function(time, event, allowed = c(0, 1, 2)) {
   if (missing(time))  .err("req", arg = "time")
   if (missing(event)) .err("req", arg = "event")
   if (!is.numeric(time)) .err("numeric", arg = "time")

@@ -39,7 +39,7 @@ estimating_equation_ipcw <- function(
     time.point <- as.numeric(estimand$time.point)
   }
 
-  out_readExposureDesign <- reg_read_exposure_design(data, exposure, estimand$code.exposure.ref)
+  out_readExposureDesign <- readExposureDesign(data, exposure, estimand$code.exposure.ref)
   x_a <- out_readExposureDesign$x_a
   x_l <- model.matrix(out_terms, mf)
   x_la <- cbind(x_l, x_a)
@@ -596,7 +596,7 @@ solveEstimatingEquation <- function(
   }
 
   obj <- makeObjectiveFunction()
-  nleqslv_method <- reg_choose_nleqslv_method(optim.method$nleqslv.method)
+  nleqslv_method <- choose_nleqslv_method(optim.method$nleqslv.method)
 
   iteration <- 0L
   max.absolute.difference <- Inf
@@ -632,4 +632,5 @@ solveEstimatingEquation <- function(
   }
   return(current_params)
 }
+
 
