@@ -32,7 +32,7 @@ createAnalysisDataset <- function(formula,
   na.action(analysis_dataset)
 }
 
-get_surv <- function(
+util_get_surv <- function(
     predicted.time,
     estimated.surv,
     estimated.time,

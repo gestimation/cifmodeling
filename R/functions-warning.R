@@ -159,7 +159,7 @@ check_weights <- function(w) {
   invisible(TRUE)
 }
 
-check_effect.measure <- function(effect.measure1, effect.measure2) {
+reg_check_effect.measure <- function(effect.measure1, effect.measure2) {
   normalize_effect_measure <- function(x, which = "effect.measure") {
     ux <- toupper(x)
     if (ux %in% c("RR","RISK RATIO")) return("RR")

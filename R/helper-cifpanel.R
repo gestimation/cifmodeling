@@ -54,7 +54,7 @@ panel_prepare_layout <- function(
     fonts = NULL
 ) {
   if (is.null(fonts)) {
-    fonts <- .panel_extract_fonts(dots)
+    fonts <- panel_extract_fonts(dots)
   }
 
   curves <- vector("list", length = K)
@@ -72,7 +72,7 @@ panel_prepare_layout <- function(
       cc  <- pair[3]
     }
 
-    args_est <- .panel_drop_nulls(list(
+    args_est <- panel_drop_nulls(list(
       formula        = formulas[[i]],
       data           = data,
       outcome.type   = if (!is.null(outcome.list)) outcome.list[[i]] else NULL,
@@ -83,7 +83,7 @@ panel_prepare_layout <- function(
     fit_i <- do.call(cifcurve, args_est)
     curves[[i]] <- fit_i
 
-    args_plot <- .panel_drop_nulls(list(
+    args_plot <- panel_drop_nulls(list(
       x                       = fit_i,
       type.y                  = if (!is.null(typey.list))   typey.list[[i]]   else NULL,
       label.y                 = if (!is.null(labely.list))  labely.list[[i]]  else NULL,
@@ -109,37 +109,37 @@ panel_prepare_layout <- function(
   list(curves = curves, plot_args = plot_args, K = K)
 }
 
-.panel_as_formula_global <- function(f) {
+panel_as_formula_global <- function(f) {
   if (is.character(f))   return(stats::as.formula(f, env = .GlobalEnv))
   if (inherits(f, "formula")) return(stats::as.formula(f, env = .GlobalEnv))
   .err("formula_must_be")
 }
 
-.panel_recycle_to <- function(x, n) {
+panel_recycle_to <- function(x, n) {
   if (length(x) == n) return(x)
   if (length(x) == 0L) .err("recycle_empty")
   rep_len(x, n)
 }
-.panel_to_list <- function(x) if (is.null(x)) NULL else if (is.list(x)) x else as.list(x)
-.panel_drop_nulls <- function(lst) lst[!vapply(lst, is.null, logical(1))]
-.panel_strip_overrides_from_dots <- function(dots, override_names) {
+panel_to_list <- function(x) if (is.null(x)) NULL else if (is.list(x)) x else as.list(x)
+panel_drop_nulls <- function(lst) lst[!vapply(lst, is.null, logical(1))]
+panel_strip_overrides_from_dots <- function(dots, override_names) {
   if (length(override_names) == 0L) return(dots)
   dots[setdiff(names(dots), override_names)]
 }
-.panel_is_surv <- function(x) {
+panel_is_surv <- function(x) {
   x <- toupper(as.character(x %||% ""))
   x %in% c("S", "SURVIVAL")
 }
-.panel_is_comp <- function(x) {
+panel_is_comp <- function(x) {
   x <- toupper(as.character(x %||% ""))
   x %in% c("C", "COMPETING-RISK", "COMPETING_RISK", "COMPETINGRISK")
 }
-.panel_norm_outcome <- function(x) {
-  if (.panel_is_surv(x)) return("S")
-  if (.panel_is_comp(x)) return("C")
+panel_norm_outcome <- function(x) {
+  if (panel_is_surv(x)) return("S")
+  if (panel_is_comp(x)) return("C")
   stop("Unknown outcome.type: ", x, " (use 'S'/'SURVIVAL' or 'C'/'COMPETING-RISK').")
 }
-.panel_validate_code_events <- function(code_events_list, outcome_flags) {
+panel_validate_code_events <- function(code_events_list, outcome_flags) {
   stopifnot(length(code_events_list) == length(outcome_flags))
   for (i in seq_along(code_events_list)) {
     pair <- code_events_list[[i]]
@@ -154,13 +154,13 @@ panel_prepare_layout <- function(
   invisible(TRUE)
 }
 
-.panel_extract_fonts <- function(dots) {
+panel_extract_fonts <- function(dots) {
   list(
     family = dots$font.family %||% "sans",
     size   = dots$font.size   %||% 12
   )
 }
-.panel_build_theme <- function(font.family = "sans", font.size = 12) {
+panel_build_theme <- function(font.family = "sans", font.size = 12) {
   base  <- font.size
   big   <- base * 1.20
   mid   <- base * 1.00

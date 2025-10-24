@@ -146,7 +146,7 @@ cifcurve <- function(
 
 calculateAJ <- function(data) {
   out_km0 <- calculateKM(data$t, data$d0, data$w, as.integer(data$strata), "none")
-  km0 <- get_surv(data$t, out_km0$surv, out_km0$time, as.integer(data$strata), out_km0$strata, out_km0$strata.levels)
+  km0 <- util_get_surv(data$t, out_km0$surv, out_km0$time, as.integer(data$strata), out_km0$strata, out_km0$strata.levels)
   ip.weight <- (data$d0 == 0) * ifelse(km0 > 0, 1 / km0, 0)
   d1_ipw <- as.matrix(data$w * data$d1 * ip.weight)
 

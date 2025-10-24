@@ -180,7 +180,7 @@ normalizeEstimate <- function(
   list(alpha_beta_estimated = alpha_beta_estimated, cov_estimated = cov_estimated)
 }
 
-check_input_polyreg <- function(data, formula, exposure, code.event1, code.event2, code.censoring,
+reg_check_input <- function(data, formula, exposure, code.event1, code.event2, code.censoring,
                        code.exposure.ref, outcome.type, conf.level, report.sandwich.conf,
                        report.boot.conf, nleqslv.method, should.normalize.covariate,
                        strata = NULL, subset.condition = NULL, na.action = na.omit) {

@@ -70,11 +70,11 @@ test_that("readExposureDesign() allowed only expected codes for exposure", {
   expect_error(readExposureDesign(df, "fruitq1"), "only one level")
 })
 
-test_that("util_check_outcome_type() / check_effect.measure() / check_error()", {
+test_that("util_check_outcome_type() / reg_check_effect.measure() / check_error()", {
   expect_equal(util_check_outcome_type("s"), "SURVIVAL")
   expect_equal(util_check_outcome_type("competing risk"), "COMPETING-RISK")
 
-  em <- check_effect.measure("rr", "Or")
+  em <- reg_check_effect.measure("rr", "Or")
   expect_equal(em$effect.measure1, "RR")
   expect_equal(em$effect.measure2, "OR")
 
@@ -114,10 +114,10 @@ test_that("read_time.point() yields expected outputs according to outcome.type",
   expect_true(is.unsorted(tp2, strictly = FALSE) == FALSE)
 })
 
-test_that("check_input_polyreg() handles NA as expected", {
+test_that("reg_check_input() handles NA as expected", {
   df <- mkdf()
   df$t[1] <- NA; df$d[2] <- NA; df$sex[3] <- NA; df$fruitq1[4] <- NA
-  out <- check_input_polyreg(
+  out <- reg_check_input(
     data = df,
     formula = Event(t,d) ~ sex,
     exposure = "fruitq1",
@@ -214,4 +214,3 @@ testthat::test_that("Event(): invalid status codes are caught", {
   df$status[2] <- 9
   testthat::expect_error(Event(df$t, df$status), regexp = "code|allowed|invalid", ignore.case = TRUE)
 })
-

@@ -1,4 +1,4 @@
-style_theme_classic <- function(font.family = "sans", font.size = 14, legend.position = "top") {
+plot_style_classic <- function(font.family = "sans", font.size = 14, legend.position = "top") {
   ggplot2::theme_classic(base_size = font.size, base_family = font.family) +
     ggplot2::theme(
       legend.position   = legend.position,
@@ -10,7 +10,7 @@ style_theme_classic <- function(font.family = "sans", font.size = 14, legend.pos
     )
 }
 
-style_theme_bold <- function(font.family = "sans", font.size = 14, legend.position = "top") {
+plot_style_bold <- function(font.family = "sans", font.size = 14, legend.position = "top") {
   ggplot2::theme_classic(base_size = font.size, base_family = font.family) +
     ggplot2::theme(
       legend.position   = legend.position,
@@ -22,7 +22,7 @@ style_theme_bold <- function(font.family = "sans", font.size = 14, legend.positi
     )
 }
 
-style_theme_framed <- function(font.family = "sans", font.size = 14, legend.position = "top") {
+plot_style_framed <- function(font.family = "sans", font.size = 14, legend.position = "top") {
   ggplot2::theme_bw(base_size = font.size, base_family = font.family) +
     ggplot2::theme(
       legend.position   = legend.position,
@@ -36,7 +36,7 @@ style_theme_framed <- function(font.family = "sans", font.size = 14, legend.posi
     )
 }
 
-style_theme_monochrome <- function(font.family = "sans", font.size = 14, legend.position = "top") {
+plot_style_monochrome <- function(font.family = "sans", font.size = 14, legend.position = "top") {
   ggplot2::theme_classic(base_size = font.size, base_family = font.family) +
     ggplot2::theme(
       legend.position   = legend.position,
@@ -48,7 +48,7 @@ style_theme_monochrome <- function(font.family = "sans", font.size = 14, legend.
     )
 }
 
-scale_monochrome <- function(n_strata = 6) {
+plot_scale_monochrome <- function(n_strata = 6) {
   ltys_all   <- c("dashed","solid","dotted","longdash","dotdash","twodash","dashed","solid","dotted","longdash","dotdash","twodash")
   shapes_all <- c(16, 1, 3, 4, 15, 17, 16, 1, 3, 4, 15, 17)
   n_use <- min(n_strata, length(ltys_all), length(shapes_all))
@@ -60,7 +60,7 @@ scale_monochrome <- function(n_strata = 6) {
   )
 }
 
-applyStyle <- function(
+plot_apply_style <- function(
     p,
     style = c("CLASSIC", "BOLD", "FRAMED", "MONOCHROME"),
     font.family = "sans",
@@ -71,22 +71,22 @@ applyStyle <- function(
   style <- match.arg(style)
   style_theme <- switch(
     style,
-    CLASSIC    = style_theme_classic(font.family, font.size, legend.position),
-    BOLD       = style_theme_bold(font.family, font.size, legend.position),
-    FRAMED     = style_theme_framed(font.family, font.size, legend.position),
-    MONOCHROME = style_theme_monochrome(font.family, font.size, legend.position)
+    CLASSIC    = plot_style_classic(font.family, font.size, legend.position),
+    BOLD       = plot_style_bold(font.family, font.size, legend.position),
+    FRAMED     = plot_style_framed(font.family, font.size, legend.position),
+    MONOCHROME = plot_style_monochrome(font.family, font.size, legend.position)
   )
   p <- p + style_theme
   if (identical(style, "MONOCHROME")) {
-    p <- p + scale_monochrome(n_strata = n_strata)
+    p <- p + plot_scale_monochrome(n_strata = n_strata)
   }
   return(p)
 }
 
-drawMarks <- function(p, survfit_object, marks, type.y, shape, size) {
+plot_draw_marks <- function(p, survfit_object, marks, type.y, shape, size) {
   time <- y <- strata <- NULL
   if (is.null(marks) || !length(marks)) return(p)
-  mark_df <- makeMarkDataFrame(survfit_object, marks, type.y, extend = TRUE)
+  mark_df <- plot_make_mark_data_frame(survfit_object, marks, type.y, extend = TRUE)
   if (is.null(mark_df) || !nrow(mark_df)) return(p)
   if (is.null(survfit_object$strata)) {
     p + geom_point(
@@ -109,7 +109,7 @@ drawMarks <- function(p, survfit_object, marks, type.y, shape, size) {
   }
 }
 
-alignMarkKeys <- function(fit, marks) {
+plot_align_mark_keys <- function(fit, marks) {
   canon_str <- function(x) sub("^.*=", "", as.character(x))
   if (is.null(marks) || length(marks) == 0) return(marks)
   fit_names <- if (is.null(fit$strata)) "(all)" else names(fit$strata)
@@ -124,9 +124,9 @@ alignMarkKeys <- function(fit, marks) {
   return(out)
 }
 
-makeMarkDataFrame <- function(fit, marks, type.y, extend = TRUE) {
+plot_make_mark_data_frame <- function(fit, marks, type.y, extend = TRUE) {
   if (is.null(marks) || length(marks) == 0) return(NULL)
-  out_alignMarkKeys <- alignMarkKeys(fit, marks)
+  out_alignMarkKeys <- plot_align_mark_keys(fit, marks)
   strata_names <- if (is.null(fit$strata)) "(all)" else names(fit$strata)
 
   out <- lapply(names(out_alignMarkKeys), function(st_lab) {
@@ -146,7 +146,7 @@ makeMarkDataFrame <- function(fit, marks, type.y, extend = TRUE) {
   do.call(rbind, out)
 }
 
-theme_risktable_font <- function(
+plot_theme_risktable_font <- function(
     axis.text.y.size = 10,
     plot.title.size = 10.75,
     font.family = "sans"
@@ -177,7 +177,7 @@ theme_risktable_font <- function(
   )
 }
 
-.plot_make_x_max <- function(sf) {
+plot_make_x_max <- function(sf) {
   if (!is.null(sf$time)) {
     xm <- suppressWarnings(max(sf$time, na.rm = TRUE))
     if (is.finite(xm)) return(xm)
@@ -190,7 +190,7 @@ theme_risktable_font <- function(
   return(1)
 }
 
-.plot_make_label.strata.map <- function(fit, label.strata) {
+plot_make_label.strata.map <- function(fit, label.strata) {
   .sf_strata_names <- function(fit) {
     if (is.null(fit$strata)) return(NULL)
     nm <- names(fit$strata)
@@ -235,6 +235,5 @@ theme_risktable_font <- function(
   ), call. = FALSE)
   return(NULL)
 }
-
 
 

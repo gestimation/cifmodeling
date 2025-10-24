@@ -495,7 +495,7 @@ call_ggsurvfit <- function(
     style = style
   )
 
-  label.strata.map <- .plot_make_label.strata.map(survfit_object, label.strata)
+  label.strata.map <- plot_make_label.strata.map(survfit_object, label.strata)
 
   p <- out_cg$out_survfit_object +
     ggplot2::labs(x = label.x, y = out_cg$label.y)
@@ -511,29 +511,29 @@ call_ggsurvfit <- function(
   if (isTRUE(addQuantileLine))       p <- p + ggsurvfit::add_quantile(y_value=quantile)
 
   if (isTRUE(addEstimateTable) && isTRUE(addRiskTable)) {
-    p <- p + add_risktable(risktable_stats = c("n.risk", "{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"), stats_label=c("No. at risk", "Estimate (95% CI)"), theme=theme_risktable_font(font.family=font.family, plot.title.size=font.size), risktable_group = "risktable_stats")
+    p <- p + add_risktable(risktable_stats = c("n.risk", "{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"), stats_label=c("No. at risk", "Estimate (95% CI)"), theme=plot_theme_risktable_font(font.family=font.family, plot.title.size=font.size), risktable_group = "risktable_stats")
     if (!identical(style, "MONOCHROME")) {
       p <- p + ggsurvfit::add_risktable_strata_symbol()
     }
   } else if (isTRUE(addEstimateTable)) {
-    p <- p + add_risktable(risktable_stats = c("{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"), stats_label=c("Estimate (95% CI)"), theme=theme_risktable_font(font.family=font.family, plot.title.size=font.size), )
+    p <- p + add_risktable(risktable_stats = c("{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"), stats_label=c("Estimate (95% CI)"), theme=plot_theme_risktable_font(font.family=font.family, plot.title.size=font.size), )
     if (!identical(style, "MONOCHROME")) {
       p <- p + ggsurvfit::add_risktable_strata_symbol()
     }
   } else if (isTRUE(addRiskTable)) {
-    p <- p + add_risktable(risktable_stats = c("n.risk"), stats_label=c("No. at risk"), theme=theme_risktable_font(font.family=font.family, plot.title.size=font.size))
+    p <- p + add_risktable(risktable_stats = c("n.risk"), stats_label=c("No. at risk"), theme=plot_theme_risktable_font(font.family=font.family, plot.title.size=font.size))
     if (!identical(style, "MONOCHROME")) {
       p <- p + ggsurvfit::add_risktable_strata_symbol()
     }
   }
   if (isTRUE(addCompetingRiskMark) && length(competing.risk.time)) {
-    p <- drawMarks(p, survfit_object, competing.risk.time, out_cg$type.y, shape = shape.competing.risk.mark, size = size.competing.risk.mark)
+    p <- plot_draw_marks(p, survfit_object, competing.risk.time, out_cg$type.y, shape = shape.competing.risk.mark, size = size.competing.risk.mark)
   }
   if (isTRUE(addIntercurrentEventMark) && length(intercurrent.event.time)) {
-    p <- drawMarks(p, survfit_object, intercurrent.event.time, out_cg$type.y, shape = shape.intercurrent.event.mark, size = size.intercurrent.event.mark)
+    p <- plot_draw_marks(p, survfit_object, intercurrent.event.time, out_cg$type.y, shape = shape.intercurrent.event.mark, size = size.intercurrent.event.mark)
   }
 
-  x_max <- .plot_make_x_max(survfit_object)
+  x_max <- plot_make_x_max(survfit_object)
   if (isTRUE(use_coord_cartesian)) {
     if (!is.null(breaks.x)) p <- p + ggplot2::scale_x_continuous(breaks = breaks.x)
     if (!is.null(breaks.y)) p <- p + ggplot2::scale_y_continuous(breaks = breaks.y)
@@ -564,7 +564,7 @@ call_ggsurvfit <- function(
   }
 
   if (!identical(style, "GGSURVFIT")) {
-    p <- applyStyle(p, style = style, font.family, font.size, legend.position)
+    p <- plot_apply_style(p, style = style, font.family, font.size, legend.position)
   }
 
   if (!is.null(label.strata.map)) {
