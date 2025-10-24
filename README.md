@@ -9,26 +9,28 @@
 
 ## Overview
 
-In medical research, advanced statistical methods are often required to
-address censoring, competing risks, and intercurrent events (e.g.,
-treatment switching) that interfere with outcome assessment.
-`cifmodeling` provides a compact, unified toolkit for survival and
-competing risks analysis in R. It covers both nonparametric estimation
-and regression modeling of cumulative incidence functions (CIFs),
-centered around three tightly connected functions.
++In medical and epidemiological research, analysts often need to handle
+censoring, competing risks, and intercurrent events (e.g., treatment
+switching), but existing R packages typically separate these tasks into
+different interfaces. `cifmodeling` provides a **unified,
+publication-ready toolkit** that integrates nonparametric estimation,
+regression modeling, and visualization for survival and competing risks
+data. It covers both nonparametric estimation and regression modeling of
+cumulative incidence functions (CIFs), centered around three tightly
+connected functions.
 
 - `cifplot()` generates a survival or cumulative incidence curve with
   marks that represent censoring, competing risks and intercurrent
-  events. Various methods for standard error and confidence intervals
-  are available. Visualization relies on `ggsurvfit/ggplot2`.
+  events. Multiple variance estimators and confidence interval methods
+  are supported. Visualization relies on `ggsurvfit/ggplot2`.
 
 - `cifpanel()` generates a multi-panel figure for survival/CIF curves,
   arranged either in a grid layout or as an inset overlay.
 
 - `polyreg()` fits regression models of cumulative incidence functions
   based on polytomous log odds products and stratified IPCW estimator.
-  This function is particularly suitable for causal inference in terms
-  of common effect measures, namely risk ratios, odds ratios, and
+  This function is particularly well-suited for causal inference in
+  terms of common effect measures, namely risk ratios, odds ratios, and
   subdistribution hazard ratios, with a competing risks, survival, or
   binary outcome.
 
@@ -294,6 +296,14 @@ output <- polyreg(nuisance.model=Event(t,epsilon) ~ +1, exposure="fruitq",
           data=diabetes.complications, effect.measure1="RR", 
           effect.measure2="RR", time.point=8, outcome.type="COMPETING-RISK")
 ```
+
+## Quality assurance
+
+`cifmodeling` includes an extensive test suite built with **testthat**,
+ensuring the numerical accuracy and graphical consistency of all core
+functions (`cifcurve`, `cifplot`, `cifpanel`, and `polyreg`). The
+package is continuously tested on GitHub Actions (Windows, macOS, Linux)
+to maintain reproducibility and CRAN-level compliance.
 
 ## Installation
 
