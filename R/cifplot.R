@@ -461,10 +461,11 @@ cifplot <- function(
         conf.type                  = conf.type,
         conf.int                   = conf.int,
         type.y                     = type.y,
-        printEachEvent                  = FALSE,
+        printEachEvent             = FALSE,
         label.x                    = label.x,
         label.y                    = label.y,
         label.strata               = lab_vec,
+        order.strata               = ord_vec,
         limits.x                   = limits.x,
         limits.y                   = limits.y,
         breaks.x                   = breaks.x,
@@ -824,21 +825,27 @@ call_ggsurvfit <- function(
   )
 
   label.strata.map <- plot_make_label.strata.map(survfit_object, label.strata)
+
+  # ==== 新規: order.strata からマップを起こす/絞り込む ====
+  # 現在のレベル（例: names(survfit_object$strata) = "fruitq=Q1", ... → 右側だけ抜く）
+  cur_lvls <- NULL
+  if (!is.null(survfit_object$strata)) {
+    cur_lvls <- unique(sub(".*=", "", names(survfit_object$strata)))
+  }
+
   if (!is.null(order.strata)) {
-    cur_lvls <- NULL
-    if (!is.null(survfit_object$strata)) {
-      cur_lvls <- unique(sub(".*=", "", names(survfit_object$strata)))
-    }
+    # label.strata.map が未指定なら、order に基づく既定マップを作る
     if (is.null(label.strata.map)) {
       if (!is.null(cur_lvls)) {
         keep <- order.strata[order.strata %in% cur_lvls]
         if (length(keep) == 0L) {
           warning("`order.strata` has no overlap with strata levels; ignoring.", call. = FALSE)
         } else {
-          label.strata.map <- stats::setNames(keep, keep)  # level→label=同名
+          label.strata.map <- stats::setNames(keep, keep)  # level → label 同名
         }
       }
     } else {
+      # 既存マップを order の順で並べ替え＆間引き
       keep <- order.strata[order.strata %in% names(label.strata.map)]
       if (length(keep) == 0L) {
         warning("`order.strata` has no overlap with strata labels; ignoring.", call. = FALSE)
@@ -853,8 +860,8 @@ call_ggsurvfit <- function(
 
   if (!is.null(label.strata.map)) {
     p <- p +
-      ggplot2::scale_color_discrete(breaks = names(label.strata.map), labels = unname(label.strata.map)) +
-      ggplot2::scale_fill_discrete(breaks = names(label.strata.map), labels = unname(label.strata.map))
+      ggplot2::scale_color_discrete(limits = names(label.strata.map), labels = unname(label.strata.map)) +
+      ggplot2::scale_fill_discrete (limits = names(label.strata.map), labels = unname(label.strata.map))
   }
 
   if (isTRUE(addConfidenceInterval)) p <- p + add_confidence_interval()
