@@ -7,7 +7,7 @@
 #' add censoring/competing-risk/intercurrent-event marks, and returns a regular \code{ggplot}
 #' object (compatible with \code{+} and \code{%+%}). You may also pass a survfit-compatible object directly.
 #'
-#' @param x A model formula or a survfit object.
+#' @param formula A model formula or a survfit object.
 #' @param data A data frame containing variables in \code{formula}.
 #' @param weights Optional name of the weight variable in \code{data}. Weights must be nonnegative; strictly positive is recommended.
 #' @param subset.condition Optional character expression to subset \code{data} before analysis.
@@ -38,7 +38,8 @@
 #'   Ignored for non-competing-risk outcomes.
 #' @param label.x Character x-axis labels (default \code{"Time"}).
 #' @param label.y Character y-axis labels (default internally set to \code{"Survival"} or \code{"Cumulative incidence"}).
-#' @param label.strata Character vector of labels for strata.
+#' @param label.strata Character vector of labels for strata. When \code{printEachVar = TRUE}, you may
+#'   also supply a named list \code{list(var = c("L1","L2", ...))}.
 #' @param limits.x Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,max(out_readSurv$t))}.
 #' @param limits.y Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,1)}.
 #' @param breaks.x Numeric vectors for axis breaks (default \code{NULL}).
@@ -71,6 +72,17 @@
 #' @param width.ggsave Numeric specify width of the \pkg{ggsurvfit} plot.
 #' @param height.ggsave Numeric specify height of the \pkg{ggsurvfit} plot.
 #' @param dpi.ggsave Numeric specify dpi of the \pkg{ggsurvfit} plot.
+#' @param printEachVar Logical. If \code{TRUE}, when multiple covariates are listed
+#'   on the right-hand side (e.g., \code{~ a + b + c}), the function produces
+#'   a panel of CIF plots, each stratified by one variable at a time.
+#' @param rows.columns.panel Optional integer vector \code{c(nrow, ncol)} controlling
+#'   the panel layout. If \code{NULL}, an automatic layout is used.
+#' @param order.strata Optional \code{list} to control the display order of strata levels
+#'   when \code{printEachVar = TRUE}. Supply as \code{list(var = c("L1","L2",...))}.
+#'   Levels not listed are dropped. Must be consistent with \code{label.strata}:
+#'   if \code{label.strata[[var]]} is a named character vector, names are matched to
+#'   levels; otherwise labels are matched by position and must have the same length as
+#'   the (possibly re-ordered) levels.
 #' @param ... Additional arguments forwarded to \code{cifpanel()} when \code{printBoth = TRUE}.
 
 #' @details
@@ -150,7 +162,9 @@
 #'   For ADaM-style data, use `code.event1 = 0`, `code.censoring = 1`.
 #' - Per-stratum time lists should have names identical to plotted strata labels.
 
-#' @return A \code{ggplot} object.
+#' @return A \code{ggplot} object. When \code{printEachVar = TRUE}, a \pkg{patchwork}
+#'   object is returned with an attribute \code{attr(x, "plots")} containing the
+#'   individual \code{ggplot} panels.
 #'
 #' @examples
 #' data(diabetes.complications)
@@ -164,17 +178,340 @@
 #' @importFrom ggsurvfit ggsurvfit add_confidence_interval add_risktable add_risktable_strata_symbol add_censor_mark add_quantile
 #' @importFrom ggplot2 theme_classic theme_bw element_text labs lims geom_point aes ggsave scale_color_discrete scale_fill_discrete element_text element_rect element_blank scale_color_manual scale_fill_manual scale_linetype_manual scale_shape_manual
 #' @importFrom grDevices gray
+#' @importFrom patchwork wrap_plots
 
 #' @name cifplot
 #' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 cifplot <- function(
-    x,
+    formula,
     data = NULL,
     weights = NULL,
     subset.condition = NULL,
     na.action = na.omit,
-    outcome.type = "SURVIVAL",
+    outcome.type = c("COMPETING-RISK", "SURVIVAL"),
+    code.event1 = 1,
+    code.event2 = 2,
+    code.censoring = 0,
+    code.events = NULL,
+    error = NULL,
+    conf.type = "arcsine-square root",
+    conf.int = 0.95,
+    type.y = NULL,
+    printBoth = FALSE,
+    label.x = "Time",
+    label.y = NULL,
+    label.strata = NULL,
+    limits.x = NULL,
+    limits.y = NULL,
+    breaks.x = NULL,
+    breaks.y = NULL,
+    use_coord_cartesian = FALSE,
+    addConfidenceInterval = TRUE,
+    addRiskTable = TRUE,
+    addEstimateTable = FALSE,
+    addCensorMark = TRUE,
+    shape.censor.mark = 3,
+    size.censor.mark = 2,
+    addCompetingRiskMark = FALSE,
+    competing.risk.time = list(),
+    shape.competing.risk.mark = 16,
+    size.competing.risk.mark = 2,
+    addIntercurrentEventMark = FALSE,
+    intercurrent.event.time = list(),
+    shape.intercurrent.event.mark = 1,
+    size.intercurrent.event.mark = 2,
+    addQuantileLine = FALSE,
+    quantile = 0.5,
+    style = "CLASSIC",
+    font.family = "sans",
+    font.size = 12,
+    legend.position = "top",
+    filename.ggsave = NULL,
+    width.ggsave = 6,
+    height.ggsave = 6,
+    dpi.ggsave = 300,
+    printEachVar = FALSE,
+    rows.columns.panel = NULL,
+    order.strata = NULL,
+    ...
+) {
+  dots <- list(...)
+
+  outcome.type <- if (is.null(outcome.type)) {
+    NULL
+  } else {
+    match.arg(outcome.type, c("COMPETING-RISK", "SURVIVAL"))
+  }
+
+  if (!is.null(code.events)) {
+    ce_vec <- normalize_code_events(code.events)
+    code.event1 <- ce_vec[1L]
+    code.event2 <- ce_vec[2L]
+    code.censoring <- ce_vec[3L]
+  }
+
+  if (!isTRUE(printEachVar)) {
+    args_single <- c(
+      list(
+        formula_or_fit             = formula,
+        data                       = data,
+        weights                    = weights,
+        subset.condition           = subset.condition,
+        na.action                  = na.action,
+        outcome.type               = outcome.type,
+        code.event1                = code.event1,
+        code.event2                = code.event2,
+        code.censoring             = code.censoring,
+        code.events                = code.events,
+        error                      = error,
+        conf.type                  = conf.type,
+        conf.int                   = conf.int,
+        type.y                     = type.y,
+        printBoth                  = printBoth,
+        label.x                    = label.x,
+        label.y                    = label.y,
+        label.strata               = label.strata,
+        limits.x                   = limits.x,
+        limits.y                   = limits.y,
+        breaks.x                   = breaks.x,
+        breaks.y                   = breaks.y,
+        use_coord_cartesian        = use_coord_cartesian,
+        addConfidenceInterval      = addConfidenceInterval,
+        addRiskTable               = addRiskTable,
+        addEstimateTable           = addEstimateTable,
+        addCensorMark              = addCensorMark,
+        shape.censor.mark          = shape.censor.mark,
+        size.censor.mark           = size.censor.mark,
+        addCompetingRiskMark       = addCompetingRiskMark,
+        competing.risk.time        = competing.risk.time,
+        shape.competing.risk.mark  = shape.competing.risk.mark,
+        size.competing.risk.mark   = size.competing.risk.mark,
+        addIntercurrentEventMark   = addIntercurrentEventMark,
+        intercurrent.event.time    = intercurrent.event.time,
+        shape.intercurrent.event.mark = shape.intercurrent.event.mark,
+        size.intercurrent.event.mark  = size.intercurrent.event.mark,
+        addQuantileLine            = addQuantileLine,
+        quantile                   = quantile,
+        style                      = style,
+        font.family                = font.family,
+        font.size                  = font.size,
+        legend.position            = legend.position,
+        filename.ggsave            = filename.ggsave,
+        width.ggsave               = width.ggsave,
+        height.ggsave              = height.ggsave,
+        dpi.ggsave                 = dpi.ggsave
+      ),
+      dots
+    )
+    return(do.call(cifplot_single, args_single))
+  }
+
+  if (inherits(formula, "survfit")) {
+    stop("printEachVar=TRUE requires a formula interface.")
+  }
+  if (isTRUE(printBoth)) {
+    stop("printEachVar=TRUE cannot be combined with printBoth.")
+  }
+  if (!inherits(formula, "formula")) {
+    stop("printEachVar=TRUE requires a model formula on the left-hand side.")
+  }
+  if (is.null(data)) {
+    stop("When `formula` is a formula, `data` must be provided.")
+  }
+
+  Terms <- stats::terms(formula, data = data)
+  rhs_vars <- attr(Terms, "term.labels")
+  if (length(rhs_vars) == 0L) {
+    stop("printEachVar=TRUE requires >=1 variable on the right-hand side.")
+  }
+  invalid_terms <- rhs_vars[grepl("[:*()]", rhs_vars)]
+  if (length(invalid_terms) > 0L) {
+    stop(
+      sprintf(
+        "printEachVar=TRUE supports simple covariate terms only; remove transformations/interactions: %s",
+        paste(invalid_terms, collapse = ", ")
+      )
+    )
+  }
+  response_str <- deparse(formula[[2L]])
+
+  lab_is_list <- is.list(label.strata)
+  ord_is_list <- is.list(order.strata)
+
+  plots <- lapply(rhs_vars, function(var_name) {
+    if (!var_name %in% names(data)) {
+      stop(sprintf("Variable '%s' not found in data.", var_name))
+    }
+    dv <- data
+    strata_vec <- dv[[var_name]]
+
+    if (is.numeric(strata_vec) && !is.factor(strata_vec)) {
+      stop(
+        sprintf(
+          "Variable '%s' is numeric. Please discretize (e.g., cut/factor) before calling cifplot().",
+          var_name
+        )
+      )
+    }
+
+    if (!is.factor(strata_vec)) {
+      strata_vec <- factor(strata_vec)
+    }
+
+    ord_vec <- NULL
+    if (!is.null(order.strata)) {
+      if (ord_is_list) {
+        ord_vec <- order.strata[[var_name]]
+      } else if (length(rhs_vars) == 1L) {
+        ord_vec <- order.strata
+      }
+    }
+    if (!is.null(ord_vec)) {
+      if (!is.character(ord_vec)) {
+        stop(sprintf("order.strata[['%s']] must be a character vector.", var_name))
+      }
+      current_levels <- levels(strata_vec)
+      keep_levels <- ord_vec[ord_vec %in% current_levels]
+      if (length(keep_levels) == 0L) {
+        stop(
+          sprintf(
+            "order.strata[['%s']] has no overlap with existing levels: %s",
+            var_name,
+            paste(current_levels, collapse = ", ")
+          )
+        )
+      }
+      strata_vec <- factor(as.character(strata_vec), levels = keep_levels)
+      keep_idx <- !is.na(strata_vec)
+      dv <- dv[keep_idx, , drop = FALSE]
+      strata_vec <- droplevels(strata_vec[keep_idx])
+    }
+
+    dv[[var_name]] <- strata_vec
+    dv <- dv[!is.na(dv[[var_name]]), , drop = FALSE]
+    dv[[var_name]] <- droplevels(dv[[var_name]])
+
+    lab_vec <- NULL
+    if (!is.null(label.strata)) {
+      if (lab_is_list) {
+        lab_vec <- label.strata[[var_name]]
+      } else if (length(rhs_vars) == 1L) {
+        lab_vec <- label.strata
+      }
+    }
+
+    if (!is.null(lab_vec)) {
+      lv <- levels(dv[[var_name]])
+      if (!is.null(names(lab_vec)) && any(nzchar(names(lab_vec)))) {
+        if (!setequal(names(lab_vec), lv)) {
+          missing <- setdiff(lv, names(lab_vec))
+          extra   <- setdiff(names(lab_vec), lv)
+          msg <- c()
+          if (length(missing) > 0L) {
+            msg <- c(msg, sprintf("missing levels: %s", paste(missing, collapse = ", ")))
+          }
+          if (length(extra) > 0L) {
+            msg <- c(msg, sprintf("unknown labels: %s", paste(extra, collapse = ", ")))
+          }
+          stop(sprintf("label.strata[['%s']] must match factor levels (%s).", var_name, paste(lv, collapse = ", ")), call. = FALSE)
+        }
+        lab_vec <- lab_vec[lv]
+        names(lab_vec) <- lv
+      } else {
+        if (length(lab_vec) != length(lv)) {
+          stop(
+            sprintf(
+              "label.strata[['%s']] length (%d) must match number of levels (%d).",
+              var_name,
+              length(lab_vec),
+              length(lv)
+            )
+          )
+        }
+      }
+    }
+
+    single_formula <- stats::as.formula(sprintf("%s ~ %s", response_str, var_name))
+
+    args_var <- c(
+      list(
+        formula_or_fit             = single_formula,
+        data                       = dv,
+        weights                    = weights,
+        subset.condition           = subset.condition,
+        na.action                  = na.action,
+        outcome.type               = outcome.type,
+        code.event1                = code.event1,
+        code.event2                = code.event2,
+        code.censoring             = code.censoring,
+        code.events                = code.events,
+        error                      = error,
+        conf.type                  = conf.type,
+        conf.int                   = conf.int,
+        type.y                     = type.y,
+        printBoth                  = FALSE,
+        label.x                    = label.x,
+        label.y                    = label.y,
+        label.strata               = lab_vec,
+        limits.x                   = limits.x,
+        limits.y                   = limits.y,
+        breaks.x                   = breaks.x,
+        breaks.y                   = breaks.y,
+        use_coord_cartesian        = use_coord_cartesian,
+        addConfidenceInterval      = addConfidenceInterval,
+        addRiskTable               = addRiskTable,
+        addEstimateTable           = addEstimateTable,
+        addCensorMark              = addCensorMark,
+        shape.censor.mark          = shape.censor.mark,
+        size.censor.mark           = size.censor.mark,
+        addCompetingRiskMark       = addCompetingRiskMark,
+        competing.risk.time        = competing.risk.time,
+        shape.competing.risk.mark  = shape.competing.risk.mark,
+        size.competing.risk.mark   = size.competing.risk.mark,
+        addIntercurrentEventMark   = addIntercurrentEventMark,
+        intercurrent.event.time    = intercurrent.event.time,
+        shape.intercurrent.event.mark = shape.intercurrent.event.mark,
+        size.intercurrent.event.mark  = size.intercurrent.event.mark,
+        addQuantileLine            = addQuantileLine,
+        quantile                   = quantile,
+        style                      = style,
+        font.family                = font.family,
+        font.size                  = font.size,
+        legend.position            = legend.position,
+        filename.ggsave            = NULL,
+        width.ggsave               = width.ggsave,
+        height.ggsave              = height.ggsave,
+        dpi.ggsave                 = dpi.ggsave
+      ),
+      dots
+    )
+
+    plot_i <- do.call(cifplot_single, args_var)
+    plot_i + ggplot2::ggtitle(var_name)
+  })
+
+  nrow <- ncol <- NULL
+  if (!is.null(rows.columns.panel)) {
+    if (!(is.numeric(rows.columns.panel) && length(rows.columns.panel) == 2L)) {
+      stop("rows.columns.panel must be a numeric vector of length 2 (c(nrow, ncol)).")
+    }
+    nrow <- rows.columns.panel[1L]
+    ncol <- rows.columns.panel[2L]
+  }
+
+  patch <- patchwork::wrap_plots(plots, nrow = nrow, ncol = ncol, guides = "keep")
+  attr(patch, "plots") <- plots
+  patch
+}
+
+cifplot_single <- function(
+    formula_or_fit,
+    data = NULL,
+    weights = NULL,
+    subset.condition = NULL,
+    na.action = na.omit,
+    outcome.type = c("COMPETING-RISK", "SURVIVAL"),
     code.event1 = 1,
     code.event2 = 2,
     code.censoring = 0,
@@ -220,6 +557,12 @@ cifplot <- function(
 ) {
   dots <- list(...)
 
+  outcome.type <- if (is.null(outcome.type)) {
+    NULL
+  } else {
+    match.arg(outcome.type, c("COMPETING-RISK", "SURVIVAL"))
+  }
+
   if (!is.null(code.events)) {
     ce_vec <- normalize_code_events(code.events)
     code.event1 <- ce_vec[1L]
@@ -228,13 +571,13 @@ cifplot <- function(
   }
 
   if (isTRUE(printBoth)) {
-    if (inherits(x, "survfit")) {
+    if (inherits(formula_or_fit, "survfit")) {
       warning("printBoth=TRUE requires a formula interface; falling back to single-plot.")
     } else {
       outcome_effective <- outcome.type
       if (is.null(outcome_effective)) {
         outcome_effective <- check_outcome.type(
-          formula = x,
+          formula = formula_or_fit,
           data = data,
           na.action = na.action,
           auto_message = FALSE
@@ -258,7 +601,7 @@ cifplot <- function(
           if (length(panel_label_y) > 2L) panel_label_y <- panel_label_y[1:2]
         }
         panel_args <- list(
-          formula                 = x,
+          formula                 = formula_or_fit,
           data                    = data,
           outcome.type            = "COMPETING-RISK",
           code.events             = list(ce_panel, c(ce_panel[2L], ce_panel[1L], ce_panel[3L])),
@@ -296,22 +639,18 @@ cifplot <- function(
         if (is.null(dots$print.panel)) dots$print.panel <- FALSE
         panel_out <- do.call(cifpanel, c(panel_args, dots))
         if (is.list(panel_out) && !is.null(panel_out$plots)) {
-          # title vector (may be NULL)
           titles <- dots$title.plot
-          # y label vector (already normalized above)
           ylabs  <- panel_label_y
 
           n <- length(panel_out$plots)
           for (i in seq_len(n)) {
             p_i <- panel_out$plots[[i]]
 
-            # apply title if provided / normalized
             if (!is.null(titles)) {
               ti <- titles[pmin(i, length(titles))]
               if (!is.na(ti)) p_i <- p_i + ggplot2::labs(title = ti)
             }
 
-            # apply y label (always set for printBoth path)
             if (!is.null(ylabs)) {
               yi <- ylabs[pmin(i, length(ylabs))]
               if (!is.na(yi)) p_i <- p_i + ggplot2::labs(y = yi)
@@ -329,18 +668,18 @@ cifplot <- function(
     }
   }
 
-  if (!inherits(x, "survfit")) {
-    if (is.null(data)) stop("When `x` is a formula, `data` must be provided.")
-    if (addCompetingRiskMark==TRUE && length(competing.risk.time)==0) {
-      competing.risk.time <- extract_time_to_event(x, data=data, which_event = "event2", code.event1=code.event1, code.event2=code.event2, code.censoring=code.censoring)
+  if (!inherits(formula_or_fit, "survfit")) {
+    if (is.null(data)) stop("When `formula` is a formula, `data` must be provided.")
+    if (isTRUE(addCompetingRiskMark) && length(competing.risk.time) == 0) {
+      competing.risk.time <- extract_time_to_event(formula_or_fit, data = data, which_event = "event2", code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring)
     }
-    x <- cifcurve(x, data = data, weights=weights, subset.condition=subset.condition, na.action=na.action,
-                  outcome.type=outcome.type, code.event1=code.event1, code.event2=code.event2, code.censoring=code.censoring,
-                  error=error, conf.type=conf.type, conf.int=conf.int)
+    formula_or_fit <- cifcurve(formula_or_fit, data = data, weights = weights, subset.condition = subset.condition, na.action = na.action,
+                  outcome.type = outcome.type, code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
+                  error = error, conf.type = conf.type, conf.int = conf.int)
   }
 
   p <- call_ggsurvfit(
-    survfit_object                = x,
+    survfit_object                = formula_or_fit,
     out_readSurv                  = NULL,
     conf.type                     = conf.type,
     addConfidenceInterval         = addConfidenceInterval,

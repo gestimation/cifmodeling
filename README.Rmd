@@ -303,10 +303,36 @@ For the initial illustration, unadjusted analysis focusing on cumulative inciden
 
 ```{r example1-1, warning=FALSE, message=FALSE}
 data(diabetes.complications)
-cifplot(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, outcome.type="COMPETING-RISK", 
-        addConfidenceInterval=TRUE, addCensorMark=FALSE, addCompetingRiskMark=FALSE, 
-        label.y="CIF of diabetic retinopathy", label.x="Years from registration", 
+cifplot(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, outcome.type="COMPETING-RISK",
+        addConfidenceInterval=TRUE, addCensorMark=FALSE, addCompetingRiskMark=FALSE,
+        label.y="CIF of diabetic retinopathy", label.x="Years from registration",
         label.strata=c("High intake","Low intake"))
+```
+
+To visualize each covariate separately when multiple strata are supplied, set `printEachVar = TRUE`.
+Each variable on the right-hand side is plotted in its own panel, and the layout can be
+controlled with `rows.columns.panel`. The example below contrasts cumulative incidence functions
+for sex and fruit intake side-by-side. When using numeric variables for stratification, discretize
+them beforehand with `cut()` or `factor()`.
+
+```{r example1-1a, warning=FALSE, message=FALSE}
+cifplot(
+  Event(t, epsilon) ~ sex + fruitq1,
+  data = diabetes.complications,
+  outcome.type = "COMPETING-RISK",
+  code.event1 = 1, code.event2 = 2, code.censoring = 0,
+  printEachVar = TRUE,
+  rows.columns.panel = c(1, 2),
+  order.strata = list(
+    sex     = c("Female", "Male"),
+    fruitq1 = c("Low", "High")
+  ),
+  label.strata = list(
+    sex     = c("Female", "Male"),
+    fruitq1 = c("Low intake", "High")
+  ),
+  limits.x = c(0, 10)
+)
 ```
 
 In the next figure, censoring marks are added along each curve (`addCensorMark = TRUE`) to indicate individuals who were censored before experiencing any event. These marks visualize the timing and frequency of censoring, allowing a clearer understanding of loss-to-censoring patterns over follow-up. Here usage of functions are different from the code above. The survfit object `output1` initially is generated using `cifcurve()` with `outcome.type="COMPETING-RISK"` by calculating Aalen–Johansen estimator stratified by fruitq1. Then, `cifplot()` is used to generate the figure. 
@@ -314,8 +340,8 @@ In the next figure, censoring marks are added along each curve (`addCensorMark =
 ```{r example1-2, warning=FALSE, message=FALSE}
 output1 <- cifcurve(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, 
 outcome.type="COMPETING-RISK")
-cifplot(output1, addConfidenceInterval=FALSE, addCensorMark=TRUE, addCompetingRiskMark=FALSE, 
-        label.y="CIF of diabetic retinopathy", label.x="Years from registration", 
+cifplot(output1, addConfidenceInterval=FALSE, addCensorMark=TRUE, addCompetingRiskMark=FALSE,
+        label.y="CIF of diabetic retinopathy", label.x="Years from registration",
         label.strata=c("High intake","Low intake"))
 ```
 

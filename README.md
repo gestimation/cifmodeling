@@ -385,13 +385,40 @@ uncertainty of estimated probabilities across exposure levels.
 
 ``` r
 data(diabetes.complications)
-cifplot(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, outcome.type="COMPETING-RISK", 
-        addConfidenceInterval=TRUE, addCensorMark=FALSE, addCompetingRiskMark=FALSE, 
-        label.y="CIF of diabetic retinopathy", label.x="Years from registration", 
+cifplot(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, outcome.type="COMPETING-RISK",
+        addConfidenceInterval=TRUE, addCensorMark=FALSE, addCompetingRiskMark=FALSE,
+        label.y="CIF of diabetic retinopathy", label.x="Years from registration",
         label.strata=c("High intake","Low intake"))
 ```
 
 <img src="man/figures/README-example1-1-1.png" width="100%" />
+
+To visualize each covariate separately when multiple strata are supplied, set
+`printEachVar = TRUE`. Each variable on the right-hand side is plotted in its own
+panel, and the layout can be controlled with `rows.columns.panel`. The example
+below contrasts cumulative incidence functions for sex and fruit intake
+side-by-side. When using numeric variables for stratification, discretize them
+beforehand with `cut()` or `factor()`.
+
+``` r
+cifplot(
+  Event(t, epsilon) ~ sex + fruitq1,
+  data = diabetes.complications,
+  outcome.type = "COMPETING-RISK",
+  code.event1 = 1, code.event2 = 2, code.censoring = 0,
+  printEachVar = TRUE,
+  rows.columns.panel = c(1, 2),
+  order.strata = list(
+    sex     = c("Female", "Male"),
+    fruitq1 = c("Low", "High")
+  ),
+  label.strata = list(
+    sex     = c("Female", "Male"),
+    fruitq1 = c("Low intake", "High")
+  ),
+  limits.x = c(0, 10)
+)
+```
 
 In the next figure, censoring marks are added along each curve
 (`addCensorMark = TRUE`) to indicate individuals who were censored

@@ -6,12 +6,12 @@
 censoring, competing risks and intermediate events}
 \usage{
 cifplot(
-  x,
+  formula,
   data = NULL,
   weights = NULL,
   subset.condition = NULL,
   na.action = na.omit,
-  outcome.type = "SURVIVAL",
+  outcome.type = c("COMPETING-RISK", "SURVIVAL"),
   code.event1 = 1,
   code.event2 = 2,
   code.censoring = 0,
@@ -53,11 +53,14 @@ cifplot(
   width.ggsave = 6,
   height.ggsave = 6,
   dpi.ggsave = 300,
+  printEachVar = FALSE,
+  rows.columns.panel = NULL,
+  order.strata = NULL,
   ...
 )
 }
 \arguments{
-\item{x}{A model formula or a survfit object.}
+\item{formula}{A model formula or a survfit object.}
 
 \item{data}{A data frame containing variables in \code{formula}.}
 
@@ -104,7 +107,8 @@ Ignored for non-competing-risk outcomes.}
 
 \item{label.y}{Character y-axis labels (default internally set to \code{"Survival"} or \code{"Cumulative incidence"}).}
 
-\item{label.strata}{Character vector of labels for strata.}
+\item{label.strata}{Character vector of labels for strata. When \code{printEachVar = TRUE}, you may
+also supply a named list \code{list(var = c("L1","L2", ...))}.}
 
 \item{limits.x}{Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,max(out_readSurv$t))}.}
 
@@ -165,10 +169,26 @@ It calls geom_point() (default \code{TRUE}).}
 
 \item{dpi.ggsave}{Numeric specify dpi of the \pkg{ggsurvfit} plot.}
 
+\item{printEachVar}{Logical. If \code{TRUE}, when multiple covariates are listed
+on the right-hand side (e.g., \code{~ a + b + c}), the function produces
+a panel of CIF plots, each stratified by one variable at a time.}
+
+\item{rows.columns.panel}{Optional integer vector \code{c(nrow, ncol)} controlling
+the panel layout. If \code{NULL}, an automatic layout is used.}
+
+\item{order.strata}{Optional \code{list} to control the display order of strata levels
+when \code{printEachVar = TRUE}. Supply as \code{list(var = c("L1","L2",...))}.
+Levels not listed are dropped. Must be consistent with \code{label.strata}:
+if \code{label.strata[[var]]} is a named character vector, names are matched to
+levels; otherwise labels are matched by position and must have the same length as
+the (possibly re-ordered) levels.}
+
 \item{...}{Additional arguments forwarded to \code{cifpanel()} when \code{printBoth = TRUE}.}
 }
 \value{
-A \code{ggplot} object.
+A \code{ggplot} object. When \code{printEachVar = TRUE}, a \pkg{patchwork}
+object is returned with an attribute \code{attr(x, "plots")} containing the
+individual \code{ggplot} panels.
 }
 \description{
 This function produces the Kaplan–Meier survival or Aalen–Johansen cumulative
