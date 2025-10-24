@@ -1059,6 +1059,15 @@ layout and styling options.
 
 - `label.strata` Character vector of labels for strata.
 
+- `order.strata` Optional ordering of strata levels. When
+  `printEachVar = TRUE`, supply a named list
+  `list(var = c("L1","L2",...))` for each RHS variable; unmatched levels
+  are dropped. When `printEachVar = FALSE`, supply a character vector
+  `c("L1","L2",...)` that specifies the display order (legend/risktable)
+  of the single stratification factor. Levels not listed are dropped. If
+  `label.strata` is a named vector, its names must match the
+  (re-ordered) levels.
+
 - `limits.x` Numeric length-2 vectors for axis limits. If `NULL` it is
   internally set to `c(0,max(out_readSurv$t))`.
 

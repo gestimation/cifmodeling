@@ -105,12 +105,15 @@ For \code{"COMPETING-RISK"} pass options supported by \code{calculateAalenDeltaS
 \item{label.strata}{Character vector of labels for strata. When \code{printEachVar = TRUE}, you may
 also supply a named list \code{list(var = c("L1","L2", ...))}.}
 
-\item{order.strata}{Optional \code{list} to control the display order of strata levels
-when \code{printEachVar = TRUE}. Supply as \code{list(var = c("L1","L2",...))}.
-Levels not listed are dropped. Must be consistent with \code{label.strata}:
-if \code{label.strata[[var]]} is a named character vector, names are matched to
-levels; otherwise labels are matched by position and must have the same length as
-the (possibly re-ordered) levels.}
+\item{order.strata}{Optional ordering of strata levels.
+\itemize{
+\item When \code{printEachVar = TRUE}, supply a named list
+\code{list(var = c("L1","L2",...))} for each RHS variable; unmatched levels are dropped.
+\item When \code{printEachVar = FALSE}, supply a character vector \code{c("L1","L2",...)}
+that specifies the display order (legend/risktable) of the single stratification factor.
+Levels not listed are dropped.
+If \code{label.strata} is a named vector, its names must match the (re-ordered) levels.
+}}
 
 \item{limits.x}{Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,max(out_readSurv$t))}.}
 

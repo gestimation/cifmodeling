@@ -529,6 +529,7 @@ You can also supply multiple model summaries as a named list to compare estimate
 -   `label.x` Character x-axis labels (default `"Time"`).
 -   `label.y` Character y-axis labels (default internally set to `"Survival"` or `"Cumulative incidence"`).
 -   `label.strata` Character vector of labels for strata.
+-   `order.strata` Optional ordering of strata levels. When `printEachVar = TRUE`, supply a named list `list(var = c("L1","L2",...))` for each RHS variable; unmatched levels are dropped. When `printEachVar = FALSE`, supply a character vector `c("L1","L2",...)` that specifies the display order (legend/risktable) of the single stratification factor. Levels not listed are dropped. If `label.strata` is a named vector, its names must match the (re-ordered) levels.
 -   `limits.x` Numeric length-2 vectors for axis limits. If `NULL` it is internally set to `c(0,max(out_readSurv$t))`.
 -   `limits.y` Numeric length-2 vectors for axis limits. If `NULL` it is internally set to `c(0,1)`.
 -   `breaks.x` Numeric vectors for axis breaks (default `NULL`).

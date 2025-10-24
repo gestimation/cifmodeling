@@ -36,12 +36,13 @@
 #' @param label.y Character y-axis labels (default internally set to \code{"Survival"} or \code{"Cumulative incidence"}).
 #' @param label.strata Character vector of labels for strata. When \code{printEachVar = TRUE}, you may
 #'   also supply a named list \code{list(var = c("L1","L2", ...))}.
-#' @param order.strata Optional \code{list} to control the display order of strata levels
-#'   when \code{printEachVar = TRUE}. Supply as \code{list(var = c("L1","L2",...))}.
-#'   Levels not listed are dropped. Must be consistent with \code{label.strata}:
-#'   if \code{label.strata[[var]]} is a named character vector, names are matched to
-#'   levels; otherwise labels are matched by position and must have the same length as
-#'   the (possibly re-ordered) levels.
+#' @param order.strata Optional ordering of strata levels.
+#'   - When \code{printEachVar = TRUE}, supply a named list
+#'     \code{list(var = c("L1","L2",...))} for each RHS variable; unmatched levels are dropped.
+#'   - When \code{printEachVar = FALSE}, supply a character vector \code{c("L1","L2",...)}
+#'     that specifies the display order (legend/risktable) of the single stratification factor.
+#'     Levels not listed are dropped.
+#'   If \code{label.strata} is a named vector, its names must match the (re-ordered) levels.
 #' @param limits.x Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,max(out_readSurv$t))}.
 #' @param limits.y Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,1)}.
 #' @param breaks.x Numeric vectors for axis breaks (default \code{NULL}).
@@ -252,19 +253,11 @@ cifplot <- function(
 
 
   if (!isTRUE(printEachVar)) {
-
-    # 1) パネル専用引数を落とす
     dots1 <- panel_drop_panel_only_args(dots)
-
-    # 2) 単発では不要/未対応の引数も落とす（←ココが今回のキモ）
-    #    - cifplot_single() の仮引数名を許可リストにする
     allowed <- setdiff(names(formals(cifplot_single)), "...")
-
-    #    - まず不要フラグ（printEachVar/order.strata）を除去
-    drop_extra <- c("printEachVar", "order.strata")
+    drop_extra <- c("printEachVar")
     dots2 <- dots1[setdiff(names(dots1), drop_extra)]
 
-    #    - 最後に allowed に含まれないものを丸ごと落とす
     dots_clean <- if (!is.null(names(dots2))) {
       dots2[intersect(names(dots2), allowed)]
     } else dots2
@@ -285,10 +278,10 @@ cifplot <- function(
         conf.type                = conf.type,
         conf.int                 = conf.int,
         type.y                   = type.y,
-        printEachEvent                = printEachEvent,
         label.x                  = label.x,
         label.y                  = label.y,
         label.strata             = label.strata,
+        order.strata             = order.strata,
         limits.x                 = limits.x,
         limits.y                 = limits.y,
         breaks.x                 = breaks.x,
@@ -310,6 +303,7 @@ cifplot <- function(
         size.intercurrent.event.mark  = size.intercurrent.event.mark,
         addQuantileLine          = addQuantileLine,
         quantile                 = quantile,
+        printEachEvent           = printEachEvent,
         style                    = style,
         font.family              = if (is.null(font.family) || !nzchar(font.family)) "sans" else font.family,
         font.size                = if (is.null(font.size)   || !is.finite(font.size)) 12 else font.size,
@@ -537,10 +531,10 @@ cifplot_single <- function(
     conf.type = "arcsine-square root",
     conf.int = 0.95,
     type.y = NULL,
-    printEachEvent = FALSE,
     label.x = "Time",
     label.y = NULL,
     label.strata = NULL,
+    order.strata = NULL,
     limits.x = NULL,
     limits.y = NULL,
     breaks.x = NULL,
@@ -562,6 +556,7 @@ cifplot_single <- function(
     size.intercurrent.event.mark = 2,
     addQuantileLine = FALSE,
     quantile = 0.5,
+    printEachEvent = FALSE,
     style = "CLASSIC",
     font.family = "sans",
     font.size = 12,
@@ -694,6 +689,7 @@ cifplot_single <- function(
     label.x                       = label.x,
     label.y                       = label.y,
     label.strata                  = label.strata,
+    order.strata                  = order.strata,
     limits.x                      = limits.x,
     limits.y                      = limits.y,
     breaks.x                      = breaks.x,
@@ -795,6 +791,7 @@ call_ggsurvfit <- function(
     label.x = "Time",
     label.y = NULL,
     label.strata = NULL,
+    order.strata = NULL,
     limits.x = NULL,
     limits.y = NULL,
     breaks.x = NULL,
@@ -827,6 +824,29 @@ call_ggsurvfit <- function(
   )
 
   label.strata.map <- plot_make_label.strata.map(survfit_object, label.strata)
+  if (!is.null(order.strata)) {
+    cur_lvls <- NULL
+    if (!is.null(survfit_object$strata)) {
+      cur_lvls <- unique(sub(".*=", "", names(survfit_object$strata)))
+    }
+    if (is.null(label.strata.map)) {
+      if (!is.null(cur_lvls)) {
+        keep <- order.strata[order.strata %in% cur_lvls]
+        if (length(keep) == 0L) {
+          warning("`order.strata` has no overlap with strata levels; ignoring.", call. = FALSE)
+        } else {
+          label.strata.map <- stats::setNames(keep, keep)  # level→label=同名
+        }
+      }
+    } else {
+      keep <- order.strata[order.strata %in% names(label.strata.map)]
+      if (length(keep) == 0L) {
+        warning("`order.strata` has no overlap with strata labels; ignoring.", call. = FALSE)
+      } else {
+        label.strata.map <- label.strata.map[keep]
+      }
+    }
+  }
 
   p <- out_cg$out_survfit_object +
     ggplot2::labs(x = label.x, y = out_cg$label.y)
