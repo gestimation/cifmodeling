@@ -483,7 +483,20 @@ cifpanel <- function(
     dots = dots,
     fonts = fonts
   )
-  plots <- lapply(seq_len(prep$K), function(i) do.call(cifplot, prep$plot_args[[i]]))
+  plots <- lapply(seq_len(prep$K), function(i) {
+    pa <- prep$plot_args[[i]]
+
+    # 念のため: cifplot_single が受け付けない名前は落とす
+    allowed <- setdiff(names(formals(cifplot_single)), "...")
+    if (!is.null(names(pa))) {
+      pa <- pa[intersect(names(pa), allowed)]
+    }
+
+    # サバイバル曲線を直接渡す
+    args_i <- c(list(formula_or_fit = prep$curves[[i]]), pa)
+
+    do.call(cifplot_single, args_i)
+  })
 
   if (isTRUE(use_inset_element)) {
     if (length(plots) < 2L) .err("inset_need_two")

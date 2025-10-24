@@ -124,7 +124,7 @@ cifplot(
   data = diabetes.complications,
   outcome.type = "COMPETING-RISK",
   code.events  = c(1, 2, 0),
-  printBoth    = TRUE,
+  printEachEvent= TRUE,
   title.plot   = c("Diabetic retinopathy", "Macrovascular complications"),
   label.x      = "Years from registration",
   label.y      = "Cumulative incidence",
@@ -316,22 +316,19 @@ for sex and fruit intake side-by-side. When using numeric variables for stratifi
 them beforehand with `cut()` or `factor()`.
 
 ```{r example1-1a, warning=FALSE, message=FALSE}
+diabetes.complications$use_insulin <- factor(
+  diabetes.complications$drug_insulin,
+  levels = c(0, 1),
+  labels = c("Not use", "Use")
+)
 cifplot(
-  Event(t, epsilon) ~ sex + fruitq1,
+  Event(t, epsilon) ~ fruitq + use_insulin,
   data = diabetes.complications,
   outcome.type = "COMPETING-RISK",
-  code.event1 = 1, code.event2 = 2, code.censoring = 0,
   printEachVar = TRUE,
   rows.columns.panel = c(1, 2),
-  order.strata = list(
-    sex     = c("Female", "Male"),
-    fruitq1 = c("Low", "High")
-  ),
-  label.strata = list(
-    sex     = c("Female", "Male"),
-    fruitq1 = c("Low intake", "High")
-  ),
-  limits.x = c(0, 10)
+  label.y="CIF of diabetic retinopathy", 
+  label.x="Years from registration"
 )
 ```
 

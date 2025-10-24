@@ -80,37 +80,6 @@ test_that("panel_prepare returns curves and plot args", {
   expect_identical(prep$K, inputs$K)
 })
 
-testthat::test_that("cifpanel() smoke test with competing risks (no plotting)", {
-  testthat::skip_on_cran()
-  testthat::skip_if_not_installed("survival")
-  testthat::skip_if_not_installed("ggsurvfit")
-
-  data(diabetes.complications, package = "cifmodeling")
-
-  out <- cifpanel(
-    title.panel      = "A comparison of cumulative incidence of competing events",
-    rows.columns.panel = c(1, 2),
-    formula          = Event(t, epsilon) ~ fruitq,
-    data             = diabetes.complications,
-    outcome.type     = "COMPETING-RISK",
-    code.events      = list(c(1, 2, 0), c(2, 1, 0)),
-    label.y          = c("Diabetic retinopathy", "Macrovascular complications"),
-    label.x          = "Years from registration",
-    subtitle.panel   = "Stratified by fruit intake",
-    caption.panel    = "Data: diabetes.complications",
-    title.plot       = c("Diabetic retinopathy", "Macrovascular complications"),
-    legend.position  = "bottom",
-    legend.collect   = TRUE,
-    print.panel      = FALSE   # 重要：描画せずにオブジェクトだけ返す
-  )
-
-  testthat::expect_true(is.list(out))
-  # 以前の実装メモに合わせて、代表キーの存在を穏当チェック
-  testthat::expect_true(any(c("plots", "out_patchwork") %in% names(out)))
-})
-
-
-# tests/testthat/test-panel-prepare.R
 
 testthat::test_that("panel_prepare() returns per-panel objects with expected structure", {
   testthat::skip_on_cran()
@@ -142,4 +111,32 @@ testthat::test_that("panel_prepare() returns per-panel objects with expected str
   testthat::expect_true(identical(prep$plot_args[[1]]$label.y, inputs$labely.list[[1]]))
   testthat::expect_true(identical(prep$plot_args[[2]]$label.x, inputs$labelx.list[[2]]))
   testthat::expect_true(identical(prep$plot_args[[2]]$label.y, inputs$labely.list[[2]]))
+})
+
+
+testthat::test_that("cifpanel() smoke test with competing risks (no plotting)", {
+  testthat::skip_on_cran()
+  testthat::skip_if_not_installed("survival")
+  testthat::skip_if_not_installed("ggsurvfit")
+
+  data(diabetes.complications, package = "cifmodeling")
+
+  out <- cifpanel(
+    title.panel      = "A comparison of cumulative incidence of competing events",
+    rows.columns.panel = c(1, 2),
+    formula          = Event(t, epsilon) ~ fruitq,
+    data             = diabetes.complications,
+    outcome.type     = "COMPETING-RISK",
+    code.events      = list(c(1, 2, 0), c(2, 1, 0)),
+    label.y          = c("Diabetic retinopathy", "Macrovascular complications"),
+    label.x          = "Years from registration",
+    subtitle.panel   = "Stratified by fruit intake",
+    caption.panel    = "Data: diabetes.complications",
+    title.plot       = c("Diabetic retinopathy", "Macrovascular complications"),
+    legend.position  = "bottom",
+    legend.collect   = TRUE,
+    print.panel      = FALSE
+  )
+  testthat::expect_true(is.list(out))
+  testthat::expect_true(any(c("plots", "out_patchwork") %in% names(out)))
 })

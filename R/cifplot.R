@@ -26,13 +26,13 @@
 #' @param code.censoring Integer code of censoring (default \code{0}).
 #' @param code.events Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
 #'   When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
-#'   (primarily used when \code{printBoth = TRUE}).
+#'   (primarily used when \code{printEachEvent = TRUE}).
 #' @param error Character specifying variance type used internally. For \code{"SURVIVAL"} typically \code{"greenwood"}.
 #'   For \code{"COMPETING-RISK"} pass options supported by \code{calculateAalenDeltaSE()} (\code{"aalen"}, \code{"delta"}, \code{"none"}).
 #' @param conf.type Character transformation for CI on the probability scale (default \code{"arcsine-square root"}).
 #' @param conf.int numeric two-sided confidence level (default \code{0.95}).
 #' @param type.y \code{NULL} (survival) or \code{"risk"} (display \code{1 - survival} i.e. CIF).
-#' @param printBoth Logical. If \code{TRUE} and \code{outcome.type == "COMPETING-RISK"},
+#' @param printEachEvent Logical. If \code{TRUE} and \code{outcome.type == "COMPETING-RISK"},
 #'   \code{cifplot()} internally calls \code{\link{cifpanel}} to display both event-specific
 #'   cumulative incidence curves side-by-side (event 1 and event 2). Defaults to \code{FALSE}.
 #'   Ignored for non-competing-risk outcomes.
@@ -83,13 +83,13 @@
 #'   if \code{label.strata[[var]]} is a named character vector, names are matched to
 #'   levels; otherwise labels are matched by position and must have the same length as
 #'   the (possibly re-ordered) levels.
-#' @param ... Additional arguments forwarded to \code{cifpanel()} when \code{printBoth = TRUE}.
+#' @param ... Additional arguments forwarded to \code{cifpanel()} when \code{printEachEvent = TRUE}.
 
 #' @details
 #' This function calls an internal helper \code{call_ggsurvfit()} which adds confidence intervals,
 #' risk table, censoring marks, and optional competing-risk and intercurrent-event marks.
 #'
-#' When \code{printBoth = TRUE}, two panels are created with
+#' When \code{printEachEvent = TRUE}, two panels are created with
 #' \code{code.events = list(c(e1, e2, c), c(e2, e1, c))}, where
 #' \code{code.events = c(e1, e2, c)} is the input coding for event1, event2, and censoring.
 #' Common legend is collected by default (\code{legend.collect = TRUE}).
@@ -198,7 +198,7 @@ cifplot <- function(
     conf.type = "arcsine-square root",
     conf.int = 0.95,
     type.y = NULL,
-    printBoth = FALSE,
+    printEachEvent = FALSE,
     label.x = "Time",
     label.y = NULL,
     label.strata = NULL,
@@ -238,71 +238,87 @@ cifplot <- function(
 ) {
   dots <- list(...)
 
-  outcome.type <- if (is.null(outcome.type)) {
-    NULL
-  } else {
+  if (is.null(font.family) || !nzchar(font.family)) font.family <- "sans"
+  if (is.null(font.size)   || !is.finite(font.size)) font.size   <- 12
+
+  outcome.type <- if (is.null(outcome.type)) NULL else
     match.arg(outcome.type, c("COMPETING-RISK", "SURVIVAL"))
-  }
 
   if (!is.null(code.events)) {
     ce_vec <- normalize_code_events(code.events)
-    code.event1 <- ce_vec[1L]
-    code.event2 <- ce_vec[2L]
-    code.censoring <- ce_vec[3L]
+    code.event1    <- ce_vec[1L]; code.event2 <- ce_vec[2L]; code.censoring <- ce_vec[3L]
   }
 
+
   if (!isTRUE(printEachVar)) {
+
+    # 1) パネル専用引数を落とす
+    dots1 <- panel_drop_panel_only_args(dots)
+
+    # 2) 単発では不要/未対応の引数も落とす（←ココが今回のキモ）
+    #    - cifplot_single() の仮引数名を許可リストにする
+    allowed <- setdiff(names(formals(cifplot_single)), "...")
+
+    #    - まず不要フラグ（printEachVar/order.strata）を除去
+    drop_extra <- c("printEachVar", "order.strata")
+    dots2 <- dots1[setdiff(names(dots1), drop_extra)]
+
+    #    - 最後に allowed に含まれないものを丸ごと落とす
+    dots_clean <- if (!is.null(names(dots2))) {
+      dots2[intersect(names(dots2), allowed)]
+    } else dots2
+
     args_single <- c(
       list(
-        formula_or_fit             = formula,
-        data                       = data,
-        weights                    = weights,
-        subset.condition           = subset.condition,
-        na.action                  = na.action,
-        outcome.type               = outcome.type,
-        code.event1                = code.event1,
-        code.event2                = code.event2,
-        code.censoring             = code.censoring,
-        code.events                = code.events,
-        error                      = error,
-        conf.type                  = conf.type,
-        conf.int                   = conf.int,
-        type.y                     = type.y,
-        printBoth                  = printBoth,
-        label.x                    = label.x,
-        label.y                    = label.y,
-        label.strata               = label.strata,
-        limits.x                   = limits.x,
-        limits.y                   = limits.y,
-        breaks.x                   = breaks.x,
-        breaks.y                   = breaks.y,
-        use_coord_cartesian        = use_coord_cartesian,
-        addConfidenceInterval      = addConfidenceInterval,
-        addRiskTable               = addRiskTable,
-        addEstimateTable           = addEstimateTable,
-        addCensorMark              = addCensorMark,
-        shape.censor.mark          = shape.censor.mark,
-        size.censor.mark           = size.censor.mark,
-        addCompetingRiskMark       = addCompetingRiskMark,
-        competing.risk.time        = competing.risk.time,
-        shape.competing.risk.mark  = shape.competing.risk.mark,
-        size.competing.risk.mark   = size.competing.risk.mark,
-        addIntercurrentEventMark   = addIntercurrentEventMark,
-        intercurrent.event.time    = intercurrent.event.time,
+        formula_or_fit           = formula,
+        data                     = data,
+        weights                  = weights,
+        subset.condition         = subset.condition,
+        na.action                = na.action,
+        outcome.type             = outcome.type,
+        code.event1              = code.event1,
+        code.event2              = code.event2,
+        code.censoring           = code.censoring,
+        code.events              = code.events,
+        error                    = error,
+        conf.type                = conf.type,
+        conf.int                 = conf.int,
+        type.y                   = type.y,
+        printEachEvent                = printEachEvent,
+        label.x                  = label.x,
+        label.y                  = label.y,
+        label.strata             = label.strata,
+        limits.x                 = limits.x,
+        limits.y                 = limits.y,
+        breaks.x                 = breaks.x,
+        breaks.y                 = breaks.y,
+        use_coord_cartesian      = use_coord_cartesian,
+        addConfidenceInterval    = addConfidenceInterval,
+        addRiskTable             = addRiskTable,
+        addEstimateTable         = addEstimateTable,
+        addCensorMark            = addCensorMark,
+        shape.censor.mark        = shape.censor.mark,
+        size.censor.mark         = size.censor.mark,
+        addCompetingRiskMark     = addCompetingRiskMark,
+        competing.risk.time      = competing.risk.time,
+        shape.competing.risk.mark= shape.competing.risk.mark,
+        size.competing.risk.mark = size.competing.risk.mark,
+        addIntercurrentEventMark = addIntercurrentEventMark,
+        intercurrent.event.time  = intercurrent.event.time,
         shape.intercurrent.event.mark = shape.intercurrent.event.mark,
         size.intercurrent.event.mark  = size.intercurrent.event.mark,
-        addQuantileLine            = addQuantileLine,
-        quantile                   = quantile,
-        style                      = style,
-        font.family                = font.family,
-        font.size                  = font.size,
-        legend.position            = legend.position,
-        filename.ggsave            = filename.ggsave,
-        width.ggsave               = width.ggsave,
-        height.ggsave              = height.ggsave,
-        dpi.ggsave                 = dpi.ggsave
+        addQuantileLine          = addQuantileLine,
+        quantile                 = quantile,
+        style                    = style,
+        font.family              = if (is.null(font.family) || !nzchar(font.family)) "sans" else font.family,
+        font.size                = if (is.null(font.size)   || !is.finite(font.size)) 12 else font.size,
+        legend.position          = legend.position,
+        filename.ggsave          = filename.ggsave,
+        width.ggsave             = width.ggsave,
+        height.ggsave            = height.ggsave,
+        dpi.ggsave               = dpi.ggsave
       ),
-      dots
+      dots_clean
     )
     return(do.call(cifplot_single, args_single))
   }
@@ -310,8 +326,8 @@ cifplot <- function(
   if (inherits(formula, "survfit")) {
     stop("printEachVar=TRUE requires a formula interface.")
   }
-  if (isTRUE(printBoth)) {
-    stop("printEachVar=TRUE cannot be combined with printBoth.")
+  if (isTRUE(printEachEvent)) {
+    stop("printEachVar=TRUE cannot be combined with printEachEvent.")
   }
   if (!inherits(formula, "formula")) {
     stop("printEachVar=TRUE requires a model formula on the left-hand side.")
@@ -450,7 +466,7 @@ cifplot <- function(
         conf.type                  = conf.type,
         conf.int                   = conf.int,
         type.y                     = type.y,
-        printBoth                  = FALSE,
+        printEachEvent                  = FALSE,
         label.x                    = label.x,
         label.y                    = label.y,
         label.strata               = lab_vec,
@@ -520,7 +536,7 @@ cifplot_single <- function(
     conf.type = "arcsine-square root",
     conf.int = 0.95,
     type.y = NULL,
-    printBoth = FALSE,
+    printEachEvent = FALSE,
     label.x = "Time",
     label.y = NULL,
     label.strata = NULL,
@@ -570,36 +586,36 @@ cifplot_single <- function(
     code.censoring <- ce_vec[3L]
   }
 
-  if (isTRUE(printBoth)) {
+  if (isTRUE(printEachEvent)) {
     if (inherits(formula_or_fit, "survfit")) {
-      warning("printBoth=TRUE requires a formula interface; falling back to single-plot.")
+      warning("printEachEvent=TRUE requires a formula interface; falling back to single-plot.")
     } else {
       outcome_effective <- outcome.type
       if (is.null(outcome_effective)) {
         outcome_effective <- check_outcome.type(
-          formula = formula_or_fit,
-          data = data,
-          na.action = na.action,
-          auto_message = FALSE
+          formula = formula_or_fit, data = data, na.action = na.action, auto_message = FALSE
         )
       }
       if (!is_competing_outcome(outcome_effective)) {
-        warning("printBoth=TRUE is only for COMPETING-RISK; falling back to single-plot.")
+        warning("printEachEvent=TRUE is only for COMPETING-RISK; falling back to single-plot.")
       } else {
         ce_panel <- normalize_code_events(c(code.event1, code.event2, code.censoring))
-        panel_label_y <- label.y
-        if (is.null(panel_label_y) && !is.null(dots$label.y)) {
-          panel_label_y <- dots$label.y
-        }
-        if (is.null(panel_label_y)) {
-          panel_label_y <- c(
-            "Cumulative incidence of interest",
-            "Cumulative incidence of competing risk"
-          )
+
+        # cifplot()では title.plot を受け付けない仕様：あっても捨てる
+        if (!is.null(dots$title.plot)) dots$title.plot <- NULL
+
+        # y軸ラベルは長さ2に整形して cifpanel に渡す（これは仕様維持）
+        ylabs_vec <- label.y
+        if (is.null(ylabs_vec) && !is.null(dots$label.y)) ylabs_vec <- dots$label.y
+        if (is.null(ylabs_vec)) {
+          ylabs_vec <- c("Cumulative incidence of interest",
+                         "Cumulative incidence of competing risk")
         } else {
-          if (length(panel_label_y) == 1L) panel_label_y <- rep(panel_label_y, 2L)
-          if (length(panel_label_y) > 2L) panel_label_y <- panel_label_y[1:2]
+          if (length(ylabs_vec) == 1L) ylabs_vec <- rep(ylabs_vec, 2L)
+          if (length(ylabs_vec)  > 2L) ylabs_vec <- ylabs_vec[1:2]
         }
+        if (!is.null(dots$label.y)) dots$label.y <- NULL
+
         panel_args <- list(
           formula                 = formula_or_fit,
           data                    = data,
@@ -607,7 +623,7 @@ cifplot_single <- function(
           code.events             = list(ce_panel, c(ce_panel[2L], ce_panel[1L], ce_panel[3L])),
           type.y                  = type.y,
           label.x                 = label.x,
-          label.y                 = panel_label_y,
+          label.y                 = ylabs_vec,
           label.strata            = label.strata,
           limits.x                = limits.x,
           limits.y                = limits.y,
@@ -626,39 +642,14 @@ cifplot_single <- function(
           height.ggsave           = height.ggsave,
           dpi.ggsave              = dpi.ggsave
         )
-        if (!is.null(dots$label.y)) dots$label.y <- NULL
-        if (!is.null(dots$title.plot)) {
-          if (length(dots$title.plot) == 1L) dots$title.plot <- rep(dots$title.plot, 2L)
-          if (length(dots$title.plot) > 2L) dots$title.plot <- dots$title.plot[1:2]
-        }
         if (is.null(dots$rows.columns.panel)) dots$rows.columns.panel <- c(1L, 2L)
-        if (is.null(dots$legend.collect)) dots$legend.collect <- TRUE
-        if (is.null(dots$style)) dots$style <- style
-        if (is.null(dots$font.family)) dots$font.family <- font.family
-        if (is.null(dots$font.size)) dots$font.size <- font.size
-        if (is.null(dots$print.panel)) dots$print.panel <- FALSE
+        if (is.null(dots$legend.collect))     dots$legend.collect     <- TRUE
+        if (is.null(dots$style))              dots$style              <- style
+        if (is.null(dots$font.family))        dots$font.family        <- font.family
+        if (is.null(dots$font.size))          dots$font.size          <- font.size
+        if (is.null(dots$print.panel))        dots$print.panel        <- FALSE
+
         panel_out <- do.call(cifpanel, c(panel_args, dots))
-        if (is.list(panel_out) && !is.null(panel_out$plots)) {
-          titles <- dots$title.plot
-          ylabs  <- panel_label_y
-
-          n <- length(panel_out$plots)
-          for (i in seq_len(n)) {
-            p_i <- panel_out$plots[[i]]
-
-            if (!is.null(titles)) {
-              ti <- titles[pmin(i, length(titles))]
-              if (!is.na(ti)) p_i <- p_i + ggplot2::labs(title = ti)
-            }
-
-            if (!is.null(ylabs)) {
-              yi <- ylabs[pmin(i, length(ylabs))]
-              if (!is.na(yi)) p_i <- p_i + ggplot2::labs(y = yi)
-            }
-
-            panel_out$plots[[i]] <- p_i
-          }
-        }
         if (is.list(panel_out) && !is.null(panel_out$out_patchwork)) {
           attr(panel_out$out_patchwork, "plots") <- panel_out$plots
           return(panel_out$out_patchwork)
@@ -674,8 +665,8 @@ cifplot_single <- function(
       competing.risk.time <- extract_time_to_event(formula_or_fit, data = data, which_event = "event2", code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring)
     }
     formula_or_fit <- cifcurve(formula_or_fit, data = data, weights = weights, subset.condition = subset.condition, na.action = na.action,
-                  outcome.type = outcome.type, code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
-                  error = error, conf.type = conf.type, conf.int = conf.int)
+                               outcome.type = outcome.type, code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
+                               error = error, conf.type = conf.type, conf.int = conf.int)
   }
 
   p <- call_ggsurvfit(
@@ -934,24 +925,24 @@ call_ggsurvfit <- function(
     }
   }
 
-#  use.polyreg <- FALSE
-#  time.point.polyreg <- NULL
-#  if (use.polyreg==TRUE & !is.null(time.point.polyreg) & length(levels(out_readSurv$strata))==2) {
-#    risk_ratio <- vector("numeric", length = length(time.point.polyreg))
-#    for (i in 1:length(time.point.polyreg)) {
-#      out_polyreg <- polyreg(nuisance.model = update.formula(formula, ~1), exposure = out_readSurv$strata_name, data = data, time.point = time.point.polyreg[i], outcome.type='SURVIVAL')
-#      risk_ratio[i] <- create_rr_text(out_polyreg$coefficient, out_polyreg$cov, 2)
-#      p <- p + geom_vline(xintercept = time.point.polyreg[i], linetype = "dashed", color = "black", size = 1)
-#    }
-#    if (text.position.polyreg=="bottom") {
-#      annotations <- data.frame(x=time.point.polyreg*1.02, y=rep(0, length(time.point.polyreg)), label = risk_ratio)
-#      p <- p + geom_text(data=annotations, aes(x=x, y=y, label=label), size = 4, color = "black", hjust = 0, vjust = 0)
-#    }
-#    if (text.position.polyreg=="top") {
-#      annotations <- data.frame(x=time.point.polyreg*1.02, y=rep(0.9, length(time.point.polyreg)), label = risk_ratio)
-#      p <- p + geom_text(data=annotations, aes(x=x, y=y, label=label), size = 4, color = "black", hjust = 0, vjust = 0)
-#    }
-#  }
+  #  use.polyreg <- FALSE
+  #  time.point.polyreg <- NULL
+  #  if (use.polyreg==TRUE & !is.null(time.point.polyreg) & length(levels(out_readSurv$strata))==2) {
+  #    risk_ratio <- vector("numeric", length = length(time.point.polyreg))
+  #    for (i in 1:length(time.point.polyreg)) {
+  #      out_polyreg <- polyreg(nuisance.model = update.formula(formula, ~1), exposure = out_readSurv$strata_name, data = data, time.point = time.point.polyreg[i], outcome.type='SURVIVAL')
+  #      risk_ratio[i] <- create_rr_text(out_polyreg$coefficient, out_polyreg$cov, 2)
+  #      p <- p + geom_vline(xintercept = time.point.polyreg[i], linetype = "dashed", color = "black", size = 1)
+  #    }
+  #    if (text.position.polyreg=="bottom") {
+  #      annotations <- data.frame(x=time.point.polyreg*1.02, y=rep(0, length(time.point.polyreg)), label = risk_ratio)
+  #      p <- p + geom_text(data=annotations, aes(x=x, y=y, label=label), size = 4, color = "black", hjust = 0, vjust = 0)
+  #    }
+  #    if (text.position.polyreg=="top") {
+  #      annotations <- data.frame(x=time.point.polyreg*1.02, y=rep(0.9, length(time.point.polyreg)), label = risk_ratio)
+  #      p <- p + geom_text(data=annotations, aes(x=x, y=y, label=label), size = 4, color = "black", hjust = 0, vjust = 0)
+  #    }
+  #  }
   return(p)
 }
 
@@ -995,9 +986,9 @@ check_ggsurvfit <- function(
       identical(shape.censor.mark, shape.intercurrent.event.mark)) {
     .warn("shape_identical", a = "shape.censor.mark", b = "shape.intercurrent.event.mark")
   }
-  if (isTRUE(addCensorMark) && isTRUE((addCompetingRiskMark)) &&
-      identical(shape.censor.mark, shape.intercurrent.event.mark)) {
-    .warn("shape_identical", a = "shape.censor.mark", b = "shape.intercurrent.event.mark")
+  if (isTRUE(addCensorMark) && isTRUE(addCompetingRiskMark) &&
+      identical(shape.censor.mark, shape.competing.risk.mark)) {
+    .warn("shape_identical", a = "shape.censor.mark", b = "shape.competing.risk.mark")
   }
   if (isTRUE(addCompetingRiskMark) && isTRUE(addIntercurrentEventMark) &&
       identical(shape.competing.risk.mark, shape.intercurrent.event.mark)) {
@@ -1108,4 +1099,15 @@ check_ggsurvfit <- function(
   }
   if (identical(style, "MONOCHROME")) options("ggsurvfit.switch-color-linetype" = FALSE)
   return(list(out_survfit_object=survfit_object, label.y=label.y, type.y=type.y))
+}
+
+panel_drop_panel_only_args <- function(dots) {
+  panel_only <- c(
+    "rows.columns.panel", "legend.collect", "title.panel",
+    "subtitle.panel", "caption.panel", "print.panel",
+    "title.plot", "zoom.position"
+  )
+  if (length(dots) && !is.null(names(dots))) {
+    dots[setdiff(names(dots), panel_only)]
+  } else dots
 }

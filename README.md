@@ -139,7 +139,7 @@ cifplot(
   data = diabetes.complications,
   outcome.type = "COMPETING-RISK",
   code.events  = c(1, 2, 0),
-  printBoth    = TRUE,
+  printEachEvent= TRUE,
   title.plot   = c("Diabetic retinopathy", "Macrovascular complications"),
   label.x      = "Years from registration",
   label.y      = "Cumulative incidence",
@@ -393,32 +393,32 @@ cifplot(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, outcome.type="C
 
 <img src="man/figures/README-example1-1-1.png" width="100%" />
 
-To visualize each covariate separately when multiple strata are supplied, set
-`printEachVar = TRUE`. Each variable on the right-hand side is plotted in its own
-panel, and the layout can be controlled with `rows.columns.panel`. The example
-below contrasts cumulative incidence functions for sex and fruit intake
-side-by-side. When using numeric variables for stratification, discretize them
-beforehand with `cut()` or `factor()`.
+To visualize each covariate separately when multiple strata are
+supplied, set `printEachVar = TRUE`. Each variable on the right-hand
+side is plotted in its own panel, and the layout can be controlled with
+`rows.columns.panel`. The example below contrasts cumulative incidence
+functions for sex and fruit intake side-by-side. When using numeric
+variables for stratification, discretize them beforehand with `cut()` or
+`factor()`.
 
 ``` r
+diabetes.complications$use_insulin <- factor(
+  diabetes.complications$drug_insulin,
+  levels = c(0, 1),
+  labels = c("Not use", "Use")
+)
 cifplot(
-  Event(t, epsilon) ~ sex + fruitq1,
+  Event(t, epsilon) ~ fruitq + use_insulin,
   data = diabetes.complications,
   outcome.type = "COMPETING-RISK",
-  code.event1 = 1, code.event2 = 2, code.censoring = 0,
   printEachVar = TRUE,
   rows.columns.panel = c(1, 2),
-  order.strata = list(
-    sex     = c("Female", "Male"),
-    fruitq1 = c("Low", "High")
-  ),
-  label.strata = list(
-    sex     = c("Female", "Male"),
-    fruitq1 = c("Low intake", "High")
-  ),
-  limits.x = c(0, 10)
+  label.y="CIF of diabetic retinopathy", 
+  label.x="Years from registration"
 )
 ```
+
+<img src="man/figures/README-example1-1a-1.png" width="100%" />
 
 In the next figure, censoring marks are added along each curve
 (`addCensorMark = TRUE`) to indicate individuals who were censored
@@ -433,8 +433,8 @@ calculating Aalen–Johansen estimator stratified by fruitq1. Then,
 ``` r
 output1 <- cifcurve(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, 
 outcome.type="COMPETING-RISK")
-cifplot(output1, addConfidenceInterval=FALSE, addCensorMark=TRUE, addCompetingRiskMark=FALSE, 
-        label.y="CIF of diabetic retinopathy", label.x="Years from registration", 
+cifplot(output1, addConfidenceInterval=FALSE, addCensorMark=TRUE, addCompetingRiskMark=FALSE,
+        label.y="CIF of diabetic retinopathy", label.x="Years from registration",
         label.strata=c("High intake","Low intake"))
 ```
 

@@ -20,7 +20,7 @@ cifplot(
   conf.type = "arcsine-square root",
   conf.int = 0.95,
   type.y = NULL,
-  printBoth = FALSE,
+  printEachEvent = FALSE,
   label.x = "Time",
   label.y = NULL,
   label.strata = NULL,
@@ -87,7 +87,7 @@ detection based on the event coding in \code{data}.}
 
 \item{code.events}{Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
 When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
-(primarily used when \code{printBoth = TRUE}).}
+(primarily used when \code{printEachEvent = TRUE}).}
 
 \item{error}{Character specifying variance type used internally. For \code{"SURVIVAL"} typically \code{"greenwood"}.
 For \code{"COMPETING-RISK"} pass options supported by \code{calculateAalenDeltaSE()} (\code{"aalen"}, \code{"delta"}, \code{"none"}).}
@@ -98,7 +98,7 @@ For \code{"COMPETING-RISK"} pass options supported by \code{calculateAalenDeltaS
 
 \item{type.y}{\code{NULL} (survival) or \code{"risk"} (display \code{1 - survival} i.e. CIF).}
 
-\item{printBoth}{Logical. If \code{TRUE} and \code{outcome.type == "COMPETING-RISK"},
+\item{printEachEvent}{Logical. If \code{TRUE} and \code{outcome.type == "COMPETING-RISK"},
 \code{cifplot()} internally calls \code{\link{cifpanel}} to display both event-specific
 cumulative incidence curves side-by-side (event 1 and event 2). Defaults to \code{FALSE}.
 Ignored for non-competing-risk outcomes.}
@@ -183,7 +183,7 @@ if \code{label.strata[[var]]} is a named character vector, names are matched to
 levels; otherwise labels are matched by position and must have the same length as
 the (possibly re-ordered) levels.}
 
-\item{...}{Additional arguments forwarded to \code{cifpanel()} when \code{printBoth = TRUE}.}
+\item{...}{Additional arguments forwarded to \code{cifpanel()} when \code{printEachEvent = TRUE}.}
 }
 \value{
 A \code{ggplot} object. When \code{printEachVar = TRUE}, a \pkg{patchwork}
@@ -201,7 +201,7 @@ object (compatible with \code{+} and \code{\%+\%}). You may also pass a survfit-
 This function calls an internal helper \code{call_ggsurvfit()} which adds confidence intervals,
 risk table, censoring marks, and optional competing-risk and intercurrent-event marks.
 
-When \code{printBoth = TRUE}, two panels are created with
+When \code{printEachEvent = TRUE}, two panels are created with
 \code{code.events = list(c(e1, e2, c), c(e2, e1, c))}, where
 \code{code.events = c(e1, e2, c)} is the input coding for event1, event2, and censoring.
 Common legend is collected by default (\code{legend.collect = TRUE}).
