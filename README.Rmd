@@ -40,7 +40,7 @@ library(modelsummary)
 
 ## Overview
 
-+In medical and epidemiological research, analysts often need to handle censoring, competing risks, and intercurrent events (e.g., treatment switching), but existing R packages typically separate these tasks into different interfaces. `cifmodeling` provides a **unified, publication-ready toolkit** that integrates nonparametric estimation, regression modeling, and visualization for survival and competing risks data. It covers both nonparametric estimation and regression modeling of cumulative incidence functions (CIFs), centered around three tightly connected functions.
+In medical and epidemiological research, analysts often need to handle censoring, competing risks, and intercurrent events (e.g., treatment switching), but existing R packages typically separate these tasks into different interfaces. `cifmodeling` provides a **unified, publication-ready toolkit** that integrates nonparametric estimation, regression modeling, and visualization for survival and competing risks data. It covers both nonparametric estimation and regression modeling of cumulative incidence functions (CIFs), centered around three tightly connected functions.
 
 -   `cifplot()` generates a survival or cumulative incidence curve with marks that represent censoring, competing risks and intercurrent events. Multiple variance estimators and confidence interval methods are supported. Visualization relies on `ggsurvfit/ggplot2`. 
 

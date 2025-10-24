@@ -9,7 +9,7 @@
 
 ## Overview
 
-+In medical and epidemiological research, analysts often need to handle
+In medical and epidemiological research, analysts often need to handle
 censoring, competing risks, and intercurrent events (e.g., treatment
 switching), but existing R packages typically separate these tasks into
 different interfaces. `cifmodeling` provides a **unified,
