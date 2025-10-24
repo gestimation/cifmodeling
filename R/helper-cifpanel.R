@@ -72,9 +72,12 @@ panel_prepare <- function(
       cc  <- pair[3]
     }
 
+    norm_inputs <- cifplot_normalize_formula_data(formulas[[i]], data)
+    data_i <- norm_inputs$data
+
     args_est <- panel_drop_nulls(list(
       formula        = formulas[[i]],
-      data           = data,
+      data           = data_i,
       outcome.type   = if (!is.null(outcome.list)) outcome.list[[i]] else NULL,
       code.event1    = ce1,
       code.event2    = ce2,
