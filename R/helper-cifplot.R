@@ -162,29 +162,6 @@ plot_scale_monochrome <- function(n_strata = 6) {
   )
 }
 
-plot_apply_style <- function(
-    p,
-    style = c("CLASSIC", "BOLD", "FRAMED", "MONOCHROME"),
-    font.family = "sans",
-    font.size = 14,
-    legend.position = "top",
-    n_strata = 6
-) {
-  style <- match.arg(style)
-  style_theme <- switch(
-    style,
-    CLASSIC    = plot_style_classic(font.family, font.size, legend.position),
-    BOLD       = plot_style_bold(font.family, font.size, legend.position),
-    FRAMED     = plot_style_framed(font.family, font.size, legend.position),
-    MONOCHROME = plot_style_monochrome(font.family, font.size, legend.position)
-  )
-  p <- p + style_theme
-  if (identical(style, "MONOCHROME")) {
-    p <- p + plot_scale_monochrome(n_strata = n_strata)
-  }
-  return(p)
-}
-
 plot_draw_marks <- function(p, survfit_object, marks, type.y, shape, size) {
   time <- y <- strata <- NULL
   if (is.null(marks) || !length(marks)) return(p)

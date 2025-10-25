@@ -234,6 +234,7 @@ cifplot <- function(
     printEachVar = FALSE,
     rows.columns.panel = NULL,
     style = "CLASSIC",
+    palette = NULL,
     font.family = "sans",
     font.size = 12,
     legend.position = "top",
@@ -310,6 +311,7 @@ cifplot <- function(
         quantile                 = quantile,
         printEachEvent           = printEachEvent,
         style                    = style,
+        palette                  = palette,
         font.family              = if (is.null(font.family) || !nzchar(font.family)) "sans" else font.family,
         font.size                = if (is.null(font.size)   || !is.finite(font.size)) 12 else font.size,
         legend.position          = legend.position,
@@ -488,6 +490,7 @@ cifplot <- function(
         addQuantileLine            = addQuantileLine,
         quantile                   = quantile,
         style                      = style,
+        palette                    = palette,
         font.family                = font.family,
         font.size                  = font.size,
         legend.position            = legend.position,
@@ -560,6 +563,7 @@ cifplot_single <- function(
     quantile = 0.5,
     printEachEvent = FALSE,
     style = "CLASSIC",
+    palette = NULL,
     font.family = "sans",
     font.size = 12,
     legend.position = "top",
@@ -699,6 +703,7 @@ cifplot_single <- function(
     breaks.y                      = breaks.y,
     use_coord_cartesian           = use_coord_cartesian,
     style                         = style,
+    palette                       = palette,
     font.family                   = font.family,
     font.size                     = font.size,
     legend.position               = legend.position
@@ -801,6 +806,7 @@ call_ggsurvfit <- function(
     breaks.y = NULL,
     use_coord_cartesian = FALSE,
     style = "CLASSIC",
+    palette = NULL,
     font.family = "sans",
     font.size = 14,
     legend.position = "top"
@@ -853,14 +859,18 @@ call_ggsurvfit <- function(
     }
   }
 
+  strata_levels_final <- if (!is.null(label.strata.map)) names(label.strata.map) else cur_lvls
+  strata_labels_final <- if (!is.null(label.strata.map)) unname(label.strata.map) else NULL
+  n_strata_effective <- if (!is.null(strata_levels_final)) {
+    length(strata_levels_final)
+  } else if (!is.null(cur_lvls)) {
+    length(cur_lvls)
+  } else {
+    1L
+  }
+
   p <- out_cg$out_survfit_object +
     ggplot2::labs(x = label.x, y = out_cg$label.y)
-
-  if (!is.null(label.strata.map)) {
-    p <- p +
-      ggplot2::scale_color_discrete(limits = names(label.strata.map), labels = unname(label.strata.map)) +
-      ggplot2::scale_fill_discrete (limits = names(label.strata.map), labels = unname(label.strata.map))
-  }
 
   if (isTRUE(addConfidenceInterval)) p <- p + add_confidence_interval()
   if (isTRUE(addCensorMark))         p <- p + add_censor_mark(shape = shape.censor.mark, size = size.censor.mark)
@@ -920,7 +930,17 @@ call_ggsurvfit <- function(
   }
 
   if (!identical(style, "GGSURVFIT")) {
-    p <- plot_apply_style(p, style = style, font.family, font.size, legend.position)
+    p <- plot_apply_style(
+      p,
+      style = style,
+      font.family = font.family,
+      font.size = font.size,
+      legend.position = legend.position,
+      n_strata = n_strata_effective,
+      palette_colors = palette,
+      strata_levels_final = strata_levels_final,
+      strata_labels_final = strata_labels_final
+    )
   }
 
   if (!is.null(label.strata.map)) {
@@ -943,10 +963,13 @@ call_ggsurvfit <- function(
         ggplot2::scale_shape_manual   (values = shps,            limits = lvls, labels = labs)
 
     } else {
+      if (is.null(palette)) {
+        p <- p +
+          ggplot2::scale_color_discrete  (limits =  lvls, labels = labs) +
+          ggplot2::scale_fill_discrete   (limits =  lvls, labels = labs) +
+          ggplot2::scale_linetype_discrete(limits = lvls, labels = labs)
+      }
       p <- p +
-        ggplot2::scale_color_discrete  (limits =  lvls, labels = labs) +
-        ggplot2::scale_fill_discrete   (limits =  lvls, labels = labs) +
-        ggplot2::scale_linetype_discrete(limits = lvls, labels = labs) +
         ggplot2::scale_shape_discrete  (limits =  lvls, labels = labs)
     }
   }
