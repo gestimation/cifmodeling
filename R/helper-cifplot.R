@@ -138,32 +138,6 @@ plot_style_framed <- function(font.family = "sans", font.size = 14, legend.posit
     )
 }
 
-plot_style_monochrome <- function(font.family = "sans", font.size = 14, legend.position = "top") {
-  ggplot2::theme_classic(base_size = font.size, base_family = font.family) +
-    ggplot2::theme(
-      legend.position   = legend.position,
-      axis.title        = ggplot2::element_text(size = font.size + 1, face = "bold"),
-      axis.text         = ggplot2::element_text(size = font.size, color = "grey20"),
-      legend.text       = ggplot2::element_text(size = font.size - 1, color = "grey20"),
-      legend.background = ggplot2::element_rect(fill = "transparent", color = NA),
-      panel.border      = ggplot2::element_blank()
-    )
-}
-
-plot_scale_monochrome <- function(n_strata = 6) {
-  ltys_all   <- c("dashed","solid","dotted","longdash","dotdash","twodash",
-                  "dashed","solid","dotted","longdash","dotdash","twodash",
-                  "dashed","solid","dotted","longdash","dotdash","twodash")
-  shapes_all <- c(16, 1, 3, 4, 15, 17, 16, 1, 3, 4, 15, 17, 16, 1, 3, 4, 15, 17)
-  n_use <- min(n_strata, length(ltys_all), length(shapes_all))
-  list(
-    ggplot2::scale_color_manual(values = rep("black", n_use), drop = FALSE, guide = "legend"),
-    ggplot2::scale_fill_manual(values = gray(seq(0.85, 0.30, length.out = n_use)), drop = FALSE, guide = "legend"),
-    ggplot2::scale_linetype_manual(values = ltys_all[seq_len(n_use)], drop = FALSE, guide = "legend"),
-    ggplot2::scale_shape_manual(values = shapes_all[seq_len(n_use)], drop = FALSE, guide = "legend")
-  )
-}
-
 plot_draw_marks <- function(p, survfit_object, marks, type.y, shape, size) {
   time <- y <- strata <- NULL
   if (is.null(marks) || !length(marks)) return(p)

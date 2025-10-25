@@ -178,7 +178,6 @@ plot_check_style <- function(x) {
     "CLASSIC"     = c("classic","c"),
     "BOLD"        = c("bold","b"),
     "FRAMED"      = c("framed","f"),
-    "MONOCHROME"  = c("monochrome","monotone","m"),
     "GGSURVFIT"   = c("ggsurvfit","g")
   )
   ux <- toupper(gsub("[[:space:]]+", " ", x))

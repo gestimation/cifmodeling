@@ -29,8 +29,6 @@
     "style_theme_classic": "plot_style_classic",
   "style_theme_bold": "plot_style_bold",
   "style_theme_framed": "plot_style_framed",
-  "style_theme_monochrome": "plot_style_monochrome",
-  "scale_monochrome": "plot_scale_monochrome",
   "applyStyle": "plot_apply_style",
   "drawMarks": "plot_draw_marks",
   "alignMarkKeys": "plot_align_mark_keys",

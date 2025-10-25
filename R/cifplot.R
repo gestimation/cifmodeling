@@ -183,7 +183,7 @@
 #'         label.x='Years from registration')
 
 #' @importFrom ggsurvfit ggsurvfit add_confidence_interval add_risktable add_risktable_strata_symbol add_censor_mark add_quantile
-#' @importFrom ggplot2 theme_classic theme_bw element_text labs lims geom_point aes ggsave scale_color_discrete scale_fill_discrete element_text element_rect element_blank scale_color_manual scale_fill_manual scale_linetype_manual scale_shape_manual
+#' @importFrom ggplot2 theme_classic theme_bw element_text labs lims geom_point aes ggsave guides scale_color_discrete scale_fill_discrete element_text element_rect element_blank scale_color_manual scale_fill_manual scale_linetype_manual scale_shape_manual scale_linetype_discrete scale_shape_discrete
 #' @importFrom grDevices gray
 #' @importFrom patchwork wrap_plots
 
@@ -259,7 +259,7 @@ cifplot <- function(
 
 
   if (!isTRUE(printEachVar)) {
-    dots1 <- panel_drop_panel_only_args(dots)
+    dots1 <- plot_drop_panel_only_args(dots)
     allowed <- setdiff(names(formals(cifplot_single)), "...")
     drop_extra <- c("printEachVar")
     dots2 <- dots1[setdiff(names(dots1), drop_extra)]
@@ -829,7 +829,8 @@ call_ggsurvfit <- function(
     shape.intercurrent.event.mark = shape.intercurrent.event.mark,
     out_readSurv = out_readSurv,
     use_coord_cartesian = use_coord_cartesian,
-    style = style
+    style = style,
+    palette = palette
   )
 
   label.strata.map <- plot_make_label.strata.map(survfit_object, label.strata)
@@ -859,8 +860,33 @@ call_ggsurvfit <- function(
     }
   }
 
-  strata_levels_final <- if (!is.null(label.strata.map)) names(label.strata.map) else cur_lvls
-  strata_labels_final <- if (!is.null(label.strata.map)) unname(label.strata.map) else NULL
+  cur_lvls_full  <- NULL
+  cur_lvls_short <- NULL
+  if (!is.null(survfit_object$strata)) {
+    cur_lvls_full  <- unique(names(survfit_object$strata))
+    cur_lvls_short <- sub(".*?=", "", cur_lvls_full)
+  }
+
+  remap_to_full_if_needed <- function(lbl_map, full, short) {
+    if (is.null(lbl_map) || is.null(full) || is.null(short)) return(lbl_map)
+    nm <- names(lbl_map)
+    if (!length(nm)) return(lbl_map)
+    if (!all(nm %in% full) && all(nm %in% short)) {
+      idx <- match(nm, short)
+      names(lbl_map) <- full[idx]
+    }
+    lbl_map
+  }
+  label.strata.map <- remap_to_full_if_needed(label.strata.map, cur_lvls_full, cur_lvls_short)
+
+  if (!is.null(label.strata.map)) {
+    strata_levels_final <- names(label.strata.map)
+    strata_labels_final <- unname(label.strata.map)
+  } else {
+    strata_levels_final <- cur_lvls_full
+    strata_labels_final <- cur_lvls_short
+  }
+
   n_strata_effective <- if (!is.null(strata_levels_final)) {
     length(strata_levels_final)
   } else if (!is.null(cur_lvls)) {
@@ -878,19 +904,10 @@ call_ggsurvfit <- function(
 
   if (isTRUE(addEstimateTable) && isTRUE(addRiskTable)) {
     p <- p + add_risktable(risktable_stats = c("n.risk", "{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"), stats_label=c("No. at risk", "Estimate (95% CI)"), theme=plot_theme_risktable_font(font.family=font.family, plot.title.size=font.size), risktable_group = "risktable_stats")
-    if (!identical(style, "MONOCHROME")) {
-      p <- p + ggsurvfit::add_risktable_strata_symbol()
-    }
   } else if (isTRUE(addEstimateTable)) {
     p <- p + add_risktable(risktable_stats = c("{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"), stats_label=c("Estimate (95% CI)"), theme=plot_theme_risktable_font(font.family=font.family, plot.title.size=font.size), )
-    if (!identical(style, "MONOCHROME")) {
-      p <- p + ggsurvfit::add_risktable_strata_symbol()
-    }
   } else if (isTRUE(addRiskTable)) {
     p <- p + add_risktable(risktable_stats = c("n.risk"), stats_label=c("No. at risk"), theme=plot_theme_risktable_font(font.family=font.family, plot.title.size=font.size))
-    if (!identical(style, "MONOCHROME")) {
-      p <- p + ggsurvfit::add_risktable_strata_symbol()
-    }
   }
   if (isTRUE(addCompetingRiskMark) && length(competing.risk.time)) {
     p <- plot_draw_marks(p, survfit_object, competing.risk.time, out_cg$type.y, shape = shape.competing.risk.mark, size = size.competing.risk.mark)
@@ -943,36 +960,17 @@ call_ggsurvfit <- function(
     )
   }
 
-  if (!is.null(label.strata.map)) {
-    lvls   <- names(label.strata.map)
-    labs   <- unname(label.strata.map)
-    n      <- length(lvls)
+  p <- apply_all_scales_once(
+    p,
+    style = style,
+    palette = palette,
+    n_strata = n_strata_effective,
+    strata_levels_final = strata_levels_final,
+    strata_labels_final = strata_labels_final
+  )
 
-    if (identical(style, "MONOCHROME")) {
-      ltys_all   <- c("dashed","solid","dotted","longdash","dotdash","twodash",
-                      "dashed","solid","dotted","longdash","dotdash","twodash")
-      shapes_all <- c(16, 1, 3, 4, 15, 17, 16, 1, 3, 4, 15, 17)
-      ltys   <- ltys_all[seq_len(n)]
-      shps   <- shapes_all[seq_len(n)]
-      fills  <- gray(seq(0.85, 0.30, length.out = n))
-
-      p <- p +
-        ggplot2::scale_color_manual   (values = rep("black", n), limits = lvls, labels = labs) +
-        ggplot2::scale_fill_manual    (values = fills,           limits = lvls, labels = labs) +
-        ggplot2::scale_linetype_manual(values = ltys,            limits = lvls, labels = labs) +
-        ggplot2::scale_shape_manual   (values = shps,            limits = lvls, labels = labs)
-
-    } else {
-      if (is.null(palette)) {
-        p <- p +
-          ggplot2::scale_color_discrete  (limits =  lvls, labels = labs) +
-          ggplot2::scale_fill_discrete   (limits =  lvls, labels = labs) +
-          ggplot2::scale_linetype_discrete(limits = lvls, labels = labs)
-      }
-      p <- p +
-        ggplot2::scale_shape_discrete  (limits =  lvls, labels = labs)
-    }
-  }
+  p <- p + ggplot2::guides(fill = "none", alpha = "none", shape = "none") +
+    ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(fill = NA)))
 
   #  use.polyreg <- FALSE
   #  time.point.polyreg <- NULL
@@ -1029,7 +1027,8 @@ check_ggsurvfit <- function(
     shape.intercurrent.event.mark,
     out_readSurv,
     use_coord_cartesian,
-    style
+    style,
+    palette
 ){
   if (isTRUE(addCensorMark) && isTRUE(addIntercurrentEventMark) &&
       identical(shape.censor.mark, shape.intercurrent.event.mark)) {
@@ -1123,29 +1122,39 @@ check_ggsurvfit <- function(
       x$upper <- x$surv
       return(x)
     }
-    return(survfit_object)
+    survfit_object
   }
   survfit_object <- coerce_conf(survfit_object, conf.type)
 
-  if (identical(style, "MONOCHROME")) options("ggsurvfit.switch-color-linetype" = TRUE)
-  if (       !identical(type.y,     "risk") && identical(survfit_object$type, "kaplan-meier")) {
-    survfit_object <- ggsurvfit(survfit_object, type = "survival")
-    type.y <- "survival"
-  } else if ( identical(type.y,     "risk") && identical(survfit_object$type, "kaplan-meier")) {
-    survfit_object <- ggsurvfit(survfit_object, type = "risk")
-    type.y <- "risk"
-  } else if (!identical(type.y, "survival") && identical(survfit_object$type, "aalen-johansen")) {
-    survfit_object <- ggsurvfit(survfit_object, type = "risk")
-    type.y <- "risk"
-  } else if ( identical(type.y, "survival") && identical(survfit_object$type, "aalen-johansen")) {
-    survfit_object <- ggsurvfit(survfit_object, type = "survival")
-    type.y <- "survival"
+  type.y <- cifplot_normalize_type_y(type.y)
+  target_type <- switch(
+    survfit_object$type,
+    "kaplan-meier"   = if (identical(type.y, "risk")) "risk" else "survival",
+    "aalen-johansen" = if (identical(type.y, "survival")) "survival" else "risk",
+    if (identical(type.y, "risk")) "risk" else "survival"
+  )
+  type.y <- if (identical(target_type, "risk")) "risk" else "survival"
+
+  decide_linetype_flag <- function(style, palette) {
+    if (identical(style, "MONOCHROME")) return(TRUE)
+    if (is.null(palette)) return(FALSE)
+    pal <- palette
+    pal <- ifelse(grepl("^#", pal), pal, .validate_or_fix_color(pal))
+    length(unique(tolower(pal))) == 1L
   }
-  if (identical(style, "MONOCHROME")) options("ggsurvfit.switch-color-linetype" = FALSE)
-  return(list(out_survfit_object=survfit_object, label.y=label.y, type.y=type.y))
+  linetype_aes_flag <- decide_linetype_flag(style, palette)
+
+  old_opt <- getOption("ggsurvfit.switch-color-linetype", FALSE)
+  out_plot <- ggsurvfit(
+    survfit_object,
+    type = target_type,
+    linetype_aes = linetype_aes_flag
+  )
+
+  list(out_survfit_object = out_plot, label.y = label.y, type.y = type.y)
 }
 
-panel_drop_panel_only_args <- function(dots) {
+plot_drop_panel_only_args <- function(dots) {
   panel_only <- c(
     "rows.columns.panel", "legend.collect", "title.panel",
     "subtitle.panel", "caption.panel", "print.panel",
