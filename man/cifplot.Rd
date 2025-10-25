@@ -164,7 +164,7 @@ It calls geom_point() (default \code{TRUE}).}
 \item{quantile}{Numeric specify quantile for \code{add_quantile()} (default \code{0.5}).}
 
 \item{printEachEvent}{Logical. If \code{TRUE} and \code{outcome.type == "COMPETING-RISK"},
-\code{cifplot()} internally calls \code{\link{cifpanel}} to display both event-specific
+\code{cifplot()} internally calls \code{cifpanel} to display both event-specific
 cumulative incidence curves side-by-side (event 1 and event 2). Defaults to \code{FALSE}.
 Ignored for non-competing-risk outcomes.}
 

@@ -72,7 +72,7 @@
 #' @param quantile Numeric specify quantile for \code{add_quantile()} (default \code{0.5}).
 
 #' @param printEachEvent Logical. If \code{TRUE} and \code{outcome.type == "COMPETING-RISK"},
-#'   \code{cifplot()} internally calls \code{\link{cifpanel}} to display both event-specific
+#'   \code{cifplot()} internally calls \code{cifpanel} to display both event-specific
 #'   cumulative incidence curves side-by-side (event 1 and event 2). Defaults to \code{FALSE}.
 #'   Ignored for non-competing-risk outcomes.
 #' @param printEachVar Logical. If \code{TRUE}, when multiple covariates are listed

@@ -518,6 +518,7 @@ You can also supply multiple model summaries as a named list to compare estimate
 -   `code.event1` Integer code of the event of interest (default `1`).
 -   `code.event2` Integer code of the competing event (default `2`).
 -   `code.censoring` Integer code of censoring (default `0`).
+-   `code.events` Optional numeric length-3 vector `c(event1, event2, censoring)`. When supplied, it overrides `code.event1`, `code.event2`, and `code.censoring`(primarily used when `printEachEvent = TRUE`).
 -   `error` Character specifying variance type used internally. For `"SURVIVAL"` typically `"greenwood"`. For `"COMPETING-RISK"` pass options supported by `calculateAalenDeltaSE()` (`"aalen"`, `"delta"`, `"none"`).
 -   `conf.type` Character transformation for CI on the probability scale (default `"arcsine-square root"`).
 -   `conf.int` numeric two-sided confidence level (default `0.95`).
@@ -547,8 +548,11 @@ You can also supply multiple model summaries as a named list to compare estimate
 -   `size.intercurrent.event.mark` Numeric point size for intercurrent-event marks (default `2`).
 -   `addQuantileLine` Logical add `add_quantile()}` to plot. It calls `geom_segment()` (default `TRUE`).
 -   `quantile` Numeric specify quantile for `add_quantile()` (default `0.5`).
-
+-   `printEachEvent` Logical. If `TRUE` and `outcome.type == "COMPETING-RISK"`, `cifplot()` internally calls `cifpanel()` to display both event-specific cumulative incidence curves side-by-side (event 1 and event 2). Defaults to `FALSE`. Ignored for non-competing-risk outcomes.
+-   `printEachVar Logical. If \code{TRUE}, when multiple covariates are listed on the right-hand side (e.g., `~ a + b + c`), the function produces a panel of CIF plots, each stratified by one variable at a time.
+-   `rows.columns.panel` Optional integer vector `c(nrow, ncol)` controlling the panel layout. If `NULL`, an automatic layout is used.
 -   `style` Character plot theme controls (default `"CLASSIC"`).
+-   `palette` Optional character vector specify color palette, e.g. `palette=c("blue", "cyan", "navy", "green")` (default `NULL`).
 -   `font.family` Character plot theme controls (e.g. `"sans"`, `"serif"`, and `"mono"`. default `"sans"`).
 -   `font.size` Integer plot theme controls (default `12`).
 -   `legend.position` Character specify position of legend: `"top"`, `"right"`, `"bottom"`, `"left"`, or `"none"` (default `"top"`).
@@ -567,6 +571,7 @@ You can also supply multiple model summaries as a named list to compare estimate
 -   `type.y` Optional vector/list per panel: `"surv"` or `"risk"`.
 -   `label.x`, `label.y` Optional vectors/lists of axis labels per panel.
 -   `label.strata` Optional list of character vectors for legend labels per panel (passed to `cifplot()`).
+-   `order.strata` Optional list of character vectors for ordering labels per panel (passed to `cifplot()`).
 -   `limits.x`, `limits.y` Optional vectors/lists of numeric length-2 axis limits per panel.
 -   `breaks.x`, `breaks.y` Optional vectors/lists of axis breaks per panel (forwarded to `breaks.x` / `breaks.y` in `cifplot()`).
 -   `addConfidenceInterval`, `addCensorMark`, `addCompetingRiskMark`, `addIntercurrentEventMark`, `addQuantileLine` Optional logical vectors/lists per panel to toggle features in `cifplot()`. If `NULL`, sensible defaults are used (CI/Censor on; others off).

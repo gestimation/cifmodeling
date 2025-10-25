@@ -1022,17 +1022,12 @@ layout and styling options.
 ### cifplot()
 
 - `x` A model formula or a survfit object.
-
 - `data` A data frame containing variables in `formula`.
-
 - `weights` Optional name of the weight variable in `data`. Weights must
   be nonnegative; strictly positive is recommended.
-
 - `subset.condition` Optional character expression to subset `data`
   before analysis.
-
 - `na.action` Function to handle missing values (default: `na.omit`).
-
 - `outcome.type` Character string specifying the type of time-to-event
   outcome. One of `"SURVIVAL"` (Kaplan–Meier type) or `"COMPETING-RISK"`
   (Aalen–Johansen type). If `NULL` (default), the function automatically
@@ -1041,33 +1036,26 @@ layout and styling options.
   `"SURVIVAL"` is used. You can also use abbreviations such as `"S"` or
   `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger
   automatic detection based on the event coding in `data`.
-
 - `code.event1` Integer code of the event of interest (default `1`).
-
 - `code.event2` Integer code of the competing event (default `2`).
-
 - `code.censoring` Integer code of censoring (default `0`).
-
+- `code.events` Optional numeric length-3 vector
+  `c(event1, event2, censoring)`. When supplied, it overrides
+  `code.event1`, `code.event2`, and `code.censoring`(primarily used when
+  `printEachEvent = TRUE`).
 - `error` Character specifying variance type used internally. For
   `"SURVIVAL"` typically `"greenwood"`. For `"COMPETING-RISK"` pass
   options supported by `calculateAalenDeltaSE()` (`"aalen"`, `"delta"`,
   `"none"`).
-
 - `conf.type` Character transformation for CI on the probability scale
   (default `"arcsine-square root"`).
-
 - `conf.int` numeric two-sided confidence level (default `0.95`).
-
 - `type.y` `NULL` (survival) or `"risk"` (display `1 - survival`
   i.e. CIF).
-
 - `label.x` Character x-axis labels (default `"Time"`).
-
 - `label.y` Character y-axis labels (default internally set to
   `"Survival"` or `"Cumulative incidence"`).
-
 - `label.strata` Character vector of labels for strata.
-
 - `order.strata` Optional ordering of strata levels. When
   `printEachVar = TRUE`, supply a named list
   `list(var = c("L1","L2",...))` for each RHS variable; unmatched levels
@@ -1076,86 +1064,69 @@ layout and styling options.
   of the single stratification factor. Levels not listed are dropped. If
   `label.strata` is a named vector, its names must match the
   (re-ordered) levels.
-
 - `limits.x` Numeric length-2 vectors for axis limits. If `NULL` it is
   internally set to `c(0,max(out_readSurv$t))`.
-
 - `limits.y` Numeric length-2 vectors for axis limits. If `NULL` it is
   internally set to `c(0,1)`.
-
 - `breaks.x` Numeric vectors for axis breaks (default `NULL`).
-
 - `breaks.y` Numeric vectors for axis breaks (default `NULL`).
-
 - `use_coord_cartesian` Logical specify use of `coord_cartesian()`
   (default `FALSE`).
-
 - `addConfidenceInterval` Logical add `add_confidence_interval()` to
   plot. It calls `geom_ribbon()` (default `TRUE`).
-
 - `addRiskTable` Logical add `add_risktable(risktable_stats="n.risk")`
   to plot (default `TRUE`).
-
 - `addEstimateTable` Logical add
   `add_risktable(risktable_stats="estimate (conf.low, conf.high)")` to
   plot (default `FALSE`).
-
 - `addCensorMark` Logical add `add_censor_mark()` to plot. It calls
   `geom_point()` (default `TRUE`).
-
 - `shape.censor.mark` Integer point shape for censor marks (default
   `3`).
-
 - `size.censor.mark` Numeric point size for censor marks (default `2`).
-
 - `addCompetingRiskMark` Logical add time marks to describe event2
   specified by `Event()`, usually the competing events. It calls
   `geom_point()` (default `TRUE`).
-
 - `competing.risk.time` Named list of numeric vectors (names must be
   mapped to strata labels).
-
 - `shape.competing.risk.mark` Integer point shape for competing-risk
   marks (default `16`).
-
 - `size.competing.risk.mark` Numeric point size for competing-risk marks
   (default `2`).
-
 - `addIntercurrentEventMark` Logical overlay user-specified time marks
   per strata calls `geom_point()` (default `TRUE`).
-
 - `intercurrent.event.time` Named list of numeric vectors (names must be
   mapped to strata labels).
-
 - `shape.intercurrent.event.mark` Integer point shape for
   intercurrent-event marks (default `1`).
-
 - `size.intercurrent.event.mark` Numeric point size for
   intercurrent-event marks (default `2`).
-
 - `addQuantileLine` Logical add `add_quantile()}` to plot. It calls
   `geom_segment()` (default `TRUE`).
-
 - `quantile` Numeric specify quantile for `add_quantile()` (default
   `0.5`).
-
+- `printEachEvent` Logical. If `TRUE` and
+  `outcome.type == "COMPETING-RISK"`, `cifplot()` internally calls
+  `cifpanel()` to display both event-specific cumulative incidence
+  curves side-by-side (event 1 and event 2). Defaults to `FALSE`.
+  Ignored for non-competing-risk outcomes.
+- `printEachVar Logical. If \code{TRUE}, when multiple covariates are listed on the right-hand side (e.g.,`~
+  a + b + c\`), the function produces a panel of CIF plots, each
+  stratified by one variable at a time.
+- `rows.columns.panel` Optional integer vector `c(nrow, ncol)`
+  controlling the panel layout. If `NULL`, an automatic layout is used.
 - `style` Character plot theme controls (default `"CLASSIC"`).
-
+- `palette` Optional character vector specify color palette,
+  e.g. `palette=c("blue", "cyan", "navy", "green")` (default `NULL`).
 - `font.family` Character plot theme controls (e.g. `"sans"`, `"serif"`,
   and `"mono"`. default `"sans"`).
-
 - `font.size` Integer plot theme controls (default `12`).
-
 - `legend.position` Character specify position of legend: `"top"`,
   `"right"`, `"bottom"`, `"left"`, or `"none"` (default `"top"`).
-
 - `filename.ggsave` Character save the `ggsurvfit`}\` plot with the path
   and name specified.
-
 - `width.ggsave` Numeric specify width of the `ggsurvfit` plot.
-
 - `height.ggsave` Numeric specify height of the `ggsurvfit` plot.
-
 - `dpi.ggsave` Numeric specify dpi of the `ggsurvfit` plot.
 
 ### cifpanel()
@@ -1179,6 +1150,8 @@ layout and styling options.
 - `type.y` Optional vector/list per panel: `"surv"` or `"risk"`.
 - `label.x`, `label.y` Optional vectors/lists of axis labels per panel.
 - `label.strata` Optional list of character vectors for legend labels
+  per panel (passed to `cifplot()`).
+- `order.strata` Optional list of character vectors for ordering labels
   per panel (passed to `cifplot()`).
 - `limits.x`, `limits.y` Optional vectors/lists of numeric length-2 axis
   limits per panel.
