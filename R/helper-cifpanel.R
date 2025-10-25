@@ -101,6 +101,7 @@ panel_prepare <- function(
       addIntercurrentEventMark = if (!is.null(addIC.list))  addIC.list[[i]]   else FALSE,
       addQuantileLine          = if (!is.null(addQ.list))   addQ.list[[i]]    else FALSE,
       label.strata             = if (!is.null(strata.list)) strata.list[[i]]  else NULL,
+      palette                  = dots$palette,
       style                    = dots$style %||% "CLASSIC",
       font.family              = fonts$family,
       font.size                = fonts$size,

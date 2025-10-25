@@ -43,6 +43,14 @@
 #'     that specifies the display order (legend/risktable) of the single stratification factor.
 #'     Levels not listed are dropped.
 #'   If \code{label.strata} is a named vector, its names must match the (re-ordered) levels.
+#' @param palette Character vector specifying color/linetype per stratum.
+#'   Each element can be:
+#'   - "red", "blue", ... (standard R color names) for solid lines
+#'   - "red-dot", "blue-broken", "green-dash" to set both color and linetype
+#'   - "dot" as a special keyword for a black dotted line
+#'   It also accepts a named vector mapping final legend labels to specs,
+#'   e.g., \code{c("Low intake"="red-dot","High intake"="blue")}.
+#'   If NULL, a default palette is used (Okabe-Ito if available).
 #' @param limits.x Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,max(out_readSurv$t))}.
 #' @param limits.y Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,1)}.
 #' @param breaks.x Numeric vectors for axis breaks (default \code{NULL}).
@@ -209,6 +217,7 @@ cifplot <- function(
     label.y = NULL,
     label.strata = NULL,
     order.strata = NULL,
+    palette = NULL,
     limits.x = NULL,
     limits.y = NULL,
     breaks.x = NULL,
@@ -287,6 +296,7 @@ cifplot <- function(
         label.y                  = label.y,
         label.strata             = label.strata,
         order.strata             = order.strata,
+        palette                  = palette,
         limits.x                 = limits.x,
         limits.y                 = limits.y,
         breaks.x                 = breaks.x,
@@ -466,6 +476,7 @@ cifplot <- function(
         label.y                    = label.y,
         label.strata               = lab_vec,
         order.strata               = ord_vec,
+        palette                    = palette,
         limits.x                   = limits.x,
         limits.y                   = limits.y,
         breaks.x                   = breaks.x,
@@ -537,6 +548,7 @@ cifplot_single <- function(
     label.y = NULL,
     label.strata = NULL,
     order.strata = NULL,
+    palette = NULL,
     limits.x = NULL,
     limits.y = NULL,
     breaks.x = NULL,
@@ -626,6 +638,7 @@ cifplot_single <- function(
           limits.y                = limits.y,
           breaks.x                = breaks.x,
           breaks.y                = breaks.y,
+          palette                 = palette,
           addConfidenceInterval   = addConfidenceInterval,
           addRiskTable            = addRiskTable,
           addEstimateTable        = addEstimateTable,
@@ -693,6 +706,7 @@ cifplot_single <- function(
     label.y                       = label.y,
     label.strata                  = label.strata,
     order.strata                  = order.strata,
+    palette                       = palette,
     limits.x                      = limits.x,
     limits.y                      = limits.y,
     breaks.x                      = breaks.x,
@@ -795,6 +809,7 @@ call_ggsurvfit <- function(
     label.y = NULL,
     label.strata = NULL,
     order.strata = NULL,
+    palette = NULL,
     limits.x = NULL,
     limits.y = NULL,
     breaks.x = NULL,
@@ -923,10 +938,14 @@ call_ggsurvfit <- function(
     p <- plot_apply_style(p, style = style, font.family, font.size, legend.position)
   }
 
+  legend_keys <- NULL
+  legend_labels <- NULL
   if (!is.null(label.strata.map)) {
     lvls   <- names(label.strata.map)
     labs   <- unname(label.strata.map)
     n      <- length(lvls)
+    legend_keys <- lvls
+    legend_labels <- labs
 
     if (identical(style, "MONOCHROME")) {
       ltys_all   <- c("dashed","solid","dotted","longdash","dotdash","twodash",
@@ -948,6 +967,72 @@ call_ggsurvfit <- function(
         ggplot2::scale_fill_discrete   (limits =  lvls, labels = labs) +
         ggplot2::scale_linetype_discrete(limits = lvls, labels = labs) +
         ggplot2::scale_shape_discrete  (limits =  lvls, labels = labs)
+    }
+  }
+
+  if (is.null(legend_keys)) {
+    data_df <- out_cg$out_survfit_object$data
+    strata_col <- NULL
+    if (!is.null(data_df)) {
+      if (".strata" %in% names(data_df)) strata_col <- data_df$.strata
+      if (is.null(strata_col) && "strata" %in% names(data_df)) strata_col <- data_df$strata
+    }
+    if (!is.null(strata_col)) {
+      if (is.factor(strata_col)) {
+        legend_keys <- levels(strata_col)
+      } else {
+        legend_keys <- unique(as.character(strata_col))
+      }
+    } else if (!is.null(survfit_object$strata)) {
+      legend_keys <- names(survfit_object$strata)
+    }
+    if (!is.null(legend_keys)) legend_labels <- legend_keys
+  }
+
+  if (!is.null(legend_keys) && !is.null(label.strata.map)) {
+    lookup <- stats::setNames(unname(label.strata.map), names(label.strata.map))
+    mapped <- lookup[legend_keys]
+    if (is.null(legend_labels)) legend_labels <- legend_keys
+    need_replace <- !is.na(mapped)
+    legend_labels[need_replace] <- mapped[need_replace]
+  }
+
+  if (is.null(legend_labels) && !is.null(cur_lvls)) {
+    legend_labels <- cur_lvls
+  }
+
+  if (!is.null(palette)) {
+    style_vals <- parse_colorlinetype_patterns(palette, legend_labels)
+    if (!is.null(style_vals)) {
+      label_to_key <- if (!is.null(legend_labels) && !is.null(legend_keys)) {
+        stats::setNames(legend_keys, legend_labels)
+      } else {
+        stats::setNames(legend_keys %||% legend_labels, legend_labels %||% legend_keys)
+      }
+      color_values <- style_vals$color
+      linetype_values <- style_vals$linetype
+      mapped_keys <- label_to_key[names(color_values)]
+      valid <- !is.na(mapped_keys)
+      if (any(valid)) {
+        color_values <- stats::setNames(color_values[valid], mapped_keys[valid])
+        linetype_values <- stats::setNames(linetype_values[valid], mapped_keys[valid])
+        fill_values <- color_values
+
+        breaks <- names(color_values)
+        labels_lookup <- NULL
+        if (!is.null(legend_labels) && !is.null(legend_keys)) {
+          labels_lookup <- stats::setNames(legend_labels, legend_keys)
+        }
+        scale_labels <- if (!is.null(labels_lookup)) labels_lookup[breaks] else breaks
+        if (is.null(scale_labels)) scale_labels <- breaks
+        missing_labels <- is.na(scale_labels)
+        if (any(missing_labels)) scale_labels[missing_labels] <- breaks[missing_labels]
+
+        p <- p +
+          ggplot2::scale_color_manual(values = color_values, breaks = breaks, labels = scale_labels) +
+          ggplot2::scale_linetype_manual(values = linetype_values, breaks = breaks, labels = scale_labels) +
+          ggplot2::scale_fill_manual(values = fill_values, breaks = breaks, labels = scale_labels)
+      }
     }
   }
 
