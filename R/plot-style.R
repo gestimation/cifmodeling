@@ -82,8 +82,6 @@ plot_apply_style <- function(
     strata_levels_final = NULL,
     strata_labels_final = NULL
 ) {
-  print(strata_levels_final)
-  print(strata_labels_final)
   style <- match.arg(style)
   style_theme <- switch(
     style,
@@ -105,28 +103,28 @@ plot_apply_style <- function(
     return(p)
   }
 
-# plot_apply_style() 内のスケール付与部分を差し替え
-cols <- .resolve_colors_from_palette(strata_levels_final, palette_colors)
+  # plot_apply_style() 内のスケール付与部分を差し替え
+  cols <- .resolve_colors_from_palette(strata_levels_final, palette_colors)
 
-ltys_all <- c("dashed","solid","dotted","longdash","dotdash","twodash",
-              "dashed","solid","dotted","longdash","dotdash","twodash",
-              "solid","dotted","longdash","dotdash","twodash")
-lts <- .resolve_linetypes_auto(cols, ltys_all)
+  ltys_all <- c("dashed","solid","dotted","longdash","dotdash","twodash",
+                "dashed","solid","dotted","longdash","dotdash","twodash",
+                "solid","dotted","longdash","dotdash","twodash")
+  lts <- .resolve_linetypes_auto(cols, ltys_all)
 
-breaks <- strata_levels_final
-labels <- strata_labels_final  # NULL でもOK（その場合は既定表示）
+  breaks <- strata_levels_final
+  labels <- strata_labels_final  # NULL でもOK（その場合は既定表示）
 
-p +
-  ggplot2::scale_color_manual(
-    values = unname(cols),
-    drop = FALSE, guide = "legend"
-  ) +
-  ggplot2::scale_linetype_manual(
-    values = unname(lts),  breaks = breaks, labels = labels,
-    drop = FALSE, guide = "legend"
-  ) +
-  ggplot2::scale_fill_manual(
-    values = unname(cols), breaks = breaks, labels = labels,
-    drop = FALSE, guide = "legend"
-  )
+  p +
+    ggplot2::scale_color_manual(
+      values = unname(cols),
+      drop = FALSE, guide = "legend"
+    ) +
+    ggplot2::scale_linetype_manual(
+      values = unname(lts),  breaks = breaks, labels = labels,
+      drop = FALSE, guide = "legend"
+    ) +
+    ggplot2::scale_fill_manual(
+      values = unname(cols), breaks = breaks, labels = labels,
+      drop = FALSE, guide = "legend"
+    )
 }
