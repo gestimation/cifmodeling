@@ -1,15 +1,9 @@
-setup_plot_data <- function() {
-  skip_if_not_installed("ggsurvfit")
-  data(diabetes.complications, package = "ggsurvfit")
-  diabetes.complications
-}
-
 test_that("label.strata only adjusts labels and suppresses fill legend", {
-  df <- setup_plot_data()
+  data(diabetes.complications)
   lbls <- c("0" = "Low intake", "1" = "High intake")
   p <- cifplot(
     Event(t, epsilon) ~ fruitq1,
-    data = df,
+    data = diabetes.complications,
     outcome.type = "COMPETING-RISK",
     code.events  = c(1, 2, 0),
     label.strata = lbls,
@@ -29,11 +23,11 @@ test_that("label.strata only adjusts labels and suppresses fill legend", {
 })
 
 test_that("palette only uses manual color scale", {
-  df <- setup_plot_data()
+  data(diabetes.complications)
   pal <- c("#FF0000", "#0000FF")
   p <- cifplot(
     Event(t, epsilon) ~ fruitq1,
-    data = df,
+    data = diabetes.complications,
     outcome.type = "COMPETING-RISK",
     code.events  = c(1, 2, 0),
     palette = pal,
@@ -50,12 +44,12 @@ test_that("palette only uses manual color scale", {
 })
 
 test_that("label.strata overrides palette labels", {
-  df <- setup_plot_data()
+  data(diabetes.complications)
   pal <- c("#FF0000", "#0000FF")
   lbls <- c("0" = "Group A", "1" = "Group B")
   p <- cifplot(
     Event(t, epsilon) ~ fruitq1,
-    data = df,
+    data = diabetes.complications,
     outcome.type = "COMPETING-RISK",
     code.events  = c(1, 2, 0),
     palette = pal,
@@ -72,12 +66,12 @@ test_that("label.strata overrides palette labels", {
 })
 
 test_that("order.strata sets scale limits", {
-  df <- setup_plot_data()
+  data(diabetes.complications)
   lbls <- c("0" = "Low", "1" = "High")
   ord <- c("1", "0")
   p <- cifplot(
     Event(t, epsilon) ~ fruitq1,
-    data = df,
+    data = diabetes.complications,
     outcome.type = "COMPETING-RISK",
     code.events  = c(1, 2, 0),
     label.strata = lbls,

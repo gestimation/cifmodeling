@@ -827,20 +827,22 @@ call_ggsurvfit <- function(
 
   label.strata.map <- plot_make_label.strata.map(survfit_object, label.strata)
 
-  cur_lvls <- NULL
+  cur_lvls_full  <- NULL
+  cur_lvls_short <- NULL
   if (!is.null(survfit_object$strata)) {
-    cur_lvls <- unique(sub(".*=", "", names(survfit_object$strata)))
+    cur_lvls_full  <- unique(names(survfit_object$strata))
+    cur_lvls_short <- sub(".*?=", "", cur_lvls_full)
   }
 
   if (!is.null(order.strata)) {
     if (is.null(label.strata.map)) {
-      if (!is.null(cur_lvls)) {
-        keep <- order.strata[order.strata %in% cur_lvls]
-        if (length(keep) == 0L) {
-          warning("`order.strata` has no overlap with strata levels; ignoring.", call. = FALSE)
-        } else {
-          label.strata.map <- stats::setNames(keep, keep)  # level → label 同名
-        }
+      keep_short <- order.strata[order.strata %in% cur_lvls_short]
+      if (length(keep_short) == 0L) {
+        warning("`order.strata` has no overlap with strata levels; ignoring.", call. = FALSE)
+      } else {
+        idx <- match(keep_short, cur_lvls_short)
+        keep_full <- cur_lvls_full[idx]
+        label.strata.map <- stats::setNames(keep_short, keep_full)
       }
     } else {
       keep <- order.strata[order.strata %in% names(label.strata.map)]
@@ -852,17 +854,11 @@ call_ggsurvfit <- function(
     }
   }
 
-  cur_lvls_full  <- NULL
-  cur_lvls_short <- NULL
-  if (!is.null(survfit_object$strata)) {
-    cur_lvls_full  <- unique(names(survfit_object$strata))
-    cur_lvls_short <- sub(".*?=", "", cur_lvls_full)
-  }
-
   remap_to_full_if_needed <- function(lbl_map, full, short) {
     if (is.null(lbl_map) || is.null(full) || is.null(short)) return(lbl_map)
     nm <- names(lbl_map)
     if (!length(nm)) return(lbl_map)
+    # キー（names）がフルキーでなければ、短縮→フルへ
     if (!all(nm %in% full) && all(nm %in% short)) {
       idx <- match(nm, short)
       names(lbl_map) <- full[idx]
@@ -871,21 +867,12 @@ call_ggsurvfit <- function(
   }
   label.strata.map <- remap_to_full_if_needed(label.strata.map, cur_lvls_full, cur_lvls_short)
 
-  if (!is.null(label.strata.map)) {
-    strata_levels_final <- names(label.strata.map)
-    strata_labels_final <- unname(label.strata.map)
-  } else {
-    strata_levels_final <- cur_lvls_full
-    strata_labels_final <- cur_lvls_short
-  }
+  has_user_limits <- !is.null(label.strata.map)
 
-  n_strata_effective <- if (!is.null(strata_levels_final)) {
-    length(strata_levels_final)
-  } else if (!is.null(cur_lvls)) {
-    length(cur_lvls)
-  } else {
-    1L
-  }
+  strata_levels_final <- if (has_user_limits) names(label.strata.map) else NULL  # ← limits
+  strata_labels_final <- if (has_user_limits) unname(label.strata.map) else NULL # ← labels
+
+  n_strata_effective <- if (!is.null(cur_lvls_full)) length(cur_lvls_full) else 1L
 
   p <- out_cg$out_survfit_object +
     ggplot2::labs(x = label.x, y = out_cg$label.y)
@@ -964,6 +951,8 @@ call_ggsurvfit <- function(
   p <- p + ggplot2::guides(fill = "none", alpha = "none", shape = "none") +
     ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(fill = NA)))
 
+  p <- plot_fix_palette_vector_arg(p)
+
   #  use.polyreg <- FALSE
   #  time.point.polyreg <- NULL
   #  if (use.polyreg==TRUE & !is.null(time.point.polyreg) & length(levels(out_readSurv$strata))==2) {
@@ -984,6 +973,40 @@ call_ggsurvfit <- function(
   #  }
   return(p)
 }
+
+plot_fix_palette_vector_arg <- function(p) {
+  scs <- p$scales$scales
+  if (!length(scs)) return(p)
+  for (k in seq_along(scs)) {
+    sc <- scs[[k]]
+    if (inherits(sc, "ScaleDiscrete") && is.function(sc$palette)) {
+      orig <- sc$palette
+      sc$palette <- function(n) {
+        n1 <- if (length(n) > 1L) max(n, na.rm = TRUE) else n
+        unname(orig(n1))
+      }
+      p$scales$scales[[k]] <- sc
+    }
+  }
+  scs <- p$scales$scales
+  if (!length(scs)) return(p)
+  for (k in seq_along(scs)) {
+    sc <- scs[[k]]
+    if (inherits(sc, "ScaleDiscrete")) {
+      is_manual <- identical(sc$scale_name, "manual")
+      if (is_manual || isTRUE(grepl("manual", paste0(sc$name, collapse=""), ignore.case=TRUE))) {
+        sc$scale_name <- "manual"
+        if (!inherits(sc, "ScaleDiscreteManual")) {
+          class(sc) <- c("ScaleDiscreteManual", class(sc))
+        }
+        scs[[k]] <- sc
+      }
+    }
+  }
+  p$scales$scales <- scs
+  return(p)
+}
+
 
 create_rr_text <- function(coefficient, cov, index, omit.conf.int=TRUE, conf.int=0.95) {
   alpha <- 1 - conf.int

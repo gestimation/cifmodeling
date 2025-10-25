@@ -42,8 +42,6 @@ test_that("cifplot(printEachEvent=TRUE) returns a patchwork object", {
   )
 })
 
-
-
 test_that("cifplot(printEachEvent=TRUE) returns two panels and passes y labels", {
   data(diabetes.complications)
   plt <- cifplot(
@@ -52,7 +50,6 @@ test_that("cifplot(printEachEvent=TRUE) returns two panels and passes y labels",
     outcome.type = "COMPETING-RISK",
     code.events = c(1, 2, 0),
     printEachEvent = TRUE,
-    # title.plot は cifplot() では非対応（仕様）
     label.y = "Left axis"
   )
 
@@ -60,11 +57,9 @@ test_that("cifplot(printEachEvent=TRUE) returns two panels and passes y labels",
   expect_true(!is.null(plots_attr))
   expect_length(plots_attr, 2L)
 
-  # cifplot() では title を設定しない（NAを容認）
   titles <- vapply(plots_attr, function(p) p$labels$title %||% NA_character_, character(1))
   expect_true(all(is.na(titles)))
 
-  # y軸ラベルは両パネルに反映される
   ylabels <- vapply(plots_attr, function(p) p$labels$y %||% NA_character_, character(1))
   expect_equal(ylabels, c("Left axis", "Left axis"))
 })

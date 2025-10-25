@@ -6,19 +6,22 @@
   hue_fn(k)
 }
 
-# 色名の検証（未知は警告して black にフォールバック）
 .validate_or_fix_color <- function(x) {
-  v <- tolower(grDevices::colors())
-  out <- tolower(x)
-  bad <- which(!out %in% v)
-  if (length(bad)) {
+  is_hex <- grepl("^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$", x)
+  known_names <- tolower(grDevices::colors())
+  name_candidates <- tolower(x[!is_hex])
+
+  bad_name_idx <- which(!(name_candidates %in% known_names))
+  if (length(bad_name_idx)) {
+    bad_vals <- unique(x[!is_hex][bad_name_idx])
     warning(
-      "Unknown color name: ", paste(unique(out[bad]), collapse = ", "),
+      "Unknown color name: ", paste(bad_vals, collapse = ", "),
       " (defaulting to 'black')"
     )
-    out[bad] <- "black"
+    x[!is_hex][bad_name_idx] <- "black"
   }
-  out
+  x[!is_hex] <- tolower(x[!is_hex])
+  return(x)
 }
 
 .resolve_palette_colors <- function(levels_final, palette, n, fallback_colors = NULL) {
@@ -103,45 +106,50 @@ apply_all_scales_once <- function(
     strata_levels_final,
     strata_labels_final
 ) {
+  p <- plot_strip_mapped_scales(p)
   lvls <- strata_levels_final
   labs <- strata_labels_final
   n_effective <- if (!is.null(lvls) && length(lvls)) length(lvls) else n_strata %||% 1L
   n_effective <- max(1L, n_effective)
 
+  use_manual <- !is.null(palette)
   palette_info <- .resolve_palette_colors(lvls, palette, n_effective)
-  col_values <- rep_len(palette_info$values, n_effective)
+  col_values   <- unname(rep_len(palette_info$values, n_effective))
   if (!is.null(lvls) && length(lvls)) {
-    col_values <- stats::setNames(col_values, lvls)
+    names(col_values) <- NULL
   }
 
-  if (isTRUE(palette_info$supplied)) {
+  if (use_manual) {
     color_scale <- ggplot2::scale_color_manual(
       values = col_values,
       limits = lvls,
       labels = labs,
-      drop = FALSE
+      drop   = FALSE
     )
     fill_scale <- ggplot2::scale_fill_manual(
       values = col_values,
       limits = lvls,
       labels = labs,
-      drop = FALSE,
-      guide = "none"
+      drop   = FALSE,
+      guide  = "none"
     )
+
+    color_scale$scale_name <- "manual"
+    fill_scale$scale_name  <- "manual"
+    if (!inherits(color_scale, "ScaleDiscreteManual")) {
+      class(color_scale) <- c("ScaleDiscreteManual", class(color_scale))
+    }
+    if (!inherits(fill_scale, "ScaleDiscreteManual")) {
+      class(fill_scale) <- c("ScaleDiscreteManual", class(fill_scale))
+    }
   } else {
     color_scale <- ggplot2::scale_color_discrete(
-      limits = lvls,
-      labels = labs,
-      drop = FALSE
+      limits = lvls, labels = labs, drop = FALSE
     )
     fill_scale <- ggplot2::scale_fill_discrete(
-      limits = lvls,
-      labels = labs,
-      drop = FALSE,
-      guide = "none"
+      limits = lvls, labels = labs, drop = FALSE, guide = "none"
     )
   }
-
   p +
     color_scale +
     fill_scale +
@@ -156,4 +164,20 @@ apply_all_scales_once <- function(
       drop = FALSE,
       guide = "none"
     )
+}
+
+plot_strip_mapped_scales <- function(p, aes = c("colour","fill","linetype","shape")) {
+  scs <- p$scales$scales
+  if (!length(scs)) return(p)
+  keep <- vapply(
+    scs,
+    function(sc) {
+      a <- tryCatch(sc$aesthetics, error = function(e) NULL)
+      if (is.null(a)) return(TRUE)
+      !any(a %in% aes)
+    },
+    logical(1)
+  )
+  p$scales$scales <- scs[keep]
+  return(p)
 }
