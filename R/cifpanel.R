@@ -49,6 +49,8 @@
 #' @param label.x,label.y Optional vectors/lists of axis labels per panel.
 #' @param label.strata Optional list of character vectors for legend labels per panel
 #'   (passed to [cifplot()]).
+#' @param order.strata Optional list of character vectors for ordering labels per panel
+#'   (passed to [cifplot()]).
 #' @param limits.x,limits.y Optional vectors/lists of numeric length-2 axis limits per panel.
 #' @param breaks.x,breaks.y Optional vectors/lists of axis breaks per panel (forwarded to
 #'   \code{breaks.x} / \code{breaks.y} in [cifplot()]).
@@ -256,6 +258,7 @@ cifpanel <- function(
     label.x      = NULL,
     label.y      = NULL,
     label.strata = NULL,
+    order.strata = NULL,
     limits.x     = NULL,
     limits.y     = NULL,
     breaks.x      = NULL,
@@ -387,12 +390,19 @@ cifpanel <- function(
 
   toL <- panel_to_list; rec <- panel_recycle_to
 
-  outcome.list <- toL(outcome.type); if (!is.null(outcome.list)) outcome.list <- rec(outcome.list, K)
-  typey.list   <- toL(type.y);       if (!is.null(typey.list))   typey.list   <- rec(typey.list, K)
-  labely.list  <- toL(label.y);      if (!is.null(labely.list))  labely.list  <- rec(labely.list, K)
+  outcome.list <- toL(outcome.type);      if (!is.null(outcome.list)) outcome.list <- rec(outcome.list, K)
+  typey.list   <- toL(type.y);            if (!is.null(typey.list))   typey.list   <- rec(typey.list, K)
+  labely.list  <- toL(label.y);           if (!is.null(labely.list))  labely.list  <- rec(labely.list, K)
+  typex.list   <- toL(type.x);            if (!is.null(typex.list))   typex.list   <- rec(typex.list, K)
+  labelx.list  <- toL(label.x);           if (!is.null(labelx.list))  labelx.list  <- rec(labelx.list, K)
 
-  typex.list   <- toL(type.x);       if (!is.null(typex.list))   typex.list   <- rec(typex.list, K)
-  labelx.list  <- toL(label.x);      if (!is.null(labelx.list))  labelx.list  <- rec(labelx.list, K)
+  make_panel_list_preserve_vector <- function(x, K) {
+    if (is.null(x)) return(NULL)
+    if (is.list(x)) return(panel_recycle_to(x, K))          # 既にパネルごと
+    rep(list(x), K)
+  }
+  labelstrata.list  <- make_panel_list_preserve_vector(label.strata,  K)
+  orderstrata.list  <- make_panel_list_preserve_vector(order.strata,  K)
 
   limsx.list <- NULL
   if (!is.null(limits.x)) {
@@ -436,21 +446,23 @@ cifpanel <- function(
   panel_validate_code_events(code.events, outcome.flags)
 
   kill_names <- c()
-  if (!is.null(outcome.list)) kill_names <- c(kill_names, "outcome.type")
-  if (!is.null(typey.list))   kill_names <- c(kill_names, "type.y")
-  if (!is.null(labely.list))  kill_names <- c(kill_names, "label.y")
-  if (!is.null(limsy.list))   kill_names <- c(kill_names, "limits.y")
-  if (!is.null(typex.list))   kill_names <- c(kill_names, "type.x")
-  if (!is.null(labelx.list))  kill_names <- c(kill_names, "label.x")
-  if (!is.null(limsx.list))   kill_names <- c(kill_names, "limits.x")
-  if (!is.null(breakx.list))  kill_names <- c(kill_names, "breaks.x","breaks.x")
-  if (!is.null(breaky.list))  kill_names <- c(kill_names, "breaks.y","breaks.y")
-  if (!is.null(addCI.list))   kill_names <- c(kill_names, "addConfidenceInterval")
-  if (!is.null(addCen.list))  kill_names <- c(kill_names, "addCensorMark")
-  if (!is.null(addCR.list))   kill_names <- c(kill_names, "addCompetingRiskMark")
-  if (!is.null(addIC.list))   kill_names <- c(kill_names, "addIntercurrentEventMark")
-  if (!is.null(addQ.list))    kill_names <- c(kill_names, "addQuantileLine")
-  if (!is.null(strata.list))  kill_names <- c(kill_names, "label.strata")
+  if (!is.null(outcome.list))     kill_names <- c(kill_names, "outcome.type")
+  if (!is.null(typey.list))       kill_names <- c(kill_names, "type.y")
+  if (!is.null(labely.list))      kill_names <- c(kill_names, "label.y")
+  if (!is.null(limsy.list))       kill_names <- c(kill_names, "limits.y")
+  if (!is.null(typex.list))       kill_names <- c(kill_names, "type.x")
+  if (!is.null(labelx.list))      kill_names <- c(kill_names, "label.x")
+  if (!is.null(limsx.list))       kill_names <- c(kill_names, "limits.x")
+  if (!is.null(labelstrata.list)) kill_names <- c(kill_names, "label.strata")
+  if (!is.null(orderstrata.list)) kill_names <- c(kill_names, "order.strata")
+  if (!is.null(breakx.list))      kill_names <- c(kill_names, "breaks.x","breaks.x")
+  if (!is.null(breaky.list))      kill_names <- c(kill_names, "breaks.y","breaks.y")
+  if (!is.null(addCI.list))       kill_names <- c(kill_names, "addConfidenceInterval")
+  if (!is.null(addCen.list))      kill_names <- c(kill_names, "addCensorMark")
+  if (!is.null(addCR.list))       kill_names <- c(kill_names, "addCompetingRiskMark")
+  if (!is.null(addIC.list))       kill_names <- c(kill_names, "addIntercurrentEventMark")
+  if (!is.null(addQ.list))        kill_names <- c(kill_names, "addQuantileLine")
+
   dots <- panel_strip_overrides_from_dots(dots, unique(kill_names))
 
   fonts <- panel_extract_fonts(dots)
@@ -484,13 +496,18 @@ cifpanel <- function(
   plots <- lapply(seq_len(prep$K), function(i) {
     pa <- prep$plot_args[[i]]
 
-    # 念のため: cifplot_single が受け付けない名前は落とす
+    if (!is.null(labelstrata.list))  pa$label.strata <- labelstrata.list[[i]]
+    if (!is.null(orderstrata.list))  pa$order.strata <- orderstrata.list[[i]]
+
+    if (!is.null(pa$label.strata) && !is.null(names(pa$label.strata))) {
+      if (all(!nzchar(names(pa$label.strata)))) names(pa$label.strata) <- NULL
+    }
+
     allowed <- setdiff(names(formals(cifplot_single)), "...")
     if (!is.null(names(pa))) {
       pa <- pa[intersect(names(pa), allowed)]
     }
 
-    # サバイバル曲線を直接渡す
     args_i <- c(list(formula_or_fit = prep$curves[[i]]), pa)
 
     do.call(cifplot_single, args_i)

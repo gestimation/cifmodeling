@@ -592,21 +592,19 @@ cifplot_single <- function(
     if (inherits(formula_or_fit, "survfit")) {
       warning("printEachEvent=TRUE requires a formula interface; falling back to single-plot.")
     } else {
-      outcome_effective <- outcome.type
-      if (is.null(outcome_effective)) {
-        outcome_effective <- util_check_outcome_type(
+      outcome.type_corrected <- outcome.type
+      if (is.null(outcome.type_corrected)) {
+        outcome.type_corrected <- util_check_outcome_type(
           formula = formula_or_fit, data = data, na.action = na.action, auto_message = FALSE
         )
       }
-      if (!is_competing_outcome(outcome_effective)) {
+      if (outcome.type_corrected != "COMPETING-RISK") {
         warning("printEachEvent=TRUE is only for COMPETING-RISK; falling back to single-plot.")
       } else {
         ce_panel <- normalize_code_events(c(code.event1, code.event2, code.censoring))
 
-        # cifplot()では title.plot を受け付けない仕様：あっても捨てる
         if (!is.null(dots$title.plot)) dots$title.plot <- NULL
 
-        # y軸ラベルは長さ2に整形して cifpanel に渡す（これは仕様維持）
         ylabs_vec <- label.y
         if (is.null(ylabs_vec) && !is.null(dots$label.y)) ylabs_vec <- dots$label.y
         if (is.null(ylabs_vec)) {
@@ -626,6 +624,7 @@ cifplot_single <- function(
           label.x                 = label.x,
           label.y                 = ylabs_vec,
           label.strata            = label.strata,
+          order.strata            = order.strata,
           limits.x                = limits.x,
           limits.y                = limits.y,
           breaks.x                = breaks.x,
@@ -725,13 +724,6 @@ normalize_code_events <- function(code_events) {
   if (ce_int[1L] == ce_int[2L]) .err("code_events_distinct")
   ce_int
 }
-
-is_competing_outcome <- function(outcome_type) {
-  if (is.null(outcome_type)) return(FALSE)
-  ux <- toupper(as.character(outcome_type))
-  any(ux %in% c("C", "COMPETING-RISK", "COMPETING_RISK", "COMPETINGRISK"))
-}
-
 
 #' Plot survival or cumulative incidence curves with ggsurvfit
 #'
