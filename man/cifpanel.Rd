@@ -17,6 +17,7 @@ cifpanel(
   label.x = NULL,
   label.y = NULL,
   label.strata = NULL,
+  order.strata = NULL,
   limits.x = NULL,
   limits.y = NULL,
   breaks.x = NULL,
@@ -80,6 +81,9 @@ for COMPETING-RISK: \code{c(code.event1, code.event2, code.censoring)}.}
 \item{label.x, label.y}{Optional vectors/lists of axis labels per panel.}
 
 \item{label.strata}{Optional list of character vectors for legend labels per panel
+(passed to \code{\link[=cifplot]{cifplot()}}).}
+
+\item{order.strata}{Optional list of character vectors for ordering labels per panel
 (passed to \code{\link[=cifplot]{cifplot()}}).}
 
 \item{limits.x, limits.y}{Optional vectors/lists of numeric length-2 axis limits per panel.}

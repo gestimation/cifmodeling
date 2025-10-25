@@ -249,14 +249,11 @@ cifplot <- function(
   if (is.null(font.family) || !nzchar(font.family)) font.family <- "sans"
   if (is.null(font.size)   || !is.finite(font.size)) font.size   <- 12
 
-  outcome.type <- if (is.null(outcome.type)) NULL else
-    match.arg(outcome.type, c("COMPETING-RISK", "SURVIVAL"))
-
+  outcome.type  <- util_check_outcome_type(outcome.type, formula=formula, data=data)
   if (!is.null(code.events)) {
     ce_vec <- normalize_code_events(code.events)
-    code.event1    <- ce_vec[1L]; code.event2 <- ce_vec[2L]; code.censoring <- ce_vec[3L]
+    code.event1    <- ce_vec[1]; code.event2 <- ce_vec[2]; code.censoring <- ce_vec[3]
   }
-
 
   if (!isTRUE(printEachVar)) {
     dots1 <- plot_drop_panel_only_args(dots)
@@ -341,13 +338,13 @@ cifplot <- function(
   Terms <- stats::terms(formula, data = data)
   rhs_vars <- attr(Terms, "term.labels")
   if (length(rhs_vars) == 0L) {
-    stop("printEachVar=TRUE requires >=1 variable on the right-hand side.")
+    stop("printEachVar=TRUE requires one or more variable on the right-hand side.")
   }
   invalid_terms <- rhs_vars[grepl("[:*()]", rhs_vars)]
   if (length(invalid_terms) > 0L) {
     stop(
       sprintf(
-        "printEachVar=TRUE supports simple covariate terms only; remove transformations/interactions: %s",
+        "printEachVar=TRUE does not supports transformations/interactions. Remove: %s",
         paste(invalid_terms, collapse = ", ")
       )
     )
@@ -824,7 +821,6 @@ call_ggsurvfit <- function(
     style = style,
     palette = palette
   )
-
   label.strata.map <- plot_make_label.strata.map(survfit_object, label.strata)
 
   cur_lvls_full  <- NULL

@@ -108,6 +108,7 @@ plot_style_classic <- function(font.family = "sans", font.size = 14, legend.posi
       axis.text         = ggplot2::element_text(size = font.size,     family = font.family),
       legend.text       = ggplot2::element_text(size = font.size + 4, family = font.family),
       legend.background = ggplot2::element_rect(fill = "transparent", color = NA),
+      panel.background  = element_rect(fill = "transparent", color = NA),
       panel.border      = ggplot2::element_blank()
     )
 }
@@ -120,6 +121,7 @@ plot_style_bold <- function(font.family = "sans", font.size = 14, legend.positio
       axis.text         = ggplot2::element_text(size = font.size,     family = font.family),
       legend.text       = ggplot2::element_text(size = font.size,     family = font.family),
       legend.background = ggplot2::element_rect(fill = "transparent", color = NA),
+      panel.background  = element_rect(fill = "transparent", color = NA),
       panel.border      = ggplot2::element_blank()
     )
 }
@@ -131,10 +133,37 @@ plot_style_framed <- function(font.family = "sans", font.size = 14, legend.posit
       axis.title        = ggplot2::element_text(size = font.size + 3, face = "bold", family = font.family),
       axis.text         = ggplot2::element_text(size = font.size,     family = font.family),
       legend.text       = ggplot2::element_text(size = font.size,     family = font.family),
-      legend.background = ggplot2::element_blank(),
-      legend.key        = ggplot2::element_blank(),
-      strip.background  = ggplot2::element_rect(fill = "grey90", color = "black"),
-      panel.border      = ggplot2::element_rect(color = "black", linewidth = 0.8)
+      legend.background = ggplot2::element_rect(fill = "transparent", color = NA),
+      panel.background  = element_rect(fill = "transparent", color = NA),
+      panel.grid        = ggplot2::element_blank(),
+      panel.border      = ggplot2::element_rect(color = "black", linewidth = 2)
+    )
+}
+
+plot_style_grid <- function(font.family = "sans", font.size = 14, legend.position = "top") {
+  ggplot2::theme_bw(base_size = font.size, base_family = font.family) +
+    ggplot2::theme(
+      legend.position   = legend.position,
+      axis.title        = ggplot2::element_text(size = font.size + 3, face = "bold", family = font.family),
+      axis.text         = ggplot2::element_text(size = font.size,     family = font.family),
+      legend.text       = ggplot2::element_text(size = font.size,     family = font.family),
+      legend.background = ggplot2::element_rect(fill = "transparent", color = NA),
+      panel.background  = element_rect(fill = "transparent", color = NA),
+      panel.border      = ggplot2::element_rect(color = "black", linewidth = 2)
+    )
+}
+
+plot_style_gray <- function(font.family = "sans", font.size = 14, legend.position = "top") {
+  ggplot2::theme_bw(base_size = font.size, base_family = font.family) +
+    ggplot2::theme(
+      legend.position   = legend.position,
+      axis.title        = ggplot2::element_text(size = font.size + 3, face = "bold", family = font.family),
+      axis.text         = ggplot2::element_text(size = font.size,     family = font.family),
+      legend.text       = ggplot2::element_text(size = font.size,     family = font.family),
+      legend.background = ggplot2::element_rect(fill = "transparent", color = NA),
+      panel.background  = element_rect(fill = 'gray97'),
+      panel.grid        = ggplot2::element_blank(),
+      panel.border      = ggplot2::element_rect(color = "black", linewidth = 0.2)
     )
 }
 

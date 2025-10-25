@@ -58,7 +58,7 @@
 
 #' Apply presentation style theme to CIF plots
 #'
-#' @param p A ggplot object produced by [call_ggsurvfit()].
+#' @param p A ggplot object produced by \code{call_ggsurvfit()}.
 #' @param style Character scalar matching one of the supported styles.
 #' @param font.family Base font family used in theme definitions.
 #' @param font.size Base font size used in theme definitions.
@@ -68,7 +68,7 @@
 #' @keywords internal
 plot_apply_style <- function(
     p,
-    style = c("CLASSIC", "BOLD", "FRAMED"),
+    style = c("CLASSIC", "BOLD", "FRAMED", "GRID", "GRAY"),
     font.family = "sans",
     font.size = 14,
     legend.position = "top",
@@ -77,12 +77,15 @@ plot_apply_style <- function(
     strata_levels_final = NULL,
     strata_labels_final = NULL
 ) {
+  if (style=="G") style <- "GRID"
   style <- match.arg(style)
   style_theme <- switch(
     style,
     CLASSIC    = plot_style_classic(font.family, font.size, legend.position),
     BOLD       = plot_style_bold(font.family, font.size, legend.position),
-    FRAMED     = plot_style_framed(font.family, font.size, legend.position)
+    FRAMED     = plot_style_framed(font.family, font.size, legend.position),
+    GRID       = plot_style_grid(font.family, font.size, legend.position),
+    GRAY       = plot_style_gray(font.family, font.size, legend.position)
   )
   p + style_theme
 }

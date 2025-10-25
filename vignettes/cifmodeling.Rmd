@@ -100,7 +100,7 @@ This function produces the **Kaplan–Meier survival** or **Aalen–Johansen cum
 -   **Plot customization**
     -   `type.y` chooses y-axis. (`"surv"` for survival curves and `"risk"` for CIFs)
     -   `limits.x`, `limits.y`, `breaks.x`, `breaks.y` — axis control
-    -   `style` specifies the appearance of plot (`"CLASSIC"`, `"MONOCHROME"`, `"BOLD"` or `"FRAMED"`)
+    -   `style` specifies the appearance of plot (`"CLASSIC"`, `"BOLD"`, `"FRAMED"`, `"GRID"`, `"GRAY"` or `"GGSURVFIT"`)
     -   Standard `ggplot2` arguments such as `theme()`, `labs()`, and `scale_y_continuous()` apply
 
 -   **Panel**
@@ -354,11 +354,10 @@ cifplot(Event(t,epsilon) ~ fruitq+fruitq1, data=diabetes.complications, outcome.
 In the next figure, censoring marks are added along each curve (`addCensorMark = TRUE`) to indicate individuals who were censored before experiencing any event. These marks visualize the timing and frequency of censoring, allowing a clearer understanding of loss-to-censoring patterns over follow-up. Here usage of functions are different from the code above. The survfit object `output1` initially is generated using `cifcurve()` with `outcome.type="COMPETING-RISK"` by calculating Aalen–Johansen estimator stratified by fruitq1. Then, `cifplot()` is used to generate the figure. 
 
 ```{r example1-2, warning=FALSE, message=FALSE}
-output1 <- cifcurve(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, 
-outcome.type="COMPETING-RISK")
+output1 <- cifcurve(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, outcome.type="COMPETING-RISK")
 cifplot(output1, addConfidenceInterval=FALSE, addCensorMark=TRUE, addCompetingRiskMark=FALSE,
-        label.y="CIF of diabetic retinopathy", label.x="Years from registration",
-        label.strata=c("High intake","Low intake"))
+        outcome.type="COMPETING-RISK", label.y="CIF of diabetic retinopathy", 
+        label.x="Years from registration", label.strata=c("High intake","Low intake"))
 ```
 
 In the final figure, competing risk marks are added (`addCompetingRiskMark = TRUE`) to indicate individuals who experienced the competing event (macrovascular complications) before diabetic retinopathy. The time points at which the macrovascular complications occurred were obtained as `output2` for each strata using a helper function `extract_time_to_event()`. These symbols help distinguish between events due to the primary cause and those attributable to competing causes. 
@@ -366,8 +365,8 @@ In the final figure, competing risk marks are added (`addCompetingRiskMark = TRU
 ```{r example1-3, warning=FALSE, message=FALSE}
 output2 <- extract_time_to_event(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, which_event="event2")
 cifplot(output1, addConfidenceInterval=FALSE, addCensorMark=FALSE, addCompetingRiskMark=TRUE, 
-competing.risk.time=output2, label.y="CIF of diabetic retinopathy",  
-label.x="Years from registration", label.strata=c("High intake","Low intake"))
+        outcome.type="COMPETING-RISK", competing.risk.time=output2, label.y="CIF of diabetic retinopathy",  
+        label.x="Years from registration", label.strata=c("High intake","Low intake"))
 ```
 
 An estimate of the unadjusted risk ratio for the risk of diabetic retinopathy at 8 years is obtained using `polyreg()` with `outcome.type="COMPETING-RISK"`. Here, no covariates are included in the nuisance model (intercept only). The effect of low fruit intake `fruitq1` is estimated as a risk ratio (`effect.measure1="RR"`) for diabetic retinopathy (event 1) and macrovascular complications (event 2) at 8 years (`time.point=8`).

@@ -90,8 +90,8 @@ survfit-compatible object directly.
   - `type.y` chooses y-axis. (`"surv"` for survival curves and `"risk"`
     for CIFs)
   - `limits.x`, `limits.y`, `breaks.x`, `breaks.y` — axis control
-  - `style` specifies the appearance of plot (`"CLASSIC"`,
-    `"MONOCHROME"`, `"BOLD"` or `"FRAMED"`)
+  - `style` specifies the appearance of plot (`"CLASSIC"`, `"BOLD"`,
+    `"FRAMED"`, `"GRID"`, `"GRAY"` or `"GGSURVFIT"`)
   - Standard `ggplot2` arguments such as `theme()`, `labs()`, and
     `scale_y_continuous()` apply
 - **Panel**
@@ -462,11 +462,10 @@ calculating Aalen–Johansen estimator stratified by fruitq1. Then,
 `cifplot()` is used to generate the figure.
 
 ``` r
-output1 <- cifcurve(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, 
-outcome.type="COMPETING-RISK")
+output1 <- cifcurve(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, outcome.type="COMPETING-RISK")
 cifplot(output1, addConfidenceInterval=FALSE, addCensorMark=TRUE, addCompetingRiskMark=FALSE,
-        label.y="CIF of diabetic retinopathy", label.x="Years from registration",
-        label.strata=c("High intake","Low intake"))
+        outcome.type="COMPETING-RISK", label.y="CIF of diabetic retinopathy", 
+        label.x="Years from registration", label.strata=c("High intake","Low intake"))
 ```
 
 <img src="man/figures/README-example1-2-1.png" width="100%" />
@@ -483,8 +482,8 @@ competing causes.
 ``` r
 output2 <- extract_time_to_event(Event(t,epsilon) ~ fruitq1, data=diabetes.complications, which_event="event2")
 cifplot(output1, addConfidenceInterval=FALSE, addCensorMark=FALSE, addCompetingRiskMark=TRUE, 
-competing.risk.time=output2, label.y="CIF of diabetic retinopathy",  
-label.x="Years from registration", label.strata=c("High intake","Low intake"))
+        outcome.type="COMPETING-RISK", competing.risk.time=output2, label.y="CIF of diabetic retinopathy",  
+        label.x="Years from registration", label.strata=c("High intake","Low intake"))
 ```
 
 <img src="man/figures/README-example1-3-1.png" width="100%" />

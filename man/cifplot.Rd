@@ -49,6 +49,7 @@ cifplot(
   printEachVar = FALSE,
   rows.columns.panel = NULL,
   style = "CLASSIC",
+  palette = NULL,
   font.family = "sans",
   font.size = 12,
   legend.position = "top",
