@@ -19,8 +19,8 @@ Suggests:
 Config/testthat/edition: 3
 LinkingTo: 
     Rcpp
-Imports: 
-    Rcpp, nleqslv, boot, ggsurvfit, ggplot2, patchwork
+Imports:
+    Rcpp, nleqslv, boot, ggsurvfit, ggplot2, patchwork, scales
 VignetteBuilder: knitr
 URL: https://github.com/gestimation/cifmodeling
 BugReports: https://github.com/gestimation/cifmodeling/issues

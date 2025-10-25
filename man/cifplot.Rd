@@ -24,6 +24,7 @@ cifplot(
   label.y = NULL,
   label.strata = NULL,
   order.strata = NULL,
+  palette = NULL,
   limits.x = NULL,
   limits.y = NULL,
   breaks.x = NULL,
@@ -114,6 +115,17 @@ that specifies the display order (legend/risktable) of the single stratification
 Levels not listed are dropped.
 If \code{label.strata} is a named vector, its names must match the (re-ordered) levels.
 }}
+
+\item{palette}{Character vector specifying color/linetype per stratum.
+Each element can be:
+\itemize{
+\item \code{"red"}, \code{"blue"}, ... (standard R color names) for solid lines
+\item \code{"red-dot"}, \code{"blue-broken"}, \code{"green-dash"} to set both color and linetype
+\item \code{"dot"} as a special keyword for a black dotted line
+}
+It also accepts a named vector mapping final legend labels to specs,
+e.g., \code{c("Low intake"="red-dot","High intake"="blue")}.
+If \code{NULL}, a default palette is used (Okabe-Ito if available).}
 
 \item{limits.x}{Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,max(out_readSurv$t))}.}
 
