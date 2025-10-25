@@ -2,7 +2,6 @@
 
 # 既定色
 .default_fallback_colors <- function(k) {
-  # ggplot2 標準の hue パレットを使用して k 色生成
   hue_fn <- scales::hue_pal(h = c(15, 375), c = 100, l = 65, h.start = 0)
   hue_fn(k)
 }
@@ -13,64 +12,57 @@
   out <- tolower(x)
   bad <- which(!out %in% v)
   if (length(bad)) {
-    warning("Unknown color name: ", paste(unique(out[bad]), collapse = ", "),
-            " (defaulting to 'black')")
+    warning(
+      "Unknown color name: ", paste(unique(out[bad]), collapse = ", "),
+      " (defaulting to 'black')"
+    )
     out[bad] <- "black"
   }
   out
 }
 
-# palette 入力（色名のみ）を最終凡例ラベル順の色ベクトルに解決
-# levels_final: label.strata 適用後の最終レベル
-# palette: NULL | 無名/名前付き 文字ベクトル（色名のみ）
-.resolve_colors_from_palette <- function(levels_final, palette, fallback_colors = NULL) {
-  k <- length(levels_final)
-  if (k == 0) return(character(0))
-  if (is.null(fallback_colors)) fallback_colors <- .default_fallback_colors(k)
-
+.resolve_palette_colors <- function(levels_final, palette, n, fallback_colors = NULL) {
+  if (is.null(fallback_colors)) fallback_colors <- .default_fallback_colors(max(1, n))
   if (is.null(palette)) {
-    cols <- rep_len(fallback_colors, k)
-    cols <- unname(cols)
-    names(cols) <- NULL
+    cols <- rep_len(fallback_colors, max(1, n))
+    return(list(values = unname(cols), supplied = FALSE))
   }
 
   stopifnot(is.character(palette))
+  pal <- .validate_or_fix_color(palette)
 
-  if (is.null(names(palette))) {
-    pal <- .validate_or_fix_color(palette)
-    cols <- rep_len(pal, k)
-    names(cols) <- levels_final
-    return(cols)
-  } else {
-    pal <- .validate_or_fix_color(palette)
-    cols <- vapply(levels_final, function(s) pal[[s]] %||% NA_character_, character(1))
-    if (anyNA(cols)) {
-      miss <- which(is.na(cols))
-      cols[miss] <- rep_len(fallback_colors, k)[miss]
+  if (!is.null(levels_final) && length(levels_final)) {
+    cols <- rep_len(fallback_colors, length(levels_final))
+    if (is.null(names(palette))) {
+      cols <- rep_len(pal, length(levels_final))
+    } else {
+      cols <- vapply(
+        levels_final,
+        function(s) pal[[s]] %||% NA_character_,
+        FUN.VALUE = character(1)
+      )
+      if (anyNA(cols)) {
+        miss <- which(is.na(cols))
+        cols[miss] <- rep_len(fallback_colors, length(levels_final))[miss]
+      }
     }
-    cols <- unname(cols)
-    names(cols) <- NULL
+    return(list(values = unname(cols), supplied = TRUE))
   }
+
+  cols <- rep_len(pal, max(1, n))
+  list(values = unname(cols), supplied = TRUE)
 }
 
-
-# 線種の自動判定：
-# - 全色が同一（unique(colors)==1）なら ltys_all を順に割当
-# - それ以外は "solid" に統一
-.resolve_linetypes_auto <- function(colors, ltys_all) {
-  k <- length(colors)
-  if (k == 0) return(character(0))
-  stopifnot(is.character(colors), length(colors) == k)
-
-  if (length(unique(colors)) == 1L) {
-    lt <- rep_len(ltys_all, k)
-  } else {
-    lt <- rep_len("solid", k)
-  }
-  names(lt) <- names(colors)
-  lt
-}
-
+#' Apply presentation style theme to CIF plots
+#'
+#' @param p A ggplot object produced by [call_ggsurvfit()].
+#' @param style Character scalar matching one of the supported styles.
+#' @param font.family Base font family used in theme definitions.
+#' @param font.size Base font size used in theme definitions.
+#' @param legend.position Legend placement.
+#'
+#' @return The plot with the requested theme applied.
+#' @keywords internal
 plot_apply_style <- function(
     p,
     style = c("CLASSIC", "BOLD", "FRAMED", "MONOCHROME"),
@@ -82,8 +74,6 @@ plot_apply_style <- function(
     strata_levels_final = NULL,
     strata_labels_final = NULL
 ) {
-  print(strata_levels_final)
-  print(strata_labels_final)
   style <- match.arg(style)
   style_theme <- switch(
     style,
@@ -92,41 +82,114 @@ plot_apply_style <- function(
     FRAMED     = plot_style_framed(font.family, font.size, legend.position),
     MONOCHROME = plot_style_monochrome(font.family, font.size, legend.position)
   )
-  p <- p + style_theme
+  p + style_theme
+}
 
-  # MONOCHROME は既存のスケール関数を使用（ここでは変更しない）
+#' Apply stratified scales for CIF plots in a single pass
+#'
+#' @param p A ggplot object.
+#' @param style Plot style requested by the user.
+#' @param palette Optional color palette supplied to `cifplot()`.
+#' @param n_strata Number of strata present in the plotted object.
+#' @param strata_levels_final Character vector of final strata levels after label/order adjustments.
+#' @param strata_labels_final Character vector of final strata labels.
+#'
+#' @return A ggplot object with color, fill, linetype, and shape scales applied.
+#' @keywords internal
+apply_all_scales_once <- function(
+    p,
+    style,
+    palette,
+    n_strata,
+    strata_levels_final,
+    strata_labels_final
+) {
+  lvls <- strata_levels_final
+  labs <- strata_labels_final
+  n_effective <- if (!is.null(lvls) && length(lvls)) length(lvls) else n_strata %||% 1L
+  n_effective <- max(1L, n_effective)
+
   if (identical(style, "MONOCHROME")) {
-    p <- p + plot_scale_monochrome(n_strata = n_strata)
+    mono_vals <- plot_scale_monochrome(n_effective)
+    if (!is.null(lvls) && length(lvls)) {
+      mono_vals <- lapply(mono_vals, function(x) stats::setNames(x, lvls))
+    }
+    p <- p +
+      ggplot2::scale_color_manual(
+        values = mono_vals$color,
+        limits = lvls,
+        labels = labs,
+        drop = FALSE
+      ) +
+      ggplot2::scale_fill_manual(
+        values = mono_vals$fill,
+        limits = lvls,
+        labels = labs,
+        drop = FALSE,
+        guide = "none"
+      ) +
+      ggplot2::scale_linetype_manual(
+        values = mono_vals$linetype,
+        limits = lvls,
+        labels = labs,
+        drop = FALSE
+      ) +
+      ggplot2::scale_shape_manual(
+        values = mono_vals$shape,
+        limits = lvls,
+        labels = labs,
+        drop = FALSE,
+        guide = "none"
+      )
     return(p)
   }
 
-  # デフォルト維持：palette_colors が NULL のときはスケールを追加しない
-  if (is.null(palette_colors) || is.null(strata_levels_final)) {
-    return(p)
+  palette_info <- .resolve_palette_colors(lvls, palette, n_effective)
+  col_values <- rep_len(palette_info$values, n_effective)
+  if (!is.null(lvls) && length(lvls)) {
+    col_values <- stats::setNames(col_values, lvls)
   }
 
-# plot_apply_style() 内のスケール付与部分を差し替え
-cols <- .resolve_colors_from_palette(strata_levels_final, palette_colors)
+  if (isTRUE(palette_info$supplied)) {
+    color_scale <- ggplot2::scale_color_manual(
+      values = col_values,
+      limits = lvls,
+      labels = labs,
+      drop = FALSE
+    )
+    fill_scale <- ggplot2::scale_fill_manual(
+      values = col_values,
+      limits = lvls,
+      labels = labs,
+      drop = FALSE,
+      guide = "none"
+    )
+  } else {
+    color_scale <- ggplot2::scale_color_discrete(
+      limits = lvls,
+      labels = labs,
+      drop = FALSE
+    )
+    fill_scale <- ggplot2::scale_fill_discrete(
+      limits = lvls,
+      labels = labs,
+      drop = FALSE,
+      guide = "none"
+    )
+  }
 
-ltys_all <- c("dashed","solid","dotted","longdash","dotdash","twodash",
-              "dashed","solid","dotted","longdash","dotdash","twodash",
-              "solid","dotted","longdash","dotdash","twodash")
-lts <- .resolve_linetypes_auto(cols, ltys_all)
-
-breaks <- strata_levels_final
-labels <- strata_labels_final  # NULL でもOK（その場合は既定表示）
-
-p +
-  ggplot2::scale_color_manual(
-    values = unname(cols),
-    drop = FALSE, guide = "legend"
-  ) +
-  ggplot2::scale_linetype_manual(
-    values = unname(lts),  breaks = breaks, labels = labels,
-    drop = FALSE, guide = "legend"
-  ) +
-  ggplot2::scale_fill_manual(
-    values = unname(cols), breaks = breaks, labels = labels,
-    drop = FALSE, guide = "legend"
-  )
+  p +
+    color_scale +
+    fill_scale +
+    ggplot2::scale_linetype_discrete(
+      limits = lvls,
+      labels = labs,
+      drop = FALSE
+    ) +
+    ggplot2::scale_shape_discrete(
+      limits = lvls,
+      labels = labs,
+      drop = FALSE,
+      guide = "none"
+    )
 }

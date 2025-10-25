@@ -183,7 +183,7 @@
 #'         label.x='Years from registration')
 
 #' @importFrom ggsurvfit ggsurvfit add_confidence_interval add_risktable add_risktable_strata_symbol add_censor_mark add_quantile
-#' @importFrom ggplot2 theme_classic theme_bw element_text labs lims geom_point aes ggsave scale_color_discrete scale_fill_discrete element_text element_rect element_blank scale_color_manual scale_fill_manual scale_linetype_manual scale_shape_manual
+#' @importFrom ggplot2 theme_classic theme_bw element_text labs lims geom_point aes ggsave guides scale_color_discrete scale_fill_discrete element_text element_rect element_blank scale_color_manual scale_fill_manual scale_linetype_manual scale_shape_manual scale_linetype_discrete scale_shape_discrete
 #' @importFrom grDevices gray
 #' @importFrom patchwork wrap_plots
 
@@ -899,6 +899,8 @@ call_ggsurvfit <- function(
     p <- plot_draw_marks(p, survfit_object, intercurrent.event.time, out_cg$type.y, shape = shape.intercurrent.event.mark, size = size.intercurrent.event.mark)
   }
 
+  p <- p + ggplot2::guides(fill = "none")
+
   x_max <- plot_make_x_max(survfit_object)
   if (isTRUE(use_coord_cartesian)) {
     if (!is.null(breaks.x)) p <- p + ggplot2::scale_x_continuous(breaks = breaks.x)
@@ -943,36 +945,14 @@ call_ggsurvfit <- function(
     )
   }
 
-  if (!is.null(label.strata.map)) {
-    lvls   <- names(label.strata.map)
-    labs   <- unname(label.strata.map)
-    n      <- length(lvls)
-
-    if (identical(style, "MONOCHROME")) {
-      ltys_all   <- c("dashed","solid","dotted","longdash","dotdash","twodash",
-                      "dashed","solid","dotted","longdash","dotdash","twodash")
-      shapes_all <- c(16, 1, 3, 4, 15, 17, 16, 1, 3, 4, 15, 17)
-      ltys   <- ltys_all[seq_len(n)]
-      shps   <- shapes_all[seq_len(n)]
-      fills  <- gray(seq(0.85, 0.30, length.out = n))
-
-      p <- p +
-        ggplot2::scale_color_manual   (values = rep("black", n), limits = lvls, labels = labs) +
-        ggplot2::scale_fill_manual    (values = fills,           limits = lvls, labels = labs) +
-        ggplot2::scale_linetype_manual(values = ltys,            limits = lvls, labels = labs) +
-        ggplot2::scale_shape_manual   (values = shps,            limits = lvls, labels = labs)
-
-    } else {
-      if (is.null(palette)) {
-        p <- p +
-          ggplot2::scale_color_discrete  (limits =  lvls, labels = labs) +
-          ggplot2::scale_fill_discrete   (limits =  lvls, labels = labs) +
-          ggplot2::scale_linetype_discrete(limits = lvls, labels = labs)
-      }
-      p <- p +
-        ggplot2::scale_shape_discrete  (limits =  lvls, labels = labs)
-    }
-  }
+  p <- apply_all_scales_once(
+    p,
+    style = style,
+    palette = palette,
+    n_strata = n_strata_effective,
+    strata_levels_final = strata_levels_final,
+    strata_labels_final = strata_labels_final
+  )
 
   #  use.polyreg <- FALSE
   #  time.point.polyreg <- NULL

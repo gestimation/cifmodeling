@@ -150,17 +150,29 @@ plot_style_monochrome <- function(font.family = "sans", font.size = 14, legend.p
     )
 }
 
+#' Monochrome scale defaults for CIF plots
+#'
+#' @param n_strata Number of strata to generate values for.
+#'
+#' @return A named list containing vectors for color, fill, linetype, and shape.
+#' @keywords internal
 plot_scale_monochrome <- function(n_strata = 6) {
-  ltys_all   <- c("dashed","solid","dotted","longdash","dotdash","twodash",
-                  "dashed","solid","dotted","longdash","dotdash","twodash",
-                  "dashed","solid","dotted","longdash","dotdash","twodash")
-  shapes_all <- c(16, 1, 3, 4, 15, 17, 16, 1, 3, 4, 15, 17, 16, 1, 3, 4, 15, 17)
-  n_use <- min(n_strata, length(ltys_all), length(shapes_all))
+  ltys_all <- c(
+    "dashed", "solid", "dotted", "longdash", "dotdash", "twodash",
+    "dashed", "solid", "dotted", "longdash", "dotdash", "twodash",
+    "dashed", "solid", "dotted", "longdash", "dotdash", "twodash"
+  )
+  shapes_all <- c(
+    16, 1, 3, 4, 15, 17,
+    16, 1, 3, 4, 15, 17,
+    16, 1, 3, 4, 15, 17
+  )
+  n_use <- max(1, min(n_strata, length(ltys_all), length(shapes_all)))
   list(
-    ggplot2::scale_color_manual(values = rep("black", n_use), drop = FALSE, guide = "legend"),
-    ggplot2::scale_fill_manual(values = gray(seq(0.85, 0.30, length.out = n_use)), drop = FALSE, guide = "legend"),
-    ggplot2::scale_linetype_manual(values = ltys_all[seq_len(n_use)], drop = FALSE, guide = "legend"),
-    ggplot2::scale_shape_manual(values = shapes_all[seq_len(n_use)], drop = FALSE, guide = "legend")
+    color    = rep("black", n_use),
+    fill     = gray(seq(0.85, 0.30, length.out = n_use)),
+    linetype = ltys_all[seq_len(n_use)],
+    shape    = shapes_all[seq_len(n_use)]
   )
 }
 
