@@ -30,8 +30,8 @@
 
   if (is.null(palette)) {
     cols <- rep_len(fallback_colors, k)
-    names(cols) <- levels_final
-    return(cols)
+    cols <- unname(cols)
+    names(cols) <- NULL
   }
 
   stopifnot(is.character(palette))
@@ -48,10 +48,11 @@
       miss <- which(is.na(cols))
       cols[miss] <- rep_len(fallback_colors, k)[miss]
     }
-    names(cols) <- levels_final
-    return(cols)
+    cols <- unname(cols)
+    names(cols) <- NULL
   }
 }
+
 
 # 線種の自動判定：
 # - 全色が同一（unique(colors)==1）なら ltys_all を順に割当
@@ -81,6 +82,8 @@ plot_apply_style <- function(
     strata_levels_final = NULL,
     strata_labels_final = NULL
 ) {
+  print(strata_levels_final)
+  print(strata_labels_final)
   style <- match.arg(style)
   style_theme <- switch(
     style,
@@ -102,18 +105,28 @@ plot_apply_style <- function(
     return(p)
   }
 
-  cols <- .resolve_colors_from_palette(strata_levels_final, palette_colors)
+# plot_apply_style() 内のスケール付与部分を差し替え
+cols <- .resolve_colors_from_palette(strata_levels_final, palette_colors)
 
-  ltys_all <- c("dashed","solid","dotted","longdash","dotdash","twodash",
-                "dashed","solid","dotted","longdash","dotdash","twodash",
-                "solid","dotted","longdash","dotdash","twodash")
-  lts <- .resolve_linetypes_auto(cols, ltys_all)
+ltys_all <- c("dashed","solid","dotted","longdash","dotdash","twodash",
+              "dashed","solid","dotted","longdash","dotdash","twodash",
+              "solid","dotted","longdash","dotdash","twodash")
+lts <- .resolve_linetypes_auto(cols, ltys_all)
 
-  limits <- strata_levels_final
-  labels <- strata_labels_final
+breaks <- strata_levels_final
+labels <- strata_labels_final  # NULL でもOK（その場合は既定表示）
 
-  p +
-    ggplot2::scale_color_manual(values = cols, limits = limits, labels = labels) +
-    ggplot2::scale_linetype_manual(values = lts, limits = limits, labels = labels) +
-    ggplot2::scale_fill_manual(values = cols, limits = limits, labels = labels)
+p +
+  ggplot2::scale_color_manual(
+    values = unname(cols),
+    drop = FALSE, guide = "legend"
+  ) +
+  ggplot2::scale_linetype_manual(
+    values = unname(lts),  breaks = breaks, labels = labels,
+    drop = FALSE, guide = "legend"
+  ) +
+  ggplot2::scale_fill_manual(
+    values = unname(cols), breaks = breaks, labels = labels,
+    drop = FALSE, guide = "legend"
+  )
 }
