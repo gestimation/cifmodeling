@@ -9,7 +9,7 @@
 #'
 #' @param formula A model formula or a survfit object.
 #' @param data A data frame containing variables in \code{formula}.
-#' @param weights Optional name of the weight variable in \code{data}. Weights must be nonnegative; strictly positive is recommended.
+#' @param weights Optional name of the weight variable in \code{data}. Weights must be positive.
 #' @param subset.condition Optional character expression to subset \code{data} before analysis.
 #' @param na.action Function to handle missing values (default: \code{na.omit} in \pkg{stats}).
 #' @param outcome.type
@@ -28,7 +28,8 @@
 #'   When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
 #'   (primarily used when \code{printEachEvent = TRUE}).
 #' @param error Character specifying variance type used internally. For \code{"SURVIVAL"} typically \code{"greenwood"}.
-#'   For \code{"COMPETING-RISK"} pass options supported by \code{calculateAalenDeltaSE()} (\code{"aalen"}, \code{"delta"}, \code{"none"}).
+#'   For \code{"COMPETING-RISK"} pass options supported by \code{calculateAalenDeltaSE()}
+#'   (\code{"aalen"}, \code{"delta"}, \code{"none"}).
 #' @param conf.type Character transformation for CI on the probability scale (default \code{"arcsine-square root"}).
 #' @param conf.int numeric two-sided confidence level (default \code{0.95}).
 #' @param type.y \code{NULL} (survival) or \code{"risk"} (display \code{1 - survival} i.e. CIF).
@@ -49,9 +50,11 @@
 #' @param breaks.y Numeric vectors for axis breaks (default \code{NULL}).
 #' @param use_coord_cartesian Logical specify use of coord_cartesian() (default \code{FALSE}).
 #'
-#' @param addConfidenceInterval Logical add \code{add_confidence_interval()} to plot. It calls geom_ribbon() (default \code{TRUE}).
+#' @param addConfidenceInterval Logical add \code{add_confidence_interval()} to plot.
+#' It calls geom_ribbon() (default \code{TRUE}).
 #' @param addRiskTable Logical add \code{add_risktable(risktable_stats="n.risk")} to plot (default \code{TRUE}).
-#' @param addEstimateTable Logical add \code{add_risktable(risktable_stats="estimate (conf.low, conf.high)")} to plot (default \code{FALSE}).
+#' @param addEstimateTable Logical add \code{add_risktable(risktable_stats="estimate (conf.low, conf.high)")}
+#' to plot (default \code{FALSE}).
 #' @param addCensorMark Logical add \code{add_censor_mark()} to plot. It calls geom_point() (default \code{TRUE}).
 #' @param shape.censor.mark Integer point shape for censor marks (default \code{3}).
 #' @param size.censor.mark Numeric point size for censor marks (default \code{2}).
@@ -60,7 +63,8 @@
 #' @param competing.risk.time Named list of numeric vectors (names must be mapped to strata labels).
 #' @param shape.competing.risk.mark Integer point shape for competing-risk marks (default \code{16}).
 #' @param size.competing.risk.mark Numeric point size for competing-risk marks (default \code{2}).
-#' @param addIntercurrentEventMark Logical overlay user-specified time marks per strata calls geom_point() (default \code{TRUE}).
+#' @param addIntercurrentEventMark Logical overlay user-specified time marks per strata.
+#' It calls geom_point() (default \code{TRUE}).
 #' @param intercurrent.event.time Named list of numeric vectors (names must be mapped to strata labels).
 #' @param shape.intercurrent.event.mark Integer point shape for intercurrent-event marks (default \code{1}).
 #' @param size.intercurrent.event.mark Numeric point size for intercurrent-event marks (default \code{2}).
@@ -78,9 +82,12 @@
 #'   the panel layout. If \code{NULL}, an automatic layout is used.
 
 #' @param style Character plot theme controls (default \code{"CLASSIC"}).
+#' @param palette Optional character vector specify color palette, e.g. palette=c("blue", "cyan", "navy", "green")
+#'  (default \code{NULL}).
 #' @param font.family Character plot theme controls (e.g. "sans", "serif", and "mono". default \code{"sans"}).
 #' @param font.size Integer plot theme controls (default \code{12}).
-#' @param legend.position Character specify position of legend: \code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, or \code{"none"} (default \code{"top"}).
+#' @param legend.position Character specify position of legend: \code{"top"}, \code{"right"},
+#' \code{"bottom"}, \code{"left"}, or \code{"none"} (default \code{"top"}).
 #' @param filename.ggsave Character save the \pkg{ggsurvfit} plot with the path and name specified.
 #' @param width.ggsave Numeric specify width of the \pkg{ggsurvfit} plot.
 #' @param height.ggsave Numeric specify height of the \pkg{ggsurvfit} plot.

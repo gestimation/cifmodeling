@@ -29,15 +29,6 @@ knitr::opts_chunk$set(
 #  dev = "ragg_png",     
   comment = "#>"
 )
-
-#library(cifmodeling)
-if (requireNamespace("devtools", quietly = TRUE)) {
-  devtools::load_all(".",
-                     export_all = TRUE,
-                     helpers    = TRUE,
-                     quiet      = TRUE,
-                     warn_conflicts = FALSE)
-}
 ```
 
 <!-- badges: start --> <!-- badges: end -->
@@ -45,7 +36,7 @@ if (requireNamespace("devtools", quietly = TRUE)) {
 ```{r setup, include=FALSE, warning=FALSE}
 #pak::pak("gestimation/cifmodeling")
 #devtools::install_github("gestimation/cifmodeling") 
-#library(cifmodeling)
+library(cifmodeling)
 library(nleqslv)
 library(boot)
 library(ggplot2)
@@ -405,14 +396,14 @@ output4 <- polyreg(nuisance.model=Event(t,d) ~ +1,
 
 ## Example 3. Adjusted competing risks analysis
 
-The code below specifies polytomous log-odds models of both of competing events (`outcome.type='COMPETING-RISK'`). Here 15 covariates and censoring strata are specified in `nuisance.model=` and `strata=`, respectively.
+The code below specifies polytomous log-odds models of both of competing events (`outcome.type="COMPETING-RISK"`). Here 15 covariates and censoring strata are specified in `nuisance.model=` and `strata=`, respectively.
 
 ```{r example5}
 output5 <- polyreg(nuisance.model = Event(t,epsilon) ~ age+sex+bmi+hba1c
           +diabetes_duration+drug_oha+drug_insulin+sbp+ldl+hdl+tg
           +current_smoker+alcohol_drinker+ltpa, 
           exposure='fruitq1', strata='strata', data=diabetes.complications,
-          effect.measure1='RR', time.point=8, outcome.type='COMPETING-RISK')
+          effect.measure1='RR', time.point=8, outcome.type="COMPETING-RISK")
 ```
 
 ## Example 4. Description of cumulative incidence of competing events

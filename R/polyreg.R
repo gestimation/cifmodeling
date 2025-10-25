@@ -309,7 +309,7 @@ polyreg <- function(
   #######################################################################################################
   # 1. Pre-processing (function: checkSpell, checkInput, reg_normalize_covariate, sortByCovariate)
   #######################################################################################################
-#  computation.time0 <- proc.time()
+  computation.time0 <- proc.time()
   outcome.type  <- util_check_outcome_type(outcome.type, formula=formula, data=data)
   ce <- reg_check_effect.measure(effect.measure1, effect.measure2)
   ci <- reg_check_input(data, nuisance.model, exposure, code.event1, code.event2, code.censoring, code.exposure.ref, outcome.type, conf.level, report.sandwich.conf, report.boot.conf, nleqslv.method, should.normalize.covariate)
@@ -476,12 +476,12 @@ polyreg <- function(
     ac <- assessConvergence(new_params, prev_params, current_obj_value, optim.parameter1, optim.parameter2, optim.parameter3)
 
     nleqslv.info <- extractOptimizationInfo(out_nleqslv, nleqslv.method)
-#    computation.time.second <- as.numeric((proc.time() - computation.time0)[3])
+    computation.time.second <- as.numeric((proc.time() - computation.time0)[3])
 
     trace_df <- append_trace(
       trace_df,
       iteration = iteration,
-      computation.time.second = 46,
+      computation.time.second = computation.time.second,
       nleqslv.method = nleqslv.method,
       nleqslv.info = nleqslv.info,
       objective.function = ac$obj_value,

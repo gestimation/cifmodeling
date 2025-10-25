@@ -82,10 +82,11 @@ out_cifcurve <- cifcurve(Event(t,epsilon) ~ fruitq,
                          data = diabetes.complications,
                          outcome.type='COMPETING-RISK')
 cifplot(out_cifcurve,
-        type.y = 'risk',
+        outcome.type = "COMPETING-RISK",
+        type.y = "risk",
         addRiskTable = FALSE,
-        label.y = 'CIF of diabetic retinopathy',
-        label.x = 'Years from registration')
+        label.y = "CIF of diabetic retinopathy",
+        label.x = "Years from registration")
 
 }
 \seealso{

@@ -65,7 +65,7 @@ cifplot(
 
 \item{data}{A data frame containing variables in \code{formula}.}
 
-\item{weights}{Optional name of the weight variable in \code{data}. Weights must be nonnegative; strictly positive is recommended.}
+\item{weights}{Optional name of the weight variable in \code{data}. Weights must be positive.}
 
 \item{subset.condition}{Optional character expression to subset \code{data} before analysis.}
 
@@ -91,7 +91,8 @@ When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{co
 (primarily used when \code{printEachEvent = TRUE}).}
 
 \item{error}{Character specifying variance type used internally. For \code{"SURVIVAL"} typically \code{"greenwood"}.
-For \code{"COMPETING-RISK"} pass options supported by \code{calculateAalenDeltaSE()} (\code{"aalen"}, \code{"delta"}, \code{"none"}).}
+For \code{"COMPETING-RISK"} pass options supported by \code{calculateAalenDeltaSE()}
+(\code{"aalen"}, \code{"delta"}, \code{"none"}).}
 
 \item{conf.type}{Character transformation for CI on the probability scale (default \code{"arcsine-square root"}).}
 
@@ -126,11 +127,13 @@ If \code{label.strata} is a named vector, its names must match the (re-ordered) 
 
 \item{use_coord_cartesian}{Logical specify use of coord_cartesian() (default \code{FALSE}).}
 
-\item{addConfidenceInterval}{Logical add \code{add_confidence_interval()} to plot. It calls geom_ribbon() (default \code{TRUE}).}
+\item{addConfidenceInterval}{Logical add \code{add_confidence_interval()} to plot.
+It calls geom_ribbon() (default \code{TRUE}).}
 
 \item{addRiskTable}{Logical add \code{add_risktable(risktable_stats="n.risk")} to plot (default \code{TRUE}).}
 
-\item{addEstimateTable}{Logical add \code{add_risktable(risktable_stats="estimate (conf.low, conf.high)")} to plot (default \code{FALSE}).}
+\item{addEstimateTable}{Logical add \code{add_risktable(risktable_stats="estimate (conf.low, conf.high)")}
+to plot (default \code{FALSE}).}
 
 \item{addCensorMark}{Logical add \code{add_censor_mark()} to plot. It calls geom_point() (default \code{TRUE}).}
 
@@ -147,7 +150,8 @@ It calls geom_point() (default \code{TRUE}).}
 
 \item{size.competing.risk.mark}{Numeric point size for competing-risk marks (default \code{2}).}
 
-\item{addIntercurrentEventMark}{Logical overlay user-specified time marks per strata calls geom_point() (default \code{TRUE}).}
+\item{addIntercurrentEventMark}{Logical overlay user-specified time marks per strata.
+It calls geom_point() (default \code{TRUE}).}
 
 \item{intercurrent.event.time}{Named list of numeric vectors (names must be mapped to strata labels).}
 
@@ -173,11 +177,15 @@ the panel layout. If \code{NULL}, an automatic layout is used.}
 
 \item{style}{Character plot theme controls (default \code{"CLASSIC"}).}
 
+\item{palette}{Optional character vector specify color palette, e.g. palette=c("blue", "cyan", "navy", "green")
+(default \code{NULL}).}
+
 \item{font.family}{Character plot theme controls (e.g. "sans", "serif", and "mono". default \code{"sans"}).}
 
 \item{font.size}{Integer plot theme controls (default \code{12}).}
 
-\item{legend.position}{Character specify position of legend: \code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, or \code{"none"} (default \code{"top"}).}
+\item{legend.position}{Character specify position of legend: \code{"top"}, \code{"right"},
+\code{"bottom"}, \code{"left"}, or \code{"none"} (default \code{"top"}).}
 
 \item{filename.ggsave}{Character save the \pkg{ggsurvfit} plot with the path and name specified.}
 
