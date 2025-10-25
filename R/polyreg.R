@@ -1,11 +1,11 @@
-#' @title Fit regression models of cumulative incidence functions based on polytomous
-#' log-odds products
-#' @description Fits regression models and estimates multiplicative effects of
-#' a categorical exposure under several outcome types, including competing risks,
-#' survival and binomial outcomes
-#' @param nuisance.model A \code{\link[stats]{formula}} describing the outcome and
+#' @title Fits regression models of cumulative incidence functions based on polytomous
+#' log odds products and stratified IPCW estimator
+#' @description The direct polytomous regression enables coherent modeling and
+#' estimation of a variety of multiplicative effects of a categorical exposure under
+#' several outcome types, including competing risks, survival and binomial outcomes.
+#' @param nuisance.model A \code{formula} describing the outcome and
 #'   nuisance covariates, excluding the exposure of interest.
-#' @param exposure A character string giving the name of the binary exposure
+#' @param exposure A character string giving the name of the categorical exposure
 #'   variable in \code{data}.
 #' @param strata Optional character string with the name of the stratification
 #'   variable used to adjust for dependent censoring. Defaults to \code{NULL}.
@@ -13,8 +13,7 @@
 #'   covariates referenced by \code{nuisance.model}.
 #' @param subset.condition Optional expression (as a character string) defining a
 #'   subset of \code{data} to analyse. Defaults to \code{NULL}.
-#' @param na.action A function specifying the action to take on missing values.
-#'   The default is \code{\link[stats]{na.omit}}.
+#' @param na.action Function to handle missing values (default: \code{na.omit} in \pkg{stats}).
 #' @param code.event1 Integer code corresponding to the first event of interest.
 #'   Defaults to \code{1}.
 #' @param code.event2 Integer code corresponding to the competing event. Defaults
@@ -35,6 +34,12 @@
 #'   are \code{"COMPETING-RISK"}, \code{"SURVIVAL"}, \code{"BINOMIAL"},
 #'   \code{"PROPORTIONAL"} and \code{"POLY-PROPORTIONAL"}. Defaults to
 #'   \code{"COMPETING-RISK"}.
+#' If \code{NULL} (default), the function automatically infers the outcome type
+#' from the data: if the event variable has more than two unique levels,
+#' \code{"COMPETING-RISK"} is assumed; otherwise, \code{"SURVIVAL"} is used.
+#' You can also use abbreviations such as \code{"S"} or \code{"C"}.
+#' Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic
+#' detection based on the event coding in \code{data}.
 #' @param conf.level Confidence level for Wald-type intervals. Defaults to
 #'   \code{0.95}.
 #' @param report.nuisance.parameter Logical; if \code{TRUE}, the returned object
@@ -55,7 +60,7 @@
 #'   Defaults to \code{200}.
 #' @param boot.parameter2 Numeric seed used for resampling of bootstrap.
 #' @param nleqslv.method Character string defining the solver used by
-#'   \code{\link[nleqslv]{nleqslv}}. Available choices include \code{"nleqslv"},
+#'   \pkg{nleqslv}. Available choices include \code{"nleqslv"},
 #'   \code{"Broyden"}, \code{"Newton"}, \code{"optim"}, \code{"BFGS"} and
 #'   \code{"SANN"}.
 #' @param optim.parameter1 Numeric tolerance for convergence of the outer loop.
@@ -93,6 +98,137 @@
 #'   of each exposure level. Defaults to \code{TRUE}.
 #' @param prob.bound Numeric lower bound used to truncate probabilities away
 #'   from 0 and 1. Defaults to \code{1e-5}.
+#'
+#' @details
+#'
+#' ### Overview
+#' `polyreg()` implements **log odds product modeling** for CIFs at user-specified
+#' time points, focusing on multiplicative effects of a categorical exposure, or
+#' constant effects over time like Cox regression and Fine-Gray models. It estimates
+#' multiplicative effects such as **risk ratios**, **odds ratios**, or
+#' **subdistribution hazard ratios**, while ensuring that the probabilities across
+#' competing events sum to one. This is achieved through
+#' **reparameterization using polytomous log odds products**, which fits so-called
+#' effect-measure models and nuisance models on multiple competing events
+#' simultaneously. Additionally, `polyreg()` supports direct binomial regression
+#' for survival outcomes and the Richardson model for binomial outcomes,
+#' both of which use log odds products.
+#'
+#' The function follows the familiar **formula + data** syntax with `Event()` or
+#' `Surv()` and outputs tidy results, including point estimates, standard errors,
+#' confidence intervals, and p-values. Its results can be easily summarized with
+#' `summary()` or combined with tools such as **modelsummary** or **broom** for reporting.
+#'
+#' ### Key arguments
+#' -   `nuisance.model` — a formula describing the outcome and nuisance covariates,
+#' excluding the exposure of interest.
+#' -   `exposure` — specifies the categorical exposure variable
+#' -   `effect.measure1` and `effect.measure2` — specifies the effect measures
+#' for event1 and event2 (`"RR"`, `"OR"` or `"SHR"`).
+#' -   `outcome.type` selects the outcome type (`"COMPETING-RISK"`, `"SURVIVAL"`,
+#' `"BINOMIAL"`, `"PROPORTIONAL"` or `"POLY-PROPORTIONAL"`).
+#' -   `time.point` — specifies time point at which the exposure effect is evaluated.
+#' Required for `"COMPETING-RISK"` and `"SURVIVAL"` outcomes.
+#' -   `strata` — specifies a stratification variable used to adjust for dependent censoring.
+#'
+#' ### Outcome type and event status coding
+#'
+#' The `outcome.type` argument must be set to:
+#' -   Effects on cumulative incidence probabilities at a specific time: `"COMPETING-RISK"`
+#' -   Effects on a risk at a specific time: `"SURVIVAL"`
+#' -   Common effects on cumulative incidence probabilities over time: `"POLY-PROPORTIONAL"`
+#' -   Common effects on a risk over time: `"PROPORTIONAL"`
+#' -   Effects on a risk of a binomial outcome: `"BINOMIAL"`
+#'
+#' | Setting | Codes | Meaning |
+#' |---|---|---|
+#' | COMPETING-RISK | `code.event1`, `code.event2`, `code.censoring` | event of interest / competing event / censoring |
+#' | COMPETING-RISK (default)| `code.event1=1`, `code.event2=2`, `code.censoring1` | event of interest / competing event / censoring |
+#' | SURVIVAL | `code.event1`, `code.censoring`                   | event / censoring |
+#' | SURVIVAL  (default)| `code.event1=1`, `code.censoring=0`     | event / censoring |
+#' | SURVIVAL (ADaM-ADTTE) | `code.event1=0`, `code.censoring=1` | set to match ADaM convention |
+#' | PROPORTIONAL | `code.event1`, `code.censoring`                   | event / censoring |
+#' | PROPORTIONAL  (default)| `code.event1=1`, `code.censoring=0`     | event / censoring |
+#' | PROPORTIONAL (ADaM-ADTTE) | `code.event1=0`, `code.censoring=1` | set to match ADaM convention |
+#' | POLY-PROPORTIONAL | `code.event1`, `code.event2`, `code.censoring` | event of interest / competing event / censoring |
+#' | POLY-PROPORTIONAL (default)| `code.event1=1`, `code.event2=2`, `code.censoring1` | event of interest / competing event / censoring |
+#'
+#' ### Effect measures for categorical exposure
+#'
+#' Choose the effect scale for event 1 and (optionally) event 2:
+#'
+#' | Argument | Applies to | Choices | Default |
+#' |---|---|---|---|
+#' | `effect.measure1` |event of interest | `"RR"`, `"OR"`, `"SHR"` | `"RR"` |
+#' | `effect.measure2` | competing event | `"RR"`, `"OR"`, `"SHR"` | `"RR"` |
+#'
+#' - `RR`: risk ratio at `time.point` or common over time.
+#' - `OR`: odds ratio at `time.point` or common over time.
+#' - `SHR`: subdistribution hazard ratio  or common over time.
+#'
+#' ### Inference and intervals (advanced)
+#'
+#' | Argument | Meaning | Default |
+#' |---|---|---|
+#' | `conf.level` | Wald-type CI level | `0.95` |
+#' | `report.sandwich.conf` | Sandwich variance CIs | `TRUE` |
+#' | `report.boot.conf` | Bootstrap CIs (use if `"PROPORTIONAL"` or `"POLY-PROPORTIONAL"`) | `NULL` |
+#' | `boot.bca` | Use BCa intervals (else normal approximation) | `FALSE` |
+#' | `boot.parameter1` | Bootstrap reps | `200` |
+#' | `boot.parameter2` | Seed for resampling | `46` |
+#'
+#' ### Optimization & solver controls (advanced)
+#'
+#' `polyreg()` solves estimating equations with optional inner routines.
+#'
+#' | Argument | Role | Default |
+#' |---|---|---|
+#' | `nleqslv.method` | Root solver | `"nleqslv"` |
+#' | `optim.parameter1` / `optim.parameter2` | Outer/inner convergence tolerances | `1e-6`, `1e-6` |
+#' | `optim.parameter3` | Parameter absolute bound | `100` |
+#' | `optim.parameter4` | Max outer iterations | `50` |
+#' | `optim.parameter5` | Max `nleqslv` iters per outer | `50` |
+#' | `optim.parameter6:13` | Levenberg–Marquardt controls (iters/tolerances/lambda) | see defaults |
+#'
+#' Tips:
+#' - If convergence warnings appear, relax/tighten tolerances or cap the parameter
+#'   bound (`optim.parameter3`). Inspect `report.optim.convergence = TRUE`.
+#'
+#' ### Data handling and stability
+#'
+#' | Argument | Meaning | Default |
+#' |---|---|---|
+#' | `subset.condition` | An expression (as character) to subset `data` | `NULL` |
+#' | `na.action` | NA handling function | `stats::na.omit` |
+#' | `should.normalize.covariate` | Center/scale nuisance covariates | `TRUE` |
+#' | `should.terminate.time.point` | Truncate support by exposure-wise follow-up maxima | `TRUE` |
+#' | `prob.bound` | Truncate probabilities away from 0/1 (numerical guard) | `1e-5` |
+#' | `data.initial.values` | Optional starting values data frame | `NULL` |
+#'
+#' ### Returned object and downstream use
+#'
+#' This function returns a list object that includes:
+#' -   `coefficient` — regression coefficients
+#' -   `cov` — variance-covariance matrix for regression coefficients
+#' -   `diagnostic.statistics` — a data frame containing inverse probability weights,
+#' influence functions, and predicted potential outcomes
+#' -   `summary` — a summary of estimated exposure effects
+#'
+#' Use `summary` output with `msummary()` to display formatted results. The regression
+#' coefficients and their variance-covariance matrix are provided as `coefficient`
+#' and `cov`, respectively, with the first element corresponding to the intercept term,
+#' subsequent elements to the covariates in `nuisance.model`, and the last element
+#' to the variable specified by `exposure=`. Finally, `diagnostic.statistics` is
+#' a data frame containing inverse probability weights, influence functions, and
+#' predicted values of the potential outcomes of individual observations.
+#'
+#' ### Reproducibility and conventions
+#'
+#' - Set `boot.parameter2` for reproducible bootstrap results.
+#' - Match CDISC ADaM conventions via `code.event1 = 0`, `code.censoring = 1`
+#'   (and, if applicable, `code.event2` for competing events).
+#' - Use `strata` when censoring may depend on baseline covariates (IPCW stratification).
+#'
 #' @importFrom nleqslv nleqslv
 #' @importFrom boot boot boot.ci
 #' @importFrom Rcpp sourceCpp
@@ -104,11 +240,10 @@
 #' @return A list containing fitted exposure effects and supporting results. The
 #'   main components include \code{coefficient} (estimated exposure and
 #'   covariate effects), \code{cov} (their variance-covariance matrix),
-#'   \code{summary} (a tidy summary table compatible with
-#'   \code{\link[modelsummary]{msummary}}) and \code{diagnosis.statistics}
+#'   \code{summary} (a tidy summary table compatible with \pkg{modelsummary}) and
+#'   \code{diagnostic.statistics}
 #'   (inverse probability weights, influence functions and predicted potential
 #'   outcomes).
-#' @export
 #'
 #' @examples
 #' data(diabetes.complications)
@@ -124,6 +259,10 @@
 #' if (requireNamespace("modelsummary", quietly = TRUE)) {
 #' modelsummary::msummary(output$summary, statistic = c("conf.int", "p.value"), exponentiate = TRUE)
 #' }
+
+#' @name polyreg
+#' @seealso [cifcurve()] for KM/AJ estimators; [cifplot()] for display of a CIF; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
+#' @export
 polyreg <- function(
     nuisance.model,
     exposure,
@@ -168,21 +307,21 @@ polyreg <- function(
 ) {
 
   #######################################################################################################
-  # 1. Pre-processing (function: checkSpell, checkInput, normalizeCovariate, sortByCovariate)
+  # 1. Pre-processing (function: checkSpell, checkInput, reg_normalize_covariate, sortByCovariate)
   #######################################################################################################
-  computation.time0 <- proc.time()
-  outcome.type <- check_outcome.type(outcome.type)
-  ce <- check_effect.measure(effect.measure1, effect.measure2)
-  ci <- checkInput(data, nuisance.model, exposure, code.event1, code.event2, code.censoring, code.exposure.ref, outcome.type, conf.level, report.sandwich.conf, report.boot.conf, nleqslv.method, should.normalize.covariate)
+#  computation.time0 <- proc.time()
+  outcome.type  <- util_check_outcome_type(outcome.type, formula=formula, data=data)
+  ce <- reg_check_effect.measure(effect.measure1, effect.measure2)
+  ci <- reg_check_input(data, nuisance.model, exposure, code.event1, code.event2, code.censoring, code.exposure.ref, outcome.type, conf.level, report.sandwich.conf, report.boot.conf, nleqslv.method, should.normalize.covariate)
   should.normalize.covariate <- ci$should.normalize.covariate
   report.sandwich.conf <- ci$report.sandwich.conf
   report.boot.conf <- ci$report.boot.conf
 
   data <- createAnalysisDataset(formula=nuisance.model, data=data, other.variables.analyzed=c(exposure, strata), subset.condition=subset.condition, na.action=na.action)
-  out_normalizeCovariate <- normalizeCovariate(nuisance.model, data, should.normalize.covariate, outcome.type, ci$out_readExposureDesign$exposure.levels)
+  out_normalizeCovariate <- reg_normalize_covariate(nuisance.model, data, should.normalize.covariate, outcome.type, ci$out_readExposureDesign$exposure.levels)
   normalized_data <- out_normalizeCovariate$normalized_data
-  tp <- read_time.point(nuisance.model, normalized_data, ci$out_readExposureDesign$x_a, outcome.type, code.censoring, should.terminate.time.point, time.point)
-  index.vector <- calculateIndexForParameter(NA, ci$x_l, ci$x_a, length(tp))
+  tp <- reg_read_time.point(nuisance.model, normalized_data, ci$out_readExposureDesign$x_a, outcome.type, code.censoring, should.terminate.time.point, time.point)
+  index.vector <- reg_index_for_parameter(NA, ci$x_l, ci$x_a, length(tp))
 
   estimand <- list(
     effect.measure1=ce$effect.measure1,
@@ -278,6 +417,17 @@ polyreg <- function(
   }
 
   assessConvergence <- function(new_params, current_params, current_obj_value, optim.parameter1, optim.parameter2, optim.parameter3) {
+    assessRelativeDifference <- function(new, old) {
+      max(abs(new - old) / pmax(1, abs(old)))
+    }
+    is_stalled <- function(x, stall_patience = 3, stall_eps = 1e-3) {
+      n <- length(x)
+      if (n < stall_patience) return(FALSE)
+      recent <- x[(n - stall_patience + 1L):n]
+      rng <- range(recent)
+      rel_diff <- (diff(rng) / max(1e-12, mean(recent)))
+      rel_diff <= stall_eps
+    }
     if (any(abs(new_params) > optim.parameter3)) {
       stop("Estimates are either too large or too small, and convergence might not be achieved.")
     }
@@ -299,31 +449,8 @@ polyreg <- function(
     list(converged = converged, converged.by=converged.by, relative.difference = relative.difference, max.absolute.difference = max.absolute.difference, obj_value = obj_value)
   }
 
-  assessRelativeDifference <- function(new, old) {
-    max(abs(new - old) / pmax(1, abs(old)))
-  }
-
-  is_stalled <- function(x, stall_patience = 3, stall_eps = 1e-3) {
-    n <- length(x)
-    if (n < stall_patience) return(FALSE)
-    recent <- x[(n - stall_patience + 1L):n]
-    rng <- range(recent)
-    rel_diff <- (diff(rng) / max(1e-12, mean(recent)))
-    rel_diff <= stall_eps
-  }
-
-  choose_nleqslv_method <- function(nleqslv.method) {
-    if (nleqslv.method == "nleqslv" || nleqslv.method == "Broyden") {
-      "Broyden"
-    } else if (nleqslv.method == "Newton") {
-      "Newton"
-    } else {
-      stop("Unsupported nleqslv.method: ", nleqslv.method)
-    }
-  }
-
   obj <- makeObjectiveFunction()
-  nleqslv_method  <- choose_nleqslv_method(nleqslv.method)
+  nleqslv_method  <- reg_choose_nleqslv_method(nleqslv.method)
   iteration <- 0L
   max.absolute.difference <- Inf
   out_nleqslv <- NULL
@@ -349,12 +476,12 @@ polyreg <- function(
     ac <- assessConvergence(new_params, prev_params, current_obj_value, optim.parameter1, optim.parameter2, optim.parameter3)
 
     nleqslv.info <- extractOptimizationInfo(out_nleqslv, nleqslv.method)
-    computation.time.second <- as.numeric((proc.time() - computation.time0)[3])
+#    computation.time.second <- as.numeric((proc.time() - computation.time0)[3])
 
     trace_df <- append_trace(
       trace_df,
       iteration = iteration,
-      computation.time.second = computation.time.second,
+      computation.time.second = 46,
       nleqslv.method = nleqslv.method,
       nleqslv.info = nleqslv.info,
       objective.function = ac$obj_value,
@@ -386,7 +513,7 @@ polyreg <- function(
     stop(sprintf("Unsupported outcome.type for covariance: %s", outcome.type))
   )
 
-  out_normalizeEstimate <- normalizeEstimate(
+  out_normalizeEstimate <- reg_normalize_estimate(
     outcome.type               = outcome.type,
     report.sandwich.conf       = report.sandwich.conf,
     should.normalize.covariate = should.normalize.covariate,
@@ -477,6 +604,6 @@ polyreg <- function(
     data$potential.CIFs <- out_getResults$potential.CIFs
   }
   out_data <- data
-  out <- list(summary=out_summary, coefficient=alpha_beta_estimated, cov=cov_estimated, bootstrap=out_bootstrap, diagnosis.statistics=out_data, optimization.info=trace_df)
+  out <- list(summary=out_summary, coefficient=alpha_beta_estimated, cov=cov_estimated, bootstrap=out_bootstrap, diagnostic.statistics=out_data, optimization.info=trace_df)
   return(out)
 }

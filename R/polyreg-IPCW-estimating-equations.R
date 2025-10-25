@@ -39,7 +39,7 @@ estimating_equation_ipcw <- function(
     time.point <- as.numeric(estimand$time.point)
   }
 
-  out_readExposureDesign <- readExposureDesign(data, exposure, estimand$code.exposure.ref)
+  out_readExposureDesign <- reg_read_exposure_design(data, exposure, estimand$code.exposure.ref)
   x_a <- out_readExposureDesign$x_a
   x_l <- model.matrix(out_terms, mf)
   x_la <- cbind(x_l, x_a)
@@ -342,19 +342,17 @@ calculateCov <- function(objget_results, estimand, prob.bound)
       AB2[i_score, i_para] <- AB2[i_score, i_para] + integral2[n]
     }
   }
-
   out_calculateD <- calculateD(potential.CIFs, x_a, x_l, estimand, prob.bound)
   hesse_d11 <- crossprod(x_la, w11 * out_calculateD$d_11) / n
   hesse_d12 <- crossprod(x_la, w12 * out_calculateD$d_12) / n
   hesse_d22 <- crossprod(x_la, w22 * out_calculateD$d_22) / n
-
   hesse_d1 <- cbind(hesse_d11, hesse_d12)
   hesse_d2 <- cbind(hesse_d12, hesse_d22)
   hesse <- rbind(hesse_d1, hesse_d2)
-
   total_score <- cbind(AB1, AB2)
   influence.function <- t(solve(hesse, t(total_score)))
   cov_estimated <- crossprod(influence.function) / n^2
+
   if (ncol(influence.function)==4) {
     colnames(influence.function) <- c("intercept", "exposure", "intercept", "exposure")
   } else if (ncol(influence.function)>4) {
@@ -565,6 +563,17 @@ solveEstimatingEquation <- function(
   }
 
   assessConvergence <- function(new_params, current_params, current_obj_value, optim.parameter1, optim.parameter2, optim.parameter3) {
+    assessRelativeDifference <- function(new, old) {
+      max(abs(new - old) / pmax(1, abs(old)))
+    }
+    is_stalled <- function(x, stall_patience = 3, stall_eps = 1e-3) {
+      n <- length(x)
+      if (n < stall_patience) return(FALSE)
+      recent <- x[(n - stall_patience + 1L):n]
+      rng <- range(recent)
+      rel_diff <- (diff(rng) / max(1e-12, mean(recent)))
+      rel_diff <= stall_eps
+    }
     if (any(abs(new_params) > optim.parameter3)) {
       stop("Estimates are either too large or too small, and convergence might not be achieved.")
     }
@@ -572,45 +581,22 @@ solveEstimatingEquation <- function(
     max.absolute.difference <- max(param_diff)
     relative.difference <- assessRelativeDifference(new_params, current_params)
     obj_value <- drop(crossprod(obj$estimating_equation_i(new_params)))
-    converged <- (relative.difference <= optim.parameter1) || (obj_value <= optim.parameter2) || is_stalled(c(current_obj_value, obj_value))
 
+    converged <- (relative.difference <= optim.parameter1) || (obj_value <= optim.parameter2) || is_stalled(c(current_obj_value, obj_value))
     criteria1 <- (relative.difference <= optim.parameter1)
     criteria2 <- (obj_value <= optim.parameter2)
     criteria3 <- is_stalled(c(current_obj_value, obj_value))
     converged  <- (criteria1 || criteria2 || criteria3)
     converged.by <- if (!converged) NA_character_
-    else if (criteria1)   "Converged in relative difference"
+    else if (criteria1) "Converged in relative difference"
     else if (criteria2) "Converged in objective function"
     else "Stalled"
 
     list(converged = converged, converged.by=converged.by, relative.difference = relative.difference, max.absolute.difference = max.absolute.difference, obj_value = obj_value)
   }
 
-  assessRelativeDifference <- function(new, old) {
-    max(abs(new - old) / pmax(1, abs(old)))
-  }
-
-  is_stalled <- function(x, stall_patience = 3, stall_eps = 1e-3) {
-    n <- length(x)
-    if (n < stall_patience) return(FALSE)
-    recent <- x[(n - stall_patience + 1L):n]
-    rng <- range(recent)
-    rel_diff <- (diff(rng) / max(1e-12, mean(recent)))
-    rel_diff <= stall_eps
-  }
-
-  choose_nleqslv_method <- function(nleqslv.method) {
-    if (nleqslv.method %in% c("nleqslv", "Broyden")) {
-      "Broyden"
-    } else if (nleqslv.method == "Newton") {
-      "Newton"
-    } else {
-      stop("Unsupported nleqslv.method without optim(): ", nleqslv.method)
-    }
-  }
-
   obj <- makeObjectiveFunction()
-  nleqslv_method <- choose_nleqslv_method(optim.method$nleqslv.method)
+  nleqslv_method <- reg_choose_nleqslv_method(optim.method$nleqslv.method)
 
   iteration <- 0L
   max.absolute.difference <- Inf
@@ -646,5 +632,4 @@ solveEstimatingEquation <- function(
   }
   return(current_params)
 }
-
 

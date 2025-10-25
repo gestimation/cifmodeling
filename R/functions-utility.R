@@ -1,234 +1,188 @@
-clampP <- function(p, eps = 1e-5) pmin(pmax(p, eps), 1 - eps)
+`%||%` <- function(x, y) if (is.null(x)) y else x
 
-clampLogP <- function(x, eps = 1e-5) {
-  if (!is.numeric(x)) stop("`x` must be numeric")
-  low <- log(eps)
-  high <- log1p(-eps)
-  pmin(pmax(x, low), high)
+createAnalysisDataset <- function(formula,
+                                  data,
+                                  other.variables.analyzed = NULL,
+                                  subset.condition = NULL,
+                                  na.action = na.pass,
+                                  fill_missing = FALSE) {
+  stopifnot(is.data.frame(data))
+  if (!is.null(subset.condition)) {
+    cond <- if (is.character(subset.condition)) parse(text = subset.condition)[[1]] else subset.condition
+    analysis_dataset <- subset(data, eval(cond, envir = data, enclos = parent.frame()))
+  } else {
+    analysis_dataset <- data
+  }
+
+  all_vars <- unique(c(all.vars(formula), other.variables.analyzed))
+  missing_cols <- setdiff(all_vars, names(analysis_dataset))
+
+  if (length(missing_cols)) {
+    if (isTRUE(fill_missing)) {
+      warning(sprintf("The following columns are not in `data` and will be filled with NA: %s",
+                      paste(missing_cols, collapse = ", ")))
+      for (v in missing_cols) analysis_dataset[[v]] <- NA
+    } else {
+      stop(sprintf("Undefined columns selected: %s",
+                   paste(missing_cols, collapse = ", ")))
+    }
+  }
+
+  analysis_dataset <- analysis_dataset[, all_vars, drop = FALSE]
+  na.action(analysis_dataset)
 }
 
-calculateIndexForParameter <- function(i_parameter,x_l,x_a,length.time.point) {
-  i_parameter[1] <- ncol(x_l)
-  i_parameter[2] <- i_parameter[1] + 1
-  i_parameter[3] <- i_parameter[1] + ncol(x_a)
-  i_parameter[4] <- i_parameter[1] + ncol(x_a) + 1
-  i_parameter[5] <- 2 * i_parameter[1] + ncol(x_a)
-  i_parameter[6] <- 2 * i_parameter[1] + ncol(x_a) + 1
-  i_parameter[7] <- 2 * i_parameter[1] + 2 * ncol(x_a)
-  i_parameter[8] <- length.time.point*(2 * i_parameter[1]) + 2 * ncol(x_a)
-  return(i_parameter)
-}
+util_get_surv <- function(
+    predicted.time,
+    estimated.surv,
+    estimated.time,
+    predicted.strata = NULL,
+    estimated.strata = NULL,
+    strata.levels = NULL
+){
+  if (anyNA(predicted.time)) stop("Invalid predicted.time: contains NA.")
+  if (length(estimated.surv) != length(estimated.time))
+    stop("estimated.surv and estimated.time must have the same length.")
 
-normalizeCovariate <- function(formula, data, should.normalize.covariate,
-                                   outcome.type, exposure.levels) {
-  mf <- model.frame(formula, data)
-  Y  <- model.extract(mf, "response")
-  if (inherits(Y, c("Surv","Event"))) {
-    response_vars  <- all.vars(formula[[2]])
-    covariate_cols <- setdiff(all.vars(formula), response_vars)
-  } else {
-    covariate_cols <- all.vars(formula)[-1]
+  prepareSeries <- function(time_vec, surv_vec) {
+    ok <- !(is.na(time_vec) | is.na(surv_vec))
+    time_vec <- time_vec[ok]; surv_vec <- surv_vec[ok]
+    if (!length(time_vec)) return(list(t = numeric(0), s = numeric(0)))
+    o <- order(time_vec)
+    t2 <- time_vec[o]; s2 <- surv_vec[o]
+    keep <- !duplicated(t2, fromLast = TRUE)
+    list(t = t2[keep], s = s2[keep])
   }
+  n_pred <- length(predicted.time)
+  predicted.surv <- numeric(n_pred)
 
-  normalized_data <- data
-
-  robust_scale <- function(x) {
-    x <- x[is.finite(x)]
-    if (!length(x)) return(1)
-    s <- IQR(x, na.rm=TRUE)
-    if (!is.finite(s) || s==0) {
-      s <- mad(x, center = median(x, na.rm=TRUE), constant = 1.4826, na.rm=TRUE)
-    }
-    if (!is.finite(s) || s==0) s <- sd(x, na.rm=TRUE)
-    if (!is.finite(s) || s==0) s <- 1
-    s
-  }
-
-  if (length(covariate_cols) > 0) {
-    mm <- model.matrix(reformulate(covariate_cols), data = data)
-    mm_cols <- colnames(mm)
-  } else {
-    mm <- cbind(`(Intercept)` = 1)
-    mm_cols <- "(Intercept)"
-  }
-
-  is_num <- if (length(covariate_cols) > 0)
-    vapply(data[covariate_cols], is.numeric, logical(1)) else logical(0)
-  num_covars <- covariate_cols[is_num]
-
-  scales_num <- numeric(0)
-  if (isTRUE(should.normalize.covariate) && length(num_covars) > 0) {
-    for (col in num_covars) {
-      s <- robust_scale(normalized_data[[col]])
-      normalized_data[[col]] <- normalized_data[[col]] / s
-      scales_num[col] <- s
-    }
-  } else if (length(num_covars) > 0) {
-    scales_num <- setNames(rep(1, length(num_covars)), num_covars)
-  }
-
-  scales_in_mm_order <- c()
-  if (length(mm_cols) > 1) {
-    for (cn in mm_cols[-1]) {
-      scales_in_mm_order <- c(scales_in_mm_order, scales_num[cn] %||% 1)
-    }
-  }
-
-  k_ex <- max(0L, as.integer(exposure.levels) - 1L)
-
-  block <- c(1, as.numeric(scales_in_mm_order), rep(1, k_ex))
-
-  if (outcome.type %in% c("PROPORTIONAL","POLY-PROPORTIONAL")) {
-    range_for_params <- NULL
-  } else if (outcome.type %in% c("SURVIVAL","BINOMIAL")) {
-    range_for_params <- block
-  } else if (outcome.type == "COMPETING-RISK") {
-    range_for_params <- c(block, block)
-  } else {
-    stop("Unknown outcome.type: ", outcome.type)
-  }
-
-  list(
-    normalized_data = normalized_data,
-    range           = range_for_params,
-    n_covariate_all = length(covariate_cols),
-    n               = nrow(data),
-    k_ex            = k_ex,
-    mm_cols         = mm_cols,
-    scaled_vars     = names(scales_num)
+  strata_mode <- !(
+    is.null(predicted.strata) || is.null(estimated.strata) || is.null(strata.levels) ||
+      length(estimated.strata) == 0L || length(strata.levels) == 0L
   )
-}
-
-normalizeEstimate <- function(
-    outcome.type,
-    report.sandwich.conf,
-    should.normalize.covariate,
-    current_params,
-    out_getResults,
-    estimand,
-    prob.bound,
-    out_normalizeCovariate,
-    out_calculateCov = NULL
-) {
-  if (isFALSE(report.sandwich.conf)) {
-    if (isTRUE(should.normalize.covariate) && !is.null(out_normalizeCovariate$range)) {
-      adj <- 1 / as.vector(out_normalizeCovariate$range)
-      if (length(adj) != length(current_params)) {
-        stop(sprintf(
-          "Length mismatch: adj=%d vs params=%d. outcome.type=%s, p_num=%d, k_ex=%d",
-          length(adj), length(current_params), outcome.type,
-          out_normalizeCovariate$p_num %||% NA_integer_,
-          out_normalizeCovariate$k_ex  %||% NA_integer_
-        ))
-      }
-      alpha_beta_estimated <- adj * current_params
-    } else {
-      alpha_beta_estimated <- current_params
+  if (!strata_mode) {
+    ser <- prepareSeries(estimated.time, estimated.surv)
+    if (!length(ser$t)) return(rep(1.0, n_pred))
+    for (i in seq_len(n_pred)) {
+      idx <- findInterval(predicted.time[i], ser$t, left.open = TRUE)
+      predicted.surv[i] <- if (idx > 0L) ser$s[idx] else 1.0
     }
-    return(list(alpha_beta_estimated = alpha_beta_estimated, cov_estimated = NULL))
+    return(predicted.surv)
   }
 
-  if (isTRUE(should.normalize.covariate) && !is.null(out_normalizeCovariate$range)) {
-    adj <- 1 / as.vector(out_normalizeCovariate$range)
+  if (!is.numeric(estimated.strata) || any(estimated.strata < 0))
+    stop("'estimated.strata' must be a non-negative numeric vector of counts.")
+  if (sum(estimated.strata) != length(estimated.time))
+    stop("sum(estimated.strata) must equal length(estimated.time).")
 
-    if (length(adj) != length(current_params)) {
-      stop(sprintf(
-        "Length mismatch: adj=%d vs params=%d. outcome.type=%s, p_num=%d, k_ex=%d",
-        length(adj), length(current_params), outcome.type,
-        out_normalizeCovariate$p_num %||% NA_integer_,
-        out_normalizeCovariate$k_ex  %||% NA_integer_
-      ))
-    }
+  K <- length(estimated.strata)
+  if (length(strata.levels) != K)
+    stop("'strata.levels' must have length K = length(estimated.strata).")
 
-    alpha_beta_estimated <- adj * current_params
-    if (is.null(out_calculateCov) || is.null(out_calculateCov$cov_estimated)) {
-      stop("out_calculateCov$cov_estimated is required when report.sandwich.conf=TRUE.")
-    }
-    A <- diag(adj, length(adj))
-    cov_estimated <- A %*% out_calculateCov$cov_estimated %*% A
+  if (length(predicted.strata) == 1L) {
+    predicted.strata <- rep(predicted.strata, n_pred)
+  } else if (length(predicted.strata) != n_pred) {
+    stop("Length of predicted.strata must be 1 or match length(predicted.time).")
+  }
+
+  mapped <- if (is.factor(predicted.strata)) {
+    match(as.character(predicted.strata), as.character(strata.levels))
   } else {
-    alpha_beta_estimated <- current_params
-    if (is.null(out_calculateCov) || is.null(out_calculateCov$cov_estimated)) {
-      stop("out_calculateCov$cov_estimated is required when report.sandwich.conf=TRUE.")
-    }
-    cov_estimated <- out_calculateCov$cov_estimated
+    match(predicted.strata, strata.levels)
+  }
+  if (any(is.na(mapped))) {
+    bad <- unique(predicted.strata[is.na(mapped)])
+    stop("Some values in predicted.strata are not found in 'strata.levels': ",
+         paste(bad, collapse = ", "))
   }
 
-  list(alpha_beta_estimated = alpha_beta_estimated, cov_estimated = cov_estimated)
+  cs <- cumsum(estimated.strata)
+  strata_start <- c(1L, cs[-K] + 1L)
+  strata_end   <- cs
+
+  series_per_stratum <- vector("list", K)
+  for (s in seq_len(K)) {
+    if (estimated.strata[s] == 0L) {
+      series_per_stratum[[s]] <- list(t = numeric(0), s = numeric(0))
+    } else {
+      idx <- strata_start[s]:strata_end[s]
+      series_per_stratum[[s]] <- prepareSeries(estimated.time[idx], estimated.surv[idx])
+    }
+  }
+
+  for (i in seq_len(n_pred)) {
+    s <- mapped[i]
+    ser <- series_per_stratum[[s]]
+    if (!length(ser$t)) {
+      predicted.surv[i] <- 1.0
+    } else {
+      j <- findInterval(predicted.time[i], ser$t, left.open = TRUE)
+      predicted.surv[i] <- if (j > 0L) ser$s[j] else 1.0
+    }
+  }
+
+  predicted.surv
 }
 
 
-normalizeCovariate_old <- function(formula, data, should.normalize.covariate, outcome.type, exposure.levels) {
-  mf <- model.frame(formula, data)
+util_read_surv <- function(formula, data, weights = NULL,
+                     code.event1 = 1, code.event2 = 2, code.censoring = 0,
+                     subset.condition = NULL, na.action = stats::na.omit) {
+  data <- createAnalysisDataset(formula, data, weights, subset.condition, na.action)
+  allowed <- c(code.censoring, code.event1, code.event2)
+  old_opt <- getOption("cifmodeling.allowed", NULL)
+  on.exit(options(cifmodeling.allowed = old_opt), add = TRUE)
+  options(cifmodeling.allowed = allowed)
+
+  Terms <- terms(formula, specials = c("strata","offset","cluster"), data = data)
+  mf    <- model.frame(Terms, data = data, na.action = na.action)
+
   Y <- model.extract(mf, "response")
-  response_term <- formula[[2]]
-  if (inherits(mf[[1]], "Surv") || inherits(mf[[1]], "Event")) {
-    response_vars <- all.vars(response_term)
-    covariate_cols <- setdiff(all.vars(formula), response_vars)
-  } else {
-    covariate_cols <- all.vars(formula)[-1]
-  }
-  normalized_data <- data
-  range_vector <- 1
-  exposure.range <- matrix(1, 1, exposure.levels-1)
-  if (should.normalize.covariate == TRUE & length(covariate_cols)>0) {
-    for (col in covariate_cols) {
-      x <- normalized_data[[col]]
-      range <- max(x)-min(x)
-      normalized_data[[col]] <- x/range
-      range_vector <- cbind(range_vector, range)
-    }
-    if (outcome.type == "PROPORTIONAL" || outcome.type == "POLY-PROPORTIONAL") {
-      range_vector <- NULL
-    } else if (outcome.type == "SURVIVAL" || outcome.type == "BINOMIAL") {
-      range_vector <- cbind(range_vector,exposure.range)
-    } else {
-      range_vector <- cbind(range_vector,exposure.range,range_vector,exposure.range)
-    }
-  } else {
-    if (outcome.type == "PROPORTIONAL" || outcome.type == "POLY-PROPORTIONAL") {
-      range_vector <- NULL
-    } else if (outcome.type == "SURVIVAL" || outcome.type == "BINOMIAL") {
-      range_vector <- rep(1, (length(covariate_cols)+exposure.levels))
-    } else {
-      range_vector <- rep(1, (2*length(covariate_cols)+2*exposure.levels))
-    }
-  }
-  n_covariate <- length(covariate_cols)
-  out <- list(normalized_data=normalized_data, range=range_vector, n_covariate=n_covariate, n=nrow(data))
-  return(out)
-}
+  if (!inherits(Y, c("Event","Surv"))) .err("surv_expected")
 
+  te <- util_normalize_time_event(Y[,1], Y[,2], allowed = allowed)
+  t <- te$time
+  epsilon <- te$event
+  if (any(t < 0, na.rm = TRUE)) .err("time_nonneg", arg = "time")
 
-normalizeEstimate_old <- function(
-    outcome.type,
-    report.sandwich.conf,
-    should.normalize.covariate,
-    current_params,
-    out_getResults,
-    estimand,
-    prob.bound,
-    out_normalizeCovariate
-) {
-  if (report.sandwich.conf == FALSE) {
-    alpha_beta_estimated <- if (should.normalize.covariate) {
-      adj <- 1 / as.vector(out_normalizeCovariate$range)
-      if (length(adj) != length(current_params)) stop("Length of adj (range) must match length of current_params.")
-      adj * current_params
-    } else {
-      current_params
-    }
-    return(list(alpha_beta_estimated = alpha_beta_estimated, cov_estimated = NULL))
+  d  <- as.integer(epsilon != code.censoring)
+  d0 <- as.integer(epsilon == code.censoring)
+  d1 <- as.integer(epsilon == code.event1)
+  d2 <- as.integer(epsilon == code.event2)
+
+  mf_rows <- rownames(mf)
+  idx <- suppressWarnings(as.integer(mf_rows))
+  if (any(is.na(idx))) {
+    rn <- rownames(data)
+    if (!is.null(rn)) idx <- match(mf_rows, rn)
   }
-  if (should.normalize.covariate) { #本来はoutcome.typeで分岐が必要
-    adj <- 1 / as.vector(out_normalizeCovariate$range)
-    if (length(adj) != length(current_params)) stop("Length of adj (range) must match length of current_params.")
-    alpha_beta_estimated <- adj * current_params
-    adj_matrix <- diag(adj, length(adj))
-    cov_estimated <- adj_matrix %*% out_calculateCov$cov_estimated %*% adj_matrix
+  if (any(is.na(idx))) .err("align_rows_fail")
+
+  data_sync <- data[idx, , drop = FALSE]
+  term_labels <- attr(Terms, "term.labels")
+  if (length(term_labels) == 0L) {
+    strata_name <- NULL
+    strata <- factor(rep(1, nrow(mf)))
+  } else if (length(term_labels) == 1) {
+    strata_name <- term_labels[1]
+    strata <- factor(mf[[strata_name]])
   } else {
-    alpha_beta_estimated <- current_params
-    cov_estimated <- out_calculateCov$cov_estimated
+    strata_name <- paste(term_labels, collapse = ":")
+    strata <- interaction(mf[term_labels], drop = TRUE)
   }
-  return(list(alpha_beta_estimated = alpha_beta_estimated, cov_estimated = cov_estimated))
+
+  if (is.null(weights)) {
+    w <- rep(1, nrow(mf))
+  } else if (is.character(weights) && length(weights) == 1) {
+    if (!weights %in% names(data)) {
+      w <- rep(1, nrow(data))
+    } else {
+      w <- data[[weights]]
+      check_weights(w)
+    }
+  } else {
+    check_weights(weights)
+    w <- weights
+  }
+  list(t=t, epsilon=epsilon, d=d, d0=d0, d1=d1, d2=d2, strata=strata, strata_name=strata_name, w=w, data_sync=data_sync)
 }
