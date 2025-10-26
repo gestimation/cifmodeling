@@ -5,3 +5,45 @@ calculateKM <- function(t, d, w = as.numeric( c()), strata = as.integer( c()), e
     .Call(`_cifmodeling_calculateKM`, t, d, w, strata, error)
 }
 
+#' K-group Aalen–Johansen for cause 1 with individual influence functions
+NULL
+
+#' Cause-specific Nelson–Aalen for cause 1 with individual influence functions (K groups)
+NULL
+
+#' Linear weighted average with IF-based (JK) variance (generic: difference only)
+NULL
+
+#' Weighted averages (K groups) with IF-based (JK) variance
+NULL
+
+#' Core maxCombo calculator from z & covariance
+NULL
+
+#' Convenience wrapper: build maxCombo directly from calculateWeightedAverage() result
+NULL
+
+calculateIFofAJ <- function(t, epsilon, strata) {
+    .Call(`_cifmodeling_calculateIFofAJ`, t, epsilon, strata)
+}
+
+calculateIFofNA <- function(t, epsilon, strata) {
+    .Call(`_cifmodeling_calculateIFofNA`, t, epsilon, strata)
+}
+
+calculateWeightedAverageLinear <- function(time, curve, if_list, contrasts, weights = NULL, rho = NULL, gamma = NULL, base = NULL, conf_int = 0.95) {
+    .Call(`_cifmodeling_calculateWeightedAverageLinear`, time, curve, if_list, contrasts, weights, rho, gamma, base, conf_int)
+}
+
+calculateWeightedAverage <- function(time, aj1, if_aj1, contrasts, weights = NULL, rho = NULL, gamma = NULL, weight_base = 0L, conf_int = 0.95, ref = 1L) {
+    .Call(`_cifmodeling_calculateWeightedAverage`, time, aj1, if_aj1, contrasts, weights, rho, gamma, weight_base, conf_int, ref)
+}
+
+calculateMaxCombo <- function(z, cov, n_simulation = 20000L) {
+    .Call(`_cifmodeling_calculateMaxCombo`, z, cov, n_simulation)
+}
+
+callMaxCombo <- function(out_cwa, measure = "diff", n_simulation = 20000L) {
+    .Call(`_cifmodeling_callMaxCombo`, out_cwa, measure, n_simulation)
+}
+
