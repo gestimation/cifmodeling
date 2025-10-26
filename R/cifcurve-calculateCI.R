@@ -82,7 +82,7 @@ calculateJackKnifeSE <- function(data, estimator, outputPseudo=FALSE) {
       for (k in 1:n[i]) {
         data_k <- list(t = t[-k], d = d[-k], w = w[-k], strata = rep(1, (n[i]-1)))
         estimate_k <- estimator(data_k)
-        surv_k <- get_surv(time[j], estimate_k$surv, estimate_k$time)
+        surv_k <- util_get_surv(time[j], estimate_k$surv, estimate_k$time)
         pseudo_observations[k, j] <- (n[i]*surv[j]) - (n[i]-1)*surv_k
       }
       v[j] <- var(pseudo_observations[, j], na.rm = TRUE)
@@ -201,4 +201,3 @@ calcDeltaVariance <- function(
   }
   return(first_term + second_term -2 * third_term)
 }
-

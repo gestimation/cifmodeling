@@ -6,6 +6,7 @@
 arranged either in a grid layout or as an inset overlay}
 \usage{
 cifpanel(
+  plots = NULL,
   formula = NULL,
   formulas = NULL,
   data = NULL,
@@ -16,6 +17,7 @@ cifpanel(
   label.x = NULL,
   label.y = NULL,
   label.strata = NULL,
+  order.strata = NULL,
   limits.x = NULL,
   limits.y = NULL,
   breaks.x = NULL,
@@ -49,6 +51,9 @@ cifpanel(
 )
 }
 \arguments{
+\item{plots}{list of ggplot objects. If supplied, \code{cifpanel()} will skip
+estimation/plotting and only compose the provided plots.}
+
 \item{formula}{A single model formula evaluated in \code{data}, used for all panels
 when \code{formulas} is not provided.}
 
@@ -76,6 +81,9 @@ for COMPETING-RISK: \code{c(code.event1, code.event2, code.censoring)}.}
 \item{label.x, label.y}{Optional vectors/lists of axis labels per panel.}
 
 \item{label.strata}{Optional list of character vectors for legend labels per panel
+(passed to \code{\link[=cifplot]{cifplot()}}).}
+
+\item{order.strata}{Optional list of character vectors for ordering labels per panel
 (passed to \code{\link[=cifplot]{cifplot()}}).}
 
 \item{limits.x, limits.y}{Optional vectors/lists of numeric length-2 axis limits per panel.}
@@ -283,6 +291,7 @@ cifpanel(
   legend.position = "bottom",
   legend.collect=TRUE
 )
+
 cifpanel(
   title.plot = c("Associations between fruit intake and macrovascular complications", "Details"),
   use_inset_element = TRUE,
@@ -300,18 +309,34 @@ cifpanel(
   legend.position = "bottom",
   addConfidenceInterval = FALSE
 )
-\dontrun{
-data(diabetes.complications)
-ce <- list(c(1, 2, 0), c(1, 2, 0), c(1, 0)) # 2 AJ panels + 1 KM panel
-cifpanel(
-  formulas = list(Event(t,epsilon)~fruitq, Event(t,epsilon)~sex, Surv(t, epsilon==1)~fruitq),
-  data = diabetes.complications,
-  code.events = ce,
-  rows.columns.panel = c(1, 3),
-  legend.collect = TRUE,
-  title.panel = "CIF and survival panels"
-)
-}
+
+output1 <- cifplot(Event(t,epsilon) ~ fruitq,
+                   data = diabetes.complications,
+                   outcome.type="COMPETING-RISK",
+                   code.event1=2,
+                   code.event2=1,
+                   addConfidenceInterval = FALSE,
+                   addRiskTable = FALSE,
+                   label.y='CIF of macrovascular complications',
+                   label.x='Years from registration')
+output2 <- cifplot(Event(t,epsilon) ~ fruitq,
+                   data = diabetes.complications,
+                   outcome.type="COMPETING-RISK",
+                   code.event1=2,
+                   code.event2=1,
+                   addConfidenceInterval = FALSE,
+                   addRiskTable = FALSE,
+                   label.y='CIF of macrovascular complications',
+                   label.x='Years from registration',
+                   limits.y=c(0,0.15))
+output3 <- list(a=output1, b=output2)
+cifpanel(plots = output3,
+         use_inset_element = TRUE,
+         inset.left   = 0.40, inset.bottom = 0.45,
+         inset.right  = 1.00, inset.top    = 0.95,
+         inset.align_to = "plot",
+         inset.legend.position = "none",
+         legend.position = "bottom")
 
 }
 \seealso{

@@ -307,21 +307,21 @@ polyreg <- function(
 ) {
 
   #######################################################################################################
-  # 1. Pre-processing (function: checkSpell, checkInput, normalizeCovariate, sortByCovariate)
+  # 1. Pre-processing (function: checkSpell, checkInput, reg_normalize_covariate, sortByCovariate)
   #######################################################################################################
-#  computation.time0 <- proc.time()
-  outcome.type  <- check_outcome.type(outcome.type, formula=formula, data=data)
-  ce <- check_effect.measure(effect.measure1, effect.measure2)
-  ci <- check_input_polyreg(data, nuisance.model, exposure, code.event1, code.event2, code.censoring, code.exposure.ref, outcome.type, conf.level, report.sandwich.conf, report.boot.conf, nleqslv.method, should.normalize.covariate)
+  computation.time0 <- proc.time()
+  outcome.type  <- util_check_outcome_type(outcome.type, formula=formula, data=data)
+  ce <- reg_check_effect.measure(effect.measure1, effect.measure2)
+  ci <- reg_check_input(data, nuisance.model, exposure, code.event1, code.event2, code.censoring, code.exposure.ref, outcome.type, conf.level, report.sandwich.conf, report.boot.conf, nleqslv.method, should.normalize.covariate)
   should.normalize.covariate <- ci$should.normalize.covariate
   report.sandwich.conf <- ci$report.sandwich.conf
   report.boot.conf <- ci$report.boot.conf
 
   data <- createAnalysisDataset(formula=nuisance.model, data=data, other.variables.analyzed=c(exposure, strata), subset.condition=subset.condition, na.action=na.action)
-  out_normalizeCovariate <- normalizeCovariate(nuisance.model, data, should.normalize.covariate, outcome.type, ci$out_readExposureDesign$exposure.levels)
+  out_normalizeCovariate <- reg_normalize_covariate(nuisance.model, data, should.normalize.covariate, outcome.type, ci$out_readExposureDesign$exposure.levels)
   normalized_data <- out_normalizeCovariate$normalized_data
-  tp <- read_time.point(nuisance.model, normalized_data, ci$out_readExposureDesign$x_a, outcome.type, code.censoring, should.terminate.time.point, time.point)
-  index.vector <- calculateIndexForParameter(NA, ci$x_l, ci$x_a, length(tp))
+  tp <- reg_read_time.point(nuisance.model, normalized_data, ci$out_readExposureDesign$x_a, outcome.type, code.censoring, should.terminate.time.point, time.point)
+  index.vector <- reg_index_for_parameter(NA, ci$x_l, ci$x_a, length(tp))
 
   estimand <- list(
     effect.measure1=ce$effect.measure1,
@@ -450,7 +450,7 @@ polyreg <- function(
   }
 
   obj <- makeObjectiveFunction()
-  nleqslv_method  <- choose_nleqslv_method(nleqslv.method)
+  nleqslv_method  <- reg_choose_nleqslv_method(nleqslv.method)
   iteration <- 0L
   max.absolute.difference <- Inf
   out_nleqslv <- NULL
@@ -476,12 +476,12 @@ polyreg <- function(
     ac <- assessConvergence(new_params, prev_params, current_obj_value, optim.parameter1, optim.parameter2, optim.parameter3)
 
     nleqslv.info <- extractOptimizationInfo(out_nleqslv, nleqslv.method)
-#    computation.time.second <- as.numeric((proc.time() - computation.time0)[3])
+    computation.time.second <- as.numeric((proc.time() - computation.time0)[3])
 
     trace_df <- append_trace(
       trace_df,
       iteration = iteration,
-      computation.time.second = 46,
+      computation.time.second = computation.time.second,
       nleqslv.method = nleqslv.method,
       nleqslv.info = nleqslv.info,
       objective.function = ac$obj_value,
@@ -513,7 +513,7 @@ polyreg <- function(
     stop(sprintf("Unsupported outcome.type for covariance: %s", outcome.type))
   )
 
-  out_normalizeEstimate <- normalizeEstimate(
+  out_normalizeEstimate <- reg_normalize_estimate(
     outcome.type               = outcome.type,
     report.sandwich.conf       = report.sandwich.conf,
     should.normalize.covariate = should.normalize.covariate,

@@ -30,7 +30,7 @@ clampLogP <- function(x, eps = 1e-5) {
   pmin(pmax(x, low), high)
 }
 
-calculateIndexForParameter <- function(i_parameter,x_l,x_a,length.time.point) {
+reg_index_for_parameter <- function(i_parameter,x_l,x_a,length.time.point) {
   i_parameter[1] <- ncol(x_l)
   i_parameter[2] <- i_parameter[1] + 1
   i_parameter[3] <- i_parameter[1] + ncol(x_a)
@@ -42,7 +42,7 @@ calculateIndexForParameter <- function(i_parameter,x_l,x_a,length.time.point) {
   return(i_parameter)
 }
 
-normalizeCovariate <- function(formula, data, should.normalize.covariate,
+reg_normalize_covariate <- function(formula, data, should.normalize.covariate,
                                outcome.type, exposure.levels) {
   mf <- model.frame(formula, data)
   Y  <- model.extract(mf, "response")
@@ -122,7 +122,7 @@ normalizeCovariate <- function(formula, data, should.normalize.covariate,
   )
 }
 
-normalizeEstimate <- function(
+reg_normalize_estimate <- function(
     outcome.type,
     report.sandwich.conf,
     should.normalize.covariate,
@@ -180,7 +180,7 @@ normalizeEstimate <- function(
   list(alpha_beta_estimated = alpha_beta_estimated, cov_estimated = cov_estimated)
 }
 
-check_input_polyreg <- function(data, formula, exposure, code.event1, code.event2, code.censoring,
+reg_check_input <- function(data, formula, exposure, code.event1, code.event2, code.censoring,
                        code.exposure.ref, outcome.type, conf.level, report.sandwich.conf,
                        report.boot.conf, nleqslv.method, should.normalize.covariate,
                        strata = NULL, subset.condition = NULL, na.action = na.omit) {
@@ -222,7 +222,7 @@ check_input_polyreg <- function(data, formula, exposure, code.event1, code.event
     }
   }
 
-  out_readExposureDesign <- readExposureDesign(data, exposure, code.exposure.ref)
+  out_readExposureDesign <- reg_read_exposure_design(data, exposure, code.exposure.ref)
   x_a <- out_readExposureDesign$x_a
   x_l <- model.matrix(out_terms, mf)
 
@@ -255,7 +255,7 @@ check_input_polyreg <- function(data, formula, exposure, code.event1, code.event
   return(list(should.normalize.covariate = should.normalize.covariate.corrected, report.sandwich.conf = report.sandwich.conf.corrected, report.boot.conf = report.boot.conf.corrected, out_readExposureDesign=out_readExposureDesign, x_a=x_a, x_l=x_l))
 }
 
-readExposureDesign <- function(data, exposure, code.exposure.ref = NULL, prefix = "a") {
+reg_read_exposure_design <- function(data, exposure, code.exposure.ref = NULL, prefix = "a") {
   stopifnot(is.data.frame(data))
   if (!exposure %in% names(data)) {
     stop("exposure = '", exposure, "' is not found in data.")
@@ -291,7 +291,7 @@ readExposureDesign <- function(data, exposure, code.exposure.ref = NULL, prefix 
   ))
 }
 
-read_time.point <- function(formula, data, x_a, outcome.type, code.censoring, should.terminate.time.point, time.point) {
+reg_read_time.point <- function(formula, data, x_a, outcome.type, code.censoring, should.terminate.time.point, time.point) {
   if (outcome.type %in% c("COMPETING-RISK","SURVIVAL")) {
     if (is.null(time.point) || !length(time.point)) .err("timepoint_required")
     tp <- suppressWarnings(max(time.point, na.rm = TRUE))
@@ -338,7 +338,7 @@ read_time.point <- function(formula, data, x_a, outcome.type, code.censoring, sh
   }
 }
 
-choose_nleqslv_method <- function(nleqslv.method) {
+reg_choose_nleqslv_method <- function(nleqslv.method) {
   if (nleqslv.method == "nleqslv" || nleqslv.method == "Broyden") {
     "Broyden"
   } else if (nleqslv.method == "Newton") {

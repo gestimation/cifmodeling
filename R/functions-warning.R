@@ -41,10 +41,14 @@
   inset_need_two = "`use_inset_element=TRUE` requires at least two plots.",
   inset_extra_drop = "`use_inset_element=TRUE`: only the first two plots will be used.",
   plots_extra_dropped = "There are {n_plots} plots but grid holds {n_slots}. Extra plots are dropped.",
+  code_events_len_vec = "`code.events` must be a numeric length-3 vector c(event1, event2, censoring).",
+  code_events_integer = "`code.events` entries must be integer-like (whole numbers).",
+  code_events_distinct = "`code.events[1]` and `code.events[2]` must be different event codes.",
   code_events_len_surv = "`code.events[[{i}]]` must be c(event.code1, censoring) for SURVIVAL.",
   code_events_len_cr = "`code.events[[{i}]]` must be c(event.code1, event.code2, censoring) for COMPETING-RISK.",
   infer_outcome_fail = "Failed to infer outcome.type from code.events; each must be length 2 (S) or 3 (C).",
-  shape_identical = "`{a}` and `{b}` specify an identical type of symbol."
+  shape_identical = "`{a}` and `{b}` specify an identical type of symbol.",
+  finite = "`{arg}` must be finite."
 )
 
 .warn <- function(key, ..., .messages = .msg) {
@@ -86,7 +90,7 @@
   stop(cond)
 }
 
-check_outcome.type <- function(
+util_check_outcome_type <- function(
     x = NULL,
     formula = NULL,
     data = NULL,
@@ -155,7 +159,7 @@ check_weights <- function(w) {
   invisible(TRUE)
 }
 
-check_effect.measure <- function(effect.measure1, effect.measure2) {
+reg_check_effect.measure <- function(effect.measure1, effect.measure2) {
   normalize_effect_measure <- function(x, which = "effect.measure") {
     ux <- toupper(x)
     if (ux %in% c("RR","RISK RATIO")) return("RR")
@@ -169,17 +173,18 @@ check_effect.measure <- function(effect.measure1, effect.measure2) {
   )
 }
 
-check_style <- function(x) {
-  map <- list(
-    "CLASSIC"     = c("classic","c"),
-    "BOLD"        = c("bold","b"),
-    "FRAMED"      = c("framed","f"),
-    "MONOCHROME"  = c("monochrome","monotone","m"),
-    "GGSURVFIT"   = c("ggsurvfit","g")
-  )
-  ux <- toupper(gsub("[[:space:]]+", " ", x))
-  for (k in names(map)) {
-    if (ux == k || tolower(ux) %in% tolower(map[[k]])) return(k)
-  }
-  .err("style", choices = paste(names(map), collapse = ", "))
-}
+#plot_check_style <- function(x) {
+#  map <- list(
+#    "CLASSIC"     = c("classic","c"),
+#    "BOLD"        = c("bold","b"),
+#    "FRAMED"      = c("framed","f"),
+#    "GRID"        = c("grid","g"),
+#    "GRAY"        = c("gray"),
+#    "GGSURVFIT"   = c("ggsurvfit")
+#  )
+#  ux <- toupper(gsub("[[:space:]]+", " ", x))
+#  for (k in names(map)) {
+#    if (ux == k || tolower(ux) %in% tolower(map[[k]])) return(k)
+#  }
+#  .err("style", choices = paste(names(map), collapse = ", "))
+#}

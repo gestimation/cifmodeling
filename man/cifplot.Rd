@@ -6,15 +6,16 @@
 censoring, competing risks and intermediate events}
 \usage{
 cifplot(
-  x,
+  formula,
   data = NULL,
   weights = NULL,
   subset.condition = NULL,
   na.action = na.omit,
-  outcome.type = "SURVIVAL",
+  outcome.type = c("COMPETING-RISK", "SURVIVAL"),
   code.event1 = 1,
   code.event2 = 2,
   code.censoring = 0,
+  code.events = NULL,
   error = NULL,
   conf.type = "arcsine-square root",
   conf.int = 0.95,
@@ -22,6 +23,7 @@ cifplot(
   label.x = "Time",
   label.y = NULL,
   label.strata = NULL,
+  order.strata = NULL,
   limits.x = NULL,
   limits.y = NULL,
   breaks.x = NULL,
@@ -43,22 +45,27 @@ cifplot(
   size.intercurrent.event.mark = 2,
   addQuantileLine = FALSE,
   quantile = 0.5,
+  printEachEvent = FALSE,
+  printEachVar = FALSE,
+  rows.columns.panel = NULL,
   style = "CLASSIC",
+  palette = NULL,
   font.family = "sans",
   font.size = 12,
   legend.position = "top",
   filename.ggsave = NULL,
   width.ggsave = 6,
   height.ggsave = 6,
-  dpi.ggsave = 300
+  dpi.ggsave = 300,
+  ...
 )
 }
 \arguments{
-\item{x}{A model formula or a survfit object.}
+\item{formula}{A model formula or a survfit object.}
 
 \item{data}{A data frame containing variables in \code{formula}.}
 
-\item{weights}{Optional name of the weight variable in \code{data}. Weights must be nonnegative; strictly positive is recommended.}
+\item{weights}{Optional name of the weight variable in \code{data}. Weights must be positive.}
 
 \item{subset.condition}{Optional character expression to subset \code{data} before analysis.}
 
@@ -79,8 +86,13 @@ detection based on the event coding in \code{data}.}
 
 \item{code.censoring}{Integer code of censoring (default \code{0}).}
 
+\item{code.events}{Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
+When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
+(primarily used when \code{printEachEvent = TRUE}).}
+
 \item{error}{Character specifying variance type used internally. For \code{"SURVIVAL"} typically \code{"greenwood"}.
-For \code{"COMPETING-RISK"} pass options supported by \code{calculateAalenDeltaSE()} (\code{"aalen"}, \code{"delta"}, \code{"none"}).}
+For \code{"COMPETING-RISK"} pass options supported by \code{calculateAalenDeltaSE()}
+(\code{"aalen"}, \code{"delta"}, \code{"none"}).}
 
 \item{conf.type}{Character transformation for CI on the probability scale (default \code{"arcsine-square root"}).}
 
@@ -92,7 +104,18 @@ For \code{"COMPETING-RISK"} pass options supported by \code{calculateAalenDeltaS
 
 \item{label.y}{Character y-axis labels (default internally set to \code{"Survival"} or \code{"Cumulative incidence"}).}
 
-\item{label.strata}{Character vector of labels for strata.}
+\item{label.strata}{Character vector of labels for strata. When \code{printEachVar = TRUE}, you may
+also supply a named list \code{list(var = c("L1","L2", ...))}.}
+
+\item{order.strata}{Optional ordering of strata levels.
+\itemize{
+\item When \code{printEachVar = TRUE}, supply a named list
+\code{list(var = c("L1","L2",...))} for each RHS variable; unmatched levels are dropped.
+\item When \code{printEachVar = FALSE}, supply a character vector \code{c("L1","L2",...)}
+that specifies the display order (legend/risktable) of the single stratification factor.
+Levels not listed are dropped.
+If \code{label.strata} is a named vector, its names must match the (re-ordered) levels.
+}}
 
 \item{limits.x}{Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,max(out_readSurv$t))}.}
 
@@ -104,11 +127,13 @@ For \code{"COMPETING-RISK"} pass options supported by \code{calculateAalenDeltaS
 
 \item{use_coord_cartesian}{Logical specify use of coord_cartesian() (default \code{FALSE}).}
 
-\item{addConfidenceInterval}{Logical add \code{add_confidence_interval()} to plot. It calls geom_ribbon() (default \code{TRUE}).}
+\item{addConfidenceInterval}{Logical add \code{add_confidence_interval()} to plot.
+It calls geom_ribbon() (default \code{TRUE}).}
 
 \item{addRiskTable}{Logical add \code{add_risktable(risktable_stats="n.risk")} to plot (default \code{TRUE}).}
 
-\item{addEstimateTable}{Logical add \code{add_risktable(risktable_stats="estimate (conf.low, conf.high)")} to plot (default \code{FALSE}).}
+\item{addEstimateTable}{Logical add \code{add_risktable(risktable_stats="estimate (conf.low, conf.high)")}
+to plot (default \code{FALSE}).}
 
 \item{addCensorMark}{Logical add \code{add_censor_mark()} to plot. It calls geom_point() (default \code{TRUE}).}
 
@@ -125,7 +150,8 @@ It calls geom_point() (default \code{TRUE}).}
 
 \item{size.competing.risk.mark}{Numeric point size for competing-risk marks (default \code{2}).}
 
-\item{addIntercurrentEventMark}{Logical overlay user-specified time marks per strata calls geom_point() (default \code{TRUE}).}
+\item{addIntercurrentEventMark}{Logical overlay user-specified time marks per strata.
+It calls geom_point() (default \code{TRUE}).}
 
 \item{intercurrent.event.time}{Named list of numeric vectors (names must be mapped to strata labels).}
 
@@ -137,13 +163,29 @@ It calls geom_point() (default \code{TRUE}).}
 
 \item{quantile}{Numeric specify quantile for \code{add_quantile()} (default \code{0.5}).}
 
+\item{printEachEvent}{Logical. If \code{TRUE} and \code{outcome.type == "COMPETING-RISK"},
+\code{cifplot()} internally calls \code{cifpanel} to display both event-specific
+cumulative incidence curves side-by-side (event 1 and event 2). Defaults to \code{FALSE}.
+Ignored for non-competing-risk outcomes.}
+
+\item{printEachVar}{Logical. If \code{TRUE}, when multiple covariates are listed
+on the right-hand side (e.g., \code{~ a + b + c}), the function produces
+a panel of CIF plots, each stratified by one variable at a time.}
+
+\item{rows.columns.panel}{Optional integer vector \code{c(nrow, ncol)} controlling
+the panel layout. If \code{NULL}, an automatic layout is used.}
+
 \item{style}{Character plot theme controls (default \code{"CLASSIC"}).}
+
+\item{palette}{Optional character vector specify color palette, e.g. palette=c("blue", "cyan", "navy", "green")
+(default \code{NULL}).}
 
 \item{font.family}{Character plot theme controls (e.g. "sans", "serif", and "mono". default \code{"sans"}).}
 
 \item{font.size}{Integer plot theme controls (default \code{12}).}
 
-\item{legend.position}{Character specify position of legend: \code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, or \code{"none"} (default \code{"top"}).}
+\item{legend.position}{Character specify position of legend: \code{"top"}, \code{"right"},
+\code{"bottom"}, \code{"left"}, or \code{"none"} (default \code{"top"}).}
 
 \item{filename.ggsave}{Character save the \pkg{ggsurvfit} plot with the path and name specified.}
 
@@ -152,9 +194,13 @@ It calls geom_point() (default \code{TRUE}).}
 \item{height.ggsave}{Numeric specify height of the \pkg{ggsurvfit} plot.}
 
 \item{dpi.ggsave}{Numeric specify dpi of the \pkg{ggsurvfit} plot.}
+
+\item{...}{Additional arguments forwarded to \code{cifpanel()} when \code{printEachEvent = TRUE}.}
 }
 \value{
-A \code{ggplot} object.
+A \code{ggplot} object. When \code{printEachVar = TRUE}, a \pkg{patchwork}
+object is returned with an attribute \code{attr(x, "plots")} containing the
+individual \code{ggplot} panels.
 }
 \description{
 This function produces the Kaplan–Meier survival or Aalen–Johansen cumulative
@@ -166,6 +212,16 @@ object (compatible with \code{+} and \code{\%+\%}). You may also pass a survfit-
 \details{
 This function calls an internal helper \code{call_ggsurvfit()} which adds confidence intervals,
 risk table, censoring marks, and optional competing-risk and intercurrent-event marks.
+
+When \code{printEachEvent = TRUE}, two panels are created with
+\code{code.events = list(c(e1, e2, c), c(e2, e1, c))}, where
+\code{code.events = c(e1, e2, c)} is the input coding for event1, event2, and censoring.
+Common legend is collected by default (\code{legend.collect = TRUE}).
+
+Numeric stratification variables are normalized automatically. Columns with
+fewer than nine distinct numeric values are coerced to factors; columns with
+nine or more distinct numeric values are split at the median into
+\dQuote{Below median} and \dQuote{Above median} strata.
 \subsection{Advanced control not required for typical use}{
 
 The arguments below fine-tune internal estimation and figure appearance.
