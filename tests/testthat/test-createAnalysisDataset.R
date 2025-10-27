@@ -27,7 +27,7 @@ test_that("createAnalysisDataset() produced expected a subset dataset of men", {
 })
 
 test_that("Greenwood standard error of cifcurve() yields the same outputs as separate analysis when strata is present", {
-  testdata <- createTestData(20, 1, first_zero=TRUE, last_zero=FALSE, subset_present=FALSE, logical_strata=TRUE, na_strata=FALSE)
+  testdata <- createTestData1(20, 1, first_zero=TRUE, last_zero=FALSE, subset_present=FALSE, logical_strata=TRUE, na_strata=FALSE)
   testdata1 <- subset(testdata, strata==FALSE)
   testdata2 <- subset(testdata, strata==TRUE)
   t <- cifcurve(Event(t, d)~strata, testdata, outcome.type="S", weight="w", error = "greenwood")
@@ -40,7 +40,7 @@ test_that("Greenwood standard error of cifcurve() yields the same outputs as sep
 
 test_that("cifcurve() produced the same outputs as survfit() in survival in survival data", {
   testthat::skip_if_not_installed("survival")
-  testdata <- createTestData(20, 1, first_zero=FALSE, last_zero=TRUE, subset_present=FALSE, logical_strata=TRUE, na_strata=FALSE)
+  testdata <- createTestData1(20, 1, first_zero=FALSE, last_zero=TRUE, subset_present=FALSE, logical_strata=TRUE, na_strata=FALSE)
   e <- survival::survfit(survival::Surv(t, d)~strata, testdata, weight=w, conf.type = "none")
   t <- cifcurve(Event(t, d) ~ strata, data = testdata, weight="w", conf.type = "none", outcome.type = "SURVIVAL")
   #  expected <- as.numeric(c(e$time, round(e$surv,digit=5), e$n, e$n.risk, e$n.event, e$n.censor, round(e$std.err,digit=5), e$strata))

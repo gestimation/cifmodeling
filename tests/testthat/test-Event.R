@@ -1,58 +1,45 @@
-mkdf <- function(n = 20) {
-  set.seed(1)
-  df <- data.frame(
-    t = rexp(n, rate = 0.2),
-    d = sample(c(0L, 1L), n, replace = TRUE),
-    sex = factor(sample(c("F","M"), n, replace = TRUE)),
-    fruitq1 = factor(sample(c(0,1,2), n, replace = TRUE)),
-    strata = factor(sample(letters[1:2], n, replace = TRUE)),
-    w = runif(n, 0.5, 1.5),
-    stringsAsFactors = FALSE
-  )
-  df
-}
 
 test_that("Event() allowed NA and retained length; use na.omit as necessary", {
-  df <- mkdf()
-  df$t[1] <- NA
-  df$d[2] <- NA
+  df <- createTestData2()
+  df$t[1]      <- NA
+  df$status[2] <- NA
 
-  ev <- with(df, Event(t, d))
+  ev <- with(df, Event(t, status))
   expect_s3_class(ev, "Event")
   expect_equal(nrow(ev), nrow(df))
   expect_true(any(is.na(ev[,1])))
   expect_true(any(is.na(ev[,2])))
 
-  mf <- model.frame(Event(t, d) ~ sex, data = df, na.action = na.omit)
-  y <- model.extract(mf, "response")
+  mf <- model.frame(Event(t, status) ~ x, data = df, na.action = na.omit)
+  y  <- model.extract(mf, "response")
   expect_true(nrow(y) < nrow(df))
   expect_false(any(is.na(y)))
 })
 
 test_that("util_normalize_time_event() allowed only expected codes for events", {
-  df <- mkdf(6)
-  res <- util_normalize_time_event(df$t, c(0L,1L,NA,0L,1L,2L), allowed = c(0,1,2))
+  df  <- createTestData2()
+  tt6 <- df$t[1:6]
+  res <- util_normalize_time_event(tt6, c(0L,1L,NA,0L,1L,2L), allowed = c(0,1,2))
   expect_equal(length(res$event), 6L)
 
   expect_error(
-    util_normalize_time_event(df$t, c(0,-1,1,0,1,0)),
+    util_normalize_time_event(tt6, c(0,-1,1,0,1,0)),
     class = "cifmodeling_ev_codes"
   )
-
   expect_error(
-    util_normalize_time_event(df$t, c(0, 1.2, 1, 0, 1, 0)),
+    util_normalize_time_event(tt6, c(0, 1.2, 1, 0, 1, 0)),
     class = "cifmodeling_ev_codes"
   )
 })
 
 test_that("util_read_surv() handled strata/weights as expected", {
-  df <- mkdf()
-  df$t[1] <- NA
-  df$d[2] <- NA
-  df$sex[3] <- NA
-  df$w[4] <- NA
+  df <- createTestData2()
+  df$t[1]      <- NA
+  df$status[2] <- NA
+  df$x[3]      <- NA
+  df$w[4]      <- NA
 
-  out <- util_read_surv(Event(t, d) ~ sex, data = df, weights = "w", na.action = na.omit)
+  out <- util_read_surv(Event(t, status) ~ x, data = df, weights = "w", na.action = na.omit)
   k <- length(out$t)
   expect_equal(unname(lengths(out[c("epsilon","d","d0","d1","d2","w","strata")])), rep(k, 7))
   expect_false(any(is.na(out$t)))
@@ -60,14 +47,14 @@ test_that("util_read_surv() handled strata/weights as expected", {
 })
 
 test_that("reg_read_exposure_design() allowed only expected codes for exposure", {
-  df <- mkdf()
-  de1 <- reg_read_exposure_design(df, exposure = "fruitq1", code.exposure.ref = 1)
+  df  <- createTestData2()
+  de1 <- reg_read_exposure_design(df, exposure = "x", code.exposure.ref = 0)
   expect_true(is.matrix(de1$x_a))
   expect_equal(nrow(de1$x_a), nrow(df))
   expect_true(all(colnames(de1$x_a) != "a__2"))
 
-  df$fruitq1 <- factor(0)
-  expect_error(reg_read_exposure_design(df, "fruitq1"), "only one level")
+  df$x <- factor(0)
+  expect_error(reg_read_exposure_design(df, "x"), "only one level")
 })
 
 test_that("util_check_outcome_type() / reg_check_effect.measure() / check_error()", {
@@ -92,30 +79,50 @@ test_that("util_check_outcome_type() / reg_check_effect.measure() / check_error(
 })
 
 test_that("reg_read_time.point() yields expected outputs according to outcome.type", {
-  df <- mkdf()
+  set.seed(1)
+  n = 20
+  df <- data.frame(
+    t = rexp(n, rate = 0.2),
+    d = sample(c(0L, 1L), n, replace = TRUE),
+    sex = factor(sample(c("F","M"), n, replace = TRUE)),
+    fruitq1 = factor(sample(c(0,1,2), n, replace = TRUE)),
+    strata = factor(sample(letters[1:2], n, replace = TRUE)),
+    w = runif(n, 0.5, 1.5),
+    stringsAsFactors = FALSE
+  )
   expect_error(reg_read_time.point(Event(t,d)~1, df, matrix(1, nrow(df), 1),
-                               "SURVIVAL", code.censoring = 0,
-                    should.terminate.time.point = TRUE,
-                    time.point = NULL),
-    "`?time\\.point`?\\s+is\\s+required"
+                                   "SURVIVAL", code.censoring = 0,
+                                   should.terminate.time.point = TRUE,
+                                   time.point = NULL),
+               "`?time\\.point`?\\s+is\\s+required"
   )
   tp <- reg_read_time.point(Event(t,d)~1, df, matrix(1, nrow(df), 1),
-                        "BINOMIAL", code.censoring = 0,
-                        should.terminate.time.point = TRUE,
-                        time.point = NULL)
+                            "BINOMIAL", code.censoring = 0,
+                            should.terminate.time.point = TRUE,
+                            time.point = NULL)
   expect_true(is.infinite(tp))
 
   x_a <- model.matrix(~ fruitq1, data = df)[, -1, drop = FALSE]
   tp2 <- reg_read_time.point(Event(t,d)~sex, df, x_a,
-                         "PROPORTIONAL-SURVIVAL", code.censoring = 0,
-                         should.terminate.time.point = TRUE,
-                         time.point = NULL)
+                             "PROPORTIONAL-SURVIVAL", code.censoring = 0,
+                             should.terminate.time.point = TRUE,
+                             time.point = NULL)
   expect_true(all(tp2 >= 0))
   expect_true(is.unsorted(tp2, strictly = FALSE) == FALSE)
 })
 
 test_that("reg_check_input() handles NA as expected", {
-  df <- mkdf()
+  set.seed(1)
+  n = 20
+  df <- data.frame(
+    t = rexp(n, rate = 0.2),
+    d = sample(c(0L, 1L), n, replace = TRUE),
+    sex = factor(sample(c("F","M"), n, replace = TRUE)),
+    fruitq1 = factor(sample(c(0,1,2), n, replace = TRUE)),
+    strata = factor(sample(letters[1:2], n, replace = TRUE)),
+    w = runif(n, 0.5, 1.5),
+    stringsAsFactors = FALSE
+  )
   df$t[1] <- NA; df$d[2] <- NA; df$sex[3] <- NA; df$fruitq1[4] <- NA
   out <- reg_check_input(
     data = df,
@@ -137,8 +144,6 @@ test_that("reg_check_input() handles NA as expected", {
   expect_true(ncol(out$x_l) >= 1)
 })
 
-# test-Event.R
-testthat::skip_on_cran()
 
 testthat::test_that("Event() constructs a Surv-like 2-column object", {
   df <- data.frame(
@@ -151,38 +156,36 @@ testthat::test_that("Event() constructs a Surv-like 2-column object", {
   )
   y  <- Event(df$t, df$status)
 
-  # Basic structure
-  testthat::expect_true(is.matrix(y) || is.data.frame(y))
-  testthat::expect_equal(ncol(y), 2)
-  testthat::expect_true(inherits(y, "Event"))
-  testthat::expect_true(is.numeric(y[,1]))
-  testthat::expect_true(is.numeric(y[,2]) || is.integer(y[,2]))
-
-  # Allowed codes (0,1,2) present as given
-  testthat::expect_true(all(na.omit(unique(y[,2])) %in% c(0,1,2)))
+  expect_true(is.matrix(y) || is.data.frame(y))
+  expect_equal(ncol(y), 2)
+  expect_true(inherits(y, "Event"))
+  expect_true(is.numeric(y[,1]))
+  expect_true(is.numeric(y[,2]) || is.integer(y[,2]))
+  expect_true(all(na.omit(unique(y[,2])) %in% c(0,1,2)))
 })
+
 
 testthat::test_that("Event() works inside model.frame and terms", {
   df <- data.frame(
-      t       = c(5,  7,  7,  9, 10, 12, NA,  4),
-      status  = c(1,  0,  2,  0,  1,  2,  1,  0),
-      x       = c(0,  1,  1,  0,  0,  1,  1,  0),
-      strata  = factor(c("A","A","B","B","A","B","A","B")),
-      w       = c(1,  2,  1,  1,  0.5, 1,  1,  1),
-      stringsAsFactors = FALSE
-    )
+    t       = c(5,  7,  7,  9, 10, 12, NA,  4),
+    status  = c(1,  0,  2,  0,  1,  2,  1,  0),
+    x       = c(0,  1,  1,  0,  0,  1,  1,  0),
+    strata  = factor(c("A","A","B","B","A","B","A","B")),
+    w       = c(1,  2,  1,  1,  0.5, 1,  1,  1),
+    stringsAsFactors = FALSE
+  )
   f  <- Event(t, status) ~ x
 
   Terms <- stats::terms(f, specials = c("strata","offset","cluster"), data = df)
   mf    <- stats::model.frame(Terms, data = df, na.action = stats::na.omit)
 
   y <- stats::model.extract(mf, "response")
-  testthat::expect_true(inherits(y, "Event"))
-  testthat::expect_equal(ncol(y), 2)
-  testthat::expect_equal(nrow(y), sum(stats::complete.cases(df[c("t","status","x")])))
+  expect_true(inherits(y, "Event"))
+  expect_equal(ncol(y), 2)
+  expect_equal(nrow(y), sum(stats::complete.cases(df[c("t","status","x")])))
 })
 
-testthat::test_that("Event(): NA handling and non-finite times raise as expected", {
+testthat::test_that("In Event() NA handling and non-finite times raise as expected", {
   df <- data.frame(
     t       = c(5,  7,  7,  9, 10, 12, NA,  4),
     status  = c(1,  0,  2,  0,  1,  2,  1,  0),
@@ -199,10 +202,10 @@ testthat::test_that("Event(): NA handling and non-finite times raise as expected
   # Non-finite time should error at normalization stage (if implemented)
   df2 <- df
   df2$t[1] <- Inf
-  testthat::expect_error(Event(df2$t, df2$status), regexp = "finite|non[- ]?finite|NA", ignore.case = TRUE)
+  expect_error(Event(df2$t, df2$status), regexp = "finite|non[- ]?finite|NA", ignore.case = TRUE)
 })
 
-testthat::test_that("Event(): invalid status codes are caught", {
+testthat::test_that("In Event() invalid status codes are caught", {
   df <- data.frame(
     t       = c(5,  7,  7,  9, 10, 12, NA,  4),
     status  = c(1,  0,  2,  0,  1,  2,  1,  0),
@@ -212,5 +215,5 @@ testthat::test_that("Event(): invalid status codes are caught", {
     stringsAsFactors = FALSE
   )
   df$status[2] <- 9
-  testthat::expect_error(Event(df$t, df$status), regexp = "code|allowed|invalid", ignore.case = TRUE)
+  expect_error(Event(df$t, df$status), regexp = "code|allowed|invalid", ignore.case = TRUE)
 })
