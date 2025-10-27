@@ -398,7 +398,7 @@ cifpanel <- function(
 
   make_panel_list_preserve_vector <- function(x, K) {
     if (is.null(x)) return(NULL)
-    if (is.list(x)) return(panel_recycle_to(x, K))          # 既にパネルごと
+    if (is.list(x)) return(panel_recycle_to(x, K))
     rep(list(x), K)
   }
   labelstrata.list  <- make_panel_list_preserve_vector(label.strata,  K)

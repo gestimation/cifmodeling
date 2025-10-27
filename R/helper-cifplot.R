@@ -31,15 +31,25 @@ plot_fix_palette_vector_arg <- function(p) {
   return(p)
 }
 
-plot_drop_panel_only_args <- function(dots) {
-  panel_only <- c(
-    "rows.columns.panel", "legend.collect", "title.panel",
-    "subtitle.panel", "caption.panel", "print.panel",
-    "title.plot", "zoom.position"
-  )
-  if (length(dots) && !is.null(names(dots))) {
-    dots[setdiff(names(dots), panel_only)]
-  } else dots
+plot_make_dots_clean <- function(dots) {
+  plot_drop_panel_only_args <- function(dots) {
+    panel_only <- c(
+      "rows.columns.panel", "legend.collect", "title.panel", "subtitle.panel",
+      "caption.panel", "print.panel", "title.plot", "zoom.position"
+    )
+    if (length(dots) && !is.null(names(dots))) {
+      dots[setdiff(names(dots), panel_only)]
+    } else dots
+  }
+  dots1 <- plot_drop_panel_only_args(dots)
+  allowed <- setdiff(names(formals(cifplot_single)), "...")
+  drop_extra <- c("printEachVar")
+  dots2 <- dots1[setdiff(names(dots1), drop_extra)]
+
+  dots_clean <- if (!is.null(names(dots2))) {
+    dots2[intersect(names(dots2), allowed)]
+  } else dots2
+  return(dots_clean)
 }
 
 plot_check_code_events <- function(code_events) {

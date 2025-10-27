@@ -1219,13 +1219,14 @@ layout and styling options.
   evaluated. Required for survival and competing risk analyses.
 - `outcome.type` Character string selecting the outcome type. Valid
   values are `"COMPETING-RISK"`, `"SURVIVAL"`, `"BINOMIAL"`,
-  `"PROPORTIONAL-SURVIVAL"` and `"PROPORTIONAL-COMPETING-RISK"`. Defaults to
-  `"COMPETING-RISK"`. If `NULL` (default), the function automatically
-  infers the outcome type from the data: if the event variable has more
-  than two unique levels, `"COMPETING-RISK"` is assumed; otherwise,
-  `"SURVIVAL"` is used. You can also use abbreviations such as `"S"` or
-  `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger
-  automatic detection based on the event coding in `data`.
+  `"PROPORTIONAL-SURVIVAL"` and `"PROPORTIONAL-COMPETING-RISK"`.
+  Defaults to `"COMPETING-RISK"`. If `NULL` (default), the function
+  automatically infers the outcome type from the data: if the event
+  variable has more than two unique levels, `"COMPETING-RISK"` is
+  assumed; otherwise, `"SURVIVAL"` is used. You can also use
+  abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g.,
+  `c("S", "C")`) trigger automatic detection based on the event coding
+  in `data`.
 - `conf.level` Confidence level for Wald-type intervals. Defaults to
   `0.95`.
 - `report.nuisance.parameter` Logical if `TRUE`, the returned object
@@ -1242,9 +1243,9 @@ layout and styling options.
 - `boot.bca` Logical indicating the bootstrap confidence interval
   method. Use `TRUE` for bias-corrected and accelerated intervals or
   `FALSE` for the normal approximation. Defaults to `FALSE`.
-- `boot.replications` Integer giving the number of bootstrap replications.
-  Defaults to `200`.
-- \`boot.seed Numeric seed used for resampling of bootstrap.
+- `boot.replications` Integer giving the number of bootstrap
+  replications. Defaults to `200`.
+- `boot.seed` Numeric seed used for resampling of bootstrap.
 - `nleqslv.method Character string defining the solver used by`nleqslv}`. Available choices include`“nleqslv”`,`“Broyden”`,`“Newton”`,`“optim”`,`“BFGS”`and`“SANN”\`.
 - `optim.parameter1` Numeric tolerance for convergence of the outer
   loop. Defaults to `1e-6`.
