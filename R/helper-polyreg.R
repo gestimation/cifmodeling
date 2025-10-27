@@ -101,7 +101,7 @@ reg_normalize_covariate <- function(formula, data, should.normalize.covariate,
 
   block <- c(1, as.numeric(scales_in_mm_order), rep(1, k_ex))
 
-  if (outcome.type %in% c("PROPORTIONAL","POLY-PROPORTIONAL")) {
+  if (outcome.type %in% c("PROPORTIONAL-SURVIVAL","PROPORTIONAL-COMPETING-RISK")) {
     range_for_params <- NULL
   } else if (outcome.type %in% c("SURVIVAL","BINOMIAL")) {
     range_for_params <- block
@@ -124,7 +124,6 @@ reg_normalize_covariate <- function(formula, data, should.normalize.covariate,
 
 reg_normalize_estimate <- function(
     outcome.type,
-    report.sandwich.conf,
     should.normalize.covariate,
     current_params,
     out_getResults,
@@ -133,27 +132,8 @@ reg_normalize_estimate <- function(
     out_normalizeCovariate,
     out_calculateCov = NULL
 ) {
-  if (isFALSE(report.sandwich.conf)) {
-    if (isTRUE(should.normalize.covariate) && !is.null(out_normalizeCovariate$range)) {
-      adj <- 1 / as.vector(out_normalizeCovariate$range)
-      if (length(adj) != length(current_params)) {
-        stop(sprintf(
-          "Length mismatch: adj=%d vs params=%d. outcome.type=%s, p_num=%d, k_ex=%d",
-          length(adj), length(current_params), outcome.type,
-          out_normalizeCovariate$p_num %||% NA_integer_,
-          out_normalizeCovariate$k_ex  %||% NA_integer_
-        ))
-      }
-      alpha_beta_estimated <- adj * current_params
-    } else {
-      alpha_beta_estimated <- current_params
-    }
-    return(list(alpha_beta_estimated = alpha_beta_estimated, cov_estimated = NULL))
-  }
-
   if (isTRUE(should.normalize.covariate) && !is.null(out_normalizeCovariate$range)) {
     adj <- 1 / as.vector(out_normalizeCovariate$range)
-
     if (length(adj) != length(current_params)) {
       stop(sprintf(
         "Length mismatch: adj=%d vs params=%d. outcome.type=%s, p_num=%d, k_ex=%d",
@@ -162,22 +142,37 @@ reg_normalize_estimate <- function(
         out_normalizeCovariate$k_ex  %||% NA_integer_
       ))
     }
-
     alpha_beta_estimated <- adj * current_params
-    if (is.null(out_calculateCov) || is.null(out_calculateCov$cov_estimated)) {
-      stop("out_calculateCov$cov_estimated is required when report.sandwich.conf=TRUE.")
-    }
-    A <- diag(adj, length(adj))
-    cov_estimated <- A %*% out_calculateCov$cov_estimated %*% A
   } else {
     alpha_beta_estimated <- current_params
-    if (is.null(out_calculateCov) || is.null(out_calculateCov$cov_estimated)) {
-      stop("out_calculateCov$cov_estimated is required when report.sandwich.conf=TRUE.")
-    }
-    cov_estimated <- out_calculateCov$cov_estimated
+    adj <- NULL
   }
 
-  list(alpha_beta_estimated = alpha_beta_estimated, cov_estimated = cov_estimated)
+  if (!is.null(out_calculateCov) && !is.null(out_calculateCov$cov_bootstrap)) {
+    V <- out_calculateCov$cov_bootstrap
+    if (!is.null(adj)) {
+      A <- diag(adj, length(adj))
+      cov_bootstrap <- A %*% V %*% A
+    } else {
+      cov_bootstrap <- V
+    }
+  } else {
+    cov_bootstrap <- NULL
+  }
+
+  if (!is.null(out_calculateCov) && !is.null(out_calculateCov$cov_estimated)) {
+    V <- out_calculateCov$cov_estimated
+    if (!is.null(adj)) {
+      A <- diag(adj, length(adj))
+      cov_estimated <- A %*% V %*% A
+    } else {
+      cov_estimated <- V
+    }
+  } else {
+    cov_estimated <- NULL
+  }
+
+  list(alpha_beta_estimated = alpha_beta_estimated, cov_estimated = cov_estimated, cov_bootstrap = cov_bootstrap)
 }
 
 reg_check_input <- function(data, formula, exposure, code.event1, code.event2, code.censoring,
@@ -205,7 +200,7 @@ reg_check_input <- function(data, formula, exposure, code.event1, code.event2, c
   mf <- eval(mf, parent.frame())
 
   Y <- model.extract(mf, "response")
-  if (outcome.type %in% c("COMPETING-RISK","SURVIVAL","PROPORTIONAL","POLY-PROPORTIONAL")) {
+  if (outcome.type %in% c("COMPETING-RISK","SURVIVAL","PROPORTIONAL-SURVIVAL","PROPORTIONAL-COMPETING-RISK")) {
     if (!inherits(Y, c("Event","Surv"))) .err("surv_expected")
     t <- as.numeric(Y[,1]); epsilon <- as.numeric(Y[,2])
     if (any(t < 0, na.rm = TRUE)) .err("time_nonneg", arg = "time")
@@ -228,7 +223,7 @@ reg_check_input <- function(data, formula, exposure, code.event1, code.event2, c
 
   if (!is.numeric(conf.level) || length(conf.level) != 1 || conf.level <= 0 || conf.level >= 1) .err("conf_level")
 
-  if (outcome.type == "PROPORTIONAL" | outcome.type == "POLY-PROPORTIONAL") {
+  if (outcome.type == "PROPORTIONAL-SURVIVAL" | outcome.type == "PROPORTIONAL-COMPETING-RISK") {
     should.normalize.covariate.corrected <- FALSE
     report.sandwich.conf.corrected <- FALSE
     if (is.null(report.boot.conf)) {
@@ -243,11 +238,7 @@ reg_check_input <- function(data, formula, exposure, code.event1, code.event2, c
     } else {
       report.boot.conf.corrected <- report.boot.conf
     }
-    if (report.boot.conf == FALSE || is.null(report.boot.conf)) {
-      report.sandwich.conf.corrected <- report.sandwich.conf
-    } else {
-      report.sandwich.conf.corrected <- FALSE
-    }
+    report.sandwich.conf.corrected <- report.sandwich.conf
   }
 
   outer_choices <- c("nleqslv","Newton","Broyden")
@@ -300,7 +291,7 @@ reg_read_time.point <- function(formula, data, x_a, outcome.type, code.censoring
   } else if (outcome.type == "BINOMIAL") {
     tp <- Inf
     return(tp)
-  } else if (outcome.type %in% c("PROPORTIONAL","POLY-PROPORTIONAL") & is.null(time.point)) {
+  } else if (outcome.type %in% c("PROPORTIONAL-SURVIVAL","PROPORTIONAL-COMPETING-RISK") & is.null(time.point)) {
     cl <- match.call()
     mf <- match.call(expand.dots = TRUE)[1:3]
     special <- c("strata", "cluster", "offset")

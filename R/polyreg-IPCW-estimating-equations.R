@@ -93,7 +93,7 @@ estimating_equation_ipcw <- function(
     ))
   }
 
-  if (outcome.type == "PROPORTIONAL") {
+  if (outcome.type == "PROPORTIONAL-SURVIVAL") {
     if (is.null(estimand$time.point)) {
       tp <- with(data, t[epsilon > 0]); time.point <- unique(tp)
     }
@@ -296,7 +296,7 @@ calculateEY <- function(potential.CIFs, x_a) {
   return(list(ey_1 = ey_1, ey_2 = ey_2))
 }
 
-calculateCov <- function(objget_results, estimand, prob.bound)
+calculateCov <- function(objget_results, estimand, boot.method, prob.bound)
 {
   score <- objget_results$score
   ey_1 <- objget_results$ey_1
@@ -351,7 +351,15 @@ calculateCov <- function(objget_results, estimand, prob.bound)
   hesse <- rbind(hesse_d1, hesse_d2)
   total_score <- cbind(AB1, AB2)
   influence.function <- t(solve(hesse, t(total_score)))
-  cov_estimated <- crossprod(influence.function) / n^2
+
+  if (isTRUE(boot.method$report.sandwich.conf))
+  {
+    cov_estimated <- crossprod(influence.function) / n^2
+  }
+  if (isTRUE(boot.method$report.boot.conf))
+  {
+    cov_bootstrap <- cov_wild_bootstrap(influence.function=influence.function, multiplier=boot.method$boot.multiplier, R=boot.method$boot.replications, seed=boot.method$boot.seed)
+  }
 
   if (ncol(influence.function)==4) {
     colnames(influence.function) <- c("intercept", "exposure", "intercept", "exposure")
@@ -359,7 +367,7 @@ calculateCov <- function(objget_results, estimand, prob.bound)
     colnames(influence.function) <- c("intercept", paste("covariate", 1:(ncol(influence.function)/2 - 2), sep = ""), "exposure",
                                       "intercept", paste("covariate", 1:(ncol(influence.function)/2 - 2), sep = ""), "exposure")
   }
-  return(list(cov_estimated = cov_estimated, score.function = total_score, influence.function = influence.function))
+  return(list(cov_estimated = cov_estimated, cov_bootstrap = cov_bootstrap, score.function = total_score, influence.function = influence.function))
 }
 
 calculateD <- function(potential.CIFs, x_a, x_l, estimand, prob.bound) {
@@ -430,7 +438,7 @@ calculateD <- function(potential.CIFs, x_a, x_l, estimand, prob.bound) {
   return(list(d_11 = d_11, d_12 = d_12, d_22 = d_22))
 }
 
-calculateCovSurvival <- function(objget_results, estimand, prob.bound)
+calculateCovSurvival <- function(objget_results, estimand, boot.method, prob.bound)
 {
   score <- objget_results$score
   ey_1 <- objget_results$ey_1
@@ -470,13 +478,24 @@ calculateCovSurvival <- function(objget_results, estimand, prob.bound)
 
   total_score <- AB1
   influence.function <- t(solve(hesse, t(total_score)))
-  cov_estimated <- crossprod(influence.function) / n^2
+
+  cov_estimated <- NULL
+  cov_bootstrap <- NULL
+  if (isTRUE(boot.method$report.sandwich.conf))
+  {
+    cov_estimated <- crossprod(influence.function) / n^2
+  }
+  if (isTRUE(boot.method$report.boot.conf))
+  {
+    cov_bootstrap <- cov_wild_bootstrap(influence.function=influence.function, multiplier=boot.method$boot.multiplier, R=boot.method$boot.replications, seed=boot.method$boot.seed)
+  }
+
   if (ncol(influence.function)==2) {
     colnames(influence.function) <- c("intercept", "exposure")
   } else if (ncol(influence.function)>2) {
     colnames(influence.function) <- c("intercept", paste("covariate", 1:(ncol(influence.function) - 2), sep = ""), "exposure")
   }
-  return(list(cov_estimated = cov_estimated, score.function = total_score, influence.function = influence.function))
+  return(list(cov_estimated = cov_estimated, cov_bootstrap = cov_bootstrap, score.function = total_score, influence.function = influence.function))
 }
 
 calculateDSurvival <- function(potential.CIFs, x_a, x_l, estimand, prob.bound) {
@@ -532,7 +551,7 @@ solveEstimatingEquation <- function(
     ip.weight.matrix <- calculateIPCW(nuisance.model, normalized_data, estimand$code.censoring, strata, estimand$time.point)
   } else if (outcome.type == "BINOMIAL") {
     ip.weight.matrix <- matrix(1,nrow(normalized_data),1)
-  } else if (outcome.type == "PROPORTIONAL" | outcome.type == "POLY-PROPORTIONAL") {
+  } else if (outcome.type == "PROPORTIONAL-SURVIVAL" | outcome.type == "PROPORTIONAL-COMPETING-RISK") {
     ip.weight.matrix <- calculateIPCWMatrix(nuisance.model, normalized_data, estimand$code.censoring, strata, estimand, out_normalizeCovariate)
   }
 
@@ -633,3 +652,59 @@ solveEstimatingEquation <- function(
   return(current_params)
 }
 
+#' @name cov_wild_bootstrap
+#' @noRd
+#' @param influence.function  n x p numeric matrix of individual IFs (rows = units, cols = parameters).
+#' @param R                   Integer, number of bootstrap replications (default 1000).
+#' @param multiplier          "rademacher", "mammen", or "gaussian" (default "rademacher").
+#' @param center              Logical, center IFs by column before bootstrapping (default FALSE).
+#' @param seed                Optional integer seed for reproducibility (default NULL).
+#' @return                    p x p covariance matrix estimated via wild bootstrap.
+#'
+#' @examples
+#' # V <- cov_wild_bootstrap(IF, R = 1000, multiplier = "rademacher")
+cov_wild_bootstrap <- function(
+    influence.function,
+    R = 1000,
+    multiplier = c("rademacher", "mammen", "gaussian"),
+    center = FALSE,
+    seed = NULL
+) {
+  stopifnot(is.matrix(influence.function), is.numeric(influence.function))
+  multiplier <- match.arg(multiplier)
+
+  n <- nrow(influence.function)
+  p <- ncol(influence.function)
+  if (n <= 1L || p < 1L) stop("`influence.function` must be n x p with n>1 and p>=1.")
+  if (!is.null(seed)) set.seed(seed)
+
+  IF <- influence.function
+  if (isTRUE(center)) {
+    IF <- scale(IF, center = TRUE, scale = FALSE)
+  }
+
+  draw_multipliers <- function(n, kind) {
+    if (kind == "rademacher") {
+      sample(c(-1, 1), size = n, replace = TRUE)
+    } else if (kind == "mammen") {
+      sq5 <- sqrt(5)
+      a <- (1 - sq5) / 2
+      b <- (1 + sq5) / 2
+      pa <- (sq5 + 1) / (2 * sq5)
+      u <- runif(n)
+      ifelse(u < pa, a, b)
+    } else if (kind == "gaussian") {
+      rnorm(n)
+    } else {
+      stop("Unknown `multiplier`.")
+    }
+  }
+
+  IFt <- t(IF)
+  deltas <- matrix(NA_real_, nrow = p, ncol = R)
+  for (b in seq_len(R)) {
+    g <- draw_multipliers(n, multiplier)
+    deltas[, b] <- (IFt %*% g) / n
+  }
+  return(stats::cov(t(deltas)))
+}

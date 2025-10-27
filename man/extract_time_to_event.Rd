@@ -59,7 +59,7 @@ Event types are specified by event 1, event 2, censoring, or user-specified code
 \details{
 This function is typically used internally by plotting and model functions,
 but can also be called directly to inspect the per-stratum event-time
-structure of a dataset.
+structure of a data frame.
 }
 \examples{
 data(diabetes.complications)

@@ -203,7 +203,7 @@ The function follows the familiar **formula + data** syntax with `Event()` or `S
 -   `nuisance.model` — a formula describing the outcome and nuisance covariates, excluding the exposure of interest. 
 -   `exposure` — specifies the categorical exposure variable
 -   `effect.measure1` and `effect.measure2` — specifies the effect measures for event1 and event2 (`"RR"`, `"OR"` or `"SHR"`). 
--   `outcome.type` selects the outcome type (`"COMPETING-RISK"`, `"SURVIVAL"`, `"BINOMIAL"`, `"PROPORTIONAL"` or `"POLY-PROPORTIONAL"`). 
+-   `outcome.type` selects the outcome type (`"COMPETING-RISK"`, `"SURVIVAL"`, `"BINOMIAL"`, `"PROPORTIONAL-SURVIVAL"` or `"PROPORTIONAL-COMPETING-RISK"`). 
 -   `time.point` — specifies time point at which the exposure effect is evaluated. Required for `"COMPETING-RISK"` and `"SURVIVAL"` outcomes.
 -   `strata` — specifies a stratification variable used to adjust for dependent censoring. 
 
@@ -279,9 +279,9 @@ Event codes can be customized using `code.event1`, `code.event2`, and `code.cens
 
 -   Effects on a risk at a specific time: `"SURVIVAL"`
 
--   Common effects on cumulative incidence probabilities over time: `"POLY-PROPORTIONAL"`
+-   Common effects on cumulative incidence probabilities over time: `"PROPORTIONAL-COMPETING-RISK"`
 
--   Common effects on a risk over time: `"PROPORTIONAL"`
+-   Common effects on a risk over time: `"PROPORTIONAL-SURVIVAL"`
 
 -   Effects on a risk of a binomial outcome: `"BINOMIAL"`
 
@@ -450,7 +450,7 @@ The `legend.collect = TRUE` option merges legends from all panels into a single 
 
 -   In `cifcurve()` the right-hand side of the formula defines the grouping variable(s) whose curves are estimated; weights (if any) are supplied separately. There is no dedicated exposure argument because all strata are handled through the formula term that is turned into a factor for plotting and estimation.
 -   In `polyreg()` the `nuisance.model` formula describes only the outcome and nuisance covariates (i.e. confounders), while the exposure is passed separately through the `exposure` argument. The exposure design matrix, reference level handling, and scaling of nuisance covariates are handled explicitly for regression fitting.
--   `cifcurve()` focuses on two estimands, selecting between Kaplan–Meier and Aalen–Johansen calculations via `outcome.type = "SURVIVAL"` or `"COMPETING-RISK"`. In contrast, `polyreg()` supports additional time-constant and binomial estimands (`"PROPORTIONAL"`, `"POLY-PROPORTIONAL"`, `"BINOMIAL"`) and enforces time-point requirements accordingly—for example `time.point` is mandatory for survival/competing-risk contrasts, while time-constant-effect models can infer all event time or a use-specified grid of time, `time.point`.
+-   `cifcurve()` focuses on two estimands, selecting between Kaplan–Meier and Aalen–Johansen calculations via `outcome.type = "SURVIVAL"` or `"COMPETING-RISK"`. In contrast, `polyreg()` supports additional time-constant and binomial estimands (`"PROPORTIONAL-SURVIVAL"`, `"PROPORTIONAL-COMPETING-RISK"`, `"BINOMIAL"`) and enforces time-point requirements accordingly—for example `time.point` is mandatory for survival/competing-risk contrasts, while time-constant-effect models can infer all event time or a use-specified grid of time, `time.point`.
 
 ### Event coding conventions in package cifmodeling and CDISC ADaM ADTTE
 
@@ -608,7 +608,7 @@ You can also supply multiple model summaries as a named list to compare estimate
 -   `effect.measure1` Character string specifying the effect measure for the primary event. Supported values are `"RR"`, `"OR"` and `"SHR"`.
 -   `effect.measure2` Character string specifying the effect measure for the competing event. Supported values are `"RR"`, `"OR"` and `"SHR"`.
 -   `time.point` Numeric time point at which the exposure effect is evaluated. Required for survival and competing risk analyses.
--   `outcome.type` Character string selecting the outcome type. Valid values are `"COMPETING-RISK"`, `"SURVIVAL"`, `"BINOMIAL"`, `"PROPORTIONAL"` and `"POLY-PROPORTIONAL"`. Defaults to `"COMPETING-RISK"`. If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels,
+-   `outcome.type` Character string selecting the outcome type. Valid values are `"COMPETING-RISK"`, `"SURVIVAL"`, `"BINOMIAL"`, `"PROPORTIONAL-SURVIVAL"` and `"PROPORTIONAL-COMPETING-RISK"`. Defaults to `"COMPETING-RISK"`. If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels,
 `"COMPETING-RISK"` is assumed; otherwise, `"SURVIVAL"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
 -   `conf.level` Confidence level for Wald-type intervals. Defaults to `0.95`.
 -   `report.nuisance.parameter` Logical if `TRUE`, the returned object includes estimates of the nuisance model parameters. Defaults to `FALSE`.
@@ -616,8 +616,8 @@ You can also supply multiple model summaries as a named list to compare estimate
 -   `report.sandwich.conf` Logical or `NULL`. When `TRUE`, confidence intervals based on sandwich variance are computed. When `FALSE`, they are omitted. Defaults to `TRUE`.
 -   `report.boot.conf` Logical or `NULL`. When `TRUE`, bootstrap confidence intervals are computed. When `FALSE`, they are omitted. If `NULL`, the function chooses based on `outcome.type`.
 -   ` boot.bca` Logical indicating the bootstrap confidence interval method. Use `TRUE` for bias-corrected and accelerated intervals or `FALSE` for the normal approximation. Defaults to `FALSE`.
--   `boot.parameter1` Integer giving the number of bootstrap replications. Defaults to `200`.
--   `boot.parameter2 Numeric seed used for resampling of bootstrap.
+-   `boot.replications` Integer giving the number of bootstrap replications. Defaults to `200`.
+-   `boot.seed` Numeric seed used for resampling of bootstrap.
 -   `nleqslv.method Character string defining the solver used by `nleqslv}`. Available choices include `"nleqslv"`, `"Broyden"`, `"Newton"`, `"optim"`, `"BFGS"` and `"SANN"`.
 -   `optim.parameter1` Numeric tolerance for convergence of the outer loop. Defaults to `1e-6`.
 -   `optim.parameter2` Numeric tolerance for convergence of the inner loop. Defaults to `1e-6`.

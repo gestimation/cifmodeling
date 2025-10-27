@@ -32,8 +32,8 @@
 #'   evaluated. Required for survival and competing risk analyses.
 #' @param outcome.type Character string selecting the outcome type. Valid values
 #'   are \code{"COMPETING-RISK"}, \code{"SURVIVAL"}, \code{"BINOMIAL"},
-#'   \code{"PROPORTIONAL"} and \code{"POLY-PROPORTIONAL"}. Defaults to
-#'   \code{"COMPETING-RISK"}.
+#'   \code{"PROPORTIONAL-SURVIVAL"} and \code{"PROPORTIONAL-COMPETING-RISK"}.
+#'   Defaults to \code{"COMPETING-RISK"}.
 #' If \code{NULL} (default), the function automatically infers the outcome type
 #' from the data: if the event variable has more than two unique levels,
 #' \code{"COMPETING-RISK"} is assumed; otherwise, \code{"SURVIVAL"} is used.
@@ -56,9 +56,11 @@
 #' @param boot.bca Logical indicating the bootstrap confidence interval method.
 #'   Use \code{TRUE} for bias-corrected and accelerated intervals or \code{FALSE}
 #'   for the normal approximation. Defaults to \code{FALSE}.
-#' @param boot.parameter1 Integer giving the number of bootstrap replications.
+#' @param boot.multiplier Character \code{"rademacher"}, \code{"mammen"},
+#'   or \code{"gaussian"}. Defaults to \code{"rademacher"}.
+#' @param boot.replications Integer giving the number of bootstrap replications.
 #'   Defaults to \code{200}.
-#' @param boot.parameter2 Numeric seed used for resampling of bootstrap.
+#' @param boot.seed Numeric seed used for resampling of bootstrap.
 #' @param nleqslv.method Character string defining the solver used by
 #'   \pkg{nleqslv}. Available choices include \code{"nleqslv"},
 #'   \code{"Broyden"}, \code{"Newton"}, \code{"optim"}, \code{"BFGS"} and
@@ -126,7 +128,7 @@
 #' -   `effect.measure1` and `effect.measure2` — specifies the effect measures
 #' for event1 and event2 (`"RR"`, `"OR"` or `"SHR"`).
 #' -   `outcome.type` selects the outcome type (`"COMPETING-RISK"`, `"SURVIVAL"`,
-#' `"BINOMIAL"`, `"PROPORTIONAL"` or `"POLY-PROPORTIONAL"`).
+#' `"BINOMIAL"`, `"PROPORTIONAL-SURVIVAL"` or `"PROPORTIONAL-COMPETING-RISK"`).
 #' -   `time.point` — specifies time point at which the exposure effect is evaluated.
 #' Required for `"COMPETING-RISK"` and `"SURVIVAL"` outcomes.
 #' -   `strata` — specifies a stratification variable used to adjust for dependent censoring.
@@ -136,8 +138,8 @@
 #' The `outcome.type` argument must be set to:
 #' -   Effects on cumulative incidence probabilities at a specific time: `"COMPETING-RISK"`
 #' -   Effects on a risk at a specific time: `"SURVIVAL"`
-#' -   Common effects on cumulative incidence probabilities over time: `"POLY-PROPORTIONAL"`
-#' -   Common effects on a risk over time: `"PROPORTIONAL"`
+#' -   Common effects on cumulative incidence probabilities over time: `"PROPORTIONAL-COMPETING-RISK"`
+#' -   Common effects on a risk over time: `"PROPORTIONAL-SURVIVAL"`
 #' -   Effects on a risk of a binomial outcome: `"BINOMIAL"`
 #'
 #' | Setting | Codes | Meaning |
@@ -147,11 +149,11 @@
 #' | SURVIVAL | `code.event1`, `code.censoring`                   | event / censoring |
 #' | SURVIVAL  (default)| `code.event1=1`, `code.censoring=0`     | event / censoring |
 #' | SURVIVAL (ADaM-ADTTE) | `code.event1=0`, `code.censoring=1` | set to match ADaM convention |
-#' | PROPORTIONAL | `code.event1`, `code.censoring`                   | event / censoring |
-#' | PROPORTIONAL  (default)| `code.event1=1`, `code.censoring=0`     | event / censoring |
-#' | PROPORTIONAL (ADaM-ADTTE) | `code.event1=0`, `code.censoring=1` | set to match ADaM convention |
-#' | POLY-PROPORTIONAL | `code.event1`, `code.event2`, `code.censoring` | event of interest / competing event / censoring |
-#' | POLY-PROPORTIONAL (default)| `code.event1=1`, `code.event2=2`, `code.censoring1` | event of interest / competing event / censoring |
+#' | PROPORTIONAL-SURVIVAL | `code.event1`, `code.censoring`                   | event / censoring |
+#' | PROPORTIONAL-SURVIVAL  (default)| `code.event1=1`, `code.censoring=0`     | event / censoring |
+#' | PROPORTIONAL-SURVIVAL (ADaM-ADTTE) | `code.event1=0`, `code.censoring=1` | set to match ADaM convention |
+#' | PROPORTIONAL-COMPETING-RISK | `code.event1`, `code.event2`, `code.censoring` | event of interest / competing event / censoring |
+#' | PROPORTIONAL-COMPETING-RISK (default)| `code.event1=1`, `code.event2=2`, `code.censoring1` | event of interest / competing event / censoring |
 #'
 #' ### Effect measures for categorical exposure
 #'
@@ -172,10 +174,10 @@
 #' |---|---|---|
 #' | `conf.level` | Wald-type CI level | `0.95` |
 #' | `report.sandwich.conf` | Sandwich variance CIs | `TRUE` |
-#' | `report.boot.conf` | Bootstrap CIs (use if `"PROPORTIONAL"` or `"POLY-PROPORTIONAL"`) | `NULL` |
+#' | `report.boot.conf` | Bootstrap CIs (use if `"PROPORTIONAL-SURVIVAL"` or `"PROPORTIONAL-COMPETING-RISK"`) | `NULL` |
 #' | `boot.bca` | Use BCa intervals (else normal approximation) | `FALSE` |
-#' | `boot.parameter1` | Bootstrap reps | `200` |
-#' | `boot.parameter2` | Seed for resampling | `46` |
+#' | `boot.replications` | Bootstrap reps | `200` |
+#' | `boot.seed` | Seed for resampling | `46` |
 #'
 #' ### Optimization & solver controls (advanced)
 #'
@@ -224,7 +226,7 @@
 #'
 #' ### Reproducibility and conventions
 #'
-#' - Set `boot.parameter2` for reproducible bootstrap results.
+#' - Set `boot.seed` for reproducible bootstrap results.
 #' - Match CDISC ADaM conventions via `code.event1 = 0`, `code.censoring = 1`
 #'   (and, if applicable, `code.event2` for competing events).
 #' - Use `strata` when censoring may depend on baseline covariates (IPCW stratification).
@@ -284,8 +286,9 @@ polyreg <- function(
     report.sandwich.conf = TRUE,
     report.boot.conf = NULL,
     boot.bca = FALSE,
-    boot.parameter1 = 200,
-    boot.parameter2 = 46,
+    boot.multiplier = "rademacher",
+    boot.replications = 200,
+    boot.seed = 46,
     nleqslv.method = "nleqslv",
     optim.parameter1 = 1e-6,
     optim.parameter2 = 1e-6,
@@ -335,6 +338,15 @@ polyreg <- function(
     index.vector=index.vector
   )
 
+  boot.method <- list(
+    report.sandwich.conf = report.sandwich.conf,
+    report.boot.conf     = report.boot.conf,
+    boot.bca             = boot.bca,
+    boot.multiplier      = boot.multiplier,
+    boot.replications    = boot.replications,
+    boot.seed            = boot.seed
+  )
+
   optim.method <- list(
     nleqslv.method = nleqslv.method,
     optim.parameter1 = optim.parameter1,
@@ -366,7 +378,7 @@ polyreg <- function(
       outcome.type = outcome.type,
       prob.bound = prob.bound
     )
-  } else if (outcome.type == "PROPORTIONAL" || outcome.type == "POLY-PROPORTIONAL") {
+  } else if (outcome.type == "PROPORTIONAL-SURVIVAL" || outcome.type == "PROPORTIONAL-COMPETING-RISK") {
     alpha_beta_0 <- getInitialValuesProportional(
       formula = nuisance.model,
       data = normalized_data,
@@ -386,7 +398,7 @@ polyreg <- function(
     ip.weight.matrix <- calculateIPCW(nuisance.model, normalized_data, code.censoring, strata, estimand$time.point)
   } else if (outcome.type == "BINOMIAL") {
     ip.weight.matrix <- matrix(1,nrow(normalized_data),1)
-  } else if (outcome.type == "PROPORTIONAL" || outcome.type == "POLY-PROPORTIONAL") {
+  } else if (outcome.type == "PROPORTIONAL-SURVIVAL" || outcome.type == "PROPORTIONAL-COMPETING-RISK") {
     ip.weight.matrix <- calculateIPCWMatrix(nuisance.model, normalized_data, code.censoring, strata, estimand, out_normalizeCovariate)
   }
 
@@ -503,19 +515,38 @@ polyreg <- function(
   #######################################################################################################
   # 5. Calculating variance (functions: calculateCov, calculateCovSurvival)
   #######################################################################################################
+
+  report_var <- FALSE
+  if (!isTRUE(report.sandwich.conf) && !isTRUE(report.boot.conf)) {
+    report_var <- FALSE
+  } else if (isTRUE(report.sandwich.conf) && !isTRUE(report.boot.conf)) {
+    report_var <- TRUE
+  } else if (isTRUE(report.boot.conf)) {
+    if (outcome.type %in% c("PROPORTIONAL-SURVIVAL","PROPORTIONAL-COMPETING-RISK")) {
+      report_var <- FALSE
+    } else if (outcome.type %in% c("SURVIVAL","BINOMIAL","COMPETING-RISK")) {
+      report_var <- TRUE
+    } else {
+      stop(sprintf("Unsupported outcome.type for boot rule: %s", outcome.type))
+    }
+  }
+
   out_calculateCov <- switch(
     outcome.type,
-    "COMPETING-RISK"   = calculateCov(out_getResults, estimand, prob.bound),
-    "SURVIVAL"         = calculateCovSurvival(out_getResults, estimand, prob.bound),
-    "BINOMIAL"         = calculateCovSurvival(out_getResults, estimand, prob.bound),
-    "PROPORTIONAL"     = NULL,
-    "POLY-PROPORTIONAL"= NULL,
+    "COMPETING-RISK"   = calculateCov(out_getResults, estimand, boot.method, prob.bound),
+    "SURVIVAL"         = calculateCovSurvival(out_getResults, estimand, boot.method, prob.bound),
+    "BINOMIAL"         = calculateCovSurvival(out_getResults, estimand, boot.method, prob.bound),
+    "PROPORTIONAL-SURVIVAL"     = NULL,
+    "PROPORTIONAL-COMPETING-RISK"= NULL,
     stop(sprintf("Unsupported outcome.type for covariance: %s", outcome.type))
   )
 
+  if (!report_var) {
+    out_calculateCov <- NULL
+  }
+
   out_normalizeEstimate <- reg_normalize_estimate(
     outcome.type               = outcome.type,
-    report.sandwich.conf       = report.sandwich.conf,
     should.normalize.covariate = should.normalize.covariate,
     current_params             = current_params,
     out_getResults             = out_getResults,
@@ -527,26 +558,23 @@ polyreg <- function(
 
   alpha_beta_estimated <- out_normalizeEstimate$alpha_beta_estimated
   cov_estimated        <- out_normalizeEstimate$cov_estimated
+  cov_bootstrap        <- out_normalizeEstimate$cov_bootstrap
 
   #######################################################################################################
   # 6. Calculating bootstrap confidence interval (functions: boot, solveEstimatingEquation)
   #######################################################################################################
-  if (isTRUE(report.boot.conf)) {
-    set.seed(boot.parameter2)
+  if (isTRUE(report.boot.conf) && (outcome.type=="PROPORTIONAL-SURVIVAL" || outcome.type=="PROPORTIONAL-COMPETING-RISK")) {
+    set.seed(boot.seed)
     boot.coef     <- rep(NA,2)
     boot.coef_se  <- rep(NA,2)
     boot.p_value  <- rep(NA,2)
     boot.conf_low <- rep(NA,2)
     boot.conf_high<- rep(NA,2)
 
-    if (outcome.type=="POLY-PROPORTIONAL") {
+    if (outcome.type=="PROPORTIONAL-COMPETING-RISK") {
       index_coef    <- c(length(estimand$time.point) + 1, 2*length(estimand$time.point) + 2)
-    } else if (outcome.type=="PROPORTIONAL") {
+    } else if (outcome.type=="PROPORTIONAL-SURVIVAL") {
       index_coef    <- c(length(estimand$time.point) + 1)
-    } else if (outcome.type=="COMPETING-RISK") {
-      index_coef <- seq_len(2*out_normalizeCovariate$n_covariate+4)
-    } else if (outcome.type=="BINOMIAL" | outcome.type=="SURVIVAL") {
-      index_coef <- seq_len(out_normalizeCovariate$n_covariate+2)
     }
 
     boot_function <- function(data, indices) {
@@ -556,7 +584,7 @@ polyreg <- function(
       if (inherits(res, "try-error")) NA_real_ else as.numeric(res)
     }
 
-    out_boot <- boot(normalized_data, boot_function, R = boot.parameter1)
+    out_boot <- boot(normalized_data, boot_function, R = boot.replications)
     for (j in index_coef) {
       if (isTRUE(boot.bca)) {
         out_boot.ci <- boot.ci(out_boot, conf = conf.level, index = index_coef[j], type = c("norm", "bca"))
@@ -569,7 +597,6 @@ polyreg <- function(
       } else {
         ok <- apply(out_boot$t, 1L, function(x) all(is.finite(x)))
         t_ok <- out_boot$t[ok, , drop = FALSE]
-#        cat("Skipped:", sum(!ok), " / ", length(ok), "replicates\n")
 
         mean_ok <- colMeans(t_ok)
         sd_ok   <- apply(t_ok, 2, sd)
@@ -604,6 +631,6 @@ polyreg <- function(
     data$potential.CIFs <- out_getResults$potential.CIFs
   }
   out_data <- data
-  out <- list(summary=out_summary, coefficient=alpha_beta_estimated, cov=cov_estimated, bootstrap=out_bootstrap, diagnostic.statistics=out_data, optimization.info=trace_df)
+  out <- list(summary=out_summary, coefficient=alpha_beta_estimated, cov=cov_estimated, cov_bootstrap=cov_bootstrap, bootstrap=out_bootstrap, diagnostic.statistics=out_data, optimization.info=trace_df)
   return(out)
 }

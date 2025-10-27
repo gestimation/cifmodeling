@@ -132,7 +132,7 @@ getInitialValuesProportional <- function(formula, data, outcome.type, exposure, 
   n_para_5 <- 2*out_normalizeCovariate$n_covariate + 4
   n_para_6 <- length(estimand$time.point) * (n_para_5 - 2) + 2
 
-  if (outcome.type == "PROPORTIONAL") {
+  if (outcome.type == "PROPORTIONAL-SURVIVAL") {
     alpha_beta_0 <- rep(NA_real_, n_para_6/2)
   } else {
     alpha_beta_0 <- rep(NA_real_, n_para_6)
@@ -159,7 +159,7 @@ getInitialValuesProportional <- function(formula, data, outcome.type, exposure, 
     i_para <- n_para_1*(i_time - 1) + 1
 
     tmp1 <- out_getInitialValues[seq.int(1, length.out = n_para_1)]
-    if (outcome.type == "PROPORTIONAL") {
+    if (outcome.type == "PROPORTIONAL-SURVIVAL") {
       idx1 <- seq.int(i_para, length.out = n_para_1)
       alpha_beta_0[idx1] <- tmp1
     } else {
@@ -168,7 +168,7 @@ getInitialValuesProportional <- function(formula, data, outcome.type, exposure, 
     }
     sum1 <- sum1 + out_getInitialValues[n_para_2]
 
-    if (outcome.type == "POLY-PROPORTIONAL") {
+    if (outcome.type == "PROPORTIONAL-COMPETING-RISK") {
       tmp2 <- out_getInitialValues[seq.int(n_para_3, n_para_4)]
       idx2_start <- (n_para_6 %/% 2) + i_para
       idx2 <- seq.int(idx2_start, length.out = n_para_1)
@@ -176,7 +176,7 @@ getInitialValuesProportional <- function(formula, data, outcome.type, exposure, 
       sum2 <- sum2 + out_getInitialValues[n_para_5]
     }
   }
-  if (outcome.type == "PROPORTIONAL") {
+  if (outcome.type == "PROPORTIONAL-SURVIVAL") {
     alpha_beta_0[n_para_6 %/% 2] <- sum1 / length(estimand$time.point)
   } else {
     alpha_beta_0[n_para_6 %/% 2] <- sum1 / length(estimand$time.point)

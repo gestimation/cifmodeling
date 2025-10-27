@@ -5,44 +5,109 @@ calculateKM <- function(t, d, w = as.numeric( c()), strata = as.integer( c()), e
     .Call(`_cifmodeling_calculateKM`, t, d, w, strata, error)
 }
 
-#' K-group Aalen–Johansen for cause 1 with individual influence functions
-NULL
-
-#' Cause-specific Nelson–Aalen for cause 1 with individual influence functions (K groups)
-NULL
-
-#' Linear weighted average with IF-based (JK) variance (generic: difference only)
-NULL
-
-#' Weighted averages (K groups) with IF-based (JK) variance
-NULL
-
-#' Core maxCombo calculator from z & covariance
-NULL
-
-#' Convenience wrapper: build maxCombo directly from calculateWeightedAverage() result
-NULL
-
 calculateIFofAJ <- function(t, epsilon, strata) {
     .Call(`_cifmodeling_calculateIFofAJ`, t, epsilon, strata)
 }
 
+#' @name calculateIFofNA
+#' @noRd
+#' @param t numeric vector of observed times (>=0)
+#' @param epsilon integer vector: 0=censoring, 1=event1 (event of interest), 2+=event2 (competing risks, treated as censoring)
+#' @param strata integer vector of strata labels in {1,2,...,K}
+#'
+#' @return list with
+#'   - time:         numeric vector of cause-1 jump times (union across groups), length m+1 with leading 0
+#'   - n.risk:       K x (m+1) matrix of at-risk counts Y_g(t_j) on this grid
+#'   - cumhaz1:      K x (m+1) matrix of Nelson–Aalen cumulative hazard for cause 1
+#'   - var_cumhaz1:  K x (m+1) matrix of variances (sum of IF^2)
+#'   - if_cumhaz1:   list length K; each is matrix (n_g x (m+1)) of individual IF trajectories
+#'
+#' @details
+#' Competing events (cause >= 2) are treated as censoring for the cause-specific hazard of event1,
+#' i.e., they exit the risk set at their time. The time grid uses only cause-1 event times (with leading 0).
+#'
+#' This function is intended for log-rank–type testing pipelines (Fleming–Harrington weights, maxCombo(log-rank), etc.).
+#' @examples
+#' # res <- calculateIFofNA(t, epsilon, strata)
 calculateIFofNA <- function(t, epsilon, strata) {
     .Call(`_cifmodeling_calculateIFofNA`, t, epsilon, strata)
 }
 
+#' @name calculateWeightedAverageLinear
+#' @noRd
+#' @param time   NumericVector length m+1 (0 included). analysis grid
+#' @param curve  K x (m+1) matrix of target trajectories (e.g., cumhaz1 or CIF)
+#' @param if_list List length K; each is matrix (n_g x (m+1)) of individual IF for the same target
+#' @param contrasts NumericMatrix L x K (row sums = 0)
+#' @param weights List of numeric vectors (each length m+1). If empty, rho/gamma/base supplied to build Beta-like weights.
+#' @param rho,gamma NumericVector (same length R) used when weights is empty.
+#' @param base NumericVector length m+1 used for Beta-like weights when weights is empty (e.g., overall CIF or pooled S)
+#' @param conf_int double (0,1)
+#'
+#' @return list(weight=list, table=data.frame(contrast_id, weight_id, est, se, lwr, upr, z, p),
+#'              cov = covariance matrix of IF-projections (size (L*R) x (L*R)))
 calculateWeightedAverageLinear <- function(time, curve, if_list, contrasts, weights = NULL, rho = NULL, gamma = NULL, base = NULL, conf_int = 0.95) {
     .Call(`_cifmodeling_calculateWeightedAverageLinear`, time, curve, if_list, contrasts, weights, rho, gamma, base, conf_int)
 }
 
+#' @name calculateWeightedAverage
+#' @noRd
+#' @param time   NumericVector length m+1 (0 included). From calculateIFofAJ()$time
+#' @param aj1    K x (m+1) matrix of CIF (cause 1). From calculateIFofAJ()$aj1
+#' @param if_aj1 List length K; each is matrix n_g x (m+1) of individual IF. From calculateIFofAJ()$if_aj1
+#' @param contrasts NumericMatrix L x K. Each row sums to 0. Defines L contrasts for CIF差（diff_aj1）
+#' @param weights List of weight vectors (each length m+1). If empty and P,Q given, Beta weights are created.
+#' @param P      NumericVector of length R (optional). Beta-weight P for each weight grid.
+#' @param Q      NumericVector of length R (optional). Beta-weight Q for each weight grid.
+#' @param weight_base integer (0..K). 0=overall mean CIF as base; 1..K=use that group's CIF as base for Beta weights.
+#' @param conf_int double (0,1), e.g., 0.95
+#' @param ref    integer in 1..K. Reference group for rr_aj1 / or_aj1
+#'
+#' @return List with
+#'   - weight: list of normalized weights (length R)
+#'   - diff_aj1: data.frame (contrast_id, weight_id, est, se, lwr, upr, z, p)
+#'   - rr_aj1:   data.frame (group,      weight_id, est, se, lwr, upr, z, p)  # group vs ref
+#'   - or_aj1:   data.frame (group,      weight_id, est, se, lwr, upr, z, p)  # group vs ref
+#'   - cov_diff: covariance matrix of IF projections for diff (size (L*R) x (L*R))
+#'   - cov_rr:   covariance matrix for log(RR) projections ((K-1)*R x (K-1)*R)
+#'   - cov_or:   covariance matrix for log(OR) projections ((K-1)*R x (K-1)*R)
+#'
 calculateWeightedAverage <- function(time, aj1, if_aj1, contrasts, weights = NULL, rho = NULL, gamma = NULL, weight_base = 0L, conf_int = 0.95, ref = 1L) {
     .Call(`_cifmodeling_calculateWeightedAverage`, time, aj1, if_aj1, contrasts, weights, rho, gamma, weight_base, conf_int, ref)
 }
 
+#' @name calculateMaxCombo
+#' @noRd
+#' @param z   NumericVector of standardized statistics (per weight × per contrast/comparison).
+#'            Use NA to drop entries.
+#' @param cov NumericMatrix covariance matrix aligned with z (same length).
+#' @param n_simulation integer, Monte Carlo draws for MVN-based p-value (default 20000).
+#'
+#' @return list(stat, p, R, corr)
+#'   - stat : observed max |z|
+#'   - p    : Monte Carlo p-value under MVN(0, corr)
+#'   - R    : number of z used (after NA removal)
+#'   - corr : correlation matrix used
+#'
+#' @details
+#' This implements the maxCombo test (max |Z|) using IF-based covariance (via input cov).
+#' It draws X ~ MVN(0, corr) with Cholesky and computes Pr(max |X_r| >= stat).
 calculateMaxCombo <- function(z, cov, n_simulation = 20000L) {
     .Call(`_cifmodeling_calculateMaxCombo`, z, cov, n_simulation)
 }
 
+#' @name callMaxCombo
+#' @noRd
+#' @param out_cwa      List output from calculateWeightedAverage()
+#' @param measure "diff", "rr", or "or"  （diff_aj1 / rr_aj1 / or_aj1 に対応）
+#' @param n_simulation   Monte Carlo draws (default 20000)
+#'
+#' @return list(per_weight = data.frame, maxcombo = list(stat,p,R,corr))
+#'
+#' @details
+#' - それぞれの measure で、per-weight（× per-contrast or per-group）の Z を連結して maxCombo を計算します。
+#' - 共分散行列は out_cwa$cov_diff / cov_rr / cov_or を使用します。
+#' - NAのZは自動で落とします（共分散も対応成分で抜粋）。
 callMaxCombo <- function(out_cwa, measure = "diff", n_simulation = 20000L) {
     .Call(`_cifmodeling_callMaxCombo`, out_cwa, measure, n_simulation)
 }

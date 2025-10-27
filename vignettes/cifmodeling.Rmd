@@ -216,7 +216,7 @@ The function follows the familiar **formula + data** syntax with `Event()` or `S
 -   `nuisance.model` — a formula describing the outcome and nuisance covariates, excluding the exposure of interest. 
 -   `exposure` — specifies the categorical exposure variable
 -   `effect.measure1` and `effect.measure2` — specifies the effect measures for event1 and event2 (`"RR"`, `"OR"` or `"SHR"`). 
--   `outcome.type` selects the outcome type (`"COMPETING-RISK"`, `"SURVIVAL"`, `"BINOMIAL"`, `"PROPORTIONAL"` or `"POLY-PROPORTIONAL"`). 
+-   `outcome.type` selects the outcome type (`"COMPETING-RISK"`, `"SURVIVAL"`, `"BINOMIAL"`, `"PROPORTIONAL-SURVIVAL"` or `"PROPORTIONAL-COMPETING-RISK"`). 
 -   `time.point` — specifies time point at which the exposure effect is evaluated. Required for `"COMPETING-RISK"` and `"SURVIVAL"` outcomes.
 -   `strata` — specifies a stratification variable used to adjust for dependent censoring. 
 
@@ -288,9 +288,9 @@ Event codes can be customized using `code.event1`, `code.event2`, and `code.cens
 
 -   Effects on a risk at a specific time: `"SURVIVAL"`
 
--   Common effects on cumulative incidence probabilities over time: `"POLY-PROPORTIONAL"`
+-   Common effects on cumulative incidence probabilities over time: `"PROPORTIONAL-COMPETING-RISK"`
 
--   Common effects on a risk over time: `"PROPORTIONAL"`
+-   Common effects on a risk over time: `"PROPORTIONAL-SURVIVAL"`
 
 -   Effects on a risk of a binomial outcome: `"BINOMIAL"`
 
@@ -448,7 +448,7 @@ The `legend.collect = TRUE` option merges legends from all panels into a single 
 
 -   In `cifcurve()` the right-hand side of the formula defines the grouping variable(s) whose curves are estimated; weights (if any) are supplied separately. There is no dedicated exposure argument because all strata are handled through the formula term that is turned into a factor for plotting and estimation.
 -   In `polyreg()` the `nuisance.model` formula describes only the outcome and nuisance covariates (i.e. confounders), while the exposure is passed separately through the `exposure` argument. The exposure design matrix, reference level handling, and scaling of nuisance covariates are handled explicitly for regression fitting.
--   `cifcurve()` focuses on two estimands, selecting between Kaplan–Meier and Aalen–Johansen calculations via `outcome.type = "SURVIVAL"` or `"COMPETING-RISK"`. In contrast, `polyreg()` supports additional time-constant and binomial estimands (`"PROPORTIONAL"`, `"POLY-PROPORTIONAL"`, `"BINOMIAL"`) and enforces time-point requirements accordingly—for example `time.point` is mandatory for survival/competing-risk contrasts, while time-constant-effect models can infer all event time or a use-specified grid of time, `time.point`.
+-   `cifcurve()` focuses on two estimands, selecting between Kaplan–Meier and Aalen–Johansen calculations via `outcome.type = "SURVIVAL"` or `"COMPETING-RISK"`. In contrast, `polyreg()` supports additional time-constant and binomial estimands (`"PROPORTIONAL-SURVIVAL"`, `"PROPORTIONAL-COMPETING-RISK"`, `"BINOMIAL"`) and enforces time-point requirements accordingly—for example `time.point` is mandatory for survival/competing-risk contrasts, while time-constant-effect models can infer all event time or a use-specified grid of time, `time.point`.
 
 ### Event coding conventions in package cifmodeling and CDISC ADaM ADTTE
 

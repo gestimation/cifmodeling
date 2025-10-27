@@ -101,8 +101,8 @@ util_check_outcome_type <- function(
     map <- list(
       "COMPETING-RISK"    = c("competing-risk","competing risk","competingrisks","competing-risks","cr","c"),
       "SURVIVAL"          = c("survival","s"),
-      "POLY-PROPORTIONAL" = c("poly-proportional","pp"),
-      "PROPORTIONAL"      = c("proportional","p"),
+      "PROPORTIONAL-COMPETING-RISK" = c("proportional-competing-risk","pc","pcr"),
+      "PROPORTIONAL-SURVIVAL"       = c("proportional-survival","ps"),
       "BINOMIAL"          = c("binomial","b")
     )
     alias_rev <- {

@@ -30,7 +30,7 @@ reportEffects <- function(outcome.type,
   tg_event1_tidy <- tidy_df(coef1, terms_text)
   if (outcome.type == "COMPETING-RISK" | outcome.type == "SURVIVAL" | outcome.type == "BINOMIAL") {
     effect1_text <- paste(estimand$effect.measure1, "at", estimand$time.point)
-  } else if (outcome.type == "PROPORTIONAL" | outcome.type == "POLY-PROPORTIONAL") {
+  } else if (outcome.type == "PROPORTIONAL-SURVIVAL" | outcome.type == "PROPORTIONAL-COMPETING-RISK") {
     effect1_text <- paste(estimand$effect.measure1, "of", exposure, "over time")
   }
 
@@ -51,10 +51,10 @@ reportEffects <- function(outcome.type,
     nleqslv.message              = sol$message
   )
 
-  if (outcome.type == "COMPETING-RISK" | outcome.type == "POLY-PROPORTIONAL") {
+  if (outcome.type == "COMPETING-RISK" | outcome.type == "PROPORTIONAL-COMPETING-RISK") {
     if (outcome.type == "COMPETING-RISK") {
       effect2_text <- paste(estimand$effect.measure2, "at", estimand$time.point)
-    } else if (outcome.type == "POLY-PROPORTIONAL") {
+    } else if (outcome.type == "PROPORTIONAL-COMPETING-RISK") {
       effect2_text <- paste(estimand$effect.measure2, "of", exposure, "over time")
     }
     tg_event2_tidy <- tidy_df(coef2, terms_text)
@@ -162,7 +162,7 @@ getCoefTerm <- function(report.nuisance.parameter, report.sandwich.conf, report.
       nuisance_terms <- character(0)
     }
   }
-  if (outcome.type == "POLY-PROPORTIONAL") {
+  if (outcome.type == "PROPORTIONAL-COMPETING-RISK") {
     if (report.nuisance.parameter == TRUE) {
       index1 <- seq_len(iv[8]/2)
       index2 <- seq.int(iv[8]/2+1, iv[8])
@@ -173,7 +173,7 @@ getCoefTerm <- function(report.nuisance.parameter, report.sandwich.conf, report.
       nuisance_terms <- character(0)
     }
   }
-  if (outcome.type == "PROPORTIONAL") {
+  if (outcome.type == "PROPORTIONAL-SURVIVAL") {
     if (report.nuisance.parameter == TRUE) {
       index1 <- seq_len(iv[8]/2)
       index2 <- NULL
@@ -184,8 +184,8 @@ getCoefTerm <- function(report.nuisance.parameter, report.sandwich.conf, report.
       nuisance_terms <- character(0)
     }
   }
-  coef1 <- getCoef(index1, alpha_beta_estimated, cov_estimated, report.sandwich.conf, report.boot.conf, out_bootstrap, conf.level)
-  coef2 <- getCoef(index2, alpha_beta_estimated, cov_estimated, report.sandwich.conf, report.boot.conf, out_bootstrap, conf.level)
+  coef1 <- getCoef(index1, alpha_beta_estimated, cov_estimated, outcome.type, report.sandwich.conf, report.boot.conf, out_bootstrap, conf.level)
+  coef2 <- getCoef(index2, alpha_beta_estimated, cov_estimated, outcome.type, report.sandwich.conf, report.boot.conf, out_bootstrap, conf.level)
   code.exposure.nonref <- colnames(out_getResults$x_a)
   terms_text_exposure <- if (length(code.exposure.nonref)) {
     paste0(exposure, ", ", sub("^.*_", "", code.exposure.nonref), " vs ", code.exposure.ref)
@@ -200,15 +200,22 @@ getCoef <- function(
     index,
     alpha_beta_estimated,
     cov_estimated,
+    outcome.type,
     report.sandwich.conf,
     report.boot.conf,
     out_bootstrap,
     conf.level) {
   alpha <- 1 - conf.level
   critical_value <- qnorm(1 - alpha / 2)
-  if (report.sandwich.conf == TRUE) {
+  if (report.sandwich.conf==TRUE) {
     coef <- alpha_beta_estimated[index]
     coef_se <- sqrt(diag(cov_estimated)[index])
+    conf_low <- coef - critical_value * coef_se
+    conf_high <- coef + critical_value * coef_se
+    p_value <- 2 * (1 - pnorm(abs(coef) / coef_se))
+  } else if (report.boot.conf==TRUE && outcome.type %in% c("COMPETING-RISK", "SURVIVAL", "BINOMIAL")) {
+    coef <- alpha_beta_estimated[index]
+    coef_se <- sqrt(diag(cov_bootstrap)[index])
     conf_low <- coef - critical_value * coef_se
     conf_high <- coef + critical_value * coef_se
     p_value <- 2 * (1 - pnorm(abs(coef) / coef_se))

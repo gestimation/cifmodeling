@@ -107,7 +107,7 @@ test_that("reg_read_time.point() yields expected outputs according to outcome.ty
 
   x_a <- model.matrix(~ fruitq1, data = df)[, -1, drop = FALSE]
   tp2 <- reg_read_time.point(Event(t,d)~sex, df, x_a,
-                         "PROPORTIONAL", code.censoring = 0,
+                         "PROPORTIONAL-SURVIVAL", code.censoring = 0,
                          should.terminate.time.point = TRUE,
                          time.point = NULL)
   expect_true(all(tp2 >= 0))

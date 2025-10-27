@@ -26,8 +26,8 @@ polyreg(
   report.sandwich.conf = TRUE,
   report.boot.conf = NULL,
   boot.bca = FALSE,
-  boot.parameter1 = 200,
-  boot.parameter2 = 46,
+  boot.replications = 200,
+  boot.seed = 46,
   nleqslv.method = "nleqslv",
   optim.parameter1 = 1e-06,
   optim.parameter2 = 1e-06,
@@ -91,8 +91,8 @@ evaluated. Required for survival and competing risk analyses.}
 
 \item{outcome.type}{Character string selecting the outcome type. Valid values
 are \code{"COMPETING-RISK"}, \code{"SURVIVAL"}, \code{"BINOMIAL"},
-\code{"PROPORTIONAL"} and \code{"POLY-PROPORTIONAL"}. Defaults to
-\code{"COMPETING-RISK"}.
+\code{"PROPORTIONAL-SURVIVAL"} and \code{"PROPORTIONAL-COMPETING-RISK"}.
+Defaults to \code{"COMPETING-RISK"}.
 If \code{NULL} (default), the function automatically infers the outcome type
 from the data: if the event variable has more than two unique levels,
 \code{"COMPETING-RISK"} is assumed; otherwise, \code{"SURVIVAL"} is used.
@@ -122,10 +122,10 @@ confidence intervals are computed. When \code{FALSE}, they are omitted. If
 Use \code{TRUE} for bias-corrected and accelerated intervals or \code{FALSE}
 for the normal approximation. Defaults to \code{FALSE}.}
 
-\item{boot.parameter1}{Integer giving the number of bootstrap replications.
+\item{boot.replications}{Integer giving the number of bootstrap replications.
 Defaults to \code{200}.}
 
-\item{boot.parameter2}{Numeric seed used for resampling of bootstrap.}
+\item{boot.seed}{Numeric seed used for resampling of bootstrap.}
 
 \item{nleqslv.method}{Character string defining the solver used by
 \pkg{nleqslv}. Available choices include \code{"nleqslv"},
@@ -183,6 +183,9 @@ of each exposure level. Defaults to \code{TRUE}.}
 
 \item{prob.bound}{Numeric lower bound used to truncate probabilities away
 from 0 and 1. Defaults to \code{1e-5}.}
+
+\item{boot.multiplier}{Character \code{"rademacher"}, \code{"mammen"},
+or \code{"gaussian"}. Defaults to \code{"rademacher"}.}
 }
 \value{
 A list containing fitted exposure effects and supporting results. The
@@ -227,7 +230,7 @@ excluding the exposure of interest.
 \item \code{effect.measure1} and \code{effect.measure2} — specifies the effect measures
 for event1 and event2 (\code{"RR"}, \code{"OR"} or \code{"SHR"}).
 \item \code{outcome.type} selects the outcome type (\code{"COMPETING-RISK"}, \code{"SURVIVAL"},
-\code{"BINOMIAL"}, \code{"PROPORTIONAL"} or \code{"POLY-PROPORTIONAL"}).
+\code{"BINOMIAL"}, \code{"PROPORTIONAL-SURVIVAL"} or \code{"PROPORTIONAL-COMPETING-RISK"}).
 \item \code{time.point} — specifies time point at which the exposure effect is evaluated.
 Required for \code{"COMPETING-RISK"} and \code{"SURVIVAL"} outcomes.
 \item \code{strata} — specifies a stratification variable used to adjust for dependent censoring.
@@ -240,8 +243,8 @@ The \code{outcome.type} argument must be set to:
 \itemize{
 \item Effects on cumulative incidence probabilities at a specific time: \code{"COMPETING-RISK"}
 \item Effects on a risk at a specific time: \code{"SURVIVAL"}
-\item Common effects on cumulative incidence probabilities over time: \code{"POLY-PROPORTIONAL"}
-\item Common effects on a risk over time: \code{"PROPORTIONAL"}
+\item Common effects on cumulative incidence probabilities over time: \code{"PROPORTIONAL-COMPETING-RISK"}
+\item Common effects on a risk over time: \code{"PROPORTIONAL-SURVIVAL"}
 \item Effects on a risk of a binomial outcome: \code{"BINOMIAL"}
 }\tabular{lll}{
    Setting \tab Codes \tab Meaning \cr
@@ -250,11 +253,11 @@ The \code{outcome.type} argument must be set to:
    SURVIVAL \tab \code{code.event1}, \code{code.censoring} \tab event / censoring \cr
    SURVIVAL  (default) \tab \code{code.event1=1}, \code{code.censoring=0} \tab event / censoring \cr
    SURVIVAL (ADaM-ADTTE) \tab \code{code.event1=0}, \code{code.censoring=1} \tab set to match ADaM convention \cr
-   PROPORTIONAL \tab \code{code.event1}, \code{code.censoring} \tab event / censoring \cr
-   PROPORTIONAL  (default) \tab \code{code.event1=1}, \code{code.censoring=0} \tab event / censoring \cr
-   PROPORTIONAL (ADaM-ADTTE) \tab \code{code.event1=0}, \code{code.censoring=1} \tab set to match ADaM convention \cr
-   POLY-PROPORTIONAL \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censoring \cr
-   POLY-PROPORTIONAL (default) \tab \code{code.event1=1}, \code{code.event2=2}, \code{code.censoring1} \tab event of interest / competing event / censoring \cr
+   PROPORTIONAL-SURVIVAL \tab \code{code.event1}, \code{code.censoring} \tab event / censoring \cr
+   PROPORTIONAL-SURVIVAL  (default) \tab \code{code.event1=1}, \code{code.censoring=0} \tab event / censoring \cr
+   PROPORTIONAL-SURVIVAL (ADaM-ADTTE) \tab \code{code.event1=0}, \code{code.censoring=1} \tab set to match ADaM convention \cr
+   PROPORTIONAL-COMPETING-RISK \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censoring \cr
+   PROPORTIONAL-COMPETING-RISK (default) \tab \code{code.event1=1}, \code{code.event2=2}, \code{code.censoring1} \tab event of interest / competing event / censoring \cr
 }
 
 }
@@ -278,10 +281,10 @@ Choose the effect scale for event 1 and (optionally) event 2:\tabular{llll}{
    Argument \tab Meaning \tab Default \cr
    \code{conf.level} \tab Wald-type CI level \tab \code{0.95} \cr
    \code{report.sandwich.conf} \tab Sandwich variance CIs \tab \code{TRUE} \cr
-   \code{report.boot.conf} \tab Bootstrap CIs (use if \code{"PROPORTIONAL"} or \code{"POLY-PROPORTIONAL"}) \tab \code{NULL} \cr
+   \code{report.boot.conf} \tab Bootstrap CIs (use if \code{"PROPORTIONAL-SURVIVAL"} or \code{"PROPORTIONAL-COMPETING-RISK"}) \tab \code{NULL} \cr
    \code{boot.bca} \tab Use BCa intervals (else normal approximation) \tab \code{FALSE} \cr
-   \code{boot.parameter1} \tab Bootstrap reps \tab \code{200} \cr
-   \code{boot.parameter2} \tab Seed for resampling \tab \code{46} \cr
+   \code{boot.replications} \tab Bootstrap reps \tab \code{200} \cr
+   \code{boot.seed} \tab Seed for resampling \tab \code{46} \cr
 }
 
 }
@@ -340,7 +343,7 @@ predicted values of the potential outcomes of individual observations.
 
 \subsection{Reproducibility and conventions}{
 \itemize{
-\item Set \code{boot.parameter2} for reproducible bootstrap results.
+\item Set \code{boot.seed} for reproducible bootstrap results.
 \item Match CDISC ADaM conventions via \code{code.event1 = 0}, \code{code.censoring = 1}
 (and, if applicable, \code{code.event2} for competing events).
 \item Use \code{strata} when censoring may depend on baseline covariates (IPCW stratification).

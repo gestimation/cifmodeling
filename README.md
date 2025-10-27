@@ -270,8 +270,8 @@ such as **modelsummary** or **broom** for reporting.
 - `effect.measure1` and `effect.measure2` — specifies the effect
   measures for event1 and event2 (`"RR"`, `"OR"` or `"SHR"`).
 - `outcome.type` selects the outcome type (`"COMPETING-RISK"`,
-  `"SURVIVAL"`, `"BINOMIAL"`, `"PROPORTIONAL"` or
-  `"POLY-PROPORTIONAL"`).
+  `"SURVIVAL"`, `"BINOMIAL"`, `"PROPORTIONAL-SURVIVAL"` or
+  `"PROPORTIONAL-COMPETING-RISK"`).
 - `time.point` — specifies time point at which the exposure effect is
   evaluated. Required for `"COMPETING-RISK"` and `"SURVIVAL"` outcomes.
 - `strata` — specifies a stratification variable used to adjust for
@@ -368,9 +368,9 @@ Event codes can be customized using `code.event1`, `code.event2`, and
 - Effects on a risk at a specific time: `"SURVIVAL"`
 
 - Common effects on cumulative incidence probabilities over time:
-  `"POLY-PROPORTIONAL"`
+  `"PROPORTIONAL-COMPETING-RISK"`
 
-- Common effects on a risk over time: `"PROPORTIONAL"`
+- Common effects on a risk over time: `"PROPORTIONAL-SURVIVAL"`
 
 - Effects on a risk of a binomial outcome: `"BINOMIAL"`
 
@@ -858,8 +858,8 @@ publication-ready.
 - `cifcurve()` focuses on two estimands, selecting between Kaplan–Meier
   and Aalen–Johansen calculations via `outcome.type = "SURVIVAL"` or
   `"COMPETING-RISK"`. In contrast, `polyreg()` supports additional
-  time-constant and binomial estimands (`"PROPORTIONAL"`,
-  `"POLY-PROPORTIONAL"`, `"BINOMIAL"`) and enforces time-point
+  time-constant and binomial estimands (`"PROPORTIONAL-SURVIVAL"`,
+  `"PROPORTIONAL-COMPETING-RISK"`, `"BINOMIAL"`) and enforces time-point
   requirements accordingly—for example `time.point` is mandatory for
   survival/competing-risk contrasts, while time-constant-effect models
   can infer all event time or a use-specified grid of time,
@@ -1219,7 +1219,7 @@ layout and styling options.
   evaluated. Required for survival and competing risk analyses.
 - `outcome.type` Character string selecting the outcome type. Valid
   values are `"COMPETING-RISK"`, `"SURVIVAL"`, `"BINOMIAL"`,
-  `"PROPORTIONAL"` and `"POLY-PROPORTIONAL"`. Defaults to
+  `"PROPORTIONAL-SURVIVAL"` and `"PROPORTIONAL-COMPETING-RISK"`. Defaults to
   `"COMPETING-RISK"`. If `NULL` (default), the function automatically
   infers the outcome type from the data: if the event variable has more
   than two unique levels, `"COMPETING-RISK"` is assumed; otherwise,
@@ -1242,9 +1242,9 @@ layout and styling options.
 - `boot.bca` Logical indicating the bootstrap confidence interval
   method. Use `TRUE` for bias-corrected and accelerated intervals or
   `FALSE` for the normal approximation. Defaults to `FALSE`.
-- `boot.parameter1` Integer giving the number of bootstrap replications.
+- `boot.replications` Integer giving the number of bootstrap replications.
   Defaults to `200`.
-- \`boot.parameter2 Numeric seed used for resampling of bootstrap.
+- \`boot.seed Numeric seed used for resampling of bootstrap.
 - `nleqslv.method Character string defining the solver used by`nleqslv}`. Available choices include`“nleqslv”`,`“Broyden”`,`“Newton”`,`“optim”`,`“BFGS”`and`“SANN”\`.
 - `optim.parameter1` Numeric tolerance for convergence of the outer
   loop. Defaults to `1e-6`.
