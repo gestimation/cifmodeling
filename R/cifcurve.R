@@ -77,7 +77,7 @@ cifcurve <- function(
 ) {
   outcome.type  <- util_check_outcome_type(outcome.type, formula=formula, data=data)
   out_readSurv  <- util_read_surv(formula, data, weights, code.event1, code.event2, code.censoring, subset.condition, na.action)
-  error <- check_error(error, outcome.type)
+  error <- curve_check_error(error, outcome.type)
 
   if (identical(outcome.type, "SURVIVAL")) {
     out_km <- calculateKM(out_readSurv$t, out_readSurv$d, out_readSurv$w, as.integer(out_readSurv$strata), error)
@@ -214,21 +214,21 @@ calculateAJ <- function(data) {
   }
 
   list(
-    time1 = time1,
-    aj1 = aj1,
-    n.event1 = n.event1,
-    n.event2 = n.event2,
-    n.censor = n.censor,
+    time1        = time1,
+    aj1          = aj1,
+    n.event1     = n.event1,
+    n.event2     = n.event2,
+    n.censor     = n.censor,
     n.cum.event1 = n.cum.event1,
     n.cum.event2 = n.cum.event2,
     n.cum.censor = n.cum.censor,
-    strata1 = strata1,
-    time0 = out_km0$time,
-    km0 = out_km0$surv
+    strata1      = strata1,
+    time0        = out_km0$time,
+    km0          = out_km0$surv
   )
 }
 
-check_error <- function(x, outcome.type) {
+curve_check_error <- function(x, outcome.type) {
   ot <- toupper(as.character(outcome.type))
   out <- if (is.null(x)) if (ot == "SURVIVAL") "greenwood" else "delta" else tolower(x)
 

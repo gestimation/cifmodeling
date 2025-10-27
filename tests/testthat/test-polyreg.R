@@ -37,7 +37,7 @@ test_that("polyreg() produced expected coefficients and variance covariance matr
 
 test_that("polyreg() produced expected common effects at 1:8", {
   data(diabetes.complications)
-  output <- polyreg(nuisance.model = Event(t,epsilon)~+1, exposure = 'fruitq1', strata = 'strata', data = diabetes.complications, effect.measure1='RR', effect.measure2='RR', time.point=1:8, outcome.type='PP', report.boot.conf=FALSE)
+  output <- polyreg(nuisance.model = Event(t,epsilon)~+1, exposure = 'fruitq1', strata = 'strata', data = diabetes.complications, effect.measure1='RR', effect.measure2='RR', time.point=1:8, outcome.type='PC', report.boot.conf=FALSE)
   tested <- round(output$coefficient,digits=3)
   expected <- c(-7.225, -4.051, -3.067, -2.534, -2.114, -1.803, -1.572, -1.392, 0.296, -9.319, -7.712, -6.977, -6.087, -5.156, -4.731, -4.366, -4.040, -0.022)
   expect_equal(tested, expected)

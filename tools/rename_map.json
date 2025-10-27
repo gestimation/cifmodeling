@@ -1,4 +1,15 @@
 {
+  "normalize_code_events": "plot_check_code_events",
+  ".cifplot_labels": "plot_default_labels",
+  "cifplot_normalize_type_y": "plot_normalize_type_y",
+  "cifplot_default_y_label": "plot_default_y_label",
+  "cifplot_default_event_y_labels": "plot_default_event_y_labels",
+  "cifplot_normalize_strata_var": "plot_normalize_strata",
+  "cifplot_normalize_formula_data": "plot_normalize_formula_data",
+  "apply_all_scales_once": "plot_apply_all_scales",
+  ".default_fallback_colors": "plot_default_fallback_color",
+  "plotvalidate_fix_color": "plot_validate_fix_color",
+  ".resolve_palette_colors": "plot_resolve_palette_color",
   "normalizeCovariate": "reg_normalize_covariate",
   "normalizeEstimate": "reg_normalize_estimate",
   "readExposureDesign": "reg_read_exposure_design",
@@ -38,3 +49,5 @@
   "check_style": "plot_check_style",
   ".plot_make_label.strata.map": "plot_make_label.strata.map"
 }
+
+

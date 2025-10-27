@@ -1,4 +1,225 @@
-.cifplot_labels <- list(
+plot_fix_palette_vector_arg <- function(p) {
+  scs <- p$scales$scales
+  if (!length(scs)) return(p)
+  for (k in seq_along(scs)) {
+    sc <- scs[[k]]
+    if (inherits(sc, "ScaleDiscrete") && is.function(sc$palette)) {
+      orig <- sc$palette
+      sc$palette <- function(n) {
+        n1 <- if (length(n) > 1L) max(n, na.rm = TRUE) else n
+        unname(orig(n1))
+      }
+      p$scales$scales[[k]] <- sc
+    }
+  }
+  scs <- p$scales$scales
+  if (!length(scs)) return(p)
+  for (k in seq_along(scs)) {
+    sc <- scs[[k]]
+    if (inherits(sc, "ScaleDiscrete")) {
+      is_manual <- identical(sc$scale_name, "manual")
+      if (is_manual || isTRUE(grepl("manual", paste0(sc$name, collapse=""), ignore.case=TRUE))) {
+        sc$scale_name <- "manual"
+        if (!inherits(sc, "ScaleDiscreteManual")) {
+          class(sc) <- c("ScaleDiscreteManual", class(sc))
+        }
+        scs[[k]] <- sc
+      }
+    }
+  }
+  p$scales$scales <- scs
+  return(p)
+}
+
+plot_drop_panel_only_args <- function(dots) {
+  panel_only <- c(
+    "rows.columns.panel", "legend.collect", "title.panel",
+    "subtitle.panel", "caption.panel", "print.panel",
+    "title.plot", "zoom.position"
+  )
+  if (length(dots) && !is.null(names(dots))) {
+    dots[setdiff(names(dots), panel_only)]
+  } else dots
+}
+
+plot_check_code_events <- function(code_events) {
+  if (!(is.numeric(code_events) && length(code_events) == 3L)) {
+    .err("code_events_len_vec")
+  }
+  if (anyNA(code_events)) .err("na", arg = "code.events")
+  if (any(!is.finite(code_events))) .err("finite", arg = "code.events")
+  out <- as.integer(code_events)
+  if (any(abs(code_events - out) > .Machine$double.eps^0.5)) {
+    .err("code_events_integer")
+  }
+  if (out[1L] == out[2L]) .err("code_events_distinct")
+  return(out)
+}
+
+plot_default_fallback_color <- function(k) {
+  hue_fn <- scales::hue_pal(h = c(15, 375), c = 100, l = 65, h.start = 0)
+  hue_fn(k)
+}
+
+plot_validate_fix_color <- function(x) {
+  is_hex <- grepl("^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$", x)
+  known_names <- tolower(grDevices::colors())
+  name_candidates <- tolower(x[!is_hex])
+
+  bad_name_idx <- which(!(name_candidates %in% known_names))
+  if (length(bad_name_idx)) {
+    bad_vals <- unique(x[!is_hex][bad_name_idx])
+    warning(
+      "Unknown color name: ", paste(bad_vals, collapse = ", "),
+      " (defaulting to 'black')"
+    )
+    x[!is_hex][bad_name_idx] <- "black"
+  }
+  x[!is_hex] <- tolower(x[!is_hex])
+  return(x)
+}
+
+plot_resolve_palette_color <- function(levels_final, palette, n, fallback_colors = NULL) {
+  if (is.null(fallback_colors)) fallback_colors <- plot_default_fallback_color(max(1, n))
+  if (is.null(palette)) {
+    cols <- rep_len(fallback_colors, max(1, n))
+    return(list(values = unname(cols), supplied = FALSE))
+  }
+
+  stopifnot(is.character(palette))
+  pal <- plot_validate_fix_color(palette)
+
+  if (!is.null(levels_final) && length(levels_final)) {
+    cols <- rep_len(fallback_colors, length(levels_final))
+    if (is.null(names(palette))) {
+      cols <- rep_len(pal, length(levels_final))
+    } else {
+      cols <- vapply(
+        levels_final,
+        function(s) pal[[s]] %||% NA_character_,
+        FUN.VALUE = character(1)
+      )
+      if (anyNA(cols)) {
+        miss <- which(is.na(cols))
+        cols[miss] <- rep_len(fallback_colors, length(levels_final))[miss]
+      }
+    }
+    return(list(values = unname(cols), supplied = TRUE))
+  }
+
+  cols <- rep_len(pal, max(1, n))
+  list(values = unname(cols), supplied = TRUE)
+}
+
+plot_apply_style <- function(
+    p,
+    style = c("CLASSIC", "BOLD", "FRAMED", "GRID", "GRAY"),
+    font.family = "sans",
+    font.size = 14,
+    legend.position = "top",
+    n_strata = 6,
+    palette_colors = NULL,
+    strata_levels_final = NULL,
+    strata_labels_final = NULL
+) {
+  if (style=="G") style <- "GRID"
+  style <- match.arg(style)
+  style_theme <- switch(
+    style,
+    CLASSIC    = plot_style_classic(font.family, font.size, legend.position),
+    BOLD       = plot_style_bold(font.family, font.size, legend.position),
+    FRAMED     = plot_style_framed(font.family, font.size, legend.position),
+    GRID       = plot_style_grid(font.family, font.size, legend.position),
+    GRAY       = plot_style_gray(font.family, font.size, legend.position)
+  )
+  p + style_theme
+}
+
+plot_apply_all_scales <- function(
+    p,
+    style,
+    palette,
+    n_strata,
+    strata_levels_final,
+    strata_labels_final
+) {
+  p <- plot_strip_mapped_scales(p)
+  lvls <- strata_levels_final
+  labs <- strata_labels_final
+  n_effective <- if (!is.null(lvls) && length(lvls)) length(lvls) else n_strata %||% 1L
+  n_effective <- max(1L, n_effective)
+
+  use_manual <- !is.null(palette)
+  palette_info <- plot_resolve_palette_color(lvls, palette, n_effective)
+  col_values   <- unname(rep_len(palette_info$values, n_effective))
+  if (!is.null(lvls) && length(lvls)) {
+    names(col_values) <- NULL
+  }
+
+  if (use_manual) {
+    color_scale <- ggplot2::scale_color_manual(
+      values = col_values,
+      limits = lvls,
+      labels = labs,
+      drop   = FALSE
+    )
+    fill_scale <- ggplot2::scale_fill_manual(
+      values = col_values,
+      limits = lvls,
+      labels = labs,
+      drop   = FALSE,
+      guide  = "none"
+    )
+
+    color_scale$scale_name <- "manual"
+    fill_scale$scale_name  <- "manual"
+    if (!inherits(color_scale, "ScaleDiscreteManual")) {
+      class(color_scale) <- c("ScaleDiscreteManual", class(color_scale))
+    }
+    if (!inherits(fill_scale, "ScaleDiscreteManual")) {
+      class(fill_scale) <- c("ScaleDiscreteManual", class(fill_scale))
+    }
+  } else {
+    color_scale <- ggplot2::scale_color_discrete(
+      limits = lvls, labels = labs, drop = FALSE
+    )
+    fill_scale <- ggplot2::scale_fill_discrete(
+      limits = lvls, labels = labs, drop = FALSE, guide = "none"
+    )
+  }
+  p +
+    color_scale +
+    fill_scale +
+    ggplot2::scale_linetype_discrete(
+      limits = lvls,
+      labels = labs,
+      drop = FALSE
+    ) +
+    ggplot2::scale_shape_discrete(
+      limits = lvls,
+      labels = labs,
+      drop = FALSE,
+      guide = "none"
+    )
+}
+
+plot_strip_mapped_scales <- function(p, aes = c("colour","fill","linetype","shape")) {
+  scs <- p$scales$scales
+  if (!length(scs)) return(p)
+  keep <- vapply(
+    scs,
+    function(sc) {
+      a <- tryCatch(sc$aesthetics, error = function(e) NULL)
+      if (is.null(a)) return(TRUE)
+      !any(a %in% aes)
+    },
+    logical(1)
+  )
+  p$scales$scales <- scs[keep]
+  return(p)
+}
+
+plot_default_labels <- list(
   strata = list(
     below_median = "Below median",
     above_median = "Above median"
@@ -15,7 +236,7 @@
   )
 )
 
-cifplot_normalize_type_y <- function(type.y) {
+plot_normalize_type_y <- function(type.y) {
   if (is.null(type.y) || length(type.y) == 0L) return(NULL)
   ty <- tolower(as.character(type.y[1L]))
   if (is.na(ty) || !nzchar(ty)) return(NULL)
@@ -24,25 +245,25 @@ cifplot_normalize_type_y <- function(type.y) {
   type.y
 }
 
-cifplot_default_y_label <- function(fit_type, type.y = NULL) {
+plot_default_y_label <- function(fit_type, type.y = NULL) {
   ft <- tolower(as.character(fit_type %||% ""))
-  ty <- cifplot_normalize_type_y(type.y)
+  ty <- plot_normalize_type_y(type.y)
   if (ft %in% c("kaplan-meier", "kaplan_meier", "km")) {
-    if (identical(ty, "risk")) return(.cifplot_labels$y_axis$survival_risk)
-    return(.cifplot_labels$y_axis$survival)
+    if (identical(ty, "risk")) return(plot_default_labels$y_axis$survival_risk)
+    return(plot_default_labels$y_axis$survival)
   }
   if (ft %in% c("aalen-johansen", "aalen_johansen", "aj")) {
-    if (identical(ty, "survival")) return(.cifplot_labels$y_axis$cif_survival)
-    return(.cifplot_labels$y_axis$cif)
+    if (identical(ty, "survival")) return(plot_default_labels$y_axis$cif_survival)
+    return(plot_default_labels$y_axis$cif)
   }
   NULL
 }
 
-cifplot_default_event_y_labels <- function() {
-  unname(unlist(.cifplot_labels$event_panels, use.names = FALSE))
+plot_default_event_y_labels <- function() {
+  unname(unlist(plot_default_labels$event_panels, use.names = FALSE))
 }
 
-cifplot_normalize_strata_var <- function(x, median_threshold = 9L) {
+plot_normalize_strata <- function(x, median_threshold = 9L) {
   res <- list(strategy = "factor", threshold = median_threshold)
   if (is.factor(x)) {
     vals <- droplevels(x)
@@ -57,8 +278,8 @@ cifplot_normalize_strata_var <- function(x, median_threshold = 9L) {
     if (length(uniq_vals) >= median_threshold) {
       med <- stats::median(x, na.rm = TRUE)
       if (is.finite(med)) {
-        below <- .cifplot_labels$strata$below_median
-        above <- .cifplot_labels$strata$above_median
+        below <- plot_default_labels$strata$below_median
+        above <- plot_default_labels$strata$above_median
         vals <- ifelse(x > med, above, below)
         vals[is.na(x)] <- NA_character_
         fac <- factor(vals, levels = c(below, above))
@@ -77,7 +298,7 @@ cifplot_normalize_strata_var <- function(x, median_threshold = 9L) {
   res
 }
 
-cifplot_normalize_formula_data <- function(formula, data, median_threshold = 9L) {
+plot_normalize_formula_data <- function(formula, data, median_threshold = 9L) {
   if (!inherits(formula, "formula")) {
     return(list(data = data, info = list()))
   }
@@ -93,7 +314,7 @@ cifplot_normalize_formula_data <- function(formula, data, median_threshold = 9L)
   for (var_name in rhs_vars) {
     if (!nzchar(var_name) || grepl("\\(", var_name, fixed = FALSE)) next
     if (!var_name %in% names(out_data)) next
-    norm <- cifplot_normalize_strata_var(out_data[[var_name]], median_threshold = median_threshold)
+    norm <- plot_normalize_strata(out_data[[var_name]], median_threshold = median_threshold)
     out_data[[var_name]] <- norm$values
     info[[var_name]] <- norm
   }
@@ -319,5 +540,3 @@ plot_make_label.strata.map <- function(fit, label.strata) {
   ), call. = FALSE)
   return(NULL)
 }
-
-

@@ -90,7 +90,7 @@ util_get_event_time <- function(
   tvec    <- suppressWarnings(as.numeric(out_readSurv$t))
   epsilon <- suppressWarnings(as.numeric(out_readSurv$epsilon))
   if (anyNA(tvec))   .err("na",          arg = "out_readSurv$t")
-  if (any(tvec < 0)) .err("nonneg",      arg = "out_readSurv$t")  # 既存の .msg$nonneg を使用
+  if (any(tvec < 0)) .err("nonneg",      arg = "out_readSurv$t")
 
   pick <- switch(
     which_event,
@@ -106,7 +106,6 @@ util_get_event_time <- function(
 
   labs <- unique(strata)
 
-  # --- 単一ストラタなら numeric を返す ---
   if (length(labs) == 1L) {
     idx <- (strata == labs[[1L]]) & (pick > 0L) & is.finite(tvec)
     tt  <- tvec[idx]
@@ -115,7 +114,6 @@ util_get_event_time <- function(
     return(tt)
   }
 
-  # --- 複数ストラタなら list を返す（従来挙動） ---
   out  <- stats::setNames(vector("list", length(labs)), labs)
   for (s in labs) {
     idx <- (strata == s) & (pick > 0L) & is.finite(tvec)

@@ -91,21 +91,17 @@ testthat::test_that("panel_prepare() returns per-panel objects with expected str
   inputs <- make_inputs_2panel(diabetes.complications)
   prep <- do.call(cifmodeling:::panel_prepare, inputs)
 
-  # 構造チェック
   testthat::expect_true(is.list(prep))
   testthat::expect_identical(prep$K, inputs$K)
 
-  # curves: K 個、各要素は survfit 由来
   testthat::expect_true(is.list(prep$curves))
   testthat::expect_equal(length(prep$curves), inputs$K)
   testthat::expect_true(all(vapply(prep$curves, inherits, logical(1), what = "survfit")))
 
-  # plot_args: K 個、各要素は list
   testthat::expect_true(is.list(prep$plot_args))
   testthat::expect_equal(length(prep$plot_args), inputs$K)
   testthat::expect_true(all(vapply(prep$plot_args, is.list, logical(1))))
 
-  # pass-through 確認（代表：legend.position / label.x / label.y）
   testthat::expect_true(all(vapply(prep$plot_args, function(x) identical(x$legend.position, inputs$legend.position), logical(1))))
   testthat::expect_true(identical(prep$plot_args[[1]]$label.x, inputs$labelx.list[[1]]))
   testthat::expect_true(identical(prep$plot_args[[1]]$label.y, inputs$labely.list[[1]]))

@@ -7,29 +7,47 @@ createAnalysisDataset <- function(formula,
                                   na.action = na.pass,
                                   fill_missing = FALSE) {
   stopifnot(is.data.frame(data))
+  stopifnot(is.function(na.action))
+
+  index <- rep_len(TRUE, nrow(data))
   if (!is.null(subset.condition)) {
-    cond <- if (is.character(subset.condition)) parse(text = subset.condition)[[1]] else subset.condition
-    analysis_dataset <- subset(data, eval(cond, envir = data, enclos = parent.frame()))
-  } else {
-    analysis_dataset <- data
+    if (is.logical(subset.condition)) {
+      if (length(subset.condition) != nrow(data))
+        stop("`subset.condition` logical length must equal nrow(data).")
+      index <- subset.condition & !is.na(subset.condition)
+    } else {
+      cond_expr <- if (inherits(subset.condition, "formula")) {
+        if (length(subset.condition) != 2)
+          stop("Use a one-sided formula like `~ condition` for `subset.condition`.")
+        subset.condition[[2]]
+      } else if (is.character(subset.condition)) {
+        parse(text = subset.condition)[[1]]
+      } else if (is.expression(subset.condition)) {
+        subset.condition[[1]]
+      } else if (is.language(subset.condition)) {
+        subset.condition
+      } else stop("Unsupported `subset.condition` type.")
+      val <- eval(cond_expr, envir = data, enclos = parent.frame())
+      if (!is.logical(val)) stop("Evaluated `subset.condition` is not logical.")
+      val[is.na(val)] <- FALSE
+      index <- val
+    }
   }
+  analysis_dataset <- data[index, , drop = FALSE]
 
   all_vars <- unique(c(all.vars(formula), other.variables.analyzed))
   missing_cols <- setdiff(all_vars, names(analysis_dataset))
 
   if (length(missing_cols)) {
     if (isTRUE(fill_missing)) {
-      warning(sprintf("The following columns are not in `data` and will be filled with NA: %s",
-                      paste(missing_cols, collapse = ", ")))
+      warning(sprintf("The following columns are not in `data` and will be filled with NA: %s", paste(missing_cols, collapse = ", ")))
       for (v in missing_cols) analysis_dataset[[v]] <- NA
     } else {
-      stop(sprintf("Undefined columns selected: %s",
-                   paste(missing_cols, collapse = ", ")))
+      stop(sprintf("Undefined columns selected: %s", paste(missing_cols, collapse = ", ")))
     }
   }
-
   analysis_dataset <- analysis_dataset[, all_vars, drop = FALSE]
-  na.action(analysis_dataset)
+  return(na.action(analysis_dataset))
 }
 
 util_get_surv <- function(

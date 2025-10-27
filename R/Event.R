@@ -27,11 +27,11 @@
 #' @export
 Event <- function(time, event, allowed = getOption("cifmodeling.allowed", c(0, 1, 2))) {
   te <- util_normalize_time_event(time, event, allowed = allowed)
-  ss <- cbind(time = te$time, event = te$event)
-  dimnames(ss) <- list(NULL, c("time","event"))
-  attr(ss, "type") <- "right"
-  class(ss) <- c("Event", class(ss))
-  ss
+  out <- cbind(time = te$time, event = te$event)
+  dimnames(out) <- list(NULL, c("time","event"))
+  attr(out, "type") <- "right"
+  class(out) <- c("Event", class(out))
+  return(out)
 }
 
 util_normalize_time_event <- function(time, event, allowed = c(0, 1, 2)) {
@@ -39,23 +39,19 @@ util_normalize_time_event <- function(time, event, allowed = c(0, 1, 2)) {
   if (missing(event)) .err("req", arg = "event")
   if (!is.numeric(time)) .err("numeric", arg = "time")
 
-  # ★ NA は許容。NA 以外で非有限ならエラー
   if (any(!is.finite(time) & !is.na(time))) .err("finite", arg = "time")
 
   if (any(time < 0, na.rm = TRUE)) .err("nonneg", arg = "time")
 
   if (is.numeric(event)) {
-    # ★ NA は許容。NA 以外で非有限ならエラー
     if (any(!is.finite(event) & !is.na(event))) .err("finite", arg = "event")
     if (any(event < 0, na.rm = TRUE) || any(event != floor(event), na.rm = TRUE)) {
       .err("ev_codes", allowed = "{0,1,2,...}",
            found = paste(unique(event[!is.na(event)]), collapse = ", "))
     }
     status <- suppressWarnings(as.integer(event))
-
   } else if (is.logical(event)) {
     status <- ifelse(is.na(event), NA_integer_, as.integer(event))
-
   } else if (is.factor(event) || is.character(event)) {
     ev_chr <- as.character(event)
     ok <- !is.na(ev_chr)
@@ -68,12 +64,10 @@ util_normalize_time_event <- function(time, event, allowed = c(0, 1, 2)) {
   } else {
     .err("ev_type")
   }
-
   if (length(status) != length(time)) {
     .err("len_mismatch", x = "time", y = "event",
          nx = length(time), ny = length(status))
   }
-
   if (!is.null(allowed)) {
     ok <- is.na(status) | status %in% allowed
     if (!all(ok)) {
@@ -82,7 +76,6 @@ util_normalize_time_event <- function(time, event, allowed = c(0, 1, 2)) {
            found   = paste(sort(unique(status[!ok])), collapse = ", "))
     }
   }
-
   list(time = as.numeric(time), event = status)
 }
 

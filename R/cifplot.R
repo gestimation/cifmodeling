@@ -252,15 +252,35 @@ cifplot <- function(
     ...
 ) {
   dots <- list(...)
-
   if (is.null(font.family) || !nzchar(font.family)) font.family <- "sans"
   if (is.null(font.size)   || !is.finite(font.size)) font.size   <- 12
 
-  outcome.type  <- util_check_outcome_type(outcome.type, formula=formula, data=data)
-  if (!is.null(code.events)) {
-    ce_vec <- normalize_code_events(code.events)
-    code.event1    <- ce_vec[1]; code.event2 <- ce_vec[2]; code.censoring <- ce_vec[3]
+  .assert(!(isTRUE(printEachVar) && isTRUE(printEachEvent)), "incompatible_flags",
+          which = "printEachVar and printEachEvent")
+
+  if (isTRUE(printEachVar)) {
+    .assert(!inherits(formula, "survfit"), "need_formula_for_printEachVar")
+    .assert(inherits(formula, "formula"),  "formula_must_be")
+    .assert(!is.null(data),                "need_data")
+  } else {
+    .assert(!is.null(formula) || !is.null(dots$formula_or_fit), "need_formula_or_formulas")
   }
+
+  outcome.type <- util_check_outcome_type(outcome.type, formula = formula, data = data)
+
+  if (!is.null(code.events)) {
+    ce <- plot_check_code_events(code.events)
+    .assert(length(ce) == 3L, "code_events_len_vec")
+    .assert(all(ce == as.integer(ce)), "code_events_integer")
+    .assert(ce[1L] != ce[2L], "code_events_distinct")
+    code.event1 <- ce[1L]; code.event2 <- ce[2L]; code.censoring <- ce[3L]
+  }
+
+  .assert(is.numeric(conf.int) && length(conf.int) == 1L && is.finite(conf.int) &&
+            conf.int > 0 && conf.int < 1, "conf_level")
+
+  if (!is.null(limits.x)) .assert_limits(limits.x, "limits.x")
+  if (!is.null(limits.y)) .assert_limits(limits.y, "limits.y")
 
   if (!isTRUE(printEachVar)) {
     dots1 <- plot_drop_panel_only_args(dots)
@@ -283,7 +303,7 @@ cifplot <- function(
         code.event1              = code.event1,
         code.event2              = code.event2,
         code.censoring           = code.censoring,
-        code.events              = code.events,
+        code.events              = NULL,
         error                    = error,
         conf.type                = conf.type,
         conf.int                 = conf.int,
@@ -316,8 +336,8 @@ cifplot <- function(
         printEachEvent           = printEachEvent,
         style                    = style,
         palette                  = palette,
-        font.family              = if (is.null(font.family) || !nzchar(font.family)) "sans" else font.family,
-        font.size                = if (is.null(font.size)   || !is.finite(font.size)) 12 else font.size,
+        font.family              = font.family,
+        font.size                = font.size,
         legend.position          = legend.position,
         filename.ggsave          = filename.ggsave,
         width.ggsave             = width.ggsave,
@@ -329,47 +349,25 @@ cifplot <- function(
     return(do.call(cifplot_single, args_single))
   }
 
-  if (inherits(formula, "survfit")) {
-    stop("printEachVar=TRUE requires a formula interface.")
-  }
-  if (isTRUE(printEachEvent)) {
-    stop("printEachVar=TRUE cannot be combined with printEachEvent.")
-  }
-  if (!inherits(formula, "formula")) {
-    stop("printEachVar=TRUE requires a model formula on the left-hand side.")
-  }
-  if (is.null(data)) {
-    stop("When `formula` is a formula, `data` must be provided.")
-  }
-
   Terms <- stats::terms(formula, data = data)
   rhs_vars <- attr(Terms, "term.labels")
-  if (length(rhs_vars) == 0L) {
-    stop("printEachVar=TRUE requires one or more variable on the right-hand side.")
-  }
+
+  .assert(length(rhs_vars) > 0L, "need_rhs_vars_for_printEachVar")
   invalid_terms <- rhs_vars[grepl("[:*()]", rhs_vars)]
-  if (length(invalid_terms) > 0L) {
-    stop(
-      sprintf(
-        "printEachVar=TRUE does not supports transformations/interactions. Remove: %s",
-        paste(invalid_terms, collapse = ", ")
-      )
-    )
-  }
+  .assert(length(invalid_terms) == 0L, "no_transform_for_printEachVar", which = paste(invalid_terms, collapse = ", "))
+
   response_str <- deparse(formula[[2L]])
 
   lab_is_list <- is.list(label.strata)
   ord_is_list <- is.list(order.strata)
 
   plots <- lapply(rhs_vars, function(var_name) {
-    if (!var_name %in% names(data)) {
-      stop(sprintf("Variable '%s' not found in data.", var_name))
-    }
+    .assert(var_name %in% names(data), "var_not_found", var = var_name)
     dv <- data
     original_vec <- dv[[var_name]]
     strata_var_name <- paste0(var_name, "_strata")
 
-    norm_res <- cifplot_normalize_strata_var(original_vec)
+    norm_res <- plot_normalize_strata(original_vec)
     strata_vec <- norm_res$values
 
     dv[[strata_var_name]] <- strata_vec
@@ -383,24 +381,15 @@ cifplot <- function(
       }
     }
     if (!is.null(ord_vec)) {
-      if (!is.character(ord_vec)) {
-        stop(sprintf("order.strata[['%s']] must be a character vector.", var_name))
-      }
+      .assert(is.character(ord_vec), "order_strata_char", var = var_name)
       current_levels <- levels(dv[[strata_var_name]])
       keep_levels <- ord_vec[ord_vec %in% current_levels]
-      if (length(keep_levels) == 0L) {
-        stop(
-          sprintf(
-            "order.strata[['%s']] has no overlap with existing levels: %s",
-            var_name,
-            paste(current_levels, collapse = ", ")
-          )
-        )
-      }
+      .assert(length(keep_levels) > 0L, "order_strata_overlap_none", var = var_name, levels = paste(current_levels, collapse = ", "))
       strata_factor <- factor(as.character(dv[[strata_var_name]]), levels = keep_levels)
       keep_idx <- !is.na(strata_factor)
       dv <- dv[keep_idx, , drop = FALSE]
       strata_vec <- droplevels(strata_vec[keep_idx])
+      ord_vec <- NULL
     }
 
     dv <- dv[!is.na(dv[[strata_var_name]]), , drop = FALSE]
@@ -418,31 +407,11 @@ cifplot <- function(
     if (!is.null(lab_vec)) {
       lv <- levels(dv[[strata_var_name]])
       if (!is.null(names(lab_vec)) && any(nzchar(names(lab_vec)))) {
-        if (!setequal(names(lab_vec), lv)) {
-          missing <- setdiff(lv, names(lab_vec))
-          extra   <- setdiff(names(lab_vec), lv)
-          msg <- c()
-          if (length(missing) > 0L) {
-            msg <- c(msg, sprintf("missing levels: %s", paste(missing, collapse = ", ")))
-          }
-          if (length(extra) > 0L) {
-            msg <- c(msg, sprintf("unknown labels: %s", paste(extra, collapse = ", ")))
-          }
-          stop(sprintf("label.strata[['%s']] must match factor levels (%s).", var_name, paste(lv, collapse = ", ")), call. = FALSE)
-        }
+        .assert(setequal(names(lab_vec), lv), "label_strata_named_mismatch", var = var_name, levels = paste(lv, collapse = ", "))
         lab_vec <- lab_vec[lv]
         names(lab_vec) <- lv
       } else {
-        if (length(lab_vec) != length(lv)) {
-          stop(
-            sprintf(
-              "label.strata[['%s']] length (%d) must match number of levels (%d).",
-              var_name,
-              length(lab_vec),
-              length(lv)
-            )
-          )
-        }
+        .assert(length(lab_vec) == length(lv), "label_strata_len_mismatch", var = var_name, nlab = length(lab_vec), nlv = length(lv))
       }
     }
 
@@ -471,7 +440,7 @@ cifplot <- function(
         label.x                    = label.x,
         label.y                    = label.y,
         label.strata               = lab_vec,
-        order.strata               = ord_vec,
+        order.strata               = NULL,
         limits.x                   = limits.x,
         limits.y                   = limits.y,
         breaks.x                   = breaks.x,
@@ -513,16 +482,14 @@ cifplot <- function(
 
   nrow <- ncol <- NULL
   if (!is.null(rows.columns.panel)) {
-    if (!(is.numeric(rows.columns.panel) && length(rows.columns.panel) == 2L)) {
-      stop("rows.columns.panel must be a numeric vector of length 2 (c(nrow, ncol)).")
-    }
+    .assert(is.numeric(rows.columns.panel) && length(rows.columns.panel) == 2L, "rows_columns_panel_len2")
     nrow <- rows.columns.panel[1L]
     ncol <- rows.columns.panel[2L]
   }
 
   patch <- patchwork::wrap_plots(plots, nrow = nrow, ncol = ncol, guides = "keep")
   attr(patch, "plots") <- plots
-  patch
+  return(patch)
 }
 
 cifplot_single <- function(
@@ -579,18 +546,12 @@ cifplot_single <- function(
 ) {
   dots <- list(...)
 
-  outcome.type <- if (is.null(outcome.type)) {
-    NULL
-  } else {
-    match.arg(outcome.type, c("COMPETING-RISK", "SURVIVAL"))
-  }
-
-  if (!is.null(code.events)) {
-    ce_vec <- normalize_code_events(code.events)
-    code.event1 <- ce_vec[1L]
-    code.event2 <- ce_vec[2L]
-    code.censoring <- ce_vec[3L]
-  }
+  if (is.null(outcome.type)) {
+    outcome.type <- util_check_outcome_type(formula = if (inherits(formula_or_fit,"survfit")) NULL
+                                            else formula_or_fit, data = data, na.action = na.action, auto_message = FALSE)
+    } else {
+      outcome.type <- match.arg(outcome.type, c("COMPETING-RISK","SURVIVAL"))
+    }
 
   if (isTRUE(printEachEvent)) {
     if (inherits(formula_or_fit, "survfit")) {
@@ -605,14 +566,14 @@ cifplot_single <- function(
       if (outcome.type_corrected != "COMPETING-RISK") {
         warning("printEachEvent=TRUE is only for COMPETING-RISK; falling back to single-plot.")
       } else {
-        ce_panel <- normalize_code_events(c(code.event1, code.event2, code.censoring))
+        ce_panel <- plot_check_code_events(c(code.event1, code.event2, code.censoring))
 
         if (!is.null(dots$title.plot)) dots$title.plot <- NULL
 
         ylabs_vec <- label.y
         if (is.null(ylabs_vec) && !is.null(dots$label.y)) ylabs_vec <- dots$label.y
         if (is.null(ylabs_vec)) {
-          ylabs_vec <- cifplot_default_event_y_labels()
+          ylabs_vec <- plot_default_event_y_labels()
         } else {
           if (length(ylabs_vec) == 1L) ylabs_vec <- rep(ylabs_vec, 2L)
           if (length(ylabs_vec)  > 2L) ylabs_vec <- ylabs_vec[1:2]
@@ -665,10 +626,14 @@ cifplot_single <- function(
 
   if (!inherits(formula_or_fit, "survfit")) {
     if (is.null(data)) stop("When `formula` is a formula, `data` must be provided.")
-    norm_inputs <- cifplot_normalize_formula_data(formula_or_fit, data)
+    norm_inputs <- plot_normalize_formula_data(formula_or_fit, data)
     data_working <- norm_inputs$data
-    if (isTRUE(addCompetingRiskMark) && length(competing.risk.time) == 0) {
-      competing.risk.time <- extract_time_to_event(formula_or_fit, data = data_working, which_event = "event2", code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring)
+    if (!isTRUE(printEachEvent) &&
+      isTRUE(addCompetingRiskMark) &&
+      length(competing.risk.time) == 0) {
+      competing.risk.time <- extract_time_to_event(
+      formula_or_fit, data = data_working, which_event = "event2",
+      code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring)
     }
     formula_or_fit <- cifcurve(formula_or_fit, data = data_working, weights = weights, subset.condition = subset.condition, na.action = na.action,
                                outcome.type = outcome.type, code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
@@ -713,20 +678,6 @@ cifplot_single <- function(
   )
   if (!is.null(filename.ggsave)) ggplot2::ggsave(filename.ggsave, plot = p, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave)
   return(p)
-}
-
-normalize_code_events <- function(code_events) {
-  if (!(is.numeric(code_events) && length(code_events) == 3L)) {
-    .err("code_events_len_vec")
-  }
-  if (anyNA(code_events)) .err("na", arg = "code.events")
-  if (any(!is.finite(code_events))) .err("finite", arg = "code.events")
-  ce_int <- as.integer(code_events)
-  if (any(abs(code_events - ce_int) > .Machine$double.eps^0.5)) {
-    .err("code_events_integer")
-  }
-  if (ce_int[1L] == ce_int[2L]) .err("code_events_distinct")
-  ce_int
 }
 
 #' Plot survival or cumulative incidence curves with ggsurvfit
@@ -861,7 +812,6 @@ call_ggsurvfit <- function(
     if (is.null(lbl_map) || is.null(full) || is.null(short)) return(lbl_map)
     nm <- names(lbl_map)
     if (!length(nm)) return(lbl_map)
-    # キー（names）がフルキーでなければ、短縮→フルへ
     if (!all(nm %in% full) && all(nm %in% short)) {
       idx <- match(nm, short)
       names(lbl_map) <- full[idx]
@@ -942,7 +892,7 @@ call_ggsurvfit <- function(
     )
   }
 
-  p <- apply_all_scales_once(
+  p <- plot_apply_all_scales(
     p,
     style = style,
     palette = palette,
@@ -976,40 +926,6 @@ call_ggsurvfit <- function(
   #  }
   return(p)
 }
-
-plot_fix_palette_vector_arg <- function(p) {
-  scs <- p$scales$scales
-  if (!length(scs)) return(p)
-  for (k in seq_along(scs)) {
-    sc <- scs[[k]]
-    if (inherits(sc, "ScaleDiscrete") && is.function(sc$palette)) {
-      orig <- sc$palette
-      sc$palette <- function(n) {
-        n1 <- if (length(n) > 1L) max(n, na.rm = TRUE) else n
-        unname(orig(n1))
-      }
-      p$scales$scales[[k]] <- sc
-    }
-  }
-  scs <- p$scales$scales
-  if (!length(scs)) return(p)
-  for (k in seq_along(scs)) {
-    sc <- scs[[k]]
-    if (inherits(sc, "ScaleDiscrete")) {
-      is_manual <- identical(sc$scale_name, "manual")
-      if (is_manual || isTRUE(grepl("manual", paste0(sc$name, collapse=""), ignore.case=TRUE))) {
-        sc$scale_name <- "manual"
-        if (!inherits(sc, "ScaleDiscreteManual")) {
-          class(sc) <- c("ScaleDiscreteManual", class(sc))
-        }
-        scs[[k]] <- sc
-      }
-    }
-  }
-  p$scales$scales <- scs
-  return(p)
-}
-
 
 create_rr_text <- function(coefficient, cov, index, omit.conf.int=TRUE, conf.int=0.95) {
   alpha <- 1 - conf.int
@@ -1125,10 +1041,8 @@ check_ggsurvfit <- function(
   check_breaks(breaks.x, "breaks.x", limits.x)
   check_breaks(breaks.y, "breaks.y", limits.y)
 
-  type.y <- cifplot_normalize_type_y(type.y)
-
   if (is.null(label.y)) {
-    auto_label <- cifplot_default_y_label(survfit_object$type, type.y)
+    auto_label <- plot_default_y_label(survfit_object$type, type.y)
     if (!is.null(auto_label)) label.y <- auto_label
   }
 
@@ -1144,7 +1058,7 @@ check_ggsurvfit <- function(
   }
   survfit_object <- coerce_conf(survfit_object, conf.type)
 
-  type.y <- cifplot_normalize_type_y(type.y)
+  type.y <- plot_normalize_type_y(type.y)
   target_type <- switch(
     survfit_object$type,
     "kaplan-meier"   = if (identical(type.y, "risk")) "risk" else "survival",
@@ -1157,7 +1071,7 @@ check_ggsurvfit <- function(
     if (identical(style, "MONOCHROME")) return(TRUE)
     if (is.null(palette)) return(FALSE)
     pal <- palette
-    pal <- ifelse(grepl("^#", pal), pal, .validate_or_fix_color(pal))
+    pal <- ifelse(grepl("^#", pal), pal, plot_validate_fix_color(pal))
     length(unique(tolower(pal))) == 1L
   }
   linetype_aes_flag <- decide_linetype_flag(style, palette)
@@ -1170,15 +1084,4 @@ check_ggsurvfit <- function(
   )
 
   list(out_survfit_object = out_plot, label.y = label.y, type.y = type.y)
-}
-
-plot_drop_panel_only_args <- function(dots) {
-  panel_only <- c(
-    "rows.columns.panel", "legend.collect", "title.panel",
-    "subtitle.panel", "caption.panel", "print.panel",
-    "title.plot", "zoom.position"
-  )
-  if (length(dots) && !is.null(names(dots))) {
-    dots[setdiff(names(dots), panel_only)]
-  } else dots
 }

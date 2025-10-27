@@ -26,6 +26,7 @@ polyreg(
   report.sandwich.conf = TRUE,
   report.boot.conf = NULL,
   boot.bca = FALSE,
+  boot.multiplier = "rademacher",
   boot.replications = 200,
   boot.seed = 46,
   nleqslv.method = "nleqslv",
@@ -122,6 +123,9 @@ confidence intervals are computed. When \code{FALSE}, they are omitted. If
 Use \code{TRUE} for bias-corrected and accelerated intervals or \code{FALSE}
 for the normal approximation. Defaults to \code{FALSE}.}
 
+\item{boot.multiplier}{Character \code{"rademacher"}, \code{"mammen"},
+or \code{"gaussian"}. Defaults to \code{"rademacher"}.}
+
 \item{boot.replications}{Integer giving the number of bootstrap replications.
 Defaults to \code{200}.}
 
@@ -183,9 +187,6 @@ of each exposure level. Defaults to \code{TRUE}.}
 
 \item{prob.bound}{Numeric lower bound used to truncate probabilities away
 from 0 and 1. Defaults to \code{1e-5}.}
-
-\item{boot.multiplier}{Character \code{"rademacher"}, \code{"mammen"},
-or \code{"gaussian"}. Defaults to \code{"rademacher"}.}
 }
 \value{
 A list containing fitted exposure effects and supporting results. The
@@ -249,7 +250,7 @@ The \code{outcome.type} argument must be set to:
 }\tabular{lll}{
    Setting \tab Codes \tab Meaning \cr
    COMPETING-RISK \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censoring \cr
-   COMPETING-RISK (default) \tab \code{code.event1=1}, \code{code.event2=2}, \code{code.censoring1} \tab event of interest / competing event / censoring \cr
+   COMPETING-RISK (default) \tab \code{code.event1=1}, \code{code.event2=2}, \code{code.censoring=0} \tab event of interest / competing event / censoring \cr
    SURVIVAL \tab \code{code.event1}, \code{code.censoring} \tab event / censoring \cr
    SURVIVAL  (default) \tab \code{code.event1=1}, \code{code.censoring=0} \tab event / censoring \cr
    SURVIVAL (ADaM-ADTTE) \tab \code{code.event1=0}, \code{code.censoring=1} \tab set to match ADaM convention \cr

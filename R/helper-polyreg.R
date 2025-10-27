@@ -1,26 +1,3 @@
-#readStrata <- function(out_readSurv, out_aj, label.strata=NULL) {
-#  if (!all(as.integer(out_readSurv$strata) == 1) & (is.null(label.strata))) {
-#    names(out_aj$strata1) <- levels(as.factor(out_readSurv$strata))
-#  } else if (!all(as.integer(out_readSurv$strata) == 1)) {
-#    names(out_aj$strata1) <- label.strata
-#  }
-#  return(out_aj)
-#}
-
-#check_label.strata <- function(out_readSurv, label.strata) {
-#  strata_levels <- levels(as.factor(out_readSurv$strata))
-#  n_strata <- length(strata_levels)
-#  if (!is.null(label.strata)) {
-#    if (!is.character(label.strata)) {
-#      stop("`label.strata` must be a character vector.", call. = FALSE)
-#    }
-#    if (length(label.strata) != n_strata) {
-#      stop(sprintf("`label.strata` must have length %d (number of strata), but got %d.", n_strata, length(label.strata)), call. = FALSE)
-#    }
-#  }
-#}
-
-
 clampP <- function(p, eps = 1e-5) pmin(pmax(p, eps), 1 - eps)
 
 clampLogP <- function(x, eps = 1e-5) {

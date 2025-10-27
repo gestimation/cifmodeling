@@ -78,15 +78,15 @@ test_that("util_check_outcome_type() / reg_check_effect.measure() / check_error(
   expect_equal(em$effect.measure1, "RR")
   expect_equal(em$effect.measure2, "OR")
 
-  expect_equal(check_error(NULL, "SURVIVAL"), "greenwood")
-  expect_equal(check_error(NULL, "COMPETING-RISK"), "delta")
+  expect_equal(curve_check_error(NULL, "SURVIVAL"), "greenwood")
+  expect_equal(curve_check_error(NULL, "COMPETING-RISK"), "delta")
 
   expect_warning(
-    expect_equal(check_error("bad", "SURVIVAL"), "greenwood"),
+    expect_equal(curve_check_error("bad", "SURVIVAL"), "greenwood"),
     "SURVIVAL"
   )
   expect_warning(
-    expect_equal(check_error("bad", "COMPETING-RISK"), "delta"),
+    expect_equal(curve_check_error("bad", "COMPETING-RISK"), "delta"),
     "COMPETING-RISK"
   )
 })

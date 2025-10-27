@@ -92,8 +92,8 @@ residuals_CIFs <- function(log_CIFs, alpha1, beta1, alpha2, beta2, estimand, pro
   clog_CIFs <- clampLogP(as.numeric(log_CIFs))
   if (length(clog_CIFs) != 2*K || length(clog_CIFs) %% 2 != 0) stop("log_CIFs length must be even (2K).")
 
-  i1 <- 1:K                      # indices for event1 block
-  i2 <- (K+1):(2*K)              # indices for event2 block
+  i1 <- 1:K
+  i2 <- (K+1):(2*K)
   p1 <- exp(clog_CIFs[i1])
   p2 <- exp(clog_CIFs[i2])
   p0 <- pmax(1 - p1 - p2, prob.bound)

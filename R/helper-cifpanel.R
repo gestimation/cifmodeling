@@ -72,7 +72,7 @@ panel_prepare <- function(
       cc  <- pair[3]
     }
 
-    norm_inputs <- cifplot_normalize_formula_data(formulas[[i]], data)
+    norm_inputs <- plot_normalize_formula_data(formulas[[i]], data)
     data_i <- norm_inputs$data
 
     args_est <- panel_drop_nulls(list(

@@ -48,7 +48,13 @@
   code_events_len_cr = "`code.events[[{i}]]` must be c(event.code1, event.code2, censoring) for COMPETING-RISK.",
   infer_outcome_fail = "Failed to infer outcome.type from code.events; each must be length 2 (S) or 3 (C).",
   shape_identical = "`{a}` and `{b}` specify an identical type of symbol.",
-  finite = "`{arg}` must be finite."
+  finite = "`{arg}` must be finite.",
+  incompatible_flags = "`{which}` cannot be used together.",
+  need_formula_for_printEachVar = "printEachVar=TRUE requires a formula interface (not a survfit object).",
+  need_rhs_vars_for_printEachVar = "printEachVar=TRUE requires one or more variables on the RHS.",
+  no_transform_for_printEachVar = "printEachVar=TRUE does not support transformations/interactions. Remove: {which}.",
+  order_strata_type = "`order.strata` must be a character vector or a named list.",
+  need_formula_or_formulas = "Provide a formula or a fitted survfit-like object."
 )
 
 .warn <- function(key, ..., .messages = .msg) {
@@ -88,6 +94,23 @@
     class = c(cls, "simpleError", "error", "condition")
   )
   stop(cond)
+}
+
+.assert <- function(cond, key, ...) {
+  if (!isTRUE(cond)) .err(key, ...)
+  invisible(TRUE)
+}
+
+.assert_choice <- function(x, choices, key, ...) {
+  .assert(length(x) == 1L && is.character(x), key, ...)
+  .assert(x %in% choices, key, choices = paste(choices, collapse = ", "), ...)
+  x
+}
+
+.assert_limits <- function(x, arg) {
+  .assert(is.numeric(x) && length(x) == 2L && all(is.finite(x)), "limits_len2", arg = arg)
+  .assert(x[1L] < x[2L], "limits_increasing", arg = arg)
+  invisible(TRUE)
 }
 
 util_check_outcome_type <- function(

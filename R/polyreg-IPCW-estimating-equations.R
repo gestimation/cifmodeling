@@ -352,6 +352,8 @@ calculateCov <- function(objget_results, estimand, boot.method, prob.bound)
   total_score <- cbind(AB1, AB2)
   influence.function <- t(solve(hesse, t(total_score)))
 
+  cov_estimated <- NULL
+  cov_bootstrap <- NULL
   if (isTRUE(boot.method$report.sandwich.conf))
   {
     cov_estimated <- crossprod(influence.function) / n^2
@@ -615,8 +617,6 @@ solveEstimatingEquation <- function(
   }
 
   obj <- makeObjectiveFunction()
-  nleqslv_method <- reg_choose_nleqslv_method(optim.method$nleqslv.method)
-
   iteration <- 0L
   max.absolute.difference <- Inf
   out_nleqslv <- NULL
@@ -633,7 +633,7 @@ solveEstimatingEquation <- function(
     out_nleqslv <- nleqslv(
       prev_params,
       obj$estimating_equation_i,
-      method  = optim.method$nleqslv_method,
+      method  = reg_choose_nleqslv_method(optim.method$nleqslv.method),
       control = list(maxit = optim.method$optim.parameter5, allowSingular = FALSE)
     )
     new_params <- out_nleqslv$x
@@ -682,7 +682,6 @@ cov_wild_bootstrap <- function(
   if (isTRUE(center)) {
     IF <- scale(IF, center = TRUE, scale = FALSE)
   }
-
   draw_multipliers <- function(n, kind) {
     if (kind == "rademacher") {
       sample(c(-1, 1), size = n, replace = TRUE)
@@ -699,7 +698,6 @@ cov_wild_bootstrap <- function(
       stop("Unknown `multiplier`.")
     }
   }
-
   IFt <- t(IF)
   deltas <- matrix(NA_real_, nrow = p, ncol = R)
   for (b in seq_len(R)) {

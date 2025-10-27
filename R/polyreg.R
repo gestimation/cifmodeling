@@ -145,7 +145,7 @@
 #' | Setting | Codes | Meaning |
 #' |---|---|---|
 #' | COMPETING-RISK | `code.event1`, `code.event2`, `code.censoring` | event of interest / competing event / censoring |
-#' | COMPETING-RISK (default)| `code.event1=1`, `code.event2=2`, `code.censoring1` | event of interest / competing event / censoring |
+#' | COMPETING-RISK (default)| `code.event1=1`, `code.event2=2`, `code.censoring=0` | event of interest / competing event / censoring |
 #' | SURVIVAL | `code.event1`, `code.censoring`                   | event / censoring |
 #' | SURVIVAL  (default)| `code.event1=1`, `code.censoring=0`     | event / censoring |
 #' | SURVIVAL (ADaM-ADTTE) | `code.event1=0`, `code.censoring=1` | set to match ADaM convention |
@@ -435,7 +435,7 @@ polyreg <- function(
     is_stalled <- function(x, stall_patience = 3, stall_eps = 1e-3) {
       n <- length(x)
       if (n < stall_patience) return(FALSE)
-      recent <- x[(n - stall_patience + 1L):n]
+      recent <- x[(n - stall_patience + 1):n]
       rng <- range(recent)
       rel_diff <- (diff(rng) / max(1e-12, mean(recent)))
       rel_diff <= stall_eps
@@ -462,7 +462,6 @@ polyreg <- function(
   }
 
   obj <- makeObjectiveFunction()
-  nleqslv_method  <- reg_choose_nleqslv_method(nleqslv.method)
   iteration <- 0L
   max.absolute.difference <- Inf
   out_nleqslv <- NULL
@@ -478,7 +477,7 @@ polyreg <- function(
     out_nleqslv <- nleqslv(
       prev_params,
       obj$estimating_equation_i,
-      method  = nleqslv_method,
+      method  = reg_choose_nleqslv_method(nleqslv.method),
       control = list(maxit = optim.parameter5, allowSingular = FALSE)
     )
     new_params <- out_nleqslv$x
@@ -587,39 +586,36 @@ polyreg <- function(
     out_boot <- boot(normalized_data, boot_function, R = boot.replications)
     for (j in index_coef) {
       if (isTRUE(boot.bca)) {
-        out_boot.ci <- boot.ci(out_boot, conf = conf.level, index = index_coef[j], type = c("norm", "bca"))
-        boot.coef[j] <- (out_boot.ci$normal[2] + out_boot.ci$normal[3])/2
-        ci_range <- out_boot.ci$normal[3] - out_boot.ci$normal[2]
-        boot.coef_se[j] <- ci_range/2/qnorm(1 - (1-conf.level)/2)
-        boot.p_value[j] <- 2 * (1 - pnorm(abs(boot.coef[j]) / boot.coef_se[j]))
-        boot.conf_low[j] <- out_boot.ci$bca[4]
+        out_boot.ci       <- boot.ci(out_boot, conf = conf.level, index = index_coef[j], type = c("norm", "bca"))
+        boot.coef[j]      <- (out_boot.ci$normal[2] + out_boot.ci$normal[3])/2
+        ci_range          <- out_boot.ci$normal[3] - out_boot.ci$normal[2]
+        boot.coef_se[j]   <- ci_range/2/qnorm(1 - (1-conf.level)/2)
+        boot.p_value[j]   <- 2 * (1 - pnorm(abs(boot.coef[j]) / boot.coef_se[j]))
+        boot.conf_low[j]  <- out_boot.ci$bca[4]
         boot.conf_high[j] <- out_boot.ci$bca[5]
       } else {
-        ok <- apply(out_boot$t, 1L, function(x) all(is.finite(x)))
-        t_ok <- out_boot$t[ok, , drop = FALSE]
-
+        ok      <- apply(out_boot$t, 1, function(x) all(is.finite(x)))
+        t_ok    <- out_boot$t[ok, , drop = FALSE]
         mean_ok <- colMeans(t_ok)
         sd_ok   <- apply(t_ok, 2, sd)
-        ci_ok <- cbind(
+        ci_ok   <- cbind(
           lower = mean_ok - qnorm(0.975) * sd_ok,
           upper = mean_ok + qnorm(0.975) * sd_ok
         )
-        boot.coef[j] <- mean_ok[j]
-        boot.coef_se[j] <- sd_ok[j]
-        boot.p_value[j] <- 2 * (1 - pnorm(abs(boot.coef[j]) / boot.coef_se[j]))
-        boot.conf_low[j] <- ci_ok[j,1]
+        boot.coef[j]      <- mean_ok[j]
+        boot.coef_se[j]   <- sd_ok[j]
+        boot.p_value[j]   <- 2 * (1 - pnorm(abs(boot.coef[j]) / boot.coef_se[j]))
+        boot.conf_low[j]  <- ci_ok[j,1]
         boot.conf_high[j] <- ci_ok[j,2]
       }
     }
-    out_bootstrap <- list(
-      boot.coef=boot.coef, boot.coef_se=boot.coef_se, boot.p_value=boot.p_value, boot.conf_low=boot.conf_low, boot.conf_high=boot.conf_high
-    )
+    out_bootstrap <- list(boot.coef=boot.coef, boot.coef_se=boot.coef_se, boot.p_value=boot.p_value, boot.conf_low=boot.conf_low, boot.conf_high=boot.conf_high)
   } else {out_bootstrap <- NULL}
 
   #######################################################################################################
   # 7. Output (functions: reportSurvival, reportCOMPETING-RISK, reportPrediction)
   #######################################################################################################
-  out_summary <- reportEffects (
+  out_summary <- reportEffects(
     outcome.type, report.nuisance.parameter, report.optim.convergence, report.sandwich.conf, report.boot.conf,
     nuisance.model, exposure, estimand, alpha_beta_estimated, cov_estimated,
     out_bootstrap, out_getResults, iteration, converged.by, objective.function, max.absolute.difference, relative.difference,
