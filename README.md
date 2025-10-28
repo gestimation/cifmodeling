@@ -13,30 +13,58 @@ In medical and epidemiological research, analysts often need to handle
 censoring, competing risks, and intercurrent events (e.g., treatment
 switching), but existing R packages typically separate these tasks into
 different interfaces. `cifmodeling` provides a **unified,
-publication-ready toolkit** that integrates nonparametric estimation,
-regression modeling, and visualization for survival and competing risks
-data. It covers both nonparametric estimation and regression modeling of
-cumulative incidence functions (CIFs), centered around three tightly
-connected functions.
+publication-ready toolkit** that integrates description of survival and
+cumulative incidence function (CIF) curves, regression modeling, and
+visualization for survival and competing risks data. It covers both
+nonparametric estimation and regression modeling of CIFs, centered
+around three tightly connected functions.
 
-- `cifplot()` generates a survival or cumulative incidence curve with
-  marks that represent censoring, competing risks and intercurrent
-  events. Multiple variance estimators and confidence interval methods
-  are supported. Visualization relies on `ggsurvfit/ggplot2`.
+- `cifplot()` typically generates a survival or cumulative incidence
+  curve with marks that represent censoring, competing risks and
+  intercurrent events. Multiple variance estimators and confidence
+  interval methods are supported. Visualization relies on
+  `ggsurvfit/ggplot2`.
 
 - `cifpanel()` generates a multi-panel figure for survival/CIF curves,
   arranged either in a grid layout or as an inset overlay.
 
-- `polyreg()` fits regression models of cumulative incidence functions
-  based on polytomous log odds products and stratified IPCW estimator.
-  This function is particularly well-suited for causal inference in
-  terms of common effect measures, namely risk ratios, odds ratios, and
+- `polyreg()` fits coherent regression models of CIFs based on
+  polytomous log odds products and the stratified IPCW estimator. This
+  function is particularly well-suited for causal inference in terms of
+  typical effect measures, namely risk ratios, odds ratios, and
   subdistribution hazard ratios, with a competing risks, survival, or
   binary outcome.
 
 These functions adopt a formula + data syntax, return tidy,
 publication-ready outputs, and integrate seamlessly with `ggsurvfit` and
 `modelsummary` for visualization.
+
+## Quality control
+
+`cifmodeling` includes an extensive test suite built with **testthat**,
+ensuring the numerical accuracy and graphical consistency of all core
+functions (`cifcurve`, `cifplot`, `cifpanel`, and `polyreg`). The
+package is continuously tested on GitHub Actions (Windows, macOS, Linux)
+to maintain reproducibility and CRAN-level compliance.
+
+## Installation
+
+The package is implemented in R and relies on `Rcpp`, `nleqslv` and
+`boot` for the numerical back-end. The examples in this README also use
+`ggplot2`, `ggsurvfit`, `patchwork` and `modelsummary` for tabulation
+and plotting. Install the core package and these companion packages
+with:
+
+``` r
+install.packages("Rcpp")
+install.packages("nleqslv")
+install.packages("boot")
+install.packages("ggplot2")
+install.packages("ggsurvfit")
+install.packages("patchwork")
+install.packages("modelsummary")
+devtools::install_github("gestimation/cifmodeling")
+```
 
 ## Main functions
 
@@ -52,7 +80,7 @@ survfit-compatible object directly.
 
 **Typical use cases**
 
-- Draw one survival/CIF curve set by groups (e.g., treatment vs
+- Draw one survival/CIF curve set by exposure groups (e.g., treatment vs
   control).
 - Call `cifpanel()` with a simplified code to create a panel displaying
   plots of multiple stratified survival/CIF curves or CIF curves for
@@ -107,9 +135,9 @@ survfit-compatible object directly.
 **Under the hood: cifcurve()**
 
 `cifplot()` is a streamlined, opinionated wrapper around `cifcurve()`,
-which calculate the Kaplan–Meier estimator and the Aalen–Johansen
-estimator. `cifcurve()` returns a survfit-compatible object, enabling
-use of standard methods such as:
+which calculates the Kaplan–Meier estimator and the Aalen–Johansen
+estimator. `cifcurve()` returns a survfit-compatible object, enabling an
+independent use of standard methods such as:
 
 - `summary()` — time-by-time estimates with standard errors and
   confidence intervals
@@ -151,9 +179,13 @@ time scales, or strata. The inset feature also allows you to display
 another plot within a plot.
 
 **Typical use cases** - Compare CIF (event 1) vs CIF (event 2) in a 1×2
-layout. - Compare survival/CIF curves across strata with a shared legend
-and matched axes. - Display a plot with an enlarged y-axis within a plot
-scaled from 0 to 100%.
+layout.
+
+- Compare survival/CIF curves across strata with a shared legend and
+  matched axes.
+
+- Display a plot with an enlarged y-axis within a plot scaled from 0 to
+  100%.
 
 **Key arguments**
 
@@ -266,16 +298,18 @@ such as **modelsummary** or **broom** for reporting.
 
 - `nuisance.model` — a formula describing the outcome and nuisance
   covariates, excluding the exposure of interest.
-- `exposure` — specifies the categorical exposure variable
-- `effect.measure1` and `effect.measure2` — specifies the effect
-  measures for event1 and event2 (`"RR"`, `"OR"` or `"SHR"`).
-- `outcome.type` selects the outcome type (`"COMPETING-RISK"`,
-  `"SURVIVAL"`, `"BINOMIAL"`, `"PROPORTIONAL-SURVIVAL"` or
-  `"PROPORTIONAL-COMPETING-RISK"`).
-- `time.point` — specifies time point at which the exposure effect is
-  evaluated. Required for `"COMPETING-RISK"` and `"SURVIVAL"` outcomes.
-- `strata` — specifies a stratification variable used to adjust for
-  dependent censoring.
+- `exposure` — specifies the exposure variable. This argument accepts
+  one binary or categorical variable.
+
+the categorical exposure variable - `effect.measure1` and
+`effect.measure2` — specifies the effect measures for event1 and event2
+(`"RR"`, `"OR"` or `"SHR"`). - `outcome.type` selects the outcome type
+(`"COMPETING-RISK"`, `"SURVIVAL"`, `"BINOMIAL"`,
+`"PROPORTIONAL-SURVIVAL"` or `"PROPORTIONAL-COMPETING-RISK"`). -
+`time.point` — specifies time points at which the exposure effect is
+evaluated. Required for `"COMPETING-RISK"` and `"SURVIVAL"` outcomes. -
+`strata` — specifies the stratification variable used to adjust for
+dependent censoring.
 
 **Return**
 
@@ -297,38 +331,11 @@ output <- polyreg(nuisance.model=Event(t,epsilon) ~ +1, exposure="fruitq",
           effect.measure2="RR", time.point=8, outcome.type="COMPETING-RISK")
 ```
 
-## Quality assurance
-
-`cifmodeling` includes an extensive test suite built with **testthat**,
-ensuring the numerical accuracy and graphical consistency of all core
-functions (`cifcurve`, `cifplot`, `cifpanel`, and `polyreg`). The
-package is continuously tested on GitHub Actions (Windows, macOS, Linux)
-to maintain reproducibility and CRAN-level compliance.
-
-## Installation
-
-The package is implemented in R and relies on `Rcpp`, `nleqslv` and
-`boot` for the numerical back-end. The examples in this README also use
-`ggplot2`, `ggsurvfit`, `patchwork` and `modelsummary` for tabulation
-and plotting. Install the core package and these companion packages
-with:
-
-``` r
-install.packages("Rcpp")
-install.packages("nleqslv")
-install.packages("boot")
-install.packages("ggplot2")
-install.packages("ggsurvfit")
-install.packages("patchwork")
-install.packages("modelsummary")
-devtools::install_github("gestimation/cifmodeling")
-```
-
 If you only need the core functionality of `cifcurve()` and `polyreg()`,
 installing `Rcpp` and `nleqslv` are enough; the other packages are
 optional but recommended to reproduce the examples below.
 
-## Model specification of polyreg()
+## Direct polytomous modeling of CIFs
 
 The model for `polyreg()` is specified by three main components:
 
@@ -341,7 +348,7 @@ The model for `polyreg()` is specified by three main components:
 - Censoring adjustment: Specifies strata for inverse probability
   weighting to adjust for dependent censoring.
 
-### 1. Nuisance Model
+**1. Nuisance Model**
 
 The `nuisance.model` argument specifies the formula linking the outcome
 to covariates. Its format depends on the outcome type:
@@ -377,7 +384,7 @@ Event codes can be customized using `code.event1`, `code.event2`, and
 Covariates included in `nuisance.model` should adjust for confounding
 factors to obtain unbiased exposure effect estimates.
 
-### 2. Effect measures and time points
+**2. Effect measures and time points**
 
 Three effect measures available:
 
@@ -391,13 +398,13 @@ Set the desired measure using `effect.measure1` and, for competing risks
 analysis, `effect.measure2`. The `time.point` argument specifies the
 follow-up time at which effects are estimated.
 
-### 3. Censoring adjustment
+**3. Censoring adjustment**
 
 Inverse probability weights adjust for dependent censoring. Use
 `strata=` to specify stratification variables. If no strata are
 specified, Kaplan-Meier weights are used.
 
-## Return
+**Return**
 
 This function returns a list object that includes:
 
@@ -652,18 +659,18 @@ output4 <- polyreg(nuisance.model=Event(t,d) ~ +1,
 msummary(output4$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
 ```
 
-|                        | event 1 (no competing risk)     |
-|------------------------|---------------------------------|
-| fruitq1, Q2 to Q4 vs 0 | 0.777                           |
-|                        | \[0.654, 0.922\]                |
-|                        | (0.004)                         |
-| effect.measure         | RR at 8                         |
-| n.events               | 358 in N = 978                  |
-| median.follow.up       | 8                               |
-| range.follow.up        | \[ 0.05 , 11 \]                 |
-| n.parameters           | 2                               |
-| converged.by           | Converged in objective function |
-| nleqslv.message        | Function criterion near zero    |
+|                  | event 1 (no competing risk)     |
+|------------------|---------------------------------|
+| fruitq1, 1 vs 0  | 1.288                           |
+|                  | \[1.085, 1.529\]                |
+|                  | (0.004)                         |
+| effect.measure   | RR at 8                         |
+| n.events         | 358 in N = 978                  |
+| median.follow.up | 8                               |
+| range.follow.up  | \[ 0.05 , 11 \]                 |
+| n.parameters     | 2                               |
+| converged.by     | Converged in objective function |
+| nleqslv.message  | Function criterion near zero    |
 
 ## Example 3. Adjusted competing risks analysis
 
@@ -688,11 +695,11 @@ than exposure.
 msummary(output5$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
 ```
 
-<table style="width:99%;">
+<table style="width:97%;">
 <colgroup>
-<col style="width: 21%" />
-<col style="width: 62%" />
-<col style="width: 14%" />
+<col style="width: 26%" />
+<col style="width: 47%" />
+<col style="width: 23%" />
 </colgroup>
 <thead>
 <tr>
@@ -703,19 +710,19 @@ msummary(output5$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
 </thead>
 <tbody>
 <tr>
-<td>fruitq1, Q2 to Q4 vs 0</td>
-<td>0.645</td>
-<td>1.107</td>
+<td>fruitq1, 1 vs 0</td>
+<td>1.552</td>
+<td>0.909</td>
 </tr>
 <tr>
 <td></td>
-<td>[0.490, 0.848]</td>
-<td>[0.600, 2.042]</td>
+<td>[1.331, 1.810]</td>
+<td>[0.493, 1.676]</td>
 </tr>
 <tr>
 <td></td>
-<td>(0.002)</td>
-<td>(0.745)</td>
+<td>(&lt;0.001)</td>
+<td>(0.761)</td>
 </tr>
 <tr>
 <td>effect.measure</td>
@@ -750,15 +757,14 @@ msummary(output5$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
 </tr>
 <tr>
 <td>converged.by</td>
-<td>Converged in relative difference</td>
+<td>Converged in objective function</td>
 <td><ul>
 <li></li>
 </ul></td>
 </tr>
 <tr>
 <td>nleqslv.message</td>
-<td>Jacobian is singular (1/condition=0.0e+00) (see allowSingular
-option)</td>
+<td>Function criterion near zero</td>
 <td><ul>
 <li></li>
 </ul></td>

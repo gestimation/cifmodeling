@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 <!-- badges: end -->
 
 ```{r setup, include=FALSE, warning=FALSE, message=FALSE}
-#devtools::install_github("gestimation/cifmodeling") 
+devtools::install_github("gestimation/cifmodeling") 
 #install.packages(c("Rcpp","nleqslv","boot","ggplot2","ggsurvfit","patchwork","modelsummary"))
 library(cifmodeling)
 library(nleqslv)
@@ -33,15 +33,34 @@ library(modelsummary)
 
 ## Overview
 
-In medical and epidemiological research, analysts often need to handle censoring, competing risks, and intercurrent events (e.g., treatment switching), but existing R packages typically separate these tasks into different interfaces. `cifmodeling` provides a **unified, publication-ready toolkit** that integrates nonparametric estimation, regression modeling, and visualization for survival and competing risks data. It covers both nonparametric estimation and regression modeling of cumulative incidence functions (CIFs), centered around three tightly connected functions.
+In medical and epidemiological research, analysts often need to handle censoring, competing risks, and intercurrent events (e.g., treatment switching), but existing R packages typically separate these tasks into different interfaces. `cifmodeling` provides a **unified, publication-ready toolkit** that integrates description of survival and cumulative incidence function (CIF) curves, regression modeling, and visualization for survival and competing risks data. It covers both nonparametric estimation and regression modeling of CIFs, centered around three tightly connected functions.
 
--   `cifplot()` generates a survival or cumulative incidence curve with marks that represent censoring, competing risks and intercurrent events. Multiple variance estimators and confidence interval methods are supported. Visualization relies on `ggsurvfit/ggplot2`. 
+-   `cifplot()` typically generates a survival or cumulative incidence curve with marks that represent censoring, competing risks and intercurrent events. Multiple variance estimators and confidence interval methods are supported. Visualization relies on `ggsurvfit/ggplot2`. 
 
 -   `cifpanel()` generates a multi-panel figure for survival/CIF curves, arranged either in a grid layout or as an inset overlay.
 
--   `polyreg()` fits regression models of cumulative incidence functions based on polytomous log odds products and stratified IPCW estimator. This function is particularly well-suited for causal inference in terms of common effect measures, namely risk ratios, odds ratios, and subdistribution hazard ratios, with a competing risks, survival, or binary outcome. 
+-   `polyreg()` fits coherent regression models of CIFs based on polytomous log odds products and the stratified IPCW estimator. This function is particularly well-suited for causal inference in terms of typical effect measures, namely risk ratios, odds ratios, and subdistribution hazard ratios, with a competing risks, survival, or binary outcome. 
 
 These functions adopt a formula + data syntax, return tidy, publication-ready outputs, and integrate seamlessly with `ggsurvfit` and `modelsummary` for visualization.
+
+## Quality control
+
+`cifmodeling` includes an extensive test suite built with **testthat**, ensuring the numerical accuracy and graphical consistency of all core functions (`cifcurve`, `cifplot`, `cifpanel`, and `polyreg`). The package is continuously tested on GitHub Actions (Windows, macOS, Linux) to maintain reproducibility and CRAN-level compliance.
+
+## Installation
+
+The package is implemented in R and relies on `Rcpp`, `nleqslv` and `boot` for the numerical back-end. The examples in this README also use `ggplot2`, `ggsurvfit`, `patchwork` and `modelsummary` for tabulation and plotting. Install the core package and these companion packages with:
+
+``` r
+install.packages("Rcpp")
+install.packages("nleqslv")
+install.packages("boot")
+install.packages("ggplot2")
+install.packages("ggsurvfit")
+install.packages("patchwork")
+install.packages("modelsummary")
+devtools::install_github("gestimation/cifmodeling")
+```
 
 ## Main functions
 
@@ -51,7 +70,7 @@ This function produces the **Kaplan–Meier survival** or **Aalen–Johansen cum
 
 **Typical use cases**
 
--   Draw one survival/CIF curve set by groups (e.g., treatment vs control).
+-   Draw one survival/CIF curve set by exposure groups (e.g., treatment vs control).
 -   Call `cifpanel()` with a simplified code to create a panel displaying plots of multiple stratified survival/CIF curves or CIF curves for each event type.
 -   Add confidence intervals and censor/competing-risk/intercurrent-event marks.
 -   Add a risk table to display the number at risk or the estimated survival probabilities or CIFs and 95% confidence intervals at each point in time.
@@ -91,7 +110,7 @@ This function produces the **Kaplan–Meier survival** or **Aalen–Johansen cum
 
 **Under the hood: cifcurve()**
 
-`cifplot()` is a streamlined, opinionated wrapper around `cifcurve()`, which calculate the Kaplan–Meier estimator and the Aalen–Johansen estimator. `cifcurve()` returns a survfit-compatible object, enabling use of standard methods such as:
+`cifplot()` is a streamlined, opinionated wrapper around `cifcurve()`, which calculates the Kaplan–Meier estimator and the Aalen–Johansen estimator. `cifcurve()` returns a survfit-compatible object, enabling an independent use of standard methods such as:
 
 -   `summary()` — time-by-time estimates with standard errors and confidence intervals
 -   `plot()` — base R stepwise survival/CIF curves
@@ -117,7 +136,9 @@ cifplot(Event(t,epsilon) ~ fruitq, data=diabetes.complications,
 
 **Typical use cases**
 -   Compare CIF (event 1) vs CIF (event 2) in a 1×2 layout.
+
 -   Compare survival/CIF curves across strata with a shared legend and matched axes.
+
 -   Display a plot with an enlarged y-axis within a plot scaled from 0 to 100%. 
 
 **Key arguments**
@@ -201,11 +222,13 @@ The function follows the familiar **formula + data** syntax with `Event()` or `S
 **Key arguments**
 
 -   `nuisance.model` — a formula describing the outcome and nuisance covariates, excluding the exposure of interest. 
--   `exposure` — specifies the categorical exposure variable
+-   `exposure` — specifies the exposure variable. This argument accepts one binary or categorical variable.
+
+the categorical exposure variable
 -   `effect.measure1` and `effect.measure2` — specifies the effect measures for event1 and event2 (`"RR"`, `"OR"` or `"SHR"`). 
 -   `outcome.type` selects the outcome type (`"COMPETING-RISK"`, `"SURVIVAL"`, `"BINOMIAL"`, `"PROPORTIONAL-SURVIVAL"` or `"PROPORTIONAL-COMPETING-RISK"`). 
--   `time.point` — specifies time point at which the exposure effect is evaluated. Required for `"COMPETING-RISK"` and `"SURVIVAL"` outcomes.
--   `strata` — specifies a stratification variable used to adjust for dependent censoring. 
+-   `time.point` — specifies time points at which the exposure effect is evaluated. Required for `"COMPETING-RISK"` and `"SURVIVAL"` outcomes.
+-   `strata` — specifies the stratification variable used to adjust for dependent censoring. 
 
 **Return**
 
@@ -226,28 +249,9 @@ output <- polyreg(nuisance.model=Event(t,epsilon) ~ +1, exposure="fruitq",
           effect.measure2="RR", time.point=8, outcome.type="COMPETING-RISK")
 ```
 
-## Quality assurance
-
-`cifmodeling` includes an extensive test suite built with **testthat**, ensuring the numerical accuracy and graphical consistency of all core functions (`cifcurve`, `cifplot`, `cifpanel`, and `polyreg`). The package is continuously tested on GitHub Actions (Windows, macOS, Linux) to maintain reproducibility and CRAN-level compliance.
-
-## Installation
-
-The package is implemented in R and relies on `Rcpp`, `nleqslv` and `boot` for the numerical back-end. The examples in this README also use `ggplot2`, `ggsurvfit`, `patchwork` and `modelsummary` for tabulation and plotting. Install the core package and these companion packages with:
-
-``` r
-install.packages("Rcpp")
-install.packages("nleqslv")
-install.packages("boot")
-install.packages("ggplot2")
-install.packages("ggsurvfit")
-install.packages("patchwork")
-install.packages("modelsummary")
-devtools::install_github("gestimation/cifmodeling")
-```
-
 If you only need the core functionality of `cifcurve()` and `polyreg()`, installing `Rcpp` and `nleqslv` are enough; the other packages are optional but recommended to reproduce the examples below.
 
-## Model specification of polyreg()
+## Direct polytomous modeling of CIFs
 
 The model for `polyreg()` is specified by three main components:
 
@@ -257,7 +261,7 @@ The model for `polyreg()` is specified by three main components:
 
 -   Censoring adjustment: Specifies strata for inverse probability weighting to adjust for dependent censoring.
 
-### 1. Nuisance Model
+**1. Nuisance Model**
 
 The `nuisance.model` argument specifies the formula linking the outcome to covariates. Its format depends on the outcome type:
 
@@ -287,7 +291,7 @@ Event codes can be customized using `code.event1`, `code.event2`, and `code.cens
 
 Covariates included in `nuisance.model` should adjust for confounding factors to obtain unbiased exposure effect estimates.
 
-### 2. Effect measures and time points
+**2. Effect measures and time points**
 
 Three effect measures available:
 
@@ -299,11 +303,11 @@ Three effect measures available:
 
 Set the desired measure using `effect.measure1` and, for competing risks analysis, `effect.measure2`. The `time.point` argument specifies the follow-up time at which effects are estimated.
 
-### 3. Censoring adjustment
+**3. Censoring adjustment**
 
 Inverse probability weights adjust for dependent censoring. Use `strata=` to specify stratification variables. If no strata are specified, Kaplan-Meier weights are used.
 
-## Return
+**Return**
 
 This function returns a list object that includes:
 
