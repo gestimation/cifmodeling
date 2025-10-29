@@ -44,6 +44,9 @@
 #'     that specifies the display order (legend/risktable) of the single stratification factor.
 #'     Levels not listed are dropped.
 #'   If \code{label.strata} is a named vector, its names must match the (re-ordered) levels.
+#' @param level.strata Optional character vector giving the full set of strata levels
+#'   expected in the data. When provided, \code{order.strata} and \code{label.strata} are
+#'   validated against these levels before being applied.
 #' @param limits.x Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,max(out_readSurv$t))}.
 #' @param limits.y Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,1)}.
 #' @param breaks.x Numeric vectors for axis breaks (default \code{NULL}).
@@ -92,6 +95,11 @@
 #' @param width.ggsave Numeric specify width of the \pkg{ggsurvfit} plot.
 #' @param height.ggsave Numeric specify height of the \pkg{ggsurvfit} plot.
 #' @param dpi.ggsave Numeric specify dpi of the \pkg{ggsurvfit} plot.
+#' @param survfit.info,axis.info,visual.info,panel.info,style.info,print.info,ggsave.info
+#'   Optional lists providing batched overrides for the corresponding scalar arguments
+#'   (e.g., \code{axis.info$limits.x} overrides \code{limits.x}). Scalar arguments are
+#'   merged with these lists to preserve backwards compatibility. \code{inset.info} is
+#'   accepted for parity with [cifpanel()] but currently ignored.
 #' @param ... Additional arguments forwarded to \code{cifpanel()} when \code{printEachEvent = TRUE}.
 
 #' @details
@@ -216,6 +224,7 @@ cifplot <- function(
     label.y = NULL,
     label.strata = NULL,
     order.strata = NULL,
+    level.strata = NULL,
     limits.x = NULL,
     limits.y = NULL,
     breaks.x = NULL,
@@ -249,11 +258,170 @@ cifplot <- function(
     width.ggsave = 6,
     height.ggsave = 6,
     dpi.ggsave = 300,
+    survfit.info = NULL,
+    axis.info = NULL,
+    visual.info = NULL,
+    panel.info = NULL,
+    style.info = NULL,
+    inset.info = NULL,
+    print.info = NULL,
+    ggsave.info = NULL,
     ...
 ) {
   dots <- list(...)
-  if (is.null(font.family) || !nzchar(font.family)) font.family <- "sans"
-  if (is.null(font.size)   || !is.finite(font.size)) font.size   <- 12
+  survfit.info.user <- survfit.info
+  axis.info.user    <- axis.info
+  visual.info.user  <- visual.info
+  panel.info.user   <- panel.info
+  style.info.user   <- style.info
+  ggsave.info.user  <- ggsave.info
+
+  survfit.info <- modifyList(list(
+    error     = error,
+    conf.type = conf.type,
+    conf.int  = conf.int
+  ), survfit.info %||% list())
+
+  axis.info <- modifyList(list(
+    type.x            = NULL,
+    type.y            = type.y,
+    label.x           = label.x,
+    label.y           = label.y,
+    level.strata      = level.strata,
+    order.strata      = order.strata,
+    label.strata      = label.strata,
+    limits.x          = limits.x,
+    limits.y          = limits.y,
+    breaks.x          = breaks.x,
+    breaks.y          = breaks.y,
+    use_coord_cartesian = use_coord_cartesian,
+    touch_colour      = TRUE
+  ), axis.info %||% list())
+
+  visual.info <- modifyList(list(
+    addConfidenceInterval    = addConfidenceInterval,
+    ci.alpha                 = 0.25,
+    addRiskTable             = addRiskTable,
+    addEstimateTable         = addEstimateTable,
+    addCensorMark            = addCensorMark,
+    shape.censor.mark        = shape.censor.mark,
+    size.censor.mark         = size.censor.mark,
+    addCompetingRiskMark     = addCompetingRiskMark,
+    competing.risk.time      = competing.risk.time,
+    shape.competing.risk.mark= shape.competing.risk.mark,
+    size.competing.risk.mark = size.competing.risk.mark,
+    addIntercurrentEventMark = addIntercurrentEventMark,
+    intercurrent.event.time  = intercurrent.event.time,
+    shape.intercurrent.event.mark = shape.intercurrent.event.mark,
+    size.intercurrent.event.mark  = size.intercurrent.event.mark,
+    addQuantileLine          = addQuantileLine,
+    quantile                 = quantile
+  ), visual.info %||% list())
+
+  panel.info <- modifyList(list(
+    printEachEvent     = printEachEvent,
+    printEachVar       = printEachVar,
+    rows.columns.panel = rows.columns.panel
+  ), panel.info %||% list())
+
+  style.info <- modifyList(list(
+    style           = style,
+    palette         = palette,
+    font.family     = font.family,
+    font.size       = font.size,
+    legend.position = legend.position
+  ), style.info %||% list())
+
+  ggsave.info <- modifyList(list(
+    filename.ggsave = filename.ggsave,
+    width.ggsave    = width.ggsave,
+    height.ggsave   = height.ggsave,
+    dpi.ggsave      = dpi.ggsave,
+    units           = "in"
+  ), ggsave.info %||% list())
+
+  axis.info$touch_colour <- axis.info$touch_colour %||% TRUE
+
+  style.info$font.family <- style.info$font.family %||% "sans"
+  style.info$font.size   <- style.info$font.size   %||% 12
+
+  legend.position <- style.info$legend.position
+  style           <- style.info$style
+  palette         <- style.info$palette
+  font.family     <- style.info$font.family
+  font.size       <- style.info$font.size
+
+  filename.ggsave <- ggsave.info$filename.ggsave
+  width.ggsave    <- ggsave.info$width.ggsave
+  height.ggsave   <- ggsave.info$height.ggsave
+  dpi.ggsave      <- ggsave.info$dpi.ggsave
+  ggsave.units    <- ggsave.info$units %||% "in"
+
+  printEachEvent <- isTRUE(panel.info$printEachEvent)
+  printEachVar   <- isTRUE(panel.info$printEachVar)
+  rows.columns.panel <- panel.info$rows.columns.panel
+
+  use_coord_cartesian <- isTRUE(axis.info$use_coord_cartesian)
+
+  type.y <- axis.info$type.y
+  label.x <- axis.info$label.x
+  label.y <- axis.info$label.y
+  label.strata <- axis.info$label.strata
+  order.strata <- axis.info$order.strata
+  level.strata <- axis.info$level.strata
+  limits.x <- axis.info$limits.x
+  limits.y <- axis.info$limits.y
+  breaks.x <- axis.info$breaks.x
+  breaks.y <- axis.info$breaks.y
+
+  addConfidenceInterval <- visual.info$addConfidenceInterval
+  addRiskTable          <- visual.info$addRiskTable
+  addEstimateTable      <- visual.info$addEstimateTable
+  addCensorMark         <- visual.info$addCensorMark
+  shape.censor.mark     <- visual.info$shape.censor.mark
+  size.censor.mark      <- visual.info$size.censor.mark
+  addCompetingRiskMark  <- visual.info$addCompetingRiskMark
+  competing.risk.time   <- visual.info$competing.risk.time
+  shape.competing.risk.mark <- visual.info$shape.competing.risk.mark
+  size.competing.risk.mark  <- visual.info$size.competing.risk.mark
+  addIntercurrentEventMark  <- visual.info$addIntercurrentEventMark
+  intercurrent.event.time   <- visual.info$intercurrent.event.time
+  shape.intercurrent.event.mark <- visual.info$shape.intercurrent.event.mark
+  size.intercurrent.event.mark  <- visual.info$size.intercurrent.event.mark
+  addQuantileLine        <- visual.info$addQuantileLine
+  quantile               <- visual.info$quantile
+
+  error     <- survfit.info$error     %||% error
+  conf.type <- survfit.info$conf.type %||% conf.type
+  conf.int  <- survfit.info$conf.int  %||% conf.int
+
+  level_input <- axis.info$level.strata
+  order_input <- axis.info$order.strata
+
+  norm <- normalize_strata_info(
+    level.strata = axis.info$level.strata,
+    order.strata = axis.info$order.strata,
+    label.strata = axis.info$label.strata
+  )
+
+  axis.info$level.strata <- norm$level
+  axis.info$order.strata <- norm$order_data
+  axis.info$label.strata <- norm$label_map
+
+  if (!is.null(axis.info$label.strata)) {
+    stopifnot(!is.null(names(axis.info$label.strata)))
+  }
+  if (!is.null(order_input) && !is.null(level_input)) {
+    if (!all(as.character(order_input) %in% as.character(level_input))) {
+      warning("order.strata has unknown levels; ignoring order/label application.")
+      axis.info$order.strata <- NULL
+      axis.info$label.strata <- NULL
+    }
+  }
+  label.strata <- axis.info$label.strata
+  order.strata <- axis.info$order.strata
+  level.strata <- axis.info$level.strata
+
 
   .assert(!(isTRUE(printEachVar) && isTRUE(printEachEvent)), "incompatible_flags",
           which = "printEachVar and printEachEvent")
@@ -338,7 +506,14 @@ cifplot <- function(
       ),
       dots_clean
     )
-    return(do.call(cifplot_single, args_single))
+    out_plot <- do.call(cifplot_single, args_single)
+    out_plot <- apply_strata_to_plots(
+      list(out_plot),
+      order_data   = axis.info$order.strata,
+      label_map    = axis.info$label.strata,
+      touch_colour = axis.info$touch_colour
+    )[[1]]
+    return(out_plot)
   }
 
   return(cifplot_printEachVar(
@@ -446,6 +621,159 @@ cifplot_single <- function(
     ...
 ) {
   dots <- list(...)
+  survfit.info.user <- survfit.info
+  axis.info.user    <- axis.info
+  visual.info.user  <- visual.info
+  panel.info.user   <- panel.info
+  style.info.user   <- style.info
+  ggsave.info.user  <- ggsave.info
+
+  survfit.info <- modifyList(list(
+    error     = error,
+    conf.type = conf.type,
+    conf.int  = conf.int
+  ), survfit.info %||% list())
+
+  axis.info <- modifyList(list(
+    type.x            = NULL,
+    type.y            = type.y,
+    label.x           = label.x,
+    label.y           = label.y,
+    level.strata      = level.strata,
+    order.strata      = order.strata,
+    label.strata      = label.strata,
+    limits.x          = limits.x,
+    limits.y          = limits.y,
+    breaks.x          = breaks.x,
+    breaks.y          = breaks.y,
+    use_coord_cartesian = use_coord_cartesian,
+    touch_colour      = TRUE
+  ), axis.info %||% list())
+
+  visual.info <- modifyList(list(
+    addConfidenceInterval    = addConfidenceInterval,
+    ci.alpha                 = 0.25,
+    addRiskTable             = addRiskTable,
+    addEstimateTable         = addEstimateTable,
+    addCensorMark            = addCensorMark,
+    shape.censor.mark        = shape.censor.mark,
+    size.censor.mark         = size.censor.mark,
+    addCompetingRiskMark     = addCompetingRiskMark,
+    competing.risk.time      = competing.risk.time,
+    shape.competing.risk.mark= shape.competing.risk.mark,
+    size.competing.risk.mark = size.competing.risk.mark,
+    addIntercurrentEventMark = addIntercurrentEventMark,
+    intercurrent.event.time  = intercurrent.event.time,
+    shape.intercurrent.event.mark = shape.intercurrent.event.mark,
+    size.intercurrent.event.mark  = size.intercurrent.event.mark,
+    addQuantileLine          = addQuantileLine,
+    quantile                 = quantile
+  ), visual.info %||% list())
+
+  panel.info <- modifyList(list(
+    printEachEvent     = printEachEvent,
+    printEachVar       = printEachVar,
+    rows.columns.panel = rows.columns.panel
+  ), panel.info %||% list())
+
+  style.info <- modifyList(list(
+    style           = style,
+    palette         = palette,
+    font.family     = font.family,
+    font.size       = font.size,
+    legend.position = legend.position
+  ), style.info %||% list())
+
+  ggsave.info <- modifyList(list(
+    filename.ggsave = filename.ggsave,
+    width.ggsave    = width.ggsave,
+    height.ggsave   = height.ggsave,
+    dpi.ggsave      = dpi.ggsave,
+    units           = "in"
+  ), ggsave.info %||% list())
+
+  axis.info$touch_colour <- axis.info$touch_colour %||% TRUE
+
+  style.info$font.family <- style.info$font.family %||% "sans"
+  style.info$font.size   <- style.info$font.size   %||% 12
+
+  legend.position <- style.info$legend.position
+  style           <- style.info$style
+  palette         <- style.info$palette
+  font.family     <- style.info$font.family
+  font.size       <- style.info$font.size
+
+  filename.ggsave <- ggsave.info$filename.ggsave
+  width.ggsave    <- ggsave.info$width.ggsave
+  height.ggsave   <- ggsave.info$height.ggsave
+  dpi.ggsave      <- ggsave.info$dpi.ggsave
+  ggsave.units    <- ggsave.info$units %||% "in"
+
+  printEachEvent <- isTRUE(panel.info$printEachEvent)
+  printEachVar   <- isTRUE(panel.info$printEachVar)
+  rows.columns.panel <- panel.info$rows.columns.panel
+
+  use_coord_cartesian <- isTRUE(axis.info$use_coord_cartesian)
+
+  type.y <- axis.info$type.y
+  label.x <- axis.info$label.x
+  label.y <- axis.info$label.y
+  label.strata <- axis.info$label.strata
+  order.strata <- axis.info$order.strata
+  level.strata <- axis.info$level.strata
+  limits.x <- axis.info$limits.x
+  limits.y <- axis.info$limits.y
+  breaks.x <- axis.info$breaks.x
+  breaks.y <- axis.info$breaks.y
+
+  addConfidenceInterval <- visual.info$addConfidenceInterval
+  addRiskTable          <- visual.info$addRiskTable
+  addEstimateTable      <- visual.info$addEstimateTable
+  addCensorMark         <- visual.info$addCensorMark
+  shape.censor.mark     <- visual.info$shape.censor.mark
+  size.censor.mark      <- visual.info$size.censor.mark
+  addCompetingRiskMark  <- visual.info$addCompetingRiskMark
+  competing.risk.time   <- visual.info$competing.risk.time
+  shape.competing.risk.mark <- visual.info$shape.competing.risk.mark
+  size.competing.risk.mark  <- visual.info$size.competing.risk.mark
+  addIntercurrentEventMark  <- visual.info$addIntercurrentEventMark
+  intercurrent.event.time   <- visual.info$intercurrent.event.time
+  shape.intercurrent.event.mark <- visual.info$shape.intercurrent.event.mark
+  size.intercurrent.event.mark  <- visual.info$size.intercurrent.event.mark
+  addQuantileLine        <- visual.info$addQuantileLine
+  quantile               <- visual.info$quantile
+
+  error     <- survfit.info$error     %||% error
+  conf.type <- survfit.info$conf.type %||% conf.type
+  conf.int  <- survfit.info$conf.int  %||% conf.int
+
+  level_input <- axis.info$level.strata
+  order_input <- axis.info$order.strata
+
+  norm <- normalize_strata_info(
+    level.strata = axis.info$level.strata,
+    order.strata = axis.info$order.strata,
+    label.strata = axis.info$label.strata
+  )
+
+  axis.info$level.strata <- norm$level
+  axis.info$order.strata <- norm$order_data
+  axis.info$label.strata <- norm$label_map
+
+  if (!is.null(axis.info$label.strata)) {
+    stopifnot(!is.null(names(axis.info$label.strata)))
+  }
+  if (!is.null(order_input) && !is.null(level_input)) {
+    if (!all(as.character(order_input) %in% as.character(level_input))) {
+      warning("order.strata has unknown levels; ignoring order/label application.")
+      axis.info$order.strata <- NULL
+      axis.info$label.strata <- NULL
+    }
+  }
+  label.strata <- axis.info$label.strata
+  order.strata <- axis.info$order.strata
+  level.strata <- axis.info$level.strata
+
 
   if (is.null(outcome.type)) {
     outcome.type <- util_check_outcome_type(formula = if (inherits(formula_or_fit,"survfit")) NULL
@@ -490,34 +818,59 @@ cifplot_single <- function(
         }
         if (!is.null(dots$label.y)) dots$label.y <- NULL
 
+        axis.info.panel <- modifyList(axis.info, list(
+          type.y        = type.y,
+          label.x       = label.x,
+          label.y       = ylabs_vec,
+          label.strata  = label.strata,
+          order.strata  = order.strata,
+          level.strata  = level.strata,
+          limits.x      = limits.x,
+          limits.y      = limits.y,
+          breaks.x      = breaks.x,
+          breaks.y      = breaks.y
+        ))
+        visual.info.panel <- modifyList(visual.info, list(
+          addConfidenceInterval    = addConfidenceInterval,
+          addRiskTable             = addRiskTable,
+          addEstimateTable         = addEstimateTable,
+          addCensorMark            = addCensorMark,
+          shape.censor.mark        = shape.censor.mark,
+          size.censor.mark         = size.censor.mark,
+          addCompetingRiskMark     = addCompetingRiskMark,
+          competing.risk.time      = competing.risk.time,
+          shape.competing.risk.mark= shape.competing.risk.mark,
+          size.competing.risk.mark = size.competing.risk.mark,
+          addIntercurrentEventMark = addIntercurrentEventMark,
+          intercurrent.event.time  = intercurrent.event.time,
+          shape.intercurrent.event.mark = shape.intercurrent.event.mark,
+          size.intercurrent.event.mark  = size.intercurrent.event.mark,
+          addQuantileLine          = addQuantileLine,
+          quantile                 = quantile
+        ))
+        panel.info.panel <- modifyList(panel.info, list(
+          rows.columns.panel = if (is.null(rows.columns.panel)) c(1L, 2L) else rows.columns.panel
+        ))
+        ggsave.info.panel <- modifyList(ggsave.info, list(
+          filename.ggsave = filename.ggsave,
+          width.ggsave    = width.ggsave,
+          height.ggsave   = height.ggsave,
+          dpi.ggsave      = dpi.ggsave,
+          units           = ggsave.units
+        ))
         panel_args <- list(
-          formula                 = formula_or_fit,
-          data                    = data,
-          outcome.type            = "COMPETING-RISK",
-          code.events             = list(ce_panel, c(ce_panel[2L], ce_panel[1L], ce_panel[3L])),
-          type.y                  = type.y,
-          label.x                 = label.x,
-          label.y                 = ylabs_vec,
-          label.strata            = label.strata,
-          order.strata            = order.strata,
-          limits.x                = limits.x,
-          limits.y                = limits.y,
-          breaks.x                = breaks.x,
-          breaks.y                = breaks.y,
-          addConfidenceInterval   = addConfidenceInterval,
-          addRiskTable            = addRiskTable,
-          addEstimateTable        = addEstimateTable,
-          addCensorMark           = addCensorMark,
-          addCompetingRiskMark    = addCompetingRiskMark,
-          addIntercurrentEventMark= addIntercurrentEventMark,
-          addQuantileLine         = addQuantileLine,
-          legend.position         = legend.position,
-          filename.ggsave         = filename.ggsave,
-          width.ggsave            = width.ggsave,
-          height.ggsave           = height.ggsave,
-          dpi.ggsave              = dpi.ggsave
+          formula      = formula_or_fit,
+          data         = data,
+          outcome.type = "COMPETING-RISK",
+          code.events  = list(ce_panel, c(ce_panel[2L], ce_panel[1L], ce_panel[3L])),
+          axis.info    = axis.info.panel,
+          visual.info  = visual.info.panel,
+          panel.info   = panel.info.panel,
+          style.info   = style.info,
+          ggsave.info  = ggsave.info.panel,
+          survfit.info = survfit.info
         )
-        if (is.null(dots$rows.columns.panel)) dots$rows.columns.panel <- c(1L, 2L)
+        if (is.null(dots$rows.columns.panel)) dots$rows.columns.panel <- panel.info.panel$rows.columns.panel
         if (is.null(dots$legend.collect))     dots$legend.collect     <- TRUE
         if (is.null(dots$style))              dots$style              <- style
         if (is.null(dots$font.family))        dots$font.family        <- font.family
@@ -587,7 +940,7 @@ cifplot_single <- function(
     font.size                     = font.size,
     legend.position               = legend.position
   )
-  if (!is.null(filename.ggsave)) ggplot2::ggsave(filename.ggsave, plot = p, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave)
+  if (!is.null(filename.ggsave)) ggplot2::ggsave(filename.ggsave, plot = p, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave, units = ggsave.units)
   return(p)
 }
 
@@ -644,6 +997,159 @@ cifplot_printEachVar <- function(
     ...
 ){
   dots <- list(...)
+  survfit.info.user <- survfit.info
+  axis.info.user    <- axis.info
+  visual.info.user  <- visual.info
+  panel.info.user   <- panel.info
+  style.info.user   <- style.info
+  ggsave.info.user  <- ggsave.info
+
+  survfit.info <- modifyList(list(
+    error     = error,
+    conf.type = conf.type,
+    conf.int  = conf.int
+  ), survfit.info %||% list())
+
+  axis.info <- modifyList(list(
+    type.x            = NULL,
+    type.y            = type.y,
+    label.x           = label.x,
+    label.y           = label.y,
+    level.strata      = level.strata,
+    order.strata      = order.strata,
+    label.strata      = label.strata,
+    limits.x          = limits.x,
+    limits.y          = limits.y,
+    breaks.x          = breaks.x,
+    breaks.y          = breaks.y,
+    use_coord_cartesian = use_coord_cartesian,
+    touch_colour      = TRUE
+  ), axis.info %||% list())
+
+  visual.info <- modifyList(list(
+    addConfidenceInterval    = addConfidenceInterval,
+    ci.alpha                 = 0.25,
+    addRiskTable             = addRiskTable,
+    addEstimateTable         = addEstimateTable,
+    addCensorMark            = addCensorMark,
+    shape.censor.mark        = shape.censor.mark,
+    size.censor.mark         = size.censor.mark,
+    addCompetingRiskMark     = addCompetingRiskMark,
+    competing.risk.time      = competing.risk.time,
+    shape.competing.risk.mark= shape.competing.risk.mark,
+    size.competing.risk.mark = size.competing.risk.mark,
+    addIntercurrentEventMark = addIntercurrentEventMark,
+    intercurrent.event.time  = intercurrent.event.time,
+    shape.intercurrent.event.mark = shape.intercurrent.event.mark,
+    size.intercurrent.event.mark  = size.intercurrent.event.mark,
+    addQuantileLine          = addQuantileLine,
+    quantile                 = quantile
+  ), visual.info %||% list())
+
+  panel.info <- modifyList(list(
+    printEachEvent     = printEachEvent,
+    printEachVar       = printEachVar,
+    rows.columns.panel = rows.columns.panel
+  ), panel.info %||% list())
+
+  style.info <- modifyList(list(
+    style           = style,
+    palette         = palette,
+    font.family     = font.family,
+    font.size       = font.size,
+    legend.position = legend.position
+  ), style.info %||% list())
+
+  ggsave.info <- modifyList(list(
+    filename.ggsave = filename.ggsave,
+    width.ggsave    = width.ggsave,
+    height.ggsave   = height.ggsave,
+    dpi.ggsave      = dpi.ggsave,
+    units           = "in"
+  ), ggsave.info %||% list())
+
+  axis.info$touch_colour <- axis.info$touch_colour %||% TRUE
+
+  style.info$font.family <- style.info$font.family %||% "sans"
+  style.info$font.size   <- style.info$font.size   %||% 12
+
+  legend.position <- style.info$legend.position
+  style           <- style.info$style
+  palette         <- style.info$palette
+  font.family     <- style.info$font.family
+  font.size       <- style.info$font.size
+
+  filename.ggsave <- ggsave.info$filename.ggsave
+  width.ggsave    <- ggsave.info$width.ggsave
+  height.ggsave   <- ggsave.info$height.ggsave
+  dpi.ggsave      <- ggsave.info$dpi.ggsave
+  ggsave.units    <- ggsave.info$units %||% "in"
+
+  printEachEvent <- isTRUE(panel.info$printEachEvent)
+  printEachVar   <- isTRUE(panel.info$printEachVar)
+  rows.columns.panel <- panel.info$rows.columns.panel
+
+  use_coord_cartesian <- isTRUE(axis.info$use_coord_cartesian)
+
+  type.y <- axis.info$type.y
+  label.x <- axis.info$label.x
+  label.y <- axis.info$label.y
+  label.strata <- axis.info$label.strata
+  order.strata <- axis.info$order.strata
+  level.strata <- axis.info$level.strata
+  limits.x <- axis.info$limits.x
+  limits.y <- axis.info$limits.y
+  breaks.x <- axis.info$breaks.x
+  breaks.y <- axis.info$breaks.y
+
+  addConfidenceInterval <- visual.info$addConfidenceInterval
+  addRiskTable          <- visual.info$addRiskTable
+  addEstimateTable      <- visual.info$addEstimateTable
+  addCensorMark         <- visual.info$addCensorMark
+  shape.censor.mark     <- visual.info$shape.censor.mark
+  size.censor.mark      <- visual.info$size.censor.mark
+  addCompetingRiskMark  <- visual.info$addCompetingRiskMark
+  competing.risk.time   <- visual.info$competing.risk.time
+  shape.competing.risk.mark <- visual.info$shape.competing.risk.mark
+  size.competing.risk.mark  <- visual.info$size.competing.risk.mark
+  addIntercurrentEventMark  <- visual.info$addIntercurrentEventMark
+  intercurrent.event.time   <- visual.info$intercurrent.event.time
+  shape.intercurrent.event.mark <- visual.info$shape.intercurrent.event.mark
+  size.intercurrent.event.mark  <- visual.info$size.intercurrent.event.mark
+  addQuantileLine        <- visual.info$addQuantileLine
+  quantile               <- visual.info$quantile
+
+  error     <- survfit.info$error     %||% error
+  conf.type <- survfit.info$conf.type %||% conf.type
+  conf.int  <- survfit.info$conf.int  %||% conf.int
+
+  level_input <- axis.info$level.strata
+  order_input <- axis.info$order.strata
+
+  norm <- normalize_strata_info(
+    level.strata = axis.info$level.strata,
+    order.strata = axis.info$order.strata,
+    label.strata = axis.info$label.strata
+  )
+
+  axis.info$level.strata <- norm$level
+  axis.info$order.strata <- norm$order_data
+  axis.info$label.strata <- norm$label_map
+
+  if (!is.null(axis.info$label.strata)) {
+    stopifnot(!is.null(names(axis.info$label.strata)))
+  }
+  if (!is.null(order_input) && !is.null(level_input)) {
+    if (!all(as.character(order_input) %in% as.character(level_input))) {
+      warning("order.strata has unknown levels; ignoring order/label application.")
+      axis.info$order.strata <- NULL
+      axis.info$label.strata <- NULL
+    }
+  }
+  label.strata <- axis.info$label.strata
+  order.strata <- axis.info$order.strata
+  level.strata <- axis.info$level.strata
+
   Terms <- stats::terms(formula, data = data)
   rhs_vars <- attr(Terms, "term.labels")
 

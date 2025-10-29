@@ -50,6 +50,7 @@ panel_prepare <- function(
     addQ.list = NULL,
     strata.list = NULL,
     legend.position = "top",
+    survfit.info = list(),
     dots = list(),
     fonts = NULL
 ) {
@@ -75,14 +76,14 @@ panel_prepare <- function(
     norm_inputs <- plot_normalize_formula_data(formulas[[i]], data)
     data_i <- norm_inputs$data
 
-    args_est <- panel_drop_nulls(list(
+    args_est <- panel_drop_nulls(c(list(
       formula        = formulas[[i]],
       data           = data_i,
       outcome.type   = if (!is.null(outcome.list)) outcome.list[[i]] else NULL,
       code.event1    = ce1,
       code.event2    = ce2,
       code.censoring = cc
-    ))
+    ), survfit.info))
     fit_i <- do.call(cifcurve, args_est)
     curves[[i]] <- fit_i
 

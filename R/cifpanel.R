@@ -51,6 +51,9 @@
 #'   (passed to [cifplot()]).
 #' @param order.strata Optional list of character vectors for ordering labels per panel
 #'   (passed to [cifplot()]).
+#' @param level.strata Optional character vector describing the full set of strata
+#'   levels expected in the plots. When supplied, `order.strata` and
+#'   `label.strata` are validated against these levels before being applied.
 #' @param limits.x,limits.y Optional vectors/lists of numeric length-2 axis limits per panel.
 #' @param breaks.x,breaks.y Optional vectors/lists of axis breaks per panel (forwarded to
 #'   \code{breaks.x} / \code{breaks.y} in [cifplot()]).
@@ -74,6 +77,11 @@
 #' @param width.ggsave Numeric specify width of the composed panel.
 #' @param height.ggsave Numeric specify height of the composed panel.
 #' @param dpi.ggsave Numeric specify dpi of the composed panel.
+#' @param survfit.info,axis.info,visual.info,panel.info,style.info,inset.info,print.info,ggsave.info
+#'   Optional lists of settings. Each list is merged with the corresponding scalar
+#'   arguments (e.g., `axis.info$list` overrides `label.x`, `limits.x`, etc.) so that
+#'   existing code using scalar inputs continues to work while bulk updates can be
+#'   provided via a single structure.
 #' @param ... Additional arguments forwarded to \code{{cifplot}} (e.g., \code{style},
 #'   \code{font.family}, \code{font.size}, etc.). Panel-wise overrides provided via explicit
 #'   arguments take precedence over \code{...}.
@@ -253,12 +261,16 @@ cifpanel <- function(
     data                    = NULL,
     outcome.type            = NULL,
     code.events             = NULL,
+    error                  = NULL,
+    conf.type              = NULL,
+    conf.int               = NULL,
     type.x                  = NULL,
     type.y                  = NULL,
     label.x                 = NULL,
     label.y                 = NULL,
     label.strata            = NULL,
     order.strata            = NULL,
+    level.strata            = NULL,
     limits.x                = NULL,
     limits.y                = NULL,
     breaks.x                = NULL,
@@ -288,16 +300,194 @@ cifpanel <- function(
     width.ggsave            = NULL,
     height.ggsave           = NULL,
     dpi.ggsave              = 300,
+    survfit.info            = NULL,
+    axis.info               = NULL,
+    visual.info             = NULL,
+    panel.info              = NULL,
+    style.info              = NULL,
+    inset.info              = NULL,
+    print.info              = NULL,
+    ggsave.info             = NULL,
     ...
 ){
   inset.align_to <- match.arg(inset.align_to)
   dots <- list(...)
+
+  survfit.info.user <- survfit.info
+  axis.info.user    <- axis.info
+  visual.info.user  <- visual.info
+  panel.info.user   <- panel.info
+  style.info.user   <- style.info
+  inset.info.user   <- inset.info
+  print.info.user   <- print.info
+  ggsave.info.user  <- ggsave.info
+
+  survfit.info <- modifyList(list(
+    error     = error,
+    conf.type = conf.type,
+    conf.int  = conf.int
+  ), survfit.info %||% list())
+
+  axis.info <- modifyList(list(
+    type.x            = type.x,
+    type.y            = type.y,
+    label.x           = label.x,
+    label.y           = label.y,
+    level.strata      = level.strata,
+    order.strata      = order.strata,
+    label.strata      = label.strata,
+    limits.x          = limits.x,
+    limits.y          = limits.y,
+    breaks.x          = breaks.x,
+    breaks.y          = breaks.y,
+    use_coord_cartesian = get0("use_coord_cartesian", ifnotfound = NULL),
+    touch_colour      = TRUE
+  ), axis.info %||% list())
+
+  visual.info <- modifyList(list(
+    addConfidenceInterval    = if (is.null(addConfidenceInterval)) NULL else isTRUE(addConfidenceInterval),
+    ci.alpha                 = 0.25,
+    addRiskTable             = FALSE,
+    addEstimateTable         = FALSE,
+    addCensorMark            = if (is.null(addCensorMark)) NULL else isTRUE(addCensorMark),
+    shape.censor.mark        = 3,
+    size.censor.mark         = 2,
+    addCompetingRiskMark     = isTRUE(addCompetingRiskMark),
+    competing.risk.time      = list(),
+    shape.competing.risk.mark= 16,
+    size.competing.risk.mark = 2,
+    addIntercurrentEventMark = isTRUE(addIntercurrentEventMark),
+    intercurrent.event.time  = list(),
+    shape.intercurrent.event.mark = 1,
+    size.intercurrent.event.mark  = 2,
+    addQuantileLine          = isTRUE(addQuantileLine),
+    quantile                 = 0.5,
+    line.size                = 0.9
+  ), visual.info %||% list())
+
+  panel.info <- modifyList(list(
+    printEachEvent     = FALSE,
+    printEachVar       = FALSE,
+    rows.columns.panel = rows.columns.panel,
+    title.panel        = title.panel,
+    subtitle.panel     = subtitle.panel,
+    caption.panel      = caption.panel,
+    tag_levels.panel   = tag_levels.panel,
+    title.plot         = title.plot
+  ), panel.info %||% list())
+
+  style.info <- modifyList(list(
+    style           = "CLASSIC",
+    palette         = NULL,
+    font.family     = "sans",
+    font.size       = 12,
+    legend.position = legend.position,
+    legend.collect  = legend.collect
+  ), style.info %||% list())
+
+  inset.align_to <- match.arg(inset.align_to)
+  inset.info <- modifyList(list(
+    use_inset_element     = use_inset_element,
+    inset.align_to        = inset.align_to,
+    inset.left            = inset.left,
+    inset.bottom          = inset.bottom,
+    inset.right           = inset.right,
+    inset.top             = inset.top,
+    inset.legend.position = inset.legend.position
+  ), inset.info %||% list())
+
+  print.info <- modifyList(list(
+    print.panel = print.panel
+  ), print.info %||% list())
+
+  ggsave.info <- modifyList(list(
+    filename.ggsave = filename.ggsave,
+    width.ggsave    = width.ggsave,
+    height.ggsave   = height.ggsave,
+    dpi.ggsave      = dpi.ggsave,
+    units           = "in"
+  ), ggsave.info %||% list())
+
+  axis.info$touch_colour <- axis.info$touch_colour %||% TRUE
+  inset.info$inset.align_to <- match.arg(inset.info$inset.align_to, c("panel","plot","full"))
+
+  rows.columns.panel <- panel.info$rows.columns.panel
+  title.panel        <- panel.info$title.panel
+  subtitle.panel     <- panel.info$subtitle.panel
+  caption.panel      <- panel.info$caption.panel
+  tag_levels.panel   <- panel.info$tag_levels.panel
+  title.plot         <- panel.info$title.plot
+
+  legend.position    <- style.info$legend.position
+  legend.collect     <- isTRUE(style.info$legend.collect)
+
+  use_inset_element  <- isTRUE(inset.info$use_inset_element)
+  inset.align_to     <- inset.info$inset.align_to
+  inset.left         <- inset.info$inset.left
+  inset.bottom       <- inset.info$inset.bottom
+  inset.right        <- inset.info$inset.right
+  inset.top          <- inset.info$inset.top
+  inset.legend.position <- inset.info$inset.legend.position
+
+  print.panel        <- isTRUE(print.info$print.panel)
+
+  filename.ggsave    <- ggsave.info$filename.ggsave
+  width.ggsave       <- ggsave.info$width.ggsave
+  height.ggsave      <- ggsave.info$height.ggsave
+  dpi.ggsave         <- ggsave.info$dpi.ggsave
+  ggsave.units       <- ggsave.info$units %||% "in"
+
+  fonts <- panel_extract_fonts(c(style.info, dots))
+  style.info$font.family <- fonts$family
+  style.info$font.size   <- fonts$size
+  theme.panel.unified <- panel_build_theme(font.family = fonts$family, font.size = fonts$size)
+
   nrow <- as.integer(rows.columns.panel[1]); ncol <- as.integer(rows.columns.panel[2])
   n_slots <- nrow * ncol
 
+  level_input <- axis.info$level.strata
+  order_input <- axis.info$order.strata
+
+  norm <- normalize_strata_info(
+    level.strata = axis.info$level.strata,
+    order.strata = axis.info$order.strata,
+    label.strata = axis.info$label.strata
+  )
+
+  axis.info$level.strata <- norm$level
+  axis.info$order.strata <- norm$order_data
+  axis.info$label.strata <- norm$label_map
+
+  if (!is.null(axis.info$label.strata)) {
+    stopifnot(!is.null(names(axis.info$label.strata)))
+  }
+  if (!is.null(order_input) && !is.null(level_input)) {
+    if (!all(as.character(order_input) %in% as.character(level_input))) {
+      warning("order.strata has unknown levels; ignoring order/label application.")
+      axis.info$order.strata <- NULL
+      axis.info$label.strata <- NULL
+    }
+  }
+
+  type.x                <- axis.info$type.x
+  type.y                <- axis.info$type.y
+  label.x               <- axis.info$label.x
+  label.y               <- axis.info$label.y
+  label.strata          <- axis.info$label.strata
+  order.strata          <- axis.info$order.strata
+  limits.x              <- axis.info$limits.x
+  limits.y              <- axis.info$limits.y
+  breaks.x              <- axis.info$breaks.x
+  breaks.y              <- axis.info$breaks.y
+  use_coord_cartesian   <- axis.info$use_coord_cartesian
+
+  addConfidenceInterval    <- visual.info$addConfidenceInterval
+  addCensorMark            <- visual.info$addCensorMark
+  addCompetingRiskMark     <- visual.info$addCompetingRiskMark
+  addIntercurrentEventMark <- visual.info$addIntercurrentEventMark
+  addQuantileLine          <- visual.info$addQuantileLine
+
   if (!is.null(plots)) {
-    fonts <- panel_extract_fonts(dots)
-    theme.panel.unified <- panel_build_theme(font.family = fonts$family, font.size = fonts$size)
     if (!is.list(plots)) {
       stop("`plots` must be a list of ggplot objects.")
     }
@@ -305,128 +495,12 @@ cifpanel <- function(
       stop("All elements of `plots` must inherit from 'ggplot'.")
     }
 
-    if (!is.null(label.strata) || !is.null(order.strata)) {
-      candidates <- Filter(length, lapply(plots, plot_get_plot_levels))
-      unique_sizes <- unique(lengths(candidates))
-
-      ord <- NULL
-      if (!is.null(order.strata)) {
-        ord <- as.character(order.strata)
-      } else if (length(candidates)) {
-        if (!is.null(label.strata) &&
-            is.null(names(label.strata)) &&
-            length(label.strata) %in% unique_sizes) {
-          # pick the first candidate whose length matches label.strata
-          hit_len <- length(label.strata)
-          ord <- as.character(candidates[[which(lengths(candidates) == hit_len)[1]]])
-        } else {
-          # fallback: take the longest candidate (most informative)
-          ord <- as.character(candidates[[which.max(lengths(candidates))]])
-        }
-      }
-
-      lbl_map <- NULL
-      if (!is.null(label.strata)) {
-        if (!is.null(names(label.strata)) && any(nzchar(names(label.strata)))) {
-          # named: names(source level) -> value(display)
-          lbl_map <- as.character(label.strata)
-        } else if (!is.null(ord) && length(label.strata) == length(ord)) {
-          # unnamed + ord detected: align 1:1
-          lbl_map <- stats::setNames(as.character(label.strata), ord)
-        } else {
-          # last resort: don't stop — warn and try label-only override
-          warning("`label.strata` could not be aligned to strata order; applying labels-only fallback.")
-          # labels-only fallback will use a function(x) map below, without limits
-          lbl_map <- as.character(label.strata)
-          names(lbl_map) <- lbl_map  # identity mapping; will be replaced when x%in%names(lbl_map)
-        }
-      } else if (!is.null(ord)) {
-        lbl_map <- stats::setNames(ord, ord)
-      }
-
-      strip_discrete_mapped_scales <- function(p, aes_keep = c("colour","color","linetype","fill","shape")) {
-        if (!length(p$scales$scales)) return(p)
-        keep <- vapply(p$scales$scales, function(sc) {
-          is_discr <- inherits(sc, "ScaleDiscrete")
-          if (!is_discr) return(TRUE)
-          aes_sc <- tryCatch(sc$aesthetics, error = function(e) NULL)
-          if (length(aes_sc)) {
-            !any(aes_sc %in% aes_keep)
-          } else {
-            TRUE
-          }
-        }, logical(1))
-        p$scales$scales <- p$scales$scales[keep]
-        p
-      }
-
-      apply_scales <- function(p, ord, lbl_map) {
-        aes_used <- plot_mapped_aesthetics(p)       # 既存の関数：実際に使ってる審美属性を検出
-        if (!length(aes_used)) return(p)
-
-        # ★ スケール剥がしは linetype/shape のみに限定（色/塗りはパレット温存）
-        aes_strip <- intersect(aes_used, c("linetype","shape"))
-        if (length(aes_strip)) {
-          p <- strip_discrete_mapped_scales(p, aes_keep = aes_strip)
-        }
-
-        add_scale <- function(p, aes) {
-          # その図で実際に使われている水準を取得
-          used <- plot_get_levels_for_aes(p, aes_target = aes)
-          # breaks は ord と実使用水準の共通部分だけ（空にならないようにする）
-          brks <- if (!is.null(ord) && length(used)) intersect(ord, used) else used
-
-          # labels の用意（brksに合わせる）
-          lab_vec <- NULL
-          if (!is.null(lbl_map) && length(brks)) {
-            if (all(brks %in% names(lbl_map))) {
-              lab_vec <- unname(lbl_map[brks])
-            } else {
-              # 名前が合わない場合でも fallback で置換
-              lab_vec <- (function(x) ifelse(x %in% names(lbl_map), lbl_map[x], x))(brks)
-            }
-          }
-
-          if (aes == "linetype") {
-            if (length(brks)) {
-              p <- p + ggplot2::scale_linetype_discrete(breaks = brks, labels = lab_vec)
-            } else if (!is.null(lbl_map)) {
-              p <- p + ggplot2::scale_linetype_discrete(labels = function(x) ifelse(x %in% names(lbl_map), lbl_map[x], x))
-            }
-          } else if (aes == "shape") {
-            if (length(brks)) {
-              p <- p + ggplot2::scale_shape_discrete(breaks = brks, labels = lab_vec)
-            } else if (!is.null(lbl_map)) {
-              p <- p + ggplot2::scale_shape_discrete(labels = function(x) ifelse(x %in% names(lbl_map), lbl_map[x], x))
-            }
-          } else if (aes == "fill") {
-            if (length(brks)) {
-              suppressMessages({
-                p <- p + ggplot2::scale_fill_discrete(breaks = brks, labels = lab_vec)
-              })
-            } else if (!is.null(lbl_map)) {
-              suppressMessages({
-                p <- p + ggplot2::scale_fill_discrete(labels = function(x) ifelse(x %in% names(lbl_map), lbl_map[x], x))
-              })
-            }
-          } else if (aes == "colour") {
-            if (length(brks)) {
-              suppressMessages({
-                p <- p + ggplot2::scale_color_discrete(breaks = brks, labels = lab_vec)
-              })
-            } else if (!is.null(lbl_map)) {
-              suppressMessages({
-                p <- p + ggplot2::scale_color_discrete(labels = function(x) ifelse(x %in% names(lbl_map), lbl_map[x], x))
-              })
-            }
-          }
-          p
-        }
-        for (aes in aes_used) p <- add_scale(p, aes)
-        p
-      }
-      plots <- lapply(plots, apply_scales, ord = ord, lbl_map = lbl_map)
-    }
+    plots <- apply_strata_to_plots(
+      plots,
+      order_data   = axis.info$order.strata,
+      label_map    = axis.info$label.strata,
+      touch_colour = axis.info$touch_colour
+    )
 
     plots_out <- plots
     if (isTRUE(use_inset_element)) {
@@ -484,11 +558,23 @@ cifpanel <- function(
     if (!is.null(filename.ggsave)) {
       if (is.null(width.ggsave))  width.ggsave  <- if (isTRUE(use_inset_element)) 6 else max(6, 5 * rows.columns.panel[2])
       if (is.null(height.ggsave)) height.ggsave <- if (isTRUE(use_inset_element)) 6 else max(6, 5 * rows.columns.panel[1])
-      ggsave(filename.ggsave, plot = out_patchwork, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave)
+      ggsave(filename.ggsave, plot = out_patchwork, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave, units = ggsave.units)
     }
 
-    return(invisible(list(plots = plots_out, out_patchwork = out_patchwork)))
+    return(invisible(list(
+      plots = plots_out,
+      out_patchwork = out_patchwork,
+      axis.info = axis.info,
+      survfit.info = survfit.info,
+      visual.info = visual.info,
+      panel.info = panel.info,
+      style.info = style.info,
+      inset.info = inset.info,
+      print.info = print.info,
+      ggsave.info = ggsave.info
+    )))
   }
+
 
   if (is.null(data)) stop("data must be provided.")
   if (is.null(code.events) || !is.list(code.events) || length(code.events) == 0)
@@ -556,7 +642,7 @@ cifpanel <- function(
   addCR.list   <- toL(addCompetingRiskMark);     if (!is.null(addCR.list))   addCR.list   <- rec(addCR.list, K)
   addIC.list   <- toL(addIntercurrentEventMark); if (!is.null(addIC.list))   addIC.list   <- rec(addIC.list, K)
   addQ.list    <- toL(addQuantileLine);          if (!is.null(addQ.list))    addQ.list    <- rec(addQ.list, K)
-  strata.list  <- toL(label.strata);             if (!is.null(strata.list))  strata.list  <- rec(strata.list, K)
+  strata.list  <- make_panel_list_preserve_vector(label.strata, K)
 
   infer_flag_by_codes <- function(v) if (length(v) == 2L) "S" else if (length(v) == 3L) "C" else NA_character_
   if (!is.null(outcome.list)) {
@@ -584,10 +670,13 @@ cifpanel <- function(
   if (!is.null(addCR.list))       kill_names <- c(kill_names, "addCompetingRiskMark")
   if (!is.null(addIC.list))       kill_names <- c(kill_names, "addIntercurrentEventMark")
   if (!is.null(addQ.list))        kill_names <- c(kill_names, "addQuantileLine")
+  kill_names <- c(kill_names, "style", "font.family", "font.size", "legend.position", "legend.collect")
 
   dots <- panel_strip_overrides_from_dots(dots, unique(kill_names))
 
-  fonts <- panel_extract_fonts(dots)
+  fonts <- panel_extract_fonts(c(style.info, dots))
+  style.info$font.family <- fonts$family
+  style.info$font.size   <- fonts$size
   theme.panel.unified <- panel_build_theme(font.family = fonts$family, font.size = fonts$size)
 
   prep <- panel_prepare(
@@ -612,6 +701,7 @@ cifpanel <- function(
     addQ.list       = addQ.list,
     strata.list     = strata.list,
     legend.position = legend.position,
+    survfit.info    = survfit.info,
     dots            = dots,
     fonts           = fonts
   )
@@ -634,6 +724,13 @@ cifpanel <- function(
 
     do.call(cifplot_single, args_i)
   })
+
+  plots <- apply_strata_to_plots(
+    plots,
+    order_data   = axis.info$order.strata,
+    label_map    = axis.info$label.strata,
+    touch_colour = axis.info$touch_colour
+  )
 
   if (isTRUE(use_inset_element)) {
     if (length(plots) < 2L) .err("inset_need_two")
@@ -679,160 +776,73 @@ cifpanel <- function(
   if (!is.null(filename.ggsave)) {
     if (is.null(width.ggsave))  width.ggsave  <- if (isTRUE(use_inset_element)) 6 else max(6, 5 * rows.columns.panel[2])
     if (is.null(height.ggsave)) height.ggsave <- if (isTRUE(use_inset_element)) 6 else max(6, 5 * rows.columns.panel[1])
-    ggsave(filename.ggsave, plot = out_patchwork, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave)
+    ggsave(filename.ggsave, plot = out_patchwork, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave, units = ggsave.units)
   }
-  invisible(list(plots = plots, out_patchwork = out_patchwork))
+  invisible(list(
+    plots = plots,
+    out_patchwork = out_patchwork,
+    axis.info = axis.info,
+    survfit.info = survfit.info,
+    visual.info = visual.info,
+    panel.info = panel.info,
+    style.info = style.info,
+    inset.info = inset.info,
+    print.info = print.info,
+    ggsave.info = ggsave.info
+  ))
 }
 
-plot_get_plot_levels <- function(p) {
-  if (length(p$scales$scales)) {
-    for (sc in p$scales$scales) {
-      if (inherits(sc, "ScaleDiscrete")) {
-        lims <- tryCatch(sc$get_limits(), error = function(e) NULL)
-        if (length(lims)) return(as.character(lims))
-        if (!is.null(sc$limits) && length(sc$limits)) return(as.character(sc$limits))
-        rr <- tryCatch(sc$range$range, error = function(e) NULL)
-        if (length(rr)) return(as.character(rr))
-        labs <- tryCatch(sc$get_labels(), error = function(e) NULL)
-        if (!is.null(labs) && !is.null(names(labs)) && any(nzchar(names(labs))))
-          return(as.character(names(labs)))
+normalize_strata_info <- function(level.strata = NULL, order.strata = NULL, label.strata = NULL) {
+  ch <- function(x) if (is.null(x)) NULL else as.character(x)
+
+  level <- ch(level.strata)
+  if (is.null(level) || !length(level)) {
+    return(list(level = NULL, order_data = NULL, label_map = NULL))
+  }
+
+  if (!is.null(label.strata)) {
+    if (is.null(names(label.strata)) || !any(nzchar(names(label.strata)))) {
+      if (length(label.strata) == length(level)) {
+        label_map <- stats::setNames(as.character(label.strata), level)
+      } else {
+        label_map <- stats::setNames(level, level)
       }
+    } else {
+      lab <- as.character(label.strata)
+      keep <- intersect(names(lab), level)
+      label_map <- stats::setNames(lab[keep], keep)
+      miss <- setdiff(level, names(label_map))
+      if (length(miss)) label_map <- c(label_map, stats::setNames(miss, miss))
+      label_map <- label_map[level]
     }
+  } else {
+    label_map <- stats::setNames(level, level)
   }
 
-  map <- p$mapping
-  pick <- NULL
-  for (nm in c("colour","color","linetype","fill","shape")) {
-    val <- map[[nm]]
-    if (!rlang::is_missing(val) && !is.null(val) && !identical(val, quote(NULL))) {
-      pick <- rlang::as_name(val); break
-    }
+  ord <- ch(order.strata); if (is.null(ord)) ord <- level
+  if (!all(ord %in% level)) {
+    return(list(level = level, order_data = NULL, label_map = NULL))
   }
 
-  dflist <- list()
-  if (length(p$layers)) dflist <- c(dflist, lapply(p$layers, `[[`, "data"))
-  dflist <- c(dflist, list(p$data))
-
-  if (!is.null(pick)) {
-    for (df in dflist) {
-      if (!is.null(df) && !is.null(df[[pick]])) {
-        x <- df[[pick]]
-        return(if (is.factor(x)) levels(x) else unique(as.character(x)))
-      }
-    }
-  }
-
-  if (length(p$layers)) {
-    for (ly in p$layers) {
-      lmap <- ly$mapping
-      if (!is.null(lmap)) {
-        for (nm in c("colour","color","linetype","fill","shape")) {
-          val <- lmap[[nm]]
-          if (!rlang::is_missing(val) && !is.null(val) && !identical(val, quote(NULL))) {
-            pick2 <- tryCatch(rlang::as_name(val), error = function(e) NULL)
-            if (!is.null(pick2)) {
-              df <- ly$data %||% p$data
-              if (!is.null(df) && !is.null(df[[pick2]])) {
-                x <- df[[pick2]]
-                return(if (is.factor(x)) levels(x) else unique(as.character(x)))
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  key_cols <- c(".strata","strata","group",".group","Strata","STRATA")
-  for (df in dflist) {
-    if (!is.null(df)) {
-      hit <- intersect(key_cols, names(df))
-      for (kc in hit) {
-        x <- df[[kc]]
-        if (is.factor(x)) return(levels(x))
-        ux <- unique(as.character(x))
-        if (length(ux)) return(ux)
-      }
-    }
-  }
-
-  character(0)
+  list(level = level, order_data = ord, label_map = label_map)
 }
 
-plot_mapped_aesthetics <- function(p) {
-  used <- character(0)
-  check_map <- function(mp) {
-    out <- character(0)
-    for (nm in c("colour","color","linetype","fill","shape")) {
-      val <- mp[[nm]]
-      if (!rlang::is_missing(val) && !is.null(val) && !identical(val, quote(NULL))) {
-        out <- c(out, nm)
-      }
-    }
-    unique(out)
-  }
-  if (!is.null(p$mapping)) used <- unique(c(used, check_map(p$mapping)))
-  if (length(p$layers)) {
-    for (ly in p$layers) {
-      if (!is.null(ly$mapping)) used <- unique(c(used, check_map(ly$mapping)))
-    }
-  }
-  # "color" を "colour" に正規化
-  used <- unique(gsub("^color$", "colour", used))
-  used
-}
+apply_strata_to_plots <- function(plots, order_data, label_map, touch_colour = TRUE) {
+  if (!length(plots) || is.null(order_data) || is.null(label_map)) return(plots)
+  brks <- order_data
+  labs <- unname(label_map[brks])
 
+  relabel_one <- function(p) {
+    layers <- list(
+      ggplot2::scale_linetype_discrete(breaks = brks, labels = labs),
+      ggplot2::scale_shape_discrete(breaks = brks, labels = labs),
+      ggplot2::scale_fill_discrete(breaks = brks, labels = labs)
+    )
+    if (isTRUE(touch_colour)) {
+      layers <- c(layers, list(ggplot2::scale_color_discrete(breaks = brks, labels = labs)))
+    }
+    suppressMessages(Reduce(`+`, layers, init = p))
+  }
 
-plot_get_levels_for_aes <- function(p, aes_target = c("colour","linetype","fill","shape")) {
-  aes_target <- match.arg(aes_target)
-  # 1) scale から
-  if (length(p$scales$scales)) {
-    for (sc in p$scales$scales) {
-      if (inherits(sc, "ScaleDiscrete")) {
-        aes_sc <- tryCatch(sc$aesthetics, error = function(e) NULL)
-        if (length(aes_sc)) aes_sc <- gsub("^color$", "colour", aes_sc)
-        if (!is.null(aes_sc) && aes_target %in% aes_sc) {
-          lims <- tryCatch(sc$get_limits(), error = function(e) NULL)
-          if (length(lims)) return(as.character(lims))
-          if (!is.null(sc$limits) && length(sc$limits)) return(as.character(sc$limits))
-          rr <- tryCatch(sc$range$range, error = function(e) NULL)
-          if (length(rr)) return(as.character(rr))
-          labs <- tryCatch(sc$get_labels(), error = function(e) NULL)
-          if (!is.null(labs) && !is.null(names(labs)) && any(nzchar(names(labs))))
-            return(as.character(names(labs)))
-        }
-      }
-    }
-  }
-  # 2) mapping + data（トップ/レイヤ両方）
-  pick_from_map <- function(mp) {
-    val <- mp[[if (aes_target == "colour") "colour" else aes_target]]
-    if (!rlang::is_missing(val) && !is.null(val) && !identical(val, quote(NULL))) {
-      tryCatch(rlang::as_name(val), error = function(e) NULL)
-    } else NULL
-  }
-  keys <- character(0)
-  # layer 優先で見る
-  if (length(p$layers)) {
-    for (ly in p$layers) {
-      nm <- if (!is.null(ly$mapping)) pick_from_map(ly$mapping) else NULL
-      if (!is.null(nm)) {
-        df <- ly$data %||% p$data
-        if (!is.null(df) && !is.null(df[[nm]])) {
-          x <- df[[nm]]; return(if (is.factor(x)) levels(x) else unique(as.character(x)))
-        }
-      }
-    }
-  }
-  # top-level
-  if (!is.null(p$mapping)) {
-    nm <- pick_from_map(p$mapping)
-    if (!is.null(nm)) {
-      df <- p$data
-      if (!is.null(df) && !is.null(df[[nm]])) {
-        x <- df[[nm]]; return(if (is.factor(x)) levels(x) else unique(as.character(x)))
-      }
-    }
-  }
-  character(0)
+  lapply(plots, relabel_one)
 }
