@@ -151,6 +151,80 @@ plot_apply_all_scales <- function(
     palette,
     n_strata,
     strata_levels_final,
+    strata_labels_final,
+    limits_arg = NULL   # ★ 追加
+) {
+  p <- plot_strip_mapped_scales(p)
+
+  # ★ ここで使う limits は「上流で確定した limits_arg 」を“唯一の真実”として使う
+  lvls <- limits_arg
+  # no-overlap のとき、labels も固定しない（NULLにする）
+  labs <- if (is.null(lvls) || identical(lvls, character())) NULL else strata_labels_final
+
+  n_effective <- if (!is.null(lvls) && length(lvls)) length(lvls) else n_strata %||% 1L
+  n_effective <- max(1L, n_effective)
+
+  use_manual <- !is.null(palette)
+  palette_info <- plot_resolve_palette_color(lvls, palette, n_effective)
+  col_values   <- unname(rep_len(palette_info$values, n_effective))
+  if (!is.null(lvls) && length(lvls)) {
+    names(col_values) <- NULL
+  }
+
+  if (use_manual) {
+    color_scale <- ggplot2::scale_color_manual(
+      values = col_values,
+      limits = lvls,   # ★ ここが肝
+      labels = labs,
+      drop   = FALSE
+    )
+    fill_scale <- ggplot2::scale_fill_manual(
+      values = col_values,
+      limits = lvls,   # ★
+      labels = labs,
+      drop   = FALSE,
+      guide  = "none"
+    )
+
+    color_scale$scale_name <- "manual"
+    fill_scale$scale_name  <- "manual"
+    if (!inherits(color_scale, "ScaleDiscreteManual")) {
+      class(color_scale) <- c("ScaleDiscreteManual", class(color_scale))
+    }
+    if (!inherits(fill_scale, "ScaleDiscreteManual")) {
+      class(fill_scale) <- c("ScaleDiscreteManual", class(fill_scale))
+    }
+  } else {
+    color_scale <- ggplot2::scale_color_discrete(
+      limits = lvls, labels = labs, drop = FALSE
+    )
+    fill_scale <- ggplot2::scale_fill_discrete(
+      limits = lvls, labels = labs, drop = FALSE, guide = "none"
+    )
+  }
+
+  p +
+    color_scale +
+    fill_scale +
+    ggplot2::scale_linetype_discrete(
+      limits = lvls,   # ★ linetype/shape も同じ limits を共有
+      labels = labs,
+      drop = FALSE
+    ) +
+    ggplot2::scale_shape_discrete(
+      limits = lvls,
+      labels = labs,
+      drop = FALSE,
+      guide = "none"
+    )
+}
+
+plot_apply_all_scales_old <- function(
+    p,
+    style,
+    palette,
+    n_strata,
+    strata_levels_final,
     strata_labels_final
 ) {
   p <- plot_strip_mapped_scales(p)
@@ -549,4 +623,42 @@ plot_make_label.strata.map <- function(fit, label.strata) {
     length(label.strata), length(fit_names)
   ), call. = FALSE)
   return(NULL)
+}
+
+plot_survfit_strata_labels <- function(survfit_object, strata.label, recycle_ok = FALSE) {
+  if (is.null(survfit_object)) return(survfit_object)
+
+  nms <- names(survfit_object$strata)
+  if (is.null(nms) || !length(nms)) {
+    new_nms <- as.character(strata.label)
+    if (length(new_nms) != length(survfit_object$strata)) {
+      if (recycle_ok) new_nms <- rep_len(new_nms, length(survfit_object$strata))
+      else stop("Length of `strata.label` does not match number of strata.", call. = FALSE)
+    }
+    names(survfit_object$strata) <- new_nms
+    return(survfit_object)
+  }
+
+  lhs <- sub("^\\s*([^=]+)\\s*=.*$", "\\1", nms, perl = TRUE)
+  rhs <- sub("^.*?=\\s*", "", nms, perl = TRUE)
+
+  lab <- strata.label
+
+  if (!is.null(names(lab)) && length(intersect(names(lab), nms)) == length(nms)) {
+    new_rhs <- unname(lab[nms])
+
+  } else if (!is.null(names(lab)) && length(intersect(names(lab), rhs)) == length(nms)) {
+    new_rhs <- unname(lab[rhs])
+  } else {
+    lab <- as.character(lab)
+    if (length(lab) != length(nms)) {
+      if (recycle_ok) lab <- rep_len(lab, length(nms))
+      else stop("Length of `strata.label` does not match number of strata.", call. = FALSE)
+    }
+    new_rhs <- lab
+  }
+  #new_nms <- paste0(lhs, "=", new_rhs)
+  #names(survfit_object$strata) <- new_nms
+  names(survfit_object$strata) <- new_rhs
+  return(survfit_object)
 }

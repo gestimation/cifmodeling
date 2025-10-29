@@ -251,6 +251,7 @@ cifplot <- function(
     dpi.ggsave = 300,
     ...
 ) {
+
   dots <- list(...)
   if (is.null(font.family) || !nzchar(font.family)) font.family <- "sans"
   if (is.null(font.size)   || !is.finite(font.size)) font.size   <- 12
@@ -452,6 +453,15 @@ cifplot_single <- function(
                                             else formula_or_fit, data = data, na.action = na.action, auto_message = FALSE)
   } else {
     outcome.type <- match.arg(outcome.type, c("COMPETING-RISK","SURVIVAL"))
+  }
+
+  if (inherits(formula_or_fit, "survfit")) {
+    if (!is.null(label.strata))
+    {
+      plot_survfit_strata_labels(formula_or_fit, label.strata)
+    } else {
+      label.strata <- names(formula_or_fit$strata)
+    }
   }
 
   if (isTRUE(printEachEvent)) {
@@ -852,6 +862,15 @@ call_ggsurvfit <- function(
     font.size = 14,
     legend.position = "top"
 ){
+
+  if (inherits(survfit_object, "survfit")) {
+    if (!is.null(label.strata))
+    {
+      survfit_object <- plot_survfit_strata_labels(survfit_object, label.strata)
+    } else {
+      label.strata <- names(survfit_object$strata)
+    }
+  }
   out_cg <- check_ggsurvfit(
     survfit_object = survfit_object,
     type.y = type.y,
@@ -873,6 +892,7 @@ call_ggsurvfit <- function(
     style = style,
     palette = palette
   )
+
   label.strata.map <- plot_make_label.strata.map(survfit_object, label.strata)
 
   cur_lvls_full  <- NULL
@@ -882,33 +902,40 @@ call_ggsurvfit <- function(
     cur_lvls_short <- sub(".*?=", "", cur_lvls_full)
   }
 
+  limits_arg <- NULL
+  forbid_limits_due_to_order <- FALSE
+
   if (!is.null(order.strata)) {
     if (is.null(label.strata.map)) {
       keep_short <- order.strata[order.strata %in% cur_lvls_short]
       if (length(keep_short) == 0L) {
         warning("`order.strata` has no overlap with strata levels; ignoring.", call. = FALSE)
+        limits_arg <- NULL
+        forbid_limits_due_to_order <- TRUE   # ★ no-overlap: 後段で再固定させない
       } else {
         idx <- match(keep_short, cur_lvls_short)
         keep_full <- cur_lvls_full[idx]
         label.strata.map <- stats::setNames(keep_short, keep_full)
+        limits_arg <- keep_full
       }
     } else {
       keep <- order.strata[order.strata %in% names(label.strata.map)]
       if (length(keep) == 0L) {
         warning("`order.strata` has no overlap with strata labels; ignoring.", call. = FALSE)
+        limits_arg <- NULL
+        forbid_limits_due_to_order <- TRUE   # ★ 同上
       } else {
         label.strata.map <- label.strata.map[keep]
+        limits_arg <- names(label.strata.map)
       }
     }
   }
 
   remap_to_full_if_needed <- function(lbl_map, full, short) {
     if (is.null(lbl_map) || is.null(full) || is.null(short)) return(lbl_map)
-    nm <- names(lbl_map)
-    if (!length(nm)) return(lbl_map)
+    nm <- names(lbl_map); if (!length(nm)) return(lbl_map)
     if (!all(nm %in% full) && all(nm %in% short)) {
-      idx <- match(nm, short)
-      names(lbl_map) <- full[idx]
+      idx <- match(nm, short); names(lbl_map) <- full[idx]
     }
     lbl_map
   }
@@ -916,8 +943,12 @@ call_ggsurvfit <- function(
 
   has_user_limits <- !is.null(label.strata.map)
 
-  strata_levels_final <- if (has_user_limits) names(label.strata.map) else NULL  # ← limits
-  strata_labels_final <- if (has_user_limits) unname(label.strata.map) else NULL # ← labels
+  if (is.null(limits_arg) && !forbid_limits_due_to_order) {
+    limits_arg <- if (has_user_limits) names(label.strata.map) else NULL
+  }
+
+  strata_levels_final <- if (!is.null(limits_arg) && length(limits_arg)) limits_arg else NULL
+  strata_labels_final <- if (has_user_limits) unname(label.strata.map) else NULL
 
   n_strata_effective <- if (!is.null(cur_lvls_full)) length(cur_lvls_full) else 1L
 
@@ -992,7 +1023,8 @@ call_ggsurvfit <- function(
     palette = palette,
     n_strata = n_strata_effective,
     strata_levels_final = strata_levels_final,
-    strata_labels_final = strata_labels_final
+    strata_labels_final = strata_labels_final,
+    limits_arg = limits_arg
   )
 
   p <- p + ggplot2::guides(fill = "none", alpha = "none", shape = "none") +
@@ -1169,7 +1201,6 @@ check_ggsurvfit <- function(
     length(unique(tolower(pal))) == 1L
   }
   linetype_aes_flag <- decide_linetype_flag(style, palette)
-
   old_opt <- getOption("ggsurvfit.switch-color-linetype", FALSE)
   out_plot <- ggsurvfit(
     survfit_object,

@@ -98,7 +98,6 @@ test_that("order.strata with no overlap issues a warning and is ignored", {
   skip_if_not_installed("ggplot2")
 
   data(diabetes.complications)
-
   ord_bad <- c("AAA","BBB")
 
   expect_warning(
