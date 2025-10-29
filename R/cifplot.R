@@ -7,7 +7,7 @@
 #' add censoring/competing-risk/intercurrent-event marks, and returns a regular \code{ggplot}
 #' object (compatible with \code{+} and \code{%+%}). You may also pass a survfit-compatible object directly.
 #'
-#' @param formula A model formula or a survfit object.
+#' @param formula_or_fit A model formula or a survfit object.
 #' @param data A data frame containing variables in \code{formula}.
 #' @param weights Optional name of the weight variable in \code{data}. Weights must be positive.
 #' @param subset.condition Optional character expression to subset \code{data} before analysis.
@@ -198,7 +198,7 @@
 #' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 cifplot <- function(
-    formula,
+    formula_or_fit,
     data = NULL,
     weights = NULL,
     subset.condition = NULL,
@@ -251,7 +251,6 @@ cifplot <- function(
     dpi.ggsave = 300,
     ...
 ) {
-
   dots <- list(...)
   if (is.null(font.family) || !nzchar(font.family)) font.family <- "sans"
   if (is.null(font.size)   || !is.finite(font.size)) font.size   <- 12
@@ -260,11 +259,11 @@ cifplot <- function(
           which = "printEachVar and printEachEvent")
 
   if (isTRUE(printEachVar)) {
-    .assert(!inherits(formula, "survfit"), "need_formula_for_printEachVar")
-    .assert(inherits(formula, "formula"),  "formula_must_be")
+    .assert(!inherits(formula_or_fit, "survfit"), "need_formula_for_printEachVar")
+    .assert(inherits(formula_or_fit, "formula"),  "formula_must_be")
     .assert(!is.null(data),                "need_data")
   } else {
-    .assert(!is.null(formula) || !is.null(dots$formula_or_fit), "need_formula_or_formulas")
+    .assert(!is.null(formula_or_fit) || !is.null(dots$formula_or_fit), "need_formula_or_formulas")
   }
 
   outcome.type <- util_check_outcome_type(outcome.type, formula = formula, data = data)
@@ -287,7 +286,7 @@ cifplot <- function(
     dots_clean <- plot_make_dots_clean(dots)
     args_single <- c(
       list(
-        formula_or_fit           = formula,
+        formula_or_fit           = formula_or_fit,
         data                     = data,
         weights                  = weights,
         subset.condition         = subset.condition,
@@ -343,7 +342,7 @@ cifplot <- function(
   }
 
   return(cifplot_printEachVar(
-    formula                = formula,
+    formula                = formula_or_fit,
     data                   = data,
     weights                = weights,
     subset.condition       = subset.condition,
@@ -458,7 +457,7 @@ cifplot_single <- function(
   if (inherits(formula_or_fit, "survfit")) {
     if (!is.null(label.strata))
     {
-      plot_survfit_strata_labels(formula_or_fit, label.strata)
+      formula_or_fit <- plot_survfit_strata_labels(formula_or_fit, label.strata)
     } else {
       label.strata <- names(formula_or_fit$strata)
     }
@@ -526,6 +525,7 @@ cifplot_single <- function(
         if (is.null(dots$print.panel))        dots$print.panel        <- FALSE
 
         panel_out <- do.call(cifpanel, c(panel_args, dots))
+
         if (is.list(panel_out) && !is.null(panel_out$out_patchwork)) {
           attr(panel_out$out_patchwork, "plots") <- panel_out$plots
           return(panel_out$out_patchwork)
@@ -862,7 +862,6 @@ call_ggsurvfit <- function(
     font.size = 14,
     legend.position = "top"
 ){
-
   if (inherits(survfit_object, "survfit")) {
     if (!is.null(label.strata))
     {
@@ -871,6 +870,7 @@ call_ggsurvfit <- function(
       label.strata <- names(survfit_object$strata)
     }
   }
+
   out_cg <- check_ggsurvfit(
     survfit_object = survfit_object,
     type.y = type.y,
@@ -905,51 +905,18 @@ call_ggsurvfit <- function(
   limits_arg <- NULL
   forbid_limits_due_to_order <- FALSE
 
-  if (!is.null(order.strata)) {
-    if (is.null(label.strata.map)) {
-      keep_short <- order.strata[order.strata %in% cur_lvls_short]
-      if (length(keep_short) == 0L) {
-        warning("`order.strata` has no overlap with strata levels; ignoring.", call. = FALSE)
-        limits_arg <- NULL
-        forbid_limits_due_to_order <- TRUE   # ★ no-overlap: 後段で再固定させない
-      } else {
-        idx <- match(keep_short, cur_lvls_short)
-        keep_full <- cur_lvls_full[idx]
-        label.strata.map <- stats::setNames(keep_short, keep_full)
-        limits_arg <- keep_full
-      }
-    } else {
-      keep <- order.strata[order.strata %in% names(label.strata.map)]
-      if (length(keep) == 0L) {
-        warning("`order.strata` has no overlap with strata labels; ignoring.", call. = FALSE)
-        limits_arg <- NULL
-        forbid_limits_due_to_order <- TRUE   # ★ 同上
-      } else {
-        label.strata.map <- label.strata.map[keep]
-        limits_arg <- names(label.strata.map)
-      }
-    }
-  }
+  res <- plot_reconcile_order_and_labels(
+    cur_lvls_full  = cur_lvls_full,
+    cur_lvls_short = cur_lvls_short,
+    order.strata   = order.strata,
+    label.strata.map = label.strata.map
+  )
 
-  remap_to_full_if_needed <- function(lbl_map, full, short) {
-    if (is.null(lbl_map) || is.null(full) || is.null(short)) return(lbl_map)
-    nm <- names(lbl_map); if (!length(nm)) return(lbl_map)
-    if (!all(nm %in% full) && all(nm %in% short)) {
-      idx <- match(nm, short); names(lbl_map) <- full[idx]
-    }
-    lbl_map
-  }
-  label.strata.map <- remap_to_full_if_needed(label.strata.map, cur_lvls_full, cur_lvls_short)
-
-  has_user_limits <- !is.null(label.strata.map)
-
-  if (is.null(limits_arg) && !forbid_limits_due_to_order) {
-    limits_arg <- if (has_user_limits) names(label.strata.map) else NULL
-  }
-
-  strata_levels_final <- if (!is.null(limits_arg) && length(limits_arg)) limits_arg else NULL
-  strata_labels_final <- if (has_user_limits) unname(label.strata.map) else NULL
-
+  limits_arg             <- res$limits_arg
+  label.strata.map       <- res$label.strata.map
+  strata_levels_final    <- res$strata_levels_final
+  strata_labels_final    <- res$strata_labels_final
+  forbid_limits_due_to_order <- res$forbid_limits_due_to_order
   n_strata_effective <- if (!is.null(cur_lvls_full)) length(cur_lvls_full) else 1L
 
   p <- out_cg$out_survfit_object +

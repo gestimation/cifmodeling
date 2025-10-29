@@ -65,25 +65,6 @@ test_that("label.strata overrides palette labels", {
   expect_identical(sc_fill$guide, "none")
 })
 
-test_that("order.strata sets scale limits", {
-  data(diabetes.complications)
-  lbls <- c("0" = "Low", "1" = "High")
-  ord <- c("1", "0")
-  p <- cifplot(
-    Event(t, epsilon) ~ fruitq1,
-    data = diabetes.complications,
-    outcome.type = "COMPETING-RISK",
-    code.events  = c(1, 2, 0),
-    label.strata = lbls,
-    order.strata = ord,
-    addRiskTable = FALSE
-  )
-
-  sc_col <- p$scales$get_scales("colour")
-  expect_identical(sc_col$get_limits(), ord)
-  expect_equal(sc_col$get_labels(), unname(lbls[ord]))
-})
-
 test_that("numeric vectors with <9 unique values are converted to factor", {
   x <- c(1, 2, 2, 3, NA_real_)
   out <- cifmodeling:::plot_normalize_strata(x)
@@ -115,4 +96,36 @@ test_that("formula normalization converts numeric RHS strata", {
   expect_identical(levels(out$data$z),
                    c(cifmodeling:::plot_default_labels$strata$below_median,
                      cifmodeling:::plot_default_labels$strata$above_median))
+})
+
+test_that("order & labels must match as sets; otherwise order is ignored", {
+  cur_full  <- c("grp=A","grp=B","grp=C")
+  cur_short <- c("A","B","C")
+
+  lbl <- c("Alpha","Bravo","Charlie")
+  names(lbl) <- cur_full
+
+  ord <- c("grp=B","grp=C","grp=A")
+  out <- plot_reconcile_order_and_labels(cur_full, cur_short, ord, lbl)
+  expect_true(out$used_order)
+  expect_identical(out$limits_arg, ord)
+
+  ord_bad <- c("grp=A","grp=B")
+  expect_warning(
+    out2 <- plot_reconcile_order_and_labels(cur_full, cur_short, ord_bad, lbl),
+    "`order.strata` and `label.strata` must contain the same set of levels"
+  )
+  expect_false(out2$used_order)
+  expect_identical(out2$limits_arg, names(lbl))
+
+  ord_none <- c("grp=X","grp=Y")
+  expect_warning(
+    out3 <- plot_reconcile_order_and_labels(cur_full, cur_short, ord_none, NULL),
+    "`order.strata` has no overlap"
+  )
+  expect_null(out3$limits_arg)
+  expect_true(out3$forbid_limits_due_to_order)
+
+  out4 <- plot_reconcile_order_and_labels(cur_full, cur_short, NULL, lbl)
+  expect_identical(out4$limits_arg, names(lbl))
 })

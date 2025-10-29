@@ -93,35 +93,3 @@ test_that("order.strata works per-variable when printEachVar = TRUE", {
   expect_identical(sc2_fil$limits, ord_list$z2)
 })
 
-test_that("order.strata with no overlap issues a warning and is ignored", {
-  skip_on_cran()
-  skip_if_not_installed("ggplot2")
-
-  data(diabetes.complications)
-  ord_bad <- c("AAA","BBB")
-
-  expect_warning(
-    p <- cifplot(
-      Event(t, epsilon) ~ fruitq,
-      data = diabetes.complications,
-      outcome.type = "COMPETING-RISK",
-      type.y = "risk",
-      order.strata = ord_bad,
-      addRiskTable = FALSE
-    ),
-    regexp = "no overlap", fixed = FALSE
-  )
-
-  sc_col <- p$scales$get_scales("colour")
-  sc_fil <- p$scales$get_scales("fill")
-
-  if (!is.null(sc_col)) {
-    expect_true(is.null(sc_col$limits) || identical(sc_col$limits, character()))
-  }
-  if (!is.null(sc_fil)) {
-    expect_true(is.null(sc_fil$limits) || identical(sc_fil$limits, character()))
-  }
-})
-
-
-

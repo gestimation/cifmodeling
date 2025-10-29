@@ -151,7 +151,7 @@
 #' ### Export (optional)
 #'
 #' If `filename.ggsave` is non-`NULL`, the composed panel is saved with
-#' `ggplot2::ggsave()` using `width.ggsave`, `height.ggsave`, and `dpi.ggsave`.
+#' `ggsave()` using `width.ggsave`, `height.ggsave`, and `dpi.ggsave`.
 #' Otherwise, the function returns objects without saving.
 #'
 #' ### Value
@@ -305,17 +305,140 @@ cifpanel <- function(
       stop("All elements of `plots` must inherit from 'ggplot'.")
     }
 
+    if (!is.null(label.strata) || !is.null(order.strata)) {
+      candidates <- Filter(length, lapply(plots, plot_get_plot_levels))
+      unique_sizes <- unique(lengths(candidates))
+
+      ord <- NULL
+      if (!is.null(order.strata)) {
+        ord <- as.character(order.strata)
+      } else if (length(candidates)) {
+        if (!is.null(label.strata) &&
+            is.null(names(label.strata)) &&
+            length(label.strata) %in% unique_sizes) {
+          # pick the first candidate whose length matches label.strata
+          hit_len <- length(label.strata)
+          ord <- as.character(candidates[[which(lengths(candidates) == hit_len)[1]]])
+        } else {
+          # fallback: take the longest candidate (most informative)
+          ord <- as.character(candidates[[which.max(lengths(candidates))]])
+        }
+      }
+
+      lbl_map <- NULL
+      if (!is.null(label.strata)) {
+        if (!is.null(names(label.strata)) && any(nzchar(names(label.strata)))) {
+          # named: names(source level) -> value(display)
+          lbl_map <- as.character(label.strata)
+        } else if (!is.null(ord) && length(label.strata) == length(ord)) {
+          # unnamed + ord detected: align 1:1
+          lbl_map <- stats::setNames(as.character(label.strata), ord)
+        } else {
+          # last resort: don't stop — warn and try label-only override
+          warning("`label.strata` could not be aligned to strata order; applying labels-only fallback.")
+          # labels-only fallback will use a function(x) map below, without limits
+          lbl_map <- as.character(label.strata)
+          names(lbl_map) <- lbl_map  # identity mapping; will be replaced when x%in%names(lbl_map)
+        }
+      } else if (!is.null(ord)) {
+        lbl_map <- stats::setNames(ord, ord)
+      }
+
+      strip_discrete_mapped_scales <- function(p, aes_keep = c("colour","color","linetype","fill","shape")) {
+        if (!length(p$scales$scales)) return(p)
+        keep <- vapply(p$scales$scales, function(sc) {
+          is_discr <- inherits(sc, "ScaleDiscrete")
+          if (!is_discr) return(TRUE)
+          aes_sc <- tryCatch(sc$aesthetics, error = function(e) NULL)
+          if (length(aes_sc)) {
+            !any(aes_sc %in% aes_keep)
+          } else {
+            TRUE
+          }
+        }, logical(1))
+        p$scales$scales <- p$scales$scales[keep]
+        p
+      }
+
+      apply_scales <- function(p, ord, lbl_map) {
+        aes_used <- plot_mapped_aesthetics(p)       # 既存の関数：実際に使ってる審美属性を検出
+        if (!length(aes_used)) return(p)
+
+        # ★ スケール剥がしは linetype/shape のみに限定（色/塗りはパレット温存）
+        aes_strip <- intersect(aes_used, c("linetype","shape"))
+        if (length(aes_strip)) {
+          p <- strip_discrete_mapped_scales(p, aes_keep = aes_strip)
+        }
+
+        add_scale <- function(p, aes) {
+          # その図で実際に使われている水準を取得
+          used <- plot_get_levels_for_aes(p, aes_target = aes)
+          # breaks は ord と実使用水準の共通部分だけ（空にならないようにする）
+          brks <- if (!is.null(ord) && length(used)) intersect(ord, used) else used
+
+          # labels の用意（brksに合わせる）
+          lab_vec <- NULL
+          if (!is.null(lbl_map) && length(brks)) {
+            if (all(brks %in% names(lbl_map))) {
+              lab_vec <- unname(lbl_map[brks])
+            } else {
+              # 名前が合わない場合でも fallback で置換
+              lab_vec <- (function(x) ifelse(x %in% names(lbl_map), lbl_map[x], x))(brks)
+            }
+          }
+
+          if (aes == "linetype") {
+            if (length(brks)) {
+              p <- p + ggplot2::scale_linetype_discrete(breaks = brks, labels = lab_vec)
+            } else if (!is.null(lbl_map)) {
+              p <- p + ggplot2::scale_linetype_discrete(labels = function(x) ifelse(x %in% names(lbl_map), lbl_map[x], x))
+            }
+          } else if (aes == "shape") {
+            if (length(brks)) {
+              p <- p + ggplot2::scale_shape_discrete(breaks = brks, labels = lab_vec)
+            } else if (!is.null(lbl_map)) {
+              p <- p + ggplot2::scale_shape_discrete(labels = function(x) ifelse(x %in% names(lbl_map), lbl_map[x], x))
+            }
+          } else if (aes == "fill") {
+            if (length(brks)) {
+              suppressMessages({
+                p <- p + ggplot2::scale_fill_discrete(breaks = brks, labels = lab_vec)
+              })
+            } else if (!is.null(lbl_map)) {
+              suppressMessages({
+                p <- p + ggplot2::scale_fill_discrete(labels = function(x) ifelse(x %in% names(lbl_map), lbl_map[x], x))
+              })
+            }
+          } else if (aes == "colour") {
+            if (length(brks)) {
+              suppressMessages({
+                p <- p + ggplot2::scale_color_discrete(breaks = brks, labels = lab_vec)
+              })
+            } else if (!is.null(lbl_map)) {
+              suppressMessages({
+                p <- p + ggplot2::scale_color_discrete(labels = function(x) ifelse(x %in% names(lbl_map), lbl_map[x], x))
+              })
+            }
+          }
+          p
+        }
+        for (aes in aes_used) p <- add_scale(p, aes)
+        p
+      }
+      plots <- lapply(plots, apply_scales, ord = ord, lbl_map = lbl_map)
+    }
+
     plots_out <- plots
     if (isTRUE(use_inset_element)) {
       if (length(plots) < 2L) .err("inset_need_two")
       if (length(plots) > 2L) .warn("inset_extra_drop")
-      p_base  <- plots[[1]] + ggplot2::theme(legend.position = legend.position)
+      p_base  <- plots[[1]] + theme(legend.position = legend.position)
       if (!is.null(title.plot) && length(title.plot) >= 1L) {
-        p_base <- p_base + ggplot2::labs(title = title.plot[[1]])
+        p_base <- p_base + labs(title = title.plot[[1]])
       }
-      p_inset <- plots[[2]] + ggplot2::theme(legend.position = inset.legend.position)
+      p_inset <- plots[[2]] + theme(legend.position = inset.legend.position)
       if (!is.null(title.plot) && length(title.plot) >= 2L) {
-        p_inset <- p_inset + ggplot2::labs(title = title.plot[[2]])
+        p_inset <- p_inset + labs(title = title.plot[[2]])
       }
       out_patchwork <- p_base +
         patchwork::inset_element(
@@ -331,7 +454,7 @@ cifpanel <- function(
       if (length(plots2) < n_slots) {
         plots2 <- c(
           plots2,
-          rep(list(ggplot2::ggplot() + ggplot2::theme_void()), n_slots - length(plots2))
+          rep(list(ggplot() + theme_void()), n_slots - length(plots2))
         )
       } else if (length(plots2) > n_slots) {
         .warn("plots_extra_dropped", n_plots = length(plots2), n_slots = n_slots)
@@ -341,10 +464,10 @@ cifpanel <- function(
       if (isTRUE(legend.collect)) {
         out_patchwork <- out_patchwork +
           patchwork::plot_layout(guides = "collect") &
-          ggplot2::theme(legend.position = legend.position)
+          theme(legend.position = legend.position)
       } else {
         out_patchwork <- out_patchwork &
-          ggplot2::theme(legend.position = legend.position)
+          theme(legend.position = legend.position)
       }
       plots_out <- plots2
     }
@@ -361,7 +484,7 @@ cifpanel <- function(
     if (!is.null(filename.ggsave)) {
       if (is.null(width.ggsave))  width.ggsave  <- if (isTRUE(use_inset_element)) 6 else max(6, 5 * rows.columns.panel[2])
       if (is.null(height.ggsave)) height.ggsave <- if (isTRUE(use_inset_element)) 6 else max(6, 5 * rows.columns.panel[1])
-      ggplot2::ggsave(filename.ggsave, plot = out_patchwork, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave)
+      ggsave(filename.ggsave, plot = out_patchwork, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave)
     }
 
     return(invisible(list(plots = plots_out, out_patchwork = out_patchwork)))
@@ -433,7 +556,6 @@ cifpanel <- function(
   addCR.list   <- toL(addCompetingRiskMark);     if (!is.null(addCR.list))   addCR.list   <- rec(addCR.list, K)
   addIC.list   <- toL(addIntercurrentEventMark); if (!is.null(addIC.list))   addIC.list   <- rec(addIC.list, K)
   addQ.list    <- toL(addQuantileLine);          if (!is.null(addQ.list))    addQ.list    <- rec(addQ.list, K)
-
   strata.list  <- toL(label.strata);             if (!is.null(strata.list))  strata.list  <- rec(strata.list, K)
 
   infer_flag_by_codes <- function(v) if (length(v) == 2L) "S" else if (length(v) == 3L) "C" else NA_character_
@@ -516,11 +638,11 @@ cifpanel <- function(
   if (isTRUE(use_inset_element)) {
     if (length(plots) < 2L) .err("inset_need_two")
     if (length(plots) > 2L) .warn("inset_extra_drop")
-    p_base  <- plots[[1]] + ggplot2::theme(legend.position = legend.position)
-    p_inset <- plots[[2]] + ggplot2::theme(legend.position = inset.legend.position)
+    p_base  <- plots[[1]] + theme(legend.position = legend.position)
+    p_inset <- plots[[2]] + theme(legend.position = inset.legend.position)
     if (!is.null(title.plot)) {
-      if (length(title.plot) >= 1L) p_base  <- p_base  + ggplot2::labs(title = title.plot[[1]])
-      if (length(title.plot) >= 2L) p_inset <- p_inset + ggplot2::labs(title = title.plot[[2]])
+      if (length(title.plot) >= 1L) p_base  <- p_base  + labs(title = title.plot[[1]])
+      if (length(title.plot) >= 2L) p_inset <- p_inset + labs(title = title.plot[[2]])
     }
     out_patchwork <- p_base +
       patchwork::inset_element(
@@ -529,7 +651,7 @@ cifpanel <- function(
       )
   } else {
     if (length(plots) < n_slots) {
-      plots <- c(plots, rep(list(ggplot2::ggplot() + ggplot2::theme_void()), n_slots - length(plots)))
+      plots <- c(plots, rep(list(ggplot() + theme_void()), n_slots - length(plots)))
     } else if (length(plots) > n_slots) {
       .warn("plots_extra_dropped", n_plots = length(plots), n_slots = n_slots)
       plots <- plots[seq_len(n_slots)]
@@ -538,10 +660,10 @@ cifpanel <- function(
     if (isTRUE(legend.collect)) {
       out_patchwork <- out_patchwork +
         patchwork::plot_layout(guides = "collect") &
-        ggplot2::theme(legend.position = legend.position)
+        theme(legend.position = legend.position)
     } else {
       out_patchwork <- out_patchwork &
-        ggplot2::theme(legend.position = legend.position)
+        theme(legend.position = legend.position)
     }
   }
 
@@ -557,7 +679,160 @@ cifpanel <- function(
   if (!is.null(filename.ggsave)) {
     if (is.null(width.ggsave))  width.ggsave  <- if (isTRUE(use_inset_element)) 6 else max(6, 5 * rows.columns.panel[2])
     if (is.null(height.ggsave)) height.ggsave <- if (isTRUE(use_inset_element)) 6 else max(6, 5 * rows.columns.panel[1])
-    ggplot2::ggsave(filename.ggsave, plot = out_patchwork, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave)
+    ggsave(filename.ggsave, plot = out_patchwork, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave)
   }
   invisible(list(plots = plots, out_patchwork = out_patchwork))
+}
+
+plot_get_plot_levels <- function(p) {
+  if (length(p$scales$scales)) {
+    for (sc in p$scales$scales) {
+      if (inherits(sc, "ScaleDiscrete")) {
+        lims <- tryCatch(sc$get_limits(), error = function(e) NULL)
+        if (length(lims)) return(as.character(lims))
+        if (!is.null(sc$limits) && length(sc$limits)) return(as.character(sc$limits))
+        rr <- tryCatch(sc$range$range, error = function(e) NULL)
+        if (length(rr)) return(as.character(rr))
+        labs <- tryCatch(sc$get_labels(), error = function(e) NULL)
+        if (!is.null(labs) && !is.null(names(labs)) && any(nzchar(names(labs))))
+          return(as.character(names(labs)))
+      }
+    }
+  }
+
+  map <- p$mapping
+  pick <- NULL
+  for (nm in c("colour","color","linetype","fill","shape")) {
+    val <- map[[nm]]
+    if (!rlang::is_missing(val) && !is.null(val) && !identical(val, quote(NULL))) {
+      pick <- rlang::as_name(val); break
+    }
+  }
+
+  dflist <- list()
+  if (length(p$layers)) dflist <- c(dflist, lapply(p$layers, `[[`, "data"))
+  dflist <- c(dflist, list(p$data))
+
+  if (!is.null(pick)) {
+    for (df in dflist) {
+      if (!is.null(df) && !is.null(df[[pick]])) {
+        x <- df[[pick]]
+        return(if (is.factor(x)) levels(x) else unique(as.character(x)))
+      }
+    }
+  }
+
+  if (length(p$layers)) {
+    for (ly in p$layers) {
+      lmap <- ly$mapping
+      if (!is.null(lmap)) {
+        for (nm in c("colour","color","linetype","fill","shape")) {
+          val <- lmap[[nm]]
+          if (!rlang::is_missing(val) && !is.null(val) && !identical(val, quote(NULL))) {
+            pick2 <- tryCatch(rlang::as_name(val), error = function(e) NULL)
+            if (!is.null(pick2)) {
+              df <- ly$data %||% p$data
+              if (!is.null(df) && !is.null(df[[pick2]])) {
+                x <- df[[pick2]]
+                return(if (is.factor(x)) levels(x) else unique(as.character(x)))
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  key_cols <- c(".strata","strata","group",".group","Strata","STRATA")
+  for (df in dflist) {
+    if (!is.null(df)) {
+      hit <- intersect(key_cols, names(df))
+      for (kc in hit) {
+        x <- df[[kc]]
+        if (is.factor(x)) return(levels(x))
+        ux <- unique(as.character(x))
+        if (length(ux)) return(ux)
+      }
+    }
+  }
+
+  character(0)
+}
+
+plot_mapped_aesthetics <- function(p) {
+  used <- character(0)
+  check_map <- function(mp) {
+    out <- character(0)
+    for (nm in c("colour","color","linetype","fill","shape")) {
+      val <- mp[[nm]]
+      if (!rlang::is_missing(val) && !is.null(val) && !identical(val, quote(NULL))) {
+        out <- c(out, nm)
+      }
+    }
+    unique(out)
+  }
+  if (!is.null(p$mapping)) used <- unique(c(used, check_map(p$mapping)))
+  if (length(p$layers)) {
+    for (ly in p$layers) {
+      if (!is.null(ly$mapping)) used <- unique(c(used, check_map(ly$mapping)))
+    }
+  }
+  # "color" を "colour" に正規化
+  used <- unique(gsub("^color$", "colour", used))
+  used
+}
+
+
+plot_get_levels_for_aes <- function(p, aes_target = c("colour","linetype","fill","shape")) {
+  aes_target <- match.arg(aes_target)
+  # 1) scale から
+  if (length(p$scales$scales)) {
+    for (sc in p$scales$scales) {
+      if (inherits(sc, "ScaleDiscrete")) {
+        aes_sc <- tryCatch(sc$aesthetics, error = function(e) NULL)
+        if (length(aes_sc)) aes_sc <- gsub("^color$", "colour", aes_sc)
+        if (!is.null(aes_sc) && aes_target %in% aes_sc) {
+          lims <- tryCatch(sc$get_limits(), error = function(e) NULL)
+          if (length(lims)) return(as.character(lims))
+          if (!is.null(sc$limits) && length(sc$limits)) return(as.character(sc$limits))
+          rr <- tryCatch(sc$range$range, error = function(e) NULL)
+          if (length(rr)) return(as.character(rr))
+          labs <- tryCatch(sc$get_labels(), error = function(e) NULL)
+          if (!is.null(labs) && !is.null(names(labs)) && any(nzchar(names(labs))))
+            return(as.character(names(labs)))
+        }
+      }
+    }
+  }
+  # 2) mapping + data（トップ/レイヤ両方）
+  pick_from_map <- function(mp) {
+    val <- mp[[if (aes_target == "colour") "colour" else aes_target]]
+    if (!rlang::is_missing(val) && !is.null(val) && !identical(val, quote(NULL))) {
+      tryCatch(rlang::as_name(val), error = function(e) NULL)
+    } else NULL
+  }
+  keys <- character(0)
+  # layer 優先で見る
+  if (length(p$layers)) {
+    for (ly in p$layers) {
+      nm <- if (!is.null(ly$mapping)) pick_from_map(ly$mapping) else NULL
+      if (!is.null(nm)) {
+        df <- ly$data %||% p$data
+        if (!is.null(df) && !is.null(df[[nm]])) {
+          x <- df[[nm]]; return(if (is.factor(x)) levels(x) else unique(as.character(x)))
+        }
+      }
+    }
+  }
+  # top-level
+  if (!is.null(p$mapping)) {
+    nm <- pick_from_map(p$mapping)
+    if (!is.null(nm)) {
+      df <- p$data
+      if (!is.null(df) && !is.null(df[[nm]])) {
+        x <- df[[nm]]; return(if (is.factor(x)) levels(x) else unique(as.character(x)))
+      }
+    }
+  }
+  character(0)
 }

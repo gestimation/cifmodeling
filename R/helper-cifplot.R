@@ -579,7 +579,41 @@ plot_make_x_max <- function(sf) {
   return(1)
 }
 
-plot_make_label.strata.map <- function(fit, label.strata) {
+plot_make_label.strata.map <- function(survfit_object, label.strata) {
+  if (is.null(label.strata)) return(NULL)
+
+  cur_lvls_full  <- if (!is.null(survfit_object$strata)) unique(names(survfit_object$strata)) else NULL
+  cur_lvls_short <- if (!is.null(cur_lvls_full)) sub(".*?=", "", cur_lvls_full) else NULL
+
+  if (is.null(names(label.strata)) || any(names(label.strata) == "")) {
+    if (length(label.strata) != length(cur_lvls_full)) {
+      stop("`label.strata` length must match the number of strata.")
+    }
+    lbl_map <- stats::setNames(label.strata, cur_lvls_full)
+    return(lbl_map)
+  }
+
+  nm <- names(label.strata)
+
+  if (!is.null(cur_lvls_full) && all(nm %in% cur_lvls_full)) {
+    return(label.strata)
+  }
+
+  if (!is.null(cur_lvls_short) && all(nm %in% cur_lvls_short)) {
+    idx <- match(nm, cur_lvls_short)
+    names(label.strata) <- cur_lvls_full[idx]
+    return(label.strata)
+  }
+
+  if (length(label.strata) == length(cur_lvls_full)) {
+    lbl_map <- stats::setNames(unname(label.strata), cur_lvls_full)
+    return(lbl_map)
+  }
+
+  stop("`label.strata` names must be strata levels (full or short).")
+}
+
+plot_make_label.strata.map_ <- function(fit, label.strata) {
   .sf_strata_names <- function(fit) {
     if (is.null(fit$strata)) return(NULL)
     nm <- names(fit$strata)
@@ -657,8 +691,109 @@ plot_survfit_strata_labels <- function(survfit_object, strata.label, recycle_ok 
     }
     new_rhs <- lab
   }
-  #new_nms <- paste0(lhs, "=", new_rhs)
-  #names(survfit_object$strata) <- new_nms
   names(survfit_object$strata) <- new_rhs
   return(survfit_object)
+}
+
+plot_reconcile_order_and_labels <- function(
+    cur_lvls_full,
+    cur_lvls_short,
+    order.strata = NULL,
+    label.strata.map = NULL
+) {
+  .remap_to_full_if_needed <- function(lbl_map, full, short) {
+    if (is.null(lbl_map) || is.null(full) || is.null(short)) return(lbl_map)
+    nm <- names(lbl_map); if (!length(nm)) return(lbl_map)
+    if (!all(nm %in% full) && all(nm %in% short)) {
+      idx <- match(nm, short); names(lbl_map) <- full[idx]
+    }
+    lbl_map
+  }
+  label.strata.map <- .remap_to_full_if_needed(label.strata.map, cur_lvls_full, cur_lvls_short)
+
+  map_to_full <- function(x) {
+    if (is.null(x)) return(NULL)
+    out <- rep(NA_character_, length(x))
+    hit_f <- x %in% cur_lvls_full
+    out[hit_f] <- x[hit_f]
+    hit_s <- x %in% cur_lvls_short
+    out[hit_s] <- cur_lvls_full[match(x[hit_s], cur_lvls_short)]
+    out
+  }
+  order_full_raw <- map_to_full(order.strata)
+
+  limits_arg <- NULL
+  forbid_limits_due_to_order <- FALSE
+  used_order <- FALSE
+
+  if (!is.null(order_full_raw) && !is.null(label.strata.map)) {
+    set_ord  <- unique(order_full_raw)
+    set_lbls <- unique(names(label.strata.map))
+    has_unknown <- any(is.na(set_ord))
+    same_set <- !has_unknown && setequal(set_ord, set_lbls)
+
+    if (!same_set) {
+      warning("`order.strata` and `label.strata` must contain the same set of levels (ignoring order); ignoring `order.strata`.", call. = FALSE)
+      limits_arg <- names(label.strata.map)  # ラベル側の順（フル名）
+      forbid_limits_due_to_order <- TRUE
+      used_order <- FALSE
+    } else {
+      limits_arg <- unique(order_full_raw[!is.na(order_full_raw)])
+      used_order <- TRUE
+    }
+  } else if (!is.null(order_full_raw) && is.null(label.strata.map)) {
+    if (all(is.na(order_full_raw))) {
+      warning("`order.strata` has no overlap with strata levels; ignoring.", call. = FALSE)
+      limits_arg <- NULL
+      forbid_limits_due_to_order <- TRUE
+      used_order <- FALSE
+    } else {
+      keep <- unique(order_full_raw[!is.na(order_full_raw)])
+      if (length(keep) == 0L) {
+        warning("`order.strata` has no overlap with strata levels; ignoring.", call. = FALSE)
+        limits_arg <- NULL
+        forbid_limits_due_to_order <- TRUE
+        used_order <- FALSE
+      } else {
+        limits_arg <- keep
+        used_order <- TRUE
+      }
+    }
+  } else if (is.null(order_full_raw) && !is.null(label.strata.map)) {
+    limits_arg <- names(label.strata.map) # フル名
+  } else {
+    limits_arg <- NULL
+  }
+
+  if (!is.null(limits_arg) && !is.null(label.strata.map)) {
+    idx <- match(limits_arg, names(label.strata.map))
+    idx <- idx[!is.na(idx)]
+    label.strata.map <- label.strata.map[idx]
+  }
+
+  strata_levels_final <- if (!is.null(limits_arg) && length(limits_arg)) limits_arg else NULL
+  strata_labels_final <- if (!is.null(label.strata.map)) unname(label.strata.map) else NULL
+
+  list(
+    limits_arg = limits_arg,
+    label.strata.map = label.strata.map,
+    strata_levels_final = strata_levels_final,
+    strata_labels_final = strata_labels_final,
+    forbid_limits_due_to_order = forbid_limits_due_to_order,
+    used_order = used_order
+  )
+}
+
+plot_ensure_factor_strata <- function(formula, data) {
+  rhs <- all.vars(update(formula, . ~ .))
+  rhs <- setdiff(rhs, all.vars(update(formula, . ~ 0)))
+  for (v in rhs) {
+    if (v %in% names(data)) {
+      x <- data[[v]]
+      if (is.numeric(x) || is.integer(x) || is.logical(x)) {
+        data[[v]] <- factor(x)
+      }
+    }
+  }
+  list(formula = formula, data = data)
 }
