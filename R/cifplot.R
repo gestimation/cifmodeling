@@ -1,7 +1,7 @@
 #' @title Generate a survival or cumulative incidence curve with marks that represent
 #' censoring, competing risks and intermediate events
 #' @description
-#' This function produces the Kaplan-Meier survival or Aalen-Johansen cumulative
+#' This function produces the Kaplan–Meier survival or Aalen–Johansen cumulative
 #' incidence curve from a unified formula + data interface (\code{Event()} or \code{Surv()} on
 #' the left-hand side). It auto-labels axes based on `\code{outcome.type} and \code{type.y}, can
 #' add censoring/competing-risk/intercurrent-event marks, and returns a regular \code{ggplot}
@@ -14,7 +14,7 @@
 #' @param na.action Function to handle missing values (default: \code{na.omit} in \pkg{stats}).
 #' @param outcome.type
 #' Character string specifying the type of time-to-event outcome.
-#' One of \code{"SURVIVAL"} (Kaplan-Meier type) or \code{"COMPETING-RISK"} (Aalen-Johansen type).
+#' One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
 #' If \code{NULL} (default), the function automatically infers the outcome type
 #' from the data: if the event variable has more than two unique levels,
 #' \code{"COMPETING-RISK"} is assumed; otherwise, \code{"SURVIVAL"} is used.
@@ -446,7 +446,6 @@ cifplot_single <- function(
     ...
 ) {
   dots <- list(...)
-  data_working <- NULL   # ← これを最初に置く
 
   if (is.null(outcome.type)) {
     outcome.type <- util_check_outcome_type(formula = if (inherits(formula_or_fit,"survfit")) NULL
@@ -526,123 +525,59 @@ cifplot_single <- function(
     }
   }
 
-  # survfit で来たかどうかで分岐
   if (!inherits(formula_or_fit, "survfit")) {
     if (is.null(data)) stop("When `formula` is a formula, `data` must be provided.")
-    # 正規化
-    norm_inputs  <- plot_normalize_formula_data(formula_or_fit, data)
+    norm_inputs <- plot_normalize_formula_data(formula_or_fit, data)
     data_working <- norm_inputs$data
-
-    # --- LHS/RHS を update() を使わず安全に取得 ---
-    orig_formula <- formula_or_fit               # 必ず formula
-    lhs_expr <- orig_formula[[2L]]               # Event(t, epsilon) など
-    rhs_expr <- orig_formula[[3L]]               # 右辺式
-    rhs_vars <- all.vars(rhs_expr)
-    if (length(rhs_vars) < 1L) stop("Right-hand side must contain a stratifying variable.")
-    rhs <- rhs_vars[1L]                          # cifplot は単独層変数前提なので先頭を採用
-
-    # --- 層別変数を data_working 側で因子化（列名は変えない！） ---
-    x <- data_working[[rhs]]
-    if (!is.factor(x)) {
-      if (is.numeric(x) || is.integer(x) || is.logical(x)) {
-        lev <- sort(unique(x[!is.na(x)]), na.last = TRUE)
-        x <- factor(x, levels = lev)
-      } else {
-        x <- factor(x)
-      }
-    }
-    if (!is.null(order.strata)) {
-      os <- intersect(order.strata, levels(x))
-      if (length(os)) x <- factor(x, levels = os)
-    }
-    if (!is.null(label.strata)) {
-      stopifnot(length(label.strata) == nlevels(x))
-      levels(x) <- label.strata
-    }
-    .strata_labels <- levels(x)
-    data_working[[rhs]] <- x
-
-    # --- formula は一切いじらない（LHSもRHSもそのまま） ---
-    new_formula <- orig_formula
-
-    # --- cifcurve は一度だけ ---
-    formula_or_fit <- cifcurve(
-      new_formula,
-      data = data_working,
-      weights = weights, subset.condition = subset.condition, na.action = na.action,
-      outcome.type = outcome.type, code.event1 = code.event1, code.event2 = code.event2,
-      code.censoring = code.censoring, error = error, conf.type = conf.type, conf.int = conf.int
-    )
-
-    # もし自動で competing.risk.time を埋めるなら、data_working があるときだけ
-    if (!isTRUE(printEachEvent) && isTRUE(addCompetingRiskMark) && length(competing.risk.time) == 0) {
+    if (!isTRUE(printEachEvent) &&
+        isTRUE(addCompetingRiskMark) &&
+        length(competing.risk.time) == 0) {
       competing.risk.time <- extract_time_to_event(
-        orig_formula, data = data_working, which_event = "event2",
-        code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring
-      )
+        formula_or_fit, data = data_working, which_event = "event2",
+        code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring)
     }
-  } else {
-    # survfit ルート：ここでは update() を一切使わない
-    st <- attr(formula_or_fit, "strata")
-    .strata_labels <- if (!is.null(st)) sub("^.*?=", "", names(st)) else NULL
+    formula_or_fit <- cifcurve(formula_or_fit, data = data_working, weights = weights, subset.condition = subset.condition, na.action = na.action,
+                               outcome.type = outcome.type, code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
+                               error = error, conf.type = conf.type, conf.int = conf.int)
   }
 
-  # --- cifcurve() を呼んだ直後に strata 名を取得 ---
-  fit <- formula_or_fit  # survfit object
-
-  raw_breaks <- names(attr(fit, "strata"))   # 例: "strata=A", "strata=B"
-  if (is.null(raw_breaks)) {
-    # strata が 1水準 or 無いケースの保険
-    raw_breaks <- .strata_labels %||% character(0)
-  }
-
-  # 表示ラベルは label.strata があればそれ、なければ "変数名=水準" から右側だけ抜く
-  display_labels <- if (!is.null(label.strata) && length(label.strata) == length(raw_breaks)) {
-    label.strata
-  } else {
-    sub("^.*?=", "", raw_breaks, perl = TRUE)
-  }
-
-  # --- 描画 ---
   p <- call_ggsurvfit(
-    survfit_object = formula_or_fit,
-    out_readSurv = NULL,
-    conf.type = conf.type,
-    addConfidenceInterval = addConfidenceInterval,
-    addRiskTable = addRiskTable,
-    addEstimateTable = addEstimateTable,
-    addCensorMark = addCensorMark,
-    shape.censor.mark = shape.censor.mark,
-    size.censor.mark = size.censor.mark,
-    addCompetingRiskMark = addCompetingRiskMark,
-    competing.risk.time = competing.risk.time,
-    shape.competing.risk.mark = shape.competing.risk.mark,
-    size.competing.risk.mark = size.competing.risk.mark,
-    addIntercurrentEventMark = addIntercurrentEventMark,
-    intercurrent.event.time = intercurrent.event.time,
+    survfit_object                = formula_or_fit,
+    out_readSurv                  = NULL,
+    conf.type                     = conf.type,
+    addConfidenceInterval         = addConfidenceInterval,
+    addRiskTable                  = addRiskTable,
+    addEstimateTable              = addEstimateTable,
+    addCensorMark                 = addCensorMark,
+    shape.censor.mark             = shape.censor.mark,
+    size.censor.mark              = size.censor.mark,
+    addCompetingRiskMark          = addCompetingRiskMark,
+    competing.risk.time           = competing.risk.time,
+    shape.competing.risk.mark     = shape.competing.risk.mark,
+    size.competing.risk.mark      = size.competing.risk.mark,
+    addIntercurrentEventMark      = addIntercurrentEventMark,
+    intercurrent.event.time       = intercurrent.event.time,
     shape.intercurrent.event.mark = shape.intercurrent.event.mark,
-    size.intercurrent.event.mark = size.intercurrent.event.mark,
-    addQuantileLine = addQuantileLine,
-    quantile = quantile,
-    type.y = type.y,
-    label.x = label.x,
-    label.y = label.y,
-    label.strata = label.strata,
-    order.strata = order.strata,
-    limits.x = limits.x,
-    limits.y = limits.y,
-    breaks.x = breaks.x,
-    breaks.y = breaks.y,
-    use_coord_cartesian = use_coord_cartesian,
-    style = style,
-    palette = palette,
-    font.family = font.family,
-    font.size = font.size,
-    legend.position = legend.position,
-    .strata_labels = .strata_labels,
-    raw_breaks = raw_breaks,
-    display_labels = display_labels
+    size.intercurrent.event.mark  = size.intercurrent.event.mark,
+    addQuantileLine               = addQuantileLine,
+    quantile                      = quantile,
+    type.y                        = type.y,
+    label.x                       = label.x,
+    label.y                       = label.y,
+    label.strata                  = label.strata,
+    order.strata                  = order.strata,
+    limits.x                      = limits.x,
+    limits.y                      = limits.y,
+    breaks.x                      = breaks.x,
+    breaks.y                      = breaks.y,
+    use_coord_cartesian           = use_coord_cartesian,
+    style                         = style,
+    palette                       = palette,
+    font.family                   = font.family,
+    font.size                     = font.size,
+    legend.position               = legend.position
   )
+  if (!is.null(filename.ggsave)) ggplot2::ggsave(filename.ggsave, plot = p, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave)
   return(p)
 }
 
@@ -915,10 +850,7 @@ call_ggsurvfit <- function(
     palette = NULL,
     font.family = "sans",
     font.size = 14,
-    legend.position = "top",
-    .strata_labels = NULL,
-    raw_breaks = NULL,
-    display_labels = NULL
+    legend.position = "top"
 ){
   out_cg <- check_ggsurvfit(
     survfit_object = survfit_object,
@@ -1062,17 +994,6 @@ call_ggsurvfit <- function(
     strata_levels_final = strata_levels_final,
     strata_labels_final = strata_labels_final
   )
-
-  if (!is.null(.strata_labels) && length(.strata_labels)) {
-    # ←ここが肝：breaks=raw（実際の値）、labels=display（見せたい文字）
-    p <- p +
-      ggplot2::scale_color_discrete(breaks = raw_breaks, labels = display_labels) +
-      ggplot2::scale_linetype_discrete(breaks = raw_breaks, labels = display_labels) +
-      ggplot2::guides(
-        color    = ggplot2::guide_legend(title = NULL),
-        linetype = ggplot2::guide_legend(title = NULL)
-      )
-  }
 
   p <- p + ggplot2::guides(fill = "none", alpha = "none", shape = "none") +
     ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(fill = NA)))
