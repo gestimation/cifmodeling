@@ -398,6 +398,11 @@ cifplot <- function(
   level_input <- axis.info$level.strata
   order_input <- axis.info$order.strata
 
+  print("before normalize_strata_info")
+  print(level.strata)
+  print(label.strata)
+  print(order.strata)
+
   norm <- normalize_strata_info(
     level.strata = axis.info$level.strata,
     label.strata = axis.info$label.strata,
@@ -633,7 +638,6 @@ cifplot_single <- function(
     width.ggsave = 6,
     height.ggsave = 6,
     dpi.ggsave = 300,
-    # ★ ここを追加
     survfit.info = NULL,
     axis.info    = NULL,
     visual.info  = NULL,
@@ -647,13 +651,6 @@ cifplot_single <- function(
   level.strata <- level.strata %||% NULL
   label.strata <- label.strata %||% NULL
   order.strata <- order.strata %||% NULL
-
-  print("cifplot_single level.strata")
-  print(level.strata)
-  print("cifplot_single label.strata")
-  print(label.strata)
-  print("cifplot_single order.strata")
-  print(order.strata)
 
   survfit.info <- survfit.info %||% list()
   axis.info    <- axis.info    %||% list()
@@ -781,7 +778,7 @@ cifplot_single <- function(
   level_input <- axis.info$level.strata
   order_input <- axis.info$order.strata
 
-  print("before")
+  print("before normalize_strata_info")
   print(axis.info$level.strata)
   print(axis.info$order.strata)
   print(axis.info$label.strata)
@@ -796,7 +793,7 @@ cifplot_single <- function(
   axis.info$order.strata <- norm$order_data
   axis.info$label.strata <- norm$label_map
 
-  print("after")
+  print("after normalize_strata_info")
   print(axis.info$level.strata)
   print(axis.info$order.strata)
   print(axis.info$label.strata)
@@ -1414,16 +1411,24 @@ call_ggsurvfit <- function(
     label.strata   = label.strata,
     level.strata   = level.strata
   )
+  print("label.strata.map")
+  print(label.strata.map)
 
-  # 1) まず必要なら survfit を上書きする
-  if (plot_needs_survfit_label_update(
-    survfit_object,
-    label.strata = label.strata,
-    order.strata = order.strata,
-    level.strata = level.strata
-  )) {
-    survfit_object <- plot_survfit_strata_labels(survfit_object, label.strata)
-  }
+  print("names(survfit_object$strata)")
+  print(names(survfit_object$strata))
+
+  print("survfit_object$strata")
+  print(survfit_object$strata)
+
+# 1) まず必要なら survfit を上書きする
+#  if (plot_needs_survfit_label_update(
+#    survfit_object,
+#    label.strata = label.strata,
+#    order.strata = order.strata,
+#    level.strata = level.strata
+#  )) {
+#    survfit_object <- plot_survfit_strata_labels(survfit_object, label.strata)
+#  }
 
   # 2) ★ここで初めて今のsurvfitからレベルをとる
   cur_lvls_full  <- NULL
@@ -1437,50 +1442,45 @@ call_ggsurvfit <- function(
     }
   }
 
-  print("plot_needs_survfit_label_update")
-  print(names(survfit_object$strata))
+  print("before plot_reconcile_order_and_labels")
+#  print(names(survfit_object$strata))
+  print(cur_lvls_full)
+  print(cur_lvls_short)
   print(label.strata)
   print(level.strata)
   print(order.strata)
-  print(cur_lvls_full)
-  print(cur_lvls_short)
 
   out_cg <- check_ggsurvfit(
-    survfit_object = survfit_object,
-    type.y = type.y,
-    conf.type = conf.type,
-    label.y = label.y,
-    limits.x = limits.x,
-    limits.y = limits.y,
-    breaks.x = breaks.x,
-    breaks.y = breaks.y,
-    addConfidenceInterval = addConfidenceInterval,
-    addCensorMark = addCensorMark,
-    addCompetingRiskMark = addCompetingRiskMark,
-    addIntercurrentEventMark = addIntercurrentEventMark,
-    shape.censor.mark = shape.censor.mark,
-    shape.competing.risk.mark = shape.competing.risk.mark,
+    survfit_object                = survfit_object,
+    type.y                        = type.y,
+    conf.type                     = conf.type,
+    label.y                       = label.y,
+    limits.x                      = limits.x,
+    limits.y                      = limits.y,
+    breaks.x                      = breaks.x,
+    breaks.y                      = breaks.y,
+    addConfidenceInterval         = addConfidenceInterval,
+    addCensorMark                 = addCensorMark,
+    addCompetingRiskMark          = addCompetingRiskMark,
+    addIntercurrentEventMark      = addIntercurrentEventMark,
+    shape.censor.mark             = shape.censor.mark,
+    shape.competing.risk.mark     = shape.competing.risk.mark,
     shape.intercurrent.event.mark = shape.intercurrent.event.mark,
-    out_readSurv = out_readSurv,
-    use_coord_cartesian = use_coord_cartesian,
-    style = style,
-    palette = palette
+    out_readSurv                  = out_readSurv,
+    use_coord_cartesian           = use_coord_cartesian,
+    style                         = style,
+    palette                       = palette
   )
 
   limits_arg <- NULL
   forbid_limits_due_to_order <- FALSE
 
-  print("plot_reconcile_order_and_labels")
-  print(label.strata.map)
-  print(level.strata)
-  print(order.strata)
-
   res <- plot_reconcile_order_and_labels(
-    cur_lvls_full  = cur_lvls_full,
-    cur_lvls_short = cur_lvls_short,
+    cur_lvls_full    = cur_lvls_full,
+    cur_lvls_short   = cur_lvls_short,
     label.strata.map = label.strata.map,
-    level.strata   = level.strata,
-    order.strata   = order.strata
+    level.strata     = level.strata,
+    order.strata     = order.strata
   )
 
   limits_arg             <- res$limits_arg
@@ -1490,8 +1490,16 @@ call_ggsurvfit <- function(
   forbid_limits_due_to_order <- res$forbid_limits_due_to_order
   n_strata_effective <- if (!is.null(cur_lvls_full)) length(cur_lvls_full) else 1
 
+
+#  strata_levels_final <- c("x=0", "x=1")
+#  strata_labels_final <- c("Hi", "China")
+#  limits_arg          <- c("x=0", "x=1")
+
+  print("strata_levels_final")
   print(strata_levels_final)
+  print("strata_labels_final")
   print(strata_labels_final)
+  print("limits_arg")
   print(limits_arg)
 
   p <- out_cg$out_survfit_object +
@@ -1592,6 +1600,10 @@ call_ggsurvfit <- function(
   #      p <- p + geom_text(data=annotations, aes(x=x, y=y, label=label), size = 4, color = "black", hjust = 0, vjust = 0)
   #    }
   #  }
+
+#  str(ggplot2::ggplot_build(p)$data)
+#  str(ggplot2::ggplot_build(p)$plot$scales$scales)
+
   return(p)
 }
 

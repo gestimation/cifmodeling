@@ -142,6 +142,39 @@ plot_apply_style <- function(
     GRID       = plot_style_grid(font.family, font.size, legend.position),
     GRAY       = plot_style_gray(font.family, font.size, legend.position)
   )
+
+  # ★ここで「レジェンドを絶対に出す」方向に倒す
+  p <- p + style_theme
+
+  # strata が分かれてるなら、ここで上書き
+  if (!is.null(strata_levels_final) && length(strata_levels_final) > 1L) {
+    p <- p + ggplot2::theme(legend.position = legend.position %||% "top")
+  }
+
+  p
+}
+
+plot_apply_style_old <- function(
+    p,
+    style = c("CLASSIC", "BOLD", "FRAMED", "GRID", "GRAY"),
+    font.family = "sans",
+    font.size = 14,
+    legend.position = "top",
+    n_strata = 6,
+    palette_colors = NULL,
+    strata_levels_final = NULL,
+    strata_labels_final = NULL
+) {
+  if (style=="G") style <- "GRID"
+  style <- match.arg(style)
+  style_theme <- switch(
+    style,
+    CLASSIC    = plot_style_classic(font.family, font.size, legend.position),
+    BOLD       = plot_style_bold(font.family, font.size, legend.position),
+    FRAMED     = plot_style_framed(font.family, font.size, legend.position),
+    GRID       = plot_style_grid(font.family, font.size, legend.position),
+    GRAY       = plot_style_gray(font.family, font.size, legend.position)
+  )
   p + style_theme
 }
 
@@ -694,66 +727,36 @@ plot_survfit_strata_labels <- function(survfit_object,
   return(survfit_object)
 }
 
-pplot_survfit_strata_labels <- function(survfit_object, strata.label, recycle_ok = FALSE) {
-  if (is.null(survfit_object)) return(survfit_object)
-
-  nms <- names(survfit_object$strata)
-  if (is.null(nms) || !length(nms)) {
-    new_nms <- as.character(strata.label)
-    if (length(new_nms) != length(survfit_object$strata)) {
-      if (recycle_ok) new_nms <- rep_len(new_nms, length(survfit_object$strata))
-      else stop("Length of `strata.label` does not match number of strata.", call. = FALSE)
-    }
-    names(survfit_object$strata) <- new_nms
-    return(survfit_object)
-  }
-
-  lhs <- sub("^\\s*([^=]+)\\s*=.*$", "\\1", nms, perl = TRUE)
-  rhs <- sub("^.*?=\\s*", "", nms, perl = TRUE)
-
-  lab <- strata.label
-
-  if (!is.null(names(lab)) && length(intersect(names(lab), nms)) == length(nms)) {
-    new_rhs <- unname(lab[nms])
-
-  } else if (!is.null(names(lab)) && length(intersect(names(lab), rhs)) == length(nms)) {
-    new_rhs <- unname(lab[rhs])
-  } else {
-    lab <- as.character(lab)
-    if (length(lab) != length(nms)) {
-      if (recycle_ok) lab <- rep_len(lab, length(nms))
-      else stop("Length of `strata.label` does not match number of strata.", call. = FALSE)
-    }
-    new_rhs <- lab
-  }
-  names(survfit_object$strata) <- new_rhs
-  return(survfit_object)
-}
-
-
-
-`%||%` <- function(x, y) if (is.null(x)) y else x
 
 plot_reconcile_order_and_labels <- function(
     cur_lvls_full,
     cur_lvls_short,
-    level.strata = NUL,
+    level.strata = NULL,
     order.strata = NULL,
     label.strata.map = NULL
 ) {
 
-  # 1) label.strata.map が「名前なしベクトル」で来たら
-  #    level.strata の順番で名前を付ける
+  # 1) label.strata.map が「名前なしベクトル」で来たら level.strata で名前を付ける
   if (!is.null(label.strata.map)) {
     nm <- names(label.strata.map)
     if (is.null(nm) || !any(nzchar(nm))) {
-      # ここで「1→dog, 2→cat」を確定させる
       label.strata.map <- stats::setNames(as.character(label.strata.map),
                                           as.character(level.strata))
     }
   }
 
-  # 2) ラベルが short 名で来てたら full に直す（元の挙動を維持）
+  # 1.5) ★ ラベル指定がまったく無いときのデフォルトを作る
+  if (is.null(label.strata.map)) {
+    if (!is.null(cur_lvls_short)) {
+      # 例: c("A","B")
+      label.strata.map <- stats::setNames(cur_lvls_short, cur_lvls_full)
+    } else {
+      # short がないなら full をそのまま表示
+      label.strata.map <- stats::setNames(cur_lvls_full, cur_lvls_full)
+    }
+  }
+
+  # 2) ラベルが short 名で来てたら full に直す
   .remap_to_full_if_needed <- function(lbl_map, full, short) {
     if (is.null(lbl_map) || is.null(full) || is.null(short)) return(lbl_map)
     nm <- names(lbl_map); if (!length(nm)) return(lbl_map)
@@ -781,19 +784,16 @@ plot_reconcile_order_and_labels <- function(
   }
   order_full_raw <- map_to_full(order.strata)
 
-  # 4) ここで「全水準の宇宙」を決める
-  #    まずは実データ(survfit)の順、なければユーザーが持ってる順
+  # 4) 実データにある順をベースに
   base_levels <- cur_lvls_full %||% as.character(level.strata)
 
-  # 5) ラベルがあるなら base_levels の順に並べる
+  # 5) ラベルを base_levels の順にそろえる（足りなければ追加）
   if (!is.null(label.strata.map)) {
-    # 足りないものがあれば、レベル名をそのままラベルにする
     missing <- setdiff(base_levels, names(label.strata.map))
     if (length(missing)) {
       label.strata.map <- c(label.strata.map,
                             stats::setNames(missing, missing))
     }
-    # 並べ直し
     label.strata.map <- label.strata.map[base_levels]
   }
 
@@ -801,7 +801,7 @@ plot_reconcile_order_and_labels <- function(
   used_order <- FALSE
   forbid_limits_due_to_order <- FALSE
 
-  # 6) order.strata があればそれを最優先に並べる
+  # 6) order.strata があればそれを最優先
   if (!is.null(order_full_raw) && !all(is.na(order_full_raw))) {
     ord_clean <- unique(order_full_raw[!is.na(order_full_raw)])
     known <- ord_clean[ord_clean %in% base_levels]
@@ -813,12 +813,8 @@ plot_reconcile_order_and_labels <- function(
       label.strata.map <- label.strata.map[limits_arg]
     }
   } else {
-    # order がなければ base_levels の順
     limits_arg <- base_levels
   }
-
-  print("limits_arg in plot_reconcile_order_and_labels")
-  print(limits_arg)
 
   strata_levels_final <- if (length(limits_arg)) limits_arg else NULL
   strata_labels_final <- if (!is.null(label.strata.map)) unname(label.strata.map) else NULL
@@ -832,6 +828,7 @@ plot_reconcile_order_and_labels <- function(
     used_order = used_order
   )
 }
+
 
 plot_ensure_factor_strata <- function(formula, data) {
   rhs <- all.vars(update(formula, . ~ .))
@@ -859,14 +856,12 @@ plot_needs_survfit_label_update <- function(
 
   cur_lvls_full <- if (!is.null(survfit_object$strata)) unique(names(survfit_object$strata)) else NULL
   if (is.null(cur_lvls_full)) {
-    print("A")
     return(FALSE)
   }
 
   cur_lvls_short <- sub(".*?=", "", cur_lvls_full)
 
   if (is.null(label.strata) && is.null(order.strata) && is.null(level.strata)) {
-    print("B")
     return(FALSE)
   }
 
@@ -907,4 +902,52 @@ plot_needs_survfit_label_update <- function(
   }
 
   TRUE
+}
+
+
+# =========================================================
+# 凡例を最後にゴリッと復活させるやつ
+# =========================================================
+plot_force_strata_legend <- function(p,
+                                     strata_levels = NULL,
+                                     strata_labels = NULL) {
+
+  # 1) まず colour の scale を拾う
+  scs <- p$scales$scales
+  has_colour <- FALSE
+  if (length(scs)) {
+    for (i in seq_along(scs)) {
+      sc <- scs[[i]]
+      aes <- tryCatch(sc$aesthetics, error = function(e) NULL)
+      if (!is.null(aes) && any(aes %in% c("colour", "color"))) {
+        # ここでガイドを legend に戻す
+        sc$guide <- "legend"
+
+        # 上流から渡ってきた順番やラベルがあればここで上書き
+        if (!is.null(strata_levels)) sc$limits <- strata_levels
+        if (!is.null(strata_labels)) sc$labels <- strata_labels
+
+        p$scales$scales[[i]] <- sc
+        has_colour <- TRUE
+      }
+    }
+  }
+
+  # 2) それでも無いときは scale_color_discrete を1本足す
+  if (!has_colour) {
+    p <- p + ggplot2::scale_color_discrete(
+      limits = strata_levels,
+      labels = strata_labels,
+      drop   = FALSE,
+      guide  = "legend"
+    )
+  }
+
+  # 3) guides() でもう一度強制
+  p <- p + ggplot2::guides(
+    colour  = ggplot2::guide_legend(override.aes = list(fill = NA)),
+    linetype = ggplot2::guide_legend()
+  )
+
+  p
 }

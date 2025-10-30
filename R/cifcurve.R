@@ -81,15 +81,9 @@ cifcurve <- function(
                                   subset.condition, na.action)
   error <- curve_check_error(error, outcome.type)
 
-  # ★ ここで strata 名のベースを作っておく
-  # out_readSurv$strata はたぶんベクトル (1,1,2,2,...) なので
-  # これを factor にして levels を拾う
   strata_fac   <- as.factor(out_readSurv$strata)
   strata_lvls  <- levels(strata_fac)
-  # 元の「層を作った変数名」をとれるならここで拾う
-  # util_read_surv() がこういう名前で持ってると仮定
-  strata_var   <- out_readSurv$strata_name %||% NULL  # `%||%` は適宜
-  # var=level 形式を組む
+  strata_var   <- out_readSurv$strata_name %||% NULL
   if (!is.null(strata_var)) {
     strata_fullnames <- paste0(strata_var, "=", strata_lvls)
   } else {
@@ -120,7 +114,6 @@ cifcurve <- function(
       method    = "Kaplan-Meier"
     )
     if (any(as.integer(out_readSurv$strata) != 1)) {
-      # ★ ここを var=level にする
       names(out_km$strata) <- strata_fullnames
       survfit_object$strata <- out_km$strata
     }
@@ -128,9 +121,6 @@ cifcurve <- function(
 
   } else {
     out_aj <- calculateAJ(out_readSurv)
-
-    # もともとは: names(out_aj$strata1) <- levels(as.factor(out_readSurv$strata))
-    # ★ ここを var=level にする
     names(out_aj$strata1) <- strata_fullnames
 
     if (any(as.integer(out_readSurv$strata) != 1)) {
@@ -174,7 +164,6 @@ cifcurve <- function(
 
     class(survfit_object) <- "survfit"
   }
-
   return(survfit_object)
 }
 
