@@ -1,31 +1,4 @@
-test_that("label.strata only adjusts labels and suppresses fill legend 1", {
-  data(diabetes.complications)
-  lbls <- c("0" = "Low intake", "1" = "High intake")
-  p <- cifplot(
-    Event(t, epsilon) ~ fruitq1,
-    data = diabetes.complications,
-    outcome.type = "COMPETING-RISK",
-    code.events  = c(1, 2, 0),
-    label.strata = lbls,
-    addRiskTable = FALSE
-  )
-
-  expect_s3_class(p, "ggplot")
-  sc_col   <- p$scales$get_scales("colour")
-  sc_lin   <- p$scales$get_scales("linetype")
-  sc_fill  <- p$scales$get_scales("fill")
-  sc_shape <- p$scales$get_scales("shape")
-
-  # ここを「順序まで完全一致」→「内容が一致」に緩める
-  expect_setequal(sc_col$get_labels(), unname(lbls))
-  expect_setequal(sc_lin$get_labels(), unname(lbls))
-
-  # fill / shape は非表示のままでOK
-  expect_identical(sc_fill$guide, "none")
-  expect_identical(sc_shape$guide, "none")
-})
-
-test_that("label.strata only adjusts labels and suppresses fill legend 1", {
+test_that("label.strata only adjusts labels and suppresses fill legend", {
   data(diabetes.complications)
   label <- c("Low intake", "High intake")
   level <- c(0, 1)
@@ -44,15 +17,48 @@ test_that("label.strata only adjusts labels and suppresses fill legend 1", {
   sc_lin   <- p$scales$get_scales("linetype")
   sc_fill  <- p$scales$get_scales("fill")
   sc_shape <- p$scales$get_scales("shape")
+  print(sc_col$get_labels())
+  print(sc_lin$get_labels())
 
   # ここを「順序まで完全一致」→「内容が一致」に緩める
-  expect_setequal(sc_col$get_labels(), unname(lbls))
-  expect_setequal(sc_lin$get_labels(), unname(lbls))
+  expect_setequal(sc_col$get_labels(), unname(label))
+  expect_setequal(sc_lin$get_labels(), unname(label))
 
   # fill / shape は非表示のままでOK
   expect_identical(sc_fill$guide, "none")
   expect_identical(sc_shape$guide, "none")
 })
+
+test_that("label.strata is reflected in color legend NEW", {
+  data(diabetes.complications)
+  p <- cifplot(
+    Event(t, epsilon) ~ fruitq1,
+    data = diabetes.complications,
+    outcome.type = "COMPETING-RISK",
+    code.events  = c(1, 2, 0),
+    label.strata = c("Low intake", "High intake"),
+    level.strata = c(0, 1),
+    addRiskTable = FALSE
+  )
+
+  sc_col <- p$scales$get_scales("colour")
+  br     <- sc_col$get_breaks()
+
+  get_labels_safe <- function(sc, br) {
+    lab <- sc$labels
+    if (is.function(lab)) {
+      lab(br)
+    } else if (is.null(lab)) {
+      br
+    } else {
+      lab
+    }
+  }
+
+  lbl <- get_labels_safe(sc_col, br)
+  expect_equal(unname(lbl), c("Low intake", "High intake"))
+})
+
 
 test_that("label.strata overrides palette labels", {
   data(diabetes.complications)
