@@ -551,8 +551,8 @@ cifplot <- function(
     type.y                 = type.y,
     label.x                = label.x,
     label.y                = label.y,
-#    level.strata           = level.strata,
     label.strata           = label.strata,
+    level.strata           = level.strata,
     order.strata           = order.strata,
     limits.x               = limits.x,
     limits.y               = limits.y,
@@ -939,6 +939,7 @@ cifplot_single <- function(
     formula_or_fit <- cifcurve(formula_or_fit, data = data_working, weights = weights, subset.condition = subset.condition, na.action = na.action,
                                outcome.type = outcome.type, code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
                                error = error, conf.type = conf.type, conf.int = conf.int)
+    formula_or_fit <- plot_survfit_short_strata_names(formula_or_fit)
   }
   p <- call_ggsurvfit(
     survfit_object                = formula_or_fit,
@@ -1000,6 +1001,7 @@ cifplot_printEachVar <- function(
     label.x = "Time",
     label.y = NULL,
     label.strata = NULL,
+    level.strata = NULL,
     order.strata = NULL,
     limits.x = NULL,
     limits.y = NULL,
@@ -1031,6 +1033,14 @@ cifplot_printEachVar <- function(
     width.ggsave = 6,
     height.ggsave = 6,
     dpi.ggsave = 300,
+    printEachEvent = FALSE,
+    printEachVar = TRUE,
+    survfit.info = NULL,
+    axis.info    = NULL,
+    visual.info  = NULL,
+    panel.info   = NULL,
+    style.info   = NULL,
+    ggsave.info  = NULL,
     ...
 ){
   dots <- list(...)
@@ -1411,9 +1421,7 @@ call_ggsurvfit <- function(
     label.strata   = label.strata,
     level.strata   = level.strata
   )
-  print("label.strata.map")
-  print(label.strata.map)
-
+  print("BEFORE")
   print("names(survfit_object$strata)")
   print(names(survfit_object$strata))
 
@@ -1430,22 +1438,29 @@ call_ggsurvfit <- function(
 #    survfit_object <- plot_survfit_strata_labels(survfit_object, label.strata)
 #  }
 
+  print("AF")
+  print("names(survfit_object$strata)")
+  print(names(survfit_object$strata))
+
+  print("survfit_object$strata")
+  print(survfit_object$strata)
+
   # 2) ★ここで初めて今のsurvfitからレベルをとる
-  cur_lvls_full  <- NULL
-  cur_lvls_short <- NULL
-  if (!is.null(survfit_object$strata)) {
-    cur_lvls_full <- unique(names(survfit_object$strata))
-    if (any(grepl("=", cur_lvls_full, fixed = TRUE))) {
-      cur_lvls_short <- sub(".*?=", "", cur_lvls_full)
-    } else {
-      cur_lvls_short <- NULL
-    }
-  }
+#  cur_lvls_full  <- NULL
+#  cur_lvls_short <- NULL
+#  if (!is.null(survfit_object$strata)) {
+#    cur_lvls_full <- unique(names(survfit_object$strata))
+#    if (any(grepl("=", cur_lvls_full, fixed = TRUE))) {
+#      cur_lvls_short <- sub(".*?=", "", cur_lvls_full)
+#    } else {
+#      cur_lvls_short <- NULL
+#    }
+#  }
 
   print("before plot_reconcile_order_and_labels")
 #  print(names(survfit_object$strata))
-  print(cur_lvls_full)
-  print(cur_lvls_short)
+#  print(cur_lvls_full)
+#  print(cur_lvls_short)
   print(label.strata)
   print(level.strata)
   print(order.strata)
@@ -1476,8 +1491,7 @@ call_ggsurvfit <- function(
   forbid_limits_due_to_order <- FALSE
 
   res <- plot_reconcile_order_and_labels(
-    cur_lvls_full    = cur_lvls_full,
-    cur_lvls_short   = cur_lvls_short,
+    survfit_object    = survfit_object,
     label.strata.map = label.strata.map,
     level.strata     = level.strata,
     order.strata     = order.strata
@@ -1488,12 +1502,12 @@ call_ggsurvfit <- function(
   strata_levels_final    <- res$strata_levels_final
   strata_labels_final    <- res$strata_labels_final
   forbid_limits_due_to_order <- res$forbid_limits_due_to_order
-  n_strata_effective <- if (!is.null(cur_lvls_full)) length(cur_lvls_full) else 1
+  n_strata_effective <- length(limits_arg)
+#  n_strata_effective <- if (!is.null(cur_lvls_full)) length(cur_lvls_full) else 1
 
-
-#  strata_levels_final <- c("x=0", "x=1")
+#  strata_levels_final <- c("0", "1")
 #  strata_labels_final <- c("Hi", "China")
-#  limits_arg          <- c("x=0", "x=1")
+#  limits_arg          <- c("x=1", "x=0") # this should be compatible with names(survfit_object$strata)
 
   print("strata_levels_final")
   print(strata_levels_final)

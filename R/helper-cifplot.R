@@ -727,8 +727,140 @@ plot_survfit_strata_labels <- function(survfit_object,
   return(survfit_object)
 }
 
-
 plot_reconcile_order_and_labels <- function(
+    survfit_object,
+    level.strata    = NULL,   # ユーザーが「元の層は0/1だよ」と言いたいとき
+    order.strata    = NULL,   # 並べ順の指定（"0","1" でも "x=0","x=1" でもOK）
+    label.strata.map = NULL   # 表示名の指定（名前あり/なしどっちでもOK）
+) {
+  # ------------------------------------------------------------
+  # 0. survfit からいま使ってる層名をとる
+  # ------------------------------------------------------------
+  cur_lvls_full <- NULL
+  if (!is.null(survfit_object$strata)) {
+    cur_lvls_full <- unique(names(survfit_object$strata))
+  }
+
+  # "x=0" みたいな形なら右側を short にする
+  cur_lvls_short <- NULL
+  if (!is.null(cur_lvls_full)) {
+    if (any(grepl("=", cur_lvls_full, fixed = TRUE))) {
+      cur_lvls_short <- sub(".*?=", "", cur_lvls_full)
+    } else {
+      # すでに short になってるパターン
+      cur_lvls_short <- cur_lvls_full
+    }
+  }
+
+  # 実データが持ってる順をベースにする
+  base_levels <- cur_lvls_full
+
+  # ------------------------------------------------------------
+  # 1. label.strata.map が「名前なし」で来たら名前をつける
+  # ------------------------------------------------------------
+  if (!is.null(label.strata.map)) {
+    nm <- names(label.strata.map)
+    if (is.null(nm) || !any(nzchar(nm))) {
+      # 名前が無いなら、まず level.strata を優先
+      if (!is.null(level.strata)) {
+        label.strata.map <- stats::setNames(as.character(label.strata.map),
+                                            as.character(level.strata))
+      } else if (!is.null(cur_lvls_full)) {
+        # それもなければ、実データのキーにつける
+        label.strata.map <- stats::setNames(as.character(label.strata.map),
+                                            cur_lvls_full)
+      }
+    }
+  }
+
+  # ------------------------------------------------------------
+  # 2. ラベル指定がまったく無いときのデフォルト
+  #    → 実データが "x=0","x=1" で short が "0","1" なら short を表示にする
+  # ------------------------------------------------------------
+  if (is.null(label.strata.map)) {
+    if (!is.null(cur_lvls_full) &&
+        !is.null(cur_lvls_short) &&
+        length(cur_lvls_full) == length(cur_lvls_short) &&
+        !identical(cur_lvls_full, cur_lvls_short)) {
+      # 表示は short, key は full
+      label.strata.map <- stats::setNames(cur_lvls_short, cur_lvls_full)
+    } else if (!is.null(cur_lvls_full)) {
+      # そのまま表示
+      label.strata.map <- stats::setNames(cur_lvls_full, cur_lvls_full)
+    } else {
+      # strata 自体が無いケース（単一カーブ）
+      label.strata.map <- NULL
+    }
+  }
+
+  # ------------------------------------------------------------
+  # 3. order.strata を “実データのキー” に寄せる
+  #    ユーザーが "0","1" で渡しても "x=0","x=1" にくっつける
+  # ------------------------------------------------------------
+  map_to_full <- function(x) {
+    if (is.null(x)) return(NULL)
+    x <- as.character(x)
+    out <- rep(NA_character_, length(x))
+
+    # そのまま full に当ててみる
+    if (!is.null(cur_lvls_full)) {
+      hit_full <- x %in% cur_lvls_full
+      out[hit_full] <- x[hit_full]
+    }
+
+    # full に無かったやつは short → full で当てる
+    if (!is.null(cur_lvls_full) && !is.null(cur_lvls_short)) {
+      hit_short <- x %in% cur_lvls_short
+      out[hit_short] <- cur_lvls_full[match(x[hit_short], cur_lvls_short)]
+    }
+
+    out
+  }
+  order_full <- map_to_full(order.strata)
+
+  # ------------------------------------------------------------
+  # 4. ラベルを base_levels の順にそろえる（足りなければ埋める）
+  # ------------------------------------------------------------
+  if (!is.null(label.strata.map) && !is.null(base_levels)) {
+    missing <- setdiff(base_levels, names(label.strata.map))
+    if (length(missing)) {
+      # 足りないところはキーそのまま
+      label.strata.map <- c(label.strata.map,
+                            stats::setNames(missing, missing))
+    }
+    # 実データの並びに並べ替える
+    label.strata.map <- label.strata.map[base_levels]
+  }
+
+  # ------------------------------------------------------------
+  # 5. limits を決める（これは ggplot の scale_* にそのまま渡すやつ）
+  # ------------------------------------------------------------
+  limits_arg <- base_levels
+  used_order <- FALSE
+  forbid_limits_due_to_order <- FALSE
+
+  if (!is.null(order_full) && !all(is.na(order_full))) {
+    ord_clean <- unique(order_full[!is.na(order_full)])
+    known <- ord_clean[ord_clean %in% base_levels]
+    rest  <- setdiff(base_levels, known)
+    limits_arg <- c(known, rest)
+    used_order <- TRUE
+  }
+
+  strata_levels_final <- if (length(limits_arg)) limits_arg else NULL
+  strata_labels_final <- if (!is.null(label.strata.map)) unname(label.strata.map) else NULL
+
+  list(
+    limits_arg             = limits_arg,
+    label.strata.map       = label.strata.map,
+    strata_levels_final    = strata_levels_final,
+    strata_labels_final    = strata_labels_final,
+    forbid_limits_due_to_order = forbid_limits_due_to_order,
+    used_order             = used_order
+  )
+}
+
+plot_reconcile_order_and_labels_old <- function(
     cur_lvls_full,
     cur_lvls_short,
     level.strata = NULL,
@@ -828,7 +960,6 @@ plot_reconcile_order_and_labels <- function(
     used_order = used_order
   )
 }
-
 
 plot_ensure_factor_strata <- function(formula, data) {
   rhs <- all.vars(update(formula, . ~ .))
@@ -950,4 +1081,23 @@ plot_force_strata_legend <- function(p,
   )
 
   p
+}
+
+plot_survfit_short_strata_names <- function(survfit_object) {
+  if (is.null(survfit_object) || is.null(survfit_object$strata)) return(survfit_object)
+
+  nm <- names(survfit_object$strata)
+  if (is.null(nm) || !length(nm)) return(survfit_object)
+
+  # "=something" の形式だけを対象にする
+  idx <- grepl("=", nm, fixed = TRUE)
+  if (!any(idx)) return(survfit_object)
+
+  short <- sub(".*?=", "", nm[idx])
+  short <- trimws(short)
+
+  nn <- nm
+  nn[idx] <- short
+  names(survfit_object$strata) <- nn
+  survfit_object
 }
