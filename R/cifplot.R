@@ -222,9 +222,9 @@ cifplot <- function(
     type.y = NULL,
     label.x = "Time",
     label.y = NULL,
+    level.strata = NULL,
     label.strata = NULL,
     order.strata = NULL,
-    level.strata = NULL,
     limits.x = NULL,
     limits.y = NULL,
     breaks.x = NULL,
@@ -288,8 +288,8 @@ cifplot <- function(
     label.x           = label.x,
     label.y           = label.y,
     level.strata      = level.strata,
-    order.strata      = order.strata,
     label.strata      = label.strata,
+    order.strata      = order.strata,
     limits.x          = limits.x,
     limits.y          = limits.y,
     breaks.x          = breaks.x,
@@ -400,8 +400,8 @@ cifplot <- function(
 
   norm <- normalize_strata_info(
     level.strata = axis.info$level.strata,
-    order.strata = axis.info$order.strata,
-    label.strata = axis.info$label.strata
+    label.strata = axis.info$label.strata,
+    order.strata = axis.info$order.strata
   )
 
   axis.info$level.strata <- norm$level
@@ -418,10 +418,16 @@ cifplot <- function(
       axis.info$label.strata <- NULL
     }
   }
+  level.strata <- axis.info$level.strata
   label.strata <- axis.info$label.strata
   order.strata <- axis.info$order.strata
-  level.strata <- axis.info$level.strata
 
+  print("axis.info$level.strata")
+  print(level.strata)
+  print("axis.info$label.strata")
+  print(label.strata)
+  print("axis.info$order.strata")
+  print(order.strata)
 
   .assert(!(isTRUE(printEachVar) && isTRUE(printEachEvent)), "incompatible_flags",
           which = "printEachVar and printEachEvent")
@@ -470,6 +476,7 @@ cifplot <- function(
         type.y                   = type.y,
         label.x                  = label.x,
         label.y                  = label.y,
+        level.strata             = level.strata,
         label.strata             = label.strata,
         order.strata             = order.strata,
         limits.x                 = limits.x,
@@ -502,10 +509,16 @@ cifplot <- function(
         filename.ggsave          = filename.ggsave,
         width.ggsave             = width.ggsave,
         height.ggsave            = height.ggsave,
-        dpi.ggsave               = dpi.ggsave
-      ),
+        dpi.ggsave               = dpi.ggsave,
+        survfit.info             = survfit.info,
+        axis.info                = axis.info,
+        visual.info              = visual.info,
+        panel.info               = panel.info,
+        style.info               = style.info,
+        ggsave.info              = ggsave.info
+        ),
       dots_clean
-    )
+      )
     out_plot <- do.call(cifplot_single, args_single)
     out_plot <- apply_strata_to_plots(
       list(out_plot),
@@ -533,6 +546,7 @@ cifplot <- function(
     type.y                 = type.y,
     label.x                = label.x,
     label.y                = label.y,
+#    level.strata           = level.strata,
     label.strata           = label.strata,
     order.strata           = order.strata,
     limits.x               = limits.x,
@@ -585,6 +599,7 @@ cifplot_single <- function(
     type.y = NULL,
     label.x = "Time",
     label.y = NULL,
+    level.strata = NULL,
     label.strata = NULL,
     order.strata = NULL,
     limits.x = NULL,
@@ -618,16 +633,34 @@ cifplot_single <- function(
     width.ggsave = 6,
     height.ggsave = 6,
     dpi.ggsave = 300,
+    # ★ ここを追加
+    survfit.info = NULL,
+    axis.info    = NULL,
+    visual.info  = NULL,
+    panel.info   = NULL,
+    style.info   = NULL,
+    ggsave.info  = NULL,
     ...
 ) {
   dots <- list(...)
-  survfit.info.user <- survfit.info
-  axis.info.user    <- axis.info
-  visual.info.user  <- visual.info
-  panel.info.user   <- panel.info
-  style.info.user   <- style.info
-  ggsave.info.user  <- ggsave.info
 
+  level.strata <- level.strata %||% NULL
+  label.strata <- label.strata %||% NULL
+  order.strata <- order.strata %||% NULL
+
+  print("cifplot_single level.strata")
+  print(level.strata)
+  print("cifplot_single label.strata")
+  print(label.strata)
+  print("cifplot_single order.strata")
+  print(order.strata)
+
+  survfit.info <- survfit.info %||% list()
+  axis.info    <- axis.info    %||% list()
+  visual.info  <- visual.info  %||% list()
+  panel.info   <- panel.info   %||% list()
+  style.info   <- style.info   %||% list()
+  ggsave.info  <- ggsave.info  %||% list()
   survfit.info <- modifyList(list(
     error     = error,
     conf.type = conf.type,
@@ -640,8 +673,8 @@ cifplot_single <- function(
     label.x           = label.x,
     label.y           = label.y,
     level.strata      = level.strata,
-    order.strata      = order.strata,
     label.strata      = label.strata,
+    order.strata      = order.strata,
     limits.x          = limits.x,
     limits.y          = limits.y,
     breaks.x          = breaks.x,
@@ -671,9 +704,7 @@ cifplot_single <- function(
   ), visual.info %||% list())
 
   panel.info <- modifyList(list(
-    printEachEvent     = printEachEvent,
-    printEachVar       = printEachVar,
-    rows.columns.panel = rows.columns.panel
+    printEachEvent     = printEachEvent
   ), panel.info %||% list())
 
   style.info <- modifyList(list(
@@ -718,9 +749,9 @@ cifplot_single <- function(
   type.y <- axis.info$type.y
   label.x <- axis.info$label.x
   label.y <- axis.info$label.y
+  level.strata <- axis.info$level.strata
   label.strata <- axis.info$label.strata
   order.strata <- axis.info$order.strata
-  level.strata <- axis.info$level.strata
   limits.x <- axis.info$limits.x
   limits.y <- axis.info$limits.y
   breaks.x <- axis.info$breaks.x
@@ -750,15 +781,25 @@ cifplot_single <- function(
   level_input <- axis.info$level.strata
   order_input <- axis.info$order.strata
 
+  print("before")
+  print(axis.info$level.strata)
+  print(axis.info$order.strata)
+  print(axis.info$label.strata)
+
   norm <- normalize_strata_info(
     level.strata = axis.info$level.strata,
-    order.strata = axis.info$order.strata,
-    label.strata = axis.info$label.strata
+    label.strata = axis.info$label.strata,
+    order.strata = axis.info$order.strata
   )
 
   axis.info$level.strata <- norm$level
   axis.info$order.strata <- norm$order_data
   axis.info$label.strata <- norm$label_map
+
+  print("after")
+  print(axis.info$level.strata)
+  print(axis.info$order.strata)
+  print(axis.info$label.strata)
 
   if (!is.null(axis.info$label.strata)) {
     stopifnot(!is.null(names(axis.info$label.strata)))
@@ -770,10 +811,9 @@ cifplot_single <- function(
       axis.info$label.strata <- NULL
     }
   }
+  level.strata <- axis.info$level.strata
   label.strata <- axis.info$label.strata
   order.strata <- axis.info$order.strata
-  level.strata <- axis.info$level.strata
-
 
   if (is.null(outcome.type)) {
     outcome.type <- util_check_outcome_type(formula = if (inherits(formula_or_fit,"survfit")) NULL
@@ -782,14 +822,14 @@ cifplot_single <- function(
     outcome.type <- match.arg(outcome.type, c("COMPETING-RISK","SURVIVAL"))
   }
 
-  if (inherits(formula_or_fit, "survfit")) {
-    if (!is.null(label.strata))
-    {
-      formula_or_fit <- plot_survfit_strata_labels(formula_or_fit, label.strata)
-    } else {
-      label.strata <- names(formula_or_fit$strata)
-    }
-  }
+#  if (inherits(formula_or_fit, "survfit")) {
+#    if (!is.null(label.strata))
+#    {
+#      formula_or_fit <- plot_survfit_strata_labels(formula_or_fit, label.strata)
+#    } else {
+#      label.strata <- names(formula_or_fit$strata)
+#    }
+#  }
 
   if (isTRUE(printEachEvent)) {
     if (inherits(formula_or_fit, "survfit")) {
@@ -903,7 +943,6 @@ cifplot_single <- function(
                                outcome.type = outcome.type, code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
                                error = error, conf.type = conf.type, conf.int = conf.int)
   }
-
   p <- call_ggsurvfit(
     survfit_object                = formula_or_fit,
     out_readSurv                  = NULL,
@@ -928,6 +967,7 @@ cifplot_single <- function(
     label.x                       = label.x,
     label.y                       = label.y,
     label.strata                  = label.strata,
+    level.strata                  = level.strata,
     order.strata                  = order.strata,
     limits.x                      = limits.x,
     limits.y                      = limits.y,
@@ -1356,6 +1396,7 @@ call_ggsurvfit <- function(
     label.x = "Time",
     label.y = NULL,
     label.strata = NULL,
+    level.strata = NULL,
     order.strata = NULL,
     limits.x = NULL,
     limits.y = NULL,
@@ -1368,14 +1409,41 @@ call_ggsurvfit <- function(
     font.size = 14,
     legend.position = "top"
 ){
-  if (inherits(survfit_object, "survfit")) {
-    if (!is.null(label.strata))
-    {
-      survfit_object <- plot_survfit_strata_labels(survfit_object, label.strata)
+  label.strata.map <- plot_make_label.strata.map(
+    survfit_object = survfit_object,
+    label.strata   = label.strata,
+    level.strata   = level.strata
+  )
+
+  # 1) まず必要なら survfit を上書きする
+  if (plot_needs_survfit_label_update(
+    survfit_object,
+    label.strata = label.strata,
+    order.strata = order.strata,
+    level.strata = level.strata
+  )) {
+    survfit_object <- plot_survfit_strata_labels(survfit_object, label.strata)
+  }
+
+  # 2) ★ここで初めて今のsurvfitからレベルをとる
+  cur_lvls_full  <- NULL
+  cur_lvls_short <- NULL
+  if (!is.null(survfit_object$strata)) {
+    cur_lvls_full <- unique(names(survfit_object$strata))
+    if (any(grepl("=", cur_lvls_full, fixed = TRUE))) {
+      cur_lvls_short <- sub(".*?=", "", cur_lvls_full)
     } else {
-      label.strata <- names(survfit_object$strata)
+      cur_lvls_short <- NULL
     }
   }
+
+  print("plot_needs_survfit_label_update")
+  print(names(survfit_object$strata))
+  print(label.strata)
+  print(level.strata)
+  print(order.strata)
+  print(cur_lvls_full)
+  print(cur_lvls_short)
 
   out_cg <- check_ggsurvfit(
     survfit_object = survfit_object,
@@ -1399,23 +1467,20 @@ call_ggsurvfit <- function(
     palette = palette
   )
 
-  label.strata.map <- plot_make_label.strata.map(survfit_object, label.strata)
-
-  cur_lvls_full  <- NULL
-  cur_lvls_short <- NULL
-  if (!is.null(survfit_object$strata)) {
-    cur_lvls_full  <- unique(names(survfit_object$strata))
-    cur_lvls_short <- sub(".*?=", "", cur_lvls_full)
-  }
-
   limits_arg <- NULL
   forbid_limits_due_to_order <- FALSE
+
+  print("plot_reconcile_order_and_labels")
+  print(label.strata.map)
+  print(level.strata)
+  print(order.strata)
 
   res <- plot_reconcile_order_and_labels(
     cur_lvls_full  = cur_lvls_full,
     cur_lvls_short = cur_lvls_short,
-    order.strata   = order.strata,
-    label.strata.map = label.strata.map
+    label.strata.map = label.strata.map,
+    level.strata   = level.strata,
+    order.strata   = order.strata
   )
 
   limits_arg             <- res$limits_arg
@@ -1423,10 +1488,14 @@ call_ggsurvfit <- function(
   strata_levels_final    <- res$strata_levels_final
   strata_labels_final    <- res$strata_labels_final
   forbid_limits_due_to_order <- res$forbid_limits_due_to_order
-  n_strata_effective <- if (!is.null(cur_lvls_full)) length(cur_lvls_full) else 1L
+  n_strata_effective <- if (!is.null(cur_lvls_full)) length(cur_lvls_full) else 1
+
+  print(strata_levels_final)
+  print(strata_labels_final)
+  print(limits_arg)
 
   p <- out_cg$out_survfit_object +
-    ggplot2::labs(x = label.x, y = out_cg$label.y)
+  ggplot2::labs(x = label.x, y = out_cg$label.y)
 
   if (isTRUE(addConfidenceInterval)) p <- p + add_confidence_interval()
   if (isTRUE(addCensorMark))         p <- p + add_censor_mark(shape = shape.censor.mark, size = size.censor.mark)

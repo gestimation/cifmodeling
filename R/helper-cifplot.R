@@ -579,13 +579,31 @@ plot_make_x_max <- function(sf) {
   return(1)
 }
 
-plot_make_label.strata.map <- function(survfit_object, label.strata) {
+plot_make_label.strata.map <- function(survfit_object,
+                                       label.strata,
+                                       level.strata = NULL) {
   if (is.null(label.strata)) return(NULL)
 
   cur_lvls_full  <- if (!is.null(survfit_object$strata)) unique(names(survfit_object$strata)) else NULL
   cur_lvls_short <- if (!is.null(cur_lvls_full)) sub(".*?=", "", cur_lvls_full) else NULL
 
-  if (is.null(names(label.strata)) || any(names(label.strata) == "")) {
+  if ((is.null(names(label.strata)) || !any(nzchar(names(label.strata))))) {
+    if (!is.null(level.strata)) {
+      if (!is.null(cur_lvls_full) && length(label.strata) != length(cur_lvls_full)) {
+        stop("`label.strata` length must match the number of strata.")
+      }
+
+      lbl_map <- stats::setNames(as.character(label.strata),
+                                 as.character(level.strata))
+
+      if (!is.null(cur_lvls_short) &&
+          setequal(as.character(level.strata), cur_lvls_short)) {
+        idx <- match(as.character(level.strata), cur_lvls_short)
+        names(lbl_map) <- cur_lvls_full[idx]
+      }
+
+      return(lbl_map)
+    }
     if (length(label.strata) != length(cur_lvls_full)) {
       stop("`label.strata` length must match the number of strata.")
     }
@@ -613,53 +631,70 @@ plot_make_label.strata.map <- function(survfit_object, label.strata) {
   stop("`label.strata` names must be strata levels (full or short).")
 }
 
-plot_make_label.strata.map_ <- function(fit, label.strata) {
-  .sf_strata_names <- function(fit) {
-    if (is.null(fit$strata)) return(NULL)
-    nm <- names(fit$strata)
-    if (is.null(nm)) return(NULL)
-    nm
-  }
-  .canon_str <- function(x) sub("^.*?=", "", as.character(x))  # "strata=level" > "level"
+plot_survfit_strata_labels <- function(survfit_object,
+                                       strata.label,
+                                       recycle_ok = FALSE) {
+  if (is.null(survfit_object)) return(survfit_object)
 
-  if (is.null(label.strata)) return(NULL)
+  nms <- names(survfit_object$strata)
 
-  fit_names <- .sf_strata_names(fit)
-  if (is.null(fit_names)) return(NULL)
-  if (!is.null(names(label.strata)) && any(nzchar(names(label.strata)))) {
-    key_in  <- .canon_str(names(label.strata))
-    key_fit <- .canon_str(fit_names)
-    idx <- match(key_fit, key_in)
-    if (all(!is.na(idx))) {
-      out <- unname(label.strata[idx])
-      names(out) <- fit_names
-      return(out)
-    } else {
-      ok <- which(!is.na(idx))
-      if (length(ok) > 0L) {
-        out <- unname(label.strata[idx[ok]])
-        names(out) <- fit_names[ok]
-        warning("Some label.strata names did not match strata and were ignored: ",
-                paste(setdiff(key_in, key_fit), collapse = ", "), call. = FALSE)
-        return(out)
+  # strata に名前がないときは「文字列そのものを名前にする」しかできない
+  if (is.null(nms) || !length(nms)) {
+    new_nms <- as.character(strata.label)
+    if (length(new_nms) != length(survfit_object$strata)) {
+      if (recycle_ok) {
+        new_nms <- rep_len(new_nms, length(survfit_object$strata))
       } else {
-        warning("No names in label.strata matched strata; falling back to order.", call. = FALSE)
+        stop("Length of `strata.label` does not match number of strata.", call. = FALSE)
       }
     }
+    names(survfit_object$strata) <- new_nms
+    return(survfit_object)
   }
-  if (length(label.strata) == length(fit_names)) {
-    out <- label.strata
-    names(out) <- fit_names
-    return(out)
+
+  # ここからは「もともと名前がある」ケース
+  # nms が "var=level" 形式かもしれないので左右に割る
+  has_eq <- grepl("=", nms, fixed = TRUE)
+  lhs    <- ifelse(has_eq, sub("^\\s*([^=]+)\\s*=.*$", "\\1", nms, perl = TRUE), NA_character_)
+  rhs    <- ifelse(has_eq, sub("^.*?=\\s*", "", nms, perl = TRUE), nms)
+
+  lab <- strata.label
+
+  # 1) label が full 名できている（"fruitq1=0" など）→ そのまま採用
+  if (!is.null(names(lab)) && length(intersect(names(lab), nms)) == length(nms)) {
+    new_rhs <- unname(lab[nms])
+
+    # 2) label が short 名できている（"0","1" など）→ 右側にマッチさせる
+  } else if (!is.null(names(lab)) && length(intersect(names(lab), rhs)) == length(nms)) {
+    new_rhs <- unname(lab[rhs])
+
+    # 3) 名前なしベクトルなら長さで対応
+  } else {
+    lab <- as.character(lab)
+    if (length(lab) != length(nms)) {
+      if (recycle_ok) lab <- rep_len(lab, length(nms))
+      else stop("Length of `strata.label` does not match number of strata.", call. = FALSE)
+    }
+    new_rhs <- lab
   }
-  warning(sprintf(
-    "Length of label.strata (%d) does not match number of strata (%d); labels ignored.",
-    length(label.strata), length(fit_names)
-  ), call. = FALSE)
-  return(NULL)
+
+  # ★★ ここが重要 ★★
+  # "=" が元からあったものは、左側（変数名）を残して右側だけ差し替える
+  new_nms <- character(length(nms))
+  for (i in seq_along(nms)) {
+    if (isTRUE(has_eq[i]) && !is.na(lhs[i])) {
+      new_nms[i] <- paste0(lhs[i], "=", new_rhs[i])
+    } else {
+      # "=" がなかったやつは右側をそのまま名前にする
+      new_nms[i] <- new_rhs[i]
+    }
+  }
+
+  names(survfit_object$strata) <- new_nms
+  return(survfit_object)
 }
 
-plot_survfit_strata_labels <- function(survfit_object, strata.label, recycle_ok = FALSE) {
+pplot_survfit_strata_labels <- function(survfit_object, strata.label, recycle_ok = FALSE) {
   if (is.null(survfit_object)) return(survfit_object)
 
   nms <- names(survfit_object$strata)
@@ -695,83 +730,97 @@ plot_survfit_strata_labels <- function(survfit_object, strata.label, recycle_ok 
   return(survfit_object)
 }
 
+
+
+`%||%` <- function(x, y) if (is.null(x)) y else x
+
 plot_reconcile_order_and_labels <- function(
     cur_lvls_full,
     cur_lvls_short,
+    level.strata = NUL,
     order.strata = NULL,
     label.strata.map = NULL
 ) {
+
+  # 1) label.strata.map が「名前なしベクトル」で来たら
+  #    level.strata の順番で名前を付ける
+  if (!is.null(label.strata.map)) {
+    nm <- names(label.strata.map)
+    if (is.null(nm) || !any(nzchar(nm))) {
+      # ここで「1→dog, 2→cat」を確定させる
+      label.strata.map <- stats::setNames(as.character(label.strata.map),
+                                          as.character(level.strata))
+    }
+  }
+
+  # 2) ラベルが short 名で来てたら full に直す（元の挙動を維持）
   .remap_to_full_if_needed <- function(lbl_map, full, short) {
     if (is.null(lbl_map) || is.null(full) || is.null(short)) return(lbl_map)
     nm <- names(lbl_map); if (!length(nm)) return(lbl_map)
     if (!all(nm %in% full) && all(nm %in% short)) {
-      idx <- match(nm, short); names(lbl_map) <- full[idx]
+      idx <- match(nm, short)
+      names(lbl_map) <- full[idx]
     }
     lbl_map
   }
   label.strata.map <- .remap_to_full_if_needed(label.strata.map, cur_lvls_full, cur_lvls_short)
 
+  # 3) order.strata も short → full に寄せる
   map_to_full <- function(x) {
     if (is.null(x)) return(NULL)
     out <- rep(NA_character_, length(x))
-    hit_f <- x %in% cur_lvls_full
-    out[hit_f] <- x[hit_f]
-    hit_s <- x %in% cur_lvls_short
-    out[hit_s] <- cur_lvls_full[match(x[hit_s], cur_lvls_short)]
+    if (!is.null(cur_lvls_full)) {
+      hit_f <- x %in% cur_lvls_full
+      out[hit_f] <- x[hit_f]
+    }
+    if (!is.null(cur_lvls_short)) {
+      hit_s <- x %in% cur_lvls_short
+      out[hit_s] <- cur_lvls_full[match(x[hit_s], cur_lvls_short)]
+    }
     out
   }
   order_full_raw <- map_to_full(order.strata)
 
+  # 4) ここで「全水準の宇宙」を決める
+  #    まずは実データ(survfit)の順、なければユーザーが持ってる順
+  base_levels <- cur_lvls_full %||% as.character(level.strata)
+
+  # 5) ラベルがあるなら base_levels の順に並べる
+  if (!is.null(label.strata.map)) {
+    # 足りないものがあれば、レベル名をそのままラベルにする
+    missing <- setdiff(base_levels, names(label.strata.map))
+    if (length(missing)) {
+      label.strata.map <- c(label.strata.map,
+                            stats::setNames(missing, missing))
+    }
+    # 並べ直し
+    label.strata.map <- label.strata.map[base_levels]
+  }
+
   limits_arg <- NULL
-  forbid_limits_due_to_order <- FALSE
   used_order <- FALSE
+  forbid_limits_due_to_order <- FALSE
 
-  if (!is.null(order_full_raw) && !is.null(label.strata.map)) {
-    set_ord  <- unique(order_full_raw)
-    set_lbls <- unique(names(label.strata.map))
-    has_unknown <- any(is.na(set_ord))
-    same_set <- !has_unknown && setequal(set_ord, set_lbls)
+  # 6) order.strata があればそれを最優先に並べる
+  if (!is.null(order_full_raw) && !all(is.na(order_full_raw))) {
+    ord_clean <- unique(order_full_raw[!is.na(order_full_raw)])
+    known <- ord_clean[ord_clean %in% base_levels]
+    rest  <- setdiff(base_levels, known)
+    limits_arg <- c(known, rest)
+    used_order <- TRUE
 
-    if (!same_set) {
-      warning("`order.strata` and `label.strata` must contain the same set of levels (ignoring order); ignoring `order.strata`.", call. = FALSE)
-      limits_arg <- names(label.strata.map)  # ラベル側の順（フル名）
-      forbid_limits_due_to_order <- TRUE
-      used_order <- FALSE
-    } else {
-      limits_arg <- unique(order_full_raw[!is.na(order_full_raw)])
-      used_order <- TRUE
+    if (!is.null(label.strata.map)) {
+      label.strata.map <- label.strata.map[limits_arg]
     }
-  } else if (!is.null(order_full_raw) && is.null(label.strata.map)) {
-    if (all(is.na(order_full_raw))) {
-      warning("`order.strata` has no overlap with strata levels; ignoring.", call. = FALSE)
-      limits_arg <- NULL
-      forbid_limits_due_to_order <- TRUE
-      used_order <- FALSE
-    } else {
-      keep <- unique(order_full_raw[!is.na(order_full_raw)])
-      if (length(keep) == 0L) {
-        warning("`order.strata` has no overlap with strata levels; ignoring.", call. = FALSE)
-        limits_arg <- NULL
-        forbid_limits_due_to_order <- TRUE
-        used_order <- FALSE
-      } else {
-        limits_arg <- keep
-        used_order <- TRUE
-      }
-    }
-  } else if (is.null(order_full_raw) && !is.null(label.strata.map)) {
-    limits_arg <- names(label.strata.map) # フル名
   } else {
-    limits_arg <- NULL
+    # order がなければ base_levels の順
+    limits_arg <- base_levels
   }
 
-  if (!is.null(limits_arg) && !is.null(label.strata.map)) {
-    idx <- match(limits_arg, names(label.strata.map))
-    idx <- idx[!is.na(idx)]
-    label.strata.map <- label.strata.map[idx]
-  }
+  print("limits_arg in plot_reconcile_order_and_labels")
+  print(limits_arg)
 
-  strata_levels_final <- if (!is.null(limits_arg) && length(limits_arg)) limits_arg else NULL
+  strata_levels_final <- if (length(limits_arg)) limits_arg else NULL
   strata_labels_final <- if (!is.null(label.strata.map)) unname(label.strata.map) else NULL
 
   list(
@@ -796,4 +845,66 @@ plot_ensure_factor_strata <- function(formula, data) {
     }
   }
   list(formula = formula, data = data)
+}
+
+plot_needs_survfit_label_update <- function(
+    survfit_object,
+    label.strata = NULL,
+    order.strata = NULL,
+    level.strata = NULL
+) {
+  if (!inherits(survfit_object, "survfit")) {
+    return(FALSE)
+  }
+
+  cur_lvls_full <- if (!is.null(survfit_object$strata)) unique(names(survfit_object$strata)) else NULL
+  if (is.null(cur_lvls_full)) {
+    print("A")
+    return(FALSE)
+  }
+
+  cur_lvls_short <- sub(".*?=", "", cur_lvls_full)
+
+  if (is.null(label.strata) && is.null(order.strata) && is.null(level.strata)) {
+    print("B")
+    return(FALSE)
+  }
+
+  cand <- character()
+
+  if (!is.null(label.strata)) {
+#    if (!is.null(names(label.strata)) && any(nzchar(names(label.strata)))) {
+#      cand <- c(cand, names(label.strata))
+#    } else {
+      cand <- c(cand, as.character(label.strata))
+#    }
+  }
+
+#  if (!is.null(order.strata)) {
+#    cand <- c(cand, as.character(order.strata))
+#  }
+
+#  if (!is.null(level.strata)) {
+#    cand <- c(cand, as.character(level.strata))
+#  }
+
+  cand <- cand[!is.na(cand) & nzchar(cand)]
+
+  if (!length(cand)) {
+    print("C")
+    return(FALSE)
+  }
+
+  same_short <- setequal(cur_lvls_short, cand)
+
+  if (same_short) {
+    return(FALSE)
+  }
+
+  same_full <- setequal(cur_lvls_full, cand)
+  if (same_full) {
+    return(FALSE)
+  }
+
+  TRUE
 }

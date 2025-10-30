@@ -792,7 +792,62 @@ cifpanel <- function(
   ))
 }
 
-normalize_strata_info <- function(level.strata = NULL, order.strata = NULL, label.strata = NULL) {
+normalize_strata_info <- function(level.strata = NULL,
+                                  order.strata = NULL,
+                                  label.strata = NULL) {
+  ch <- function(x) if (is.null(x)) NULL else as.character(x)
+
+  level <- ch(level.strata)
+  if (is.null(level) || !length(level)) {
+    return(list(level = NULL, order_data = NULL, label_map = NULL))
+  }
+
+  ## --- ラベル処理 ---
+  if (!is.null(label.strata)) {
+    # 1) 名前がない or 全部空文字のとき（位置対応）
+    if (is.null(names(label.strata)) || !any(nzchar(names(label.strata)))) {
+      if (length(label.strata) == length(level)) {
+        label_map <- stats::setNames(as.character(label.strata), level)
+      } else {
+        label_map <- stats::setNames(level, level)
+      }
+    } else {
+      # 2) 名前つきのときは names を落とさないように扱う
+      lab_names <- names(label.strata)
+      lab_vals  <- as.character(unname(label.strata))
+
+      # lab_names と level の共通部分だけ使う
+      keep <- intersect(lab_names, level)
+
+      # 名前でマップを作る
+      label_map <- stats::setNames(label.strata[keep], keep)
+
+      # 足りない level にはデフォルトで level 名を入れる
+      miss <- setdiff(level, names(label_map))
+      if (length(miss)) {
+        label_map <- c(label_map, stats::setNames(miss, miss))
+      }
+
+      # level の順に並べ直す
+      label_map <- label_map[level]
+    }
+  } else {
+    label_map <- stats::setNames(level, level)
+  }
+
+  ## --- 並び順処理 ---
+  ord <- ch(order.strata)
+  if (is.null(ord)) ord <- level
+
+  # order.strata に謎のレベルが混じってたら安全に落とす
+  if (!all(ord %in% level)) {
+    return(list(level = level, order_data = NULL, label_map = NULL))
+  }
+
+  list(level = level, order_data = ord, label_map = label_map)
+}
+
+normalize_strata_info_old <- function(level.strata = NULL, order.strata = NULL, label.strata = NULL) {
   ch <- function(x) if (is.null(x)) NULL else as.character(x)
 
   level <- ch(level.strata)

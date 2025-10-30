@@ -76,6 +76,124 @@ cifcurve <- function(
     report.survfit.std.err = FALSE
 ) {
   outcome.type  <- util_check_outcome_type(outcome.type, formula=formula, data=data)
+  out_readSurv  <- util_read_surv(formula, data, weights,
+                                  code.event1, code.event2, code.censoring,
+                                  subset.condition, na.action)
+  error <- curve_check_error(error, outcome.type)
+
+  # ★ ここで strata 名のベースを作っておく
+  # out_readSurv$strata はたぶんベクトル (1,1,2,2,...) なので
+  # これを factor にして levels を拾う
+  strata_fac   <- as.factor(out_readSurv$strata)
+  strata_lvls  <- levels(strata_fac)
+  # 元の「層を作った変数名」をとれるならここで拾う
+  # util_read_surv() がこういう名前で持ってると仮定
+  strata_var   <- out_readSurv$strata_name %||% NULL  # `%||%` は適宜
+  # var=level 形式を組む
+  if (!is.null(strata_var)) {
+    strata_fullnames <- paste0(strata_var, "=", strata_lvls)
+  } else {
+    strata_fullnames <- strata_lvls
+  }
+
+  if (identical(outcome.type, "SURVIVAL")) {
+    out_km <- calculateKM(out_readSurv$t, out_readSurv$d,
+                          out_readSurv$w, as.integer(out_readSurv$strata), error)
+    out_km$std.err <- out_km$surv * out_km$std.err
+    out_ci <- calculateCI(out_km, conf.int, conf.type, conf.lower = NULL)
+    if (isTRUE(report.survfit.std.err))
+      out_km$std.err <- out_km$std.err / out_km$surv
+
+    survfit_object <- list(
+      time      = out_km$time,
+      surv      = out_km$surv,
+      n         = out_km$n,
+      n.risk    = out_km$n.risk,
+      n.event   = out_km$n.event,
+      n.censor  = out_km$n.censor,
+      std.err   = out_km$std.err,
+      upper     = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$upper,
+      lower     = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$lower,
+      conf.type = conf.type,
+      call      = match.call(),
+      type      = "kaplan-meier",
+      method    = "Kaplan-Meier"
+    )
+    if (any(as.integer(out_readSurv$strata) != 1)) {
+      # ★ ここを var=level にする
+      names(out_km$strata) <- strata_fullnames
+      survfit_object$strata <- out_km$strata
+    }
+    class(survfit_object) <- "survfit"
+
+  } else {
+    out_aj <- calculateAJ(out_readSurv)
+
+    # もともとは: names(out_aj$strata1) <- levels(as.factor(out_readSurv$strata))
+    # ★ ここを var=level にする
+    names(out_aj$strata1) <- strata_fullnames
+
+    if (any(as.integer(out_readSurv$strata) != 1)) {
+      n <- table(as.integer(out_readSurv$strata))
+      rep_list <- mapply(rep, n, out_aj$strata1, SIMPLIFY = FALSE)
+      n.risk <- do.call(c, rep_list) -
+        out_aj$n.cum.censor - out_aj$n.cum.event1 - out_aj$n.cum.event2
+    } else {
+      n <- length(out_readSurv$strata)
+      n.risk <- n - out_aj$n.cum.censor - out_aj$n.cum.event1 - out_aj$n.cum.event2
+    }
+
+    out_aj$std.err <- calculateAalenDeltaSE(
+      out_aj$time1, out_aj$aj1,
+      out_aj$n.event1, out_aj$n.event2,
+      n.risk,
+      out_aj$time0, out_aj$km0, out_aj$strata1, error
+    )
+    out_aj$surv <- 1 - out_aj$aj1
+    out_ci <- calculateCI(out_aj, conf.int, conf.type, conf.lower = NULL)
+    if (isTRUE(report.survfit.std.err))
+      out_aj$std.err <- out_aj$std.err / out_aj$surv
+
+    survfit_object <- list(
+      time        = out_aj$time1,
+      surv        = out_aj$surv,
+      n           = n,
+      n.risk      = n.risk,
+      n.event     = out_aj$n.event1,
+      n.censor    = out_aj$n.censor,
+      std.err     = out_aj$std.err,
+      upper       = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$upper,
+      lower       = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$lower,
+      conf.type   = conf.type,
+      call        = match.call(),
+      type        = "aalen-johansen",
+      method      = "aalen-johansen"
+    )
+    if (any(as.integer(out_readSurv$strata) != 1))
+      survfit_object$strata <- out_aj$strata1
+
+    class(survfit_object) <- "survfit"
+  }
+
+  return(survfit_object)
+}
+
+cifcurve_old <- function(
+    formula,
+    data,
+    weights = NULL,
+    subset.condition = NULL,
+    na.action = na.omit,
+    outcome.type = c("SURVIVAL","COMPETING-RISK"),
+    code.event1 = 1,
+    code.event2 = 2,
+    code.censoring = 0,
+    error = NULL,
+    conf.type = "arcsine-square root",
+    conf.int = 0.95,
+    report.survfit.std.err = FALSE
+) {
+  outcome.type  <- util_check_outcome_type(outcome.type, formula=formula, data=data)
   out_readSurv  <- util_read_surv(formula, data, weights, code.event1, code.event2, code.censoring, subset.condition, na.action)
   error <- curve_check_error(error, outcome.type)
 
