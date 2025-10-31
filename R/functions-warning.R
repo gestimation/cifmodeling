@@ -1,4 +1,6 @@
 .msg <- list(
+  panel_disables_tables = "addRiskTable/addEstimateTable are ignored in panel mode (printEachVar/printEachEvent); set to FALSE internally.",
+  panel_disables_labelstrata = "`label.strata` is ignored in panel mode (printEachVar/printEachEvent).",
   req           = "`{arg}` is required.",
   numeric       = "`{arg}` must be numeric.",
   nonneg        = "`{arg}` must be non-negative.",
