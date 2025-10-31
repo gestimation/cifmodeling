@@ -340,8 +340,7 @@ cifpanel <- function(
     limits.y          = limits.y,
     breaks.x          = breaks.x,
     breaks.y          = breaks.y,
-    use_coord_cartesian = get0("use_coord_cartesian", ifnotfound = NULL),
-    touch_colour      = TRUE
+    use_coord_cartesian = get0("use_coord_cartesian", ifnotfound = NULL)
   ), axis.info %||% list())
 
   visual.info <- modifyList(list(
@@ -408,7 +407,6 @@ cifpanel <- function(
     units           = "in"
   ), ggsave.info %||% list())
 
-  axis.info$touch_colour <- axis.info$touch_colour %||% TRUE
   inset.info$inset.align_to <- match.arg(inset.info$inset.align_to, c("panel","plot","full"))
 
   rows.columns.panel <- panel.info$rows.columns.panel
@@ -498,8 +496,7 @@ cifpanel <- function(
     plots <- apply_strata_to_plots(
       plots,
       order_data   = axis.info$order.strata,
-      label_map    = axis.info$label.strata,
-      touch_colour = axis.info$touch_colour
+      label_map    = axis.info$label.strata
     )
 
     plots_out <- plots
@@ -728,8 +725,7 @@ cifpanel <- function(
   plots <- apply_strata_to_plots(
     plots,
     order_data   = axis.info$order.strata,
-    label_map    = axis.info$label.strata,
-    touch_colour = axis.info$touch_colour
+    label_map    = axis.info$label.strata
   )
 
   if (isTRUE(use_inset_element)) {

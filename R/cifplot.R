@@ -269,111 +269,93 @@ cifplot <- function(
     ...
 ) {
   dots <- list(...)
-  survfit.info.user <- survfit.info
-  axis.info.user    <- axis.info
-  visual.info.user  <- visual.info
-  panel.info.user   <- panel.info
-  style.info.user   <- style.info
-  ggsave.info.user  <- ggsave.info
 
-  survfit.info <- modifyList(list(
+  infos <- cifplot_build_info(
     error     = error,
     conf.type = conf.type,
-    conf.int  = conf.int
-  ), survfit.info %||% list())
+    conf.int  = conf.int,
 
-  axis.info <- modifyList(list(
-    type.x            = NULL,
-    type.y            = type.y,
-    label.x           = label.x,
-    label.y           = label.y,
-    level.strata      = level.strata,
-    label.strata      = label.strata,
-    order.strata      = order.strata,
-    limits.x          = limits.x,
-    limits.y          = limits.y,
-    breaks.x          = breaks.x,
-    breaks.y          = breaks.y,
+    type.y    = type.y,
+    label.x   = label.x,
+    label.y   = label.y,
+    level.strata = level.strata,
+    label.strata = label.strata,
+    order.strata = order.strata,
+    limits.x  = limits.x,
+    limits.y  = limits.y,
+    breaks.x  = breaks.x,
+    breaks.y  = breaks.y,
     use_coord_cartesian = use_coord_cartesian,
-    touch_colour      = TRUE
-  ), axis.info %||% list())
 
-  visual.info <- modifyList(list(
-    addConfidenceInterval    = addConfidenceInterval,
-    ci.alpha                 = 0.25,
-    addRiskTable             = addRiskTable,
-    addEstimateTable         = addEstimateTable,
-    addCensorMark            = addCensorMark,
-    shape.censor.mark        = shape.censor.mark,
-    size.censor.mark         = size.censor.mark,
-    addCompetingRiskMark     = addCompetingRiskMark,
-    competing.risk.time      = competing.risk.time,
-    shape.competing.risk.mark= shape.competing.risk.mark,
-    size.competing.risk.mark = size.competing.risk.mark,
-    addIntercurrentEventMark = addIntercurrentEventMark,
-    intercurrent.event.time  = intercurrent.event.time,
+    addConfidenceInterval = addConfidenceInterval,
+    addRiskTable          = addRiskTable,
+    addEstimateTable      = addEstimateTable,
+    addCensorMark         = addCensorMark,
+    shape.censor.mark     = shape.censor.mark,
+    size.censor.mark      = size.censor.mark,
+    addCompetingRiskMark  = addCompetingRiskMark,
+    competing.risk.time   = competing.risk.time,
+    shape.competing.risk.mark = shape.competing.risk.mark,
+    size.competing.risk.mark  = size.competing.risk.mark,
+    addIntercurrentEventMark  = addIntercurrentEventMark,
+    intercurrent.event.time   = intercurrent.event.time,
     shape.intercurrent.event.mark = shape.intercurrent.event.mark,
     size.intercurrent.event.mark  = size.intercurrent.event.mark,
-    addQuantileLine          = addQuantileLine,
-    quantile                 = quantile
-  ), visual.info %||% list())
+    addQuantileLine        = addQuantileLine,
+    quantile               = quantile,
 
-  panel.info <- modifyList(list(
     printEachEvent     = printEachEvent,
     printEachVar       = printEachVar,
-    rows.columns.panel = rows.columns.panel
-  ), panel.info %||% list())
+    rows.columns.panel = rows.columns.panel,
 
-  style.info <- modifyList(list(
     style           = style,
     palette         = palette,
     font.family     = font.family,
     font.size       = font.size,
-    legend.position = legend.position
-  ), style.info %||% list())
+    legend.position = legend.position,
 
-  ggsave.info <- modifyList(list(
     filename.ggsave = filename.ggsave,
     width.ggsave    = width.ggsave,
     height.ggsave   = height.ggsave,
     dpi.ggsave      = dpi.ggsave,
-    units           = "in"
-  ), ggsave.info %||% list())
 
-  axis.info$touch_colour <- axis.info$touch_colour %||% TRUE
+    survfit.info = survfit.info,
+    axis.info    = axis.info,
+    visual.info  = visual.info,
+    panel.info   = panel.info,
+    style.info   = style.info,
+    ggsave.info  = ggsave.info
+  )
+
+  survfit.info <- infos$survfit.info
+  axis.info    <- infos$axis.info
+  visual.info  <- infos$visual.info
+  panel.info   <- infos$panel.info
+  style.info   <- infos$style.info
+  ggsave.info  <- infos$ggsave.info
+
+  # ここから先は「整合性チェック＆展開」だけにできる ↓
 
   style.info$font.family <- style.info$font.family %||% "sans"
   style.info$font.size   <- style.info$font.size   %||% 12
 
-  legend.position <- style.info$legend.position
-  style           <- style.info$style
-  palette         <- style.info$palette
-  font.family     <- style.info$font.family
-  font.size       <- style.info$font.size
-
-  filename.ggsave <- ggsave.info$filename.ggsave
-  width.ggsave    <- ggsave.info$width.ggsave
-  height.ggsave   <- ggsave.info$height.ggsave
-  dpi.ggsave      <- ggsave.info$dpi.ggsave
-  ggsave.units    <- ggsave.info$units %||% "in"
-
-  printEachEvent <- isTRUE(panel.info$printEachEvent)
-  printEachVar   <- isTRUE(panel.info$printEachVar)
-  rows.columns.panel <- panel.info$rows.columns.panel
-
-  use_coord_cartesian <- isTRUE(axis.info$use_coord_cartesian)
-
+  #############################################################
+  error     <- survfit.info$error     %||% error
+  conf.type <- survfit.info$conf.type %||% conf.type
+  conf.int  <- survfit.info$conf.int  %||% conf.int
+  #############################################################
   type.y <- axis.info$type.y
   label.x <- axis.info$label.x
   label.y <- axis.info$label.y
   label.strata <- axis.info$label.strata
-  order.strata <- axis.info$order.strata
   level.strata <- axis.info$level.strata
+  order.strata <- axis.info$order.strata
   limits.x <- axis.info$limits.x
   limits.y <- axis.info$limits.y
   breaks.x <- axis.info$breaks.x
   breaks.y <- axis.info$breaks.y
-
+  use_coord_cartesian <- isTRUE(axis.info$use_coord_cartesian)
+  #############################################################
   addConfidenceInterval <- visual.info$addConfidenceInterval
   addRiskTable          <- visual.info$addRiskTable
   addEstimateTable      <- visual.info$addEstimateTable
@@ -390,10 +372,24 @@ cifplot <- function(
   size.intercurrent.event.mark  <- visual.info$size.intercurrent.event.mark
   addQuantileLine        <- visual.info$addQuantileLine
   quantile               <- visual.info$quantile
+  #############################################################
+  printEachEvent <- isTRUE(panel.info$printEachEvent)
+  printEachVar   <- isTRUE(panel.info$printEachVar)
+  rows.columns.panel <- panel.info$rows.columns.panel
+  #############################################################
+  style           <- style.info$style
+  palette         <- style.info$palette
+  font.family     <- style.info$font.family
+  font.size       <- style.info$font.size
+  legend.position <- style.info$legend.position
+  #############################################################
+  filename.ggsave <- ggsave.info$filename.ggsave
+  width.ggsave    <- ggsave.info$width.ggsave
+  height.ggsave   <- ggsave.info$height.ggsave
+  dpi.ggsave      <- ggsave.info$dpi.ggsave
+  ggsave.units    <- ggsave.info$units %||% "in"
+  #############################################################
 
-  error     <- survfit.info$error     %||% error
-  conf.type <- survfit.info$conf.type %||% conf.type
-  conf.int  <- survfit.info$conf.int  %||% conf.int
 
   level_input <- axis.info$level.strata
   order_input <- axis.info$order.strata
@@ -426,13 +422,6 @@ cifplot <- function(
   level.strata <- axis.info$level.strata
   label.strata <- axis.info$label.strata
   order.strata <- axis.info$order.strata
-
-  print("axis.info$level.strata")
-  print(level.strata)
-  print("axis.info$label.strata")
-  print(label.strata)
-  print("axis.info$order.strata")
-  print(order.strata)
 
   .assert(!(isTRUE(printEachVar) && isTRUE(printEachEvent)), "incompatible_flags",
           which = "printEachVar and printEachEvent")
@@ -475,61 +464,20 @@ cifplot <- function(
         code.event2              = code.event2,
         code.censoring           = code.censoring,
         code.events              = NULL,
-        error                    = error,
-        conf.type                = conf.type,
-        conf.int                 = conf.int,
-        type.y                   = type.y,
-        label.x                  = label.x,
-        label.y                  = label.y,
-        level.strata             = level.strata,
-        label.strata             = label.strata,
-        order.strata             = order.strata,
-        limits.x                 = limits.x,
-        limits.y                 = limits.y,
-        breaks.x                 = breaks.x,
-        breaks.y                 = breaks.y,
-        use_coord_cartesian      = use_coord_cartesian,
-        addConfidenceInterval    = addConfidenceInterval,
-        addRiskTable             = addRiskTable,
-        addEstimateTable         = addEstimateTable,
-        addCensorMark            = addCensorMark,
-        shape.censor.mark        = shape.censor.mark,
-        size.censor.mark         = size.censor.mark,
-        addCompetingRiskMark     = addCompetingRiskMark,
-        competing.risk.time      = competing.risk.time,
-        shape.competing.risk.mark= shape.competing.risk.mark,
-        size.competing.risk.mark = size.competing.risk.mark,
-        addIntercurrentEventMark = addIntercurrentEventMark,
-        intercurrent.event.time  = intercurrent.event.time,
-        shape.intercurrent.event.mark = shape.intercurrent.event.mark,
-        size.intercurrent.event.mark  = size.intercurrent.event.mark,
-        addQuantileLine          = addQuantileLine,
-        quantile                 = quantile,
-        printEachEvent           = printEachEvent,
-        style                    = style,
-        palette                  = palette,
-        font.family              = font.family,
-        font.size                = font.size,
-        legend.position          = legend.position,
-        filename.ggsave          = filename.ggsave,
-        width.ggsave             = width.ggsave,
-        height.ggsave            = height.ggsave,
-        dpi.ggsave               = dpi.ggsave,
         survfit.info             = survfit.info,
         axis.info                = axis.info,
         visual.info              = visual.info,
         panel.info               = panel.info,
         style.info               = style.info,
         ggsave.info              = ggsave.info
-        ),
+      ),
       dots_clean
-      )
+    )
     out_plot <- do.call(cifplot_single, args_single)
     out_plot <- apply_strata_to_plots(
       list(out_plot),
       order_data   = axis.info$order.strata,
-      label_map    = axis.info$label.strata,
-      touch_colour = axis.info$touch_colour
+      label_map    = axis.info$label.strata
     )[[1]]
     return(out_plot)
   }
@@ -598,46 +546,7 @@ cifplot_single <- function(
     code.event2 = 2,
     code.censoring = 0,
     code.events = NULL,
-    error = NULL,
-    conf.type = "arcsine-square root",
-    conf.int = 0.95,
-    type.y = NULL,
-    label.x = "Time",
-    label.y = NULL,
-    level.strata = NULL,
-    label.strata = NULL,
-    order.strata = NULL,
-    limits.x = NULL,
-    limits.y = NULL,
-    breaks.x = NULL,
-    breaks.y = NULL,
-    use_coord_cartesian = FALSE,
-    addConfidenceInterval = TRUE,
-    addRiskTable = TRUE,
-    addEstimateTable = FALSE,
-    addCensorMark = TRUE,
-    shape.censor.mark = 3,
-    size.censor.mark = 2,
-    addCompetingRiskMark = FALSE,
-    competing.risk.time = list(),
-    shape.competing.risk.mark = 16,
-    size.competing.risk.mark = 2,
-    addIntercurrentEventMark = FALSE,
-    intercurrent.event.time = list(),
-    shape.intercurrent.event.mark = 1,
-    size.intercurrent.event.mark = 2,
-    addQuantileLine = FALSE,
-    quantile = 0.5,
-    printEachEvent = FALSE,
-    style = "CLASSIC",
-    palette = NULL,
-    font.family = "sans",
-    font.size = 12,
-    legend.position = "top",
-    filename.ggsave = NULL,
-    width.ggsave = 6,
-    height.ggsave = 6,
-    dpi.ggsave = 300,
+    # ここからは info 系だけを受ける
     survfit.info = NULL,
     axis.info    = NULL,
     visual.info  = NULL,
@@ -648,132 +557,84 @@ cifplot_single <- function(
 ) {
   dots <- list(...)
 
-  level.strata <- level.strata %||% NULL
-  label.strata <- label.strata %||% NULL
-  order.strata <- order.strata %||% NULL
-
+  # 空を全部 list() 化しておく
   survfit.info <- survfit.info %||% list()
   axis.info    <- axis.info    %||% list()
   visual.info  <- visual.info  %||% list()
   panel.info   <- panel.info   %||% list()
   style.info   <- style.info   %||% list()
   ggsave.info  <- ggsave.info  %||% list()
-  survfit.info <- modifyList(list(
-    error     = error,
-    conf.type = conf.type,
-    conf.int  = conf.int
-  ), survfit.info %||% list())
 
-  axis.info <- modifyList(list(
-    type.x            = NULL,
-    type.y            = type.y,
-    label.x           = label.x,
-    label.y           = label.y,
-    level.strata      = level.strata,
-    label.strata      = label.strata,
-    order.strata      = order.strata,
-    limits.x          = limits.x,
-    limits.y          = limits.y,
-    breaks.x          = breaks.x,
-    breaks.y          = breaks.y,
-    use_coord_cartesian = use_coord_cartesian,
-    touch_colour      = TRUE
-  ), axis.info %||% list())
+  # ----------------------------------------------------------
+  # ① survfit.info の展開
+  # ----------------------------------------------------------
+  error     <- survfit.info$error
+  conf.type <- survfit.info$conf.type
+  conf.int  <- survfit.info$conf.int
 
-  visual.info <- modifyList(list(
-    addConfidenceInterval    = addConfidenceInterval,
-    ci.alpha                 = 0.25,
-    addRiskTable             = addRiskTable,
-    addEstimateTable         = addEstimateTable,
-    addCensorMark            = addCensorMark,
-    shape.censor.mark        = shape.censor.mark,
-    size.censor.mark         = size.censor.mark,
-    addCompetingRiskMark     = addCompetingRiskMark,
-    competing.risk.time      = competing.risk.time,
-    shape.competing.risk.mark= shape.competing.risk.mark,
-    size.competing.risk.mark = size.competing.risk.mark,
-    addIntercurrentEventMark = addIntercurrentEventMark,
-    intercurrent.event.time  = intercurrent.event.time,
-    shape.intercurrent.event.mark = shape.intercurrent.event.mark,
-    size.intercurrent.event.mark  = size.intercurrent.event.mark,
-    addQuantileLine          = addQuantileLine,
-    quantile                 = quantile
-  ), visual.info %||% list())
+  # ----------------------------------------------------------
+  # ② axis.info の展開
+  # ----------------------------------------------------------
+  type.y            <- axis.info$type.y
+  label.x           <- axis.info$label.x
+  label.y           <- axis.info$label.y
+  label.strata      <- axis.info$label.strata
+  level.strata      <- axis.info$level.strata
+  order.strata      <- axis.info$order.strata
+  limits.x          <- axis.info$limits.x
+  limits.y          <- axis.info$limits.y
+  breaks.x          <- axis.info$breaks.x
+  breaks.y          <- axis.info$breaks.y
+  use_coord_cartesian <- isTRUE(axis.info$use_coord_cartesian)
 
-  panel.info <- modifyList(list(
-    printEachEvent     = printEachEvent
-  ), panel.info %||% list())
+  # ----------------------------------------------------------
+  # ③ visual.info の展開
+  # ----------------------------------------------------------
+  addConfidenceInterval        <- visual.info$addConfidenceInterval
+  addRiskTable                 <- visual.info$addRiskTable
+  addEstimateTable             <- visual.info$addEstimateTable
+  addCensorMark                <- visual.info$addCensorMark
+  shape.censor.mark            <- visual.info$shape.censor.mark
+  size.censor.mark             <- visual.info$size.censor.mark
+  addCompetingRiskMark         <- visual.info$addCompetingRiskMark
+  competing.risk.time          <- visual.info$competing.risk.time
+  shape.competing.risk.mark    <- visual.info$shape.competing.risk.mark
+  size.competing.risk.mark     <- visual.info$size.competing.risk.mark
+  addIntercurrentEventMark     <- visual.info$addIntercurrentEventMark
+  intercurrent.event.time      <- visual.info$intercurrent.event.time
+  shape.intercurrent.event.mark<- visual.info$shape.intercurrent.event.mark
+  size.intercurrent.event.mark <- visual.info$size.intercurrent.event.mark
+  addQuantileLine              <- visual.info$addQuantileLine
+  quantile                     <- visual.info$quantile
 
-  style.info <- modifyList(list(
-    style           = style,
-    palette         = palette,
-    font.family     = font.family,
-    font.size       = font.size,
-    legend.position = legend.position
-  ), style.info %||% list())
+  # ----------------------------------------------------------
+  # ④ panel.info の展開
+  # ----------------------------------------------------------
+  printEachEvent     <- isTRUE(panel.info$printEachEvent)
+  printEachVar       <- isTRUE(panel.info$printEachVar)
+  rows.columns.panel <- panel.info$rows.columns.panel
 
-  ggsave.info <- modifyList(list(
-    filename.ggsave = filename.ggsave,
-    width.ggsave    = width.ggsave,
-    height.ggsave   = height.ggsave,
-    dpi.ggsave      = dpi.ggsave,
-    units           = "in"
-  ), ggsave.info %||% list())
-
-  axis.info$touch_colour <- axis.info$touch_colour %||% TRUE
-
-  style.info$font.family <- style.info$font.family %||% "sans"
-  style.info$font.size   <- style.info$font.size   %||% 12
-
-  legend.position <- style.info$legend.position
+  # ----------------------------------------------------------
+  # ⑤ style.info の展開
+  # ----------------------------------------------------------
   style           <- style.info$style
   palette         <- style.info$palette
   font.family     <- style.info$font.family
   font.size       <- style.info$font.size
+  legend.position <- style.info$legend.position
 
+  # ----------------------------------------------------------
+  # ⑥ ggsave.info の展開
+  # ----------------------------------------------------------
   filename.ggsave <- ggsave.info$filename.ggsave
   width.ggsave    <- ggsave.info$width.ggsave
   height.ggsave   <- ggsave.info$height.ggsave
   dpi.ggsave      <- ggsave.info$dpi.ggsave
   ggsave.units    <- ggsave.info$units %||% "in"
+  # ----------------------------------------------------------
 
-  printEachEvent <- isTRUE(panel.info$printEachEvent)
-  printEachVar   <- isTRUE(panel.info$printEachVar)
-  rows.columns.panel <- panel.info$rows.columns.panel
-
-  use_coord_cartesian <- isTRUE(axis.info$use_coord_cartesian)
-
-  type.y <- axis.info$type.y
-  label.x <- axis.info$label.x
-  label.y <- axis.info$label.y
-  level.strata <- axis.info$level.strata
-  label.strata <- axis.info$label.strata
-  order.strata <- axis.info$order.strata
-  limits.x <- axis.info$limits.x
-  limits.y <- axis.info$limits.y
-  breaks.x <- axis.info$breaks.x
-  breaks.y <- axis.info$breaks.y
-
-  addConfidenceInterval <- visual.info$addConfidenceInterval
-  addRiskTable          <- visual.info$addRiskTable
-  addEstimateTable      <- visual.info$addEstimateTable
-  addCensorMark         <- visual.info$addCensorMark
-  shape.censor.mark     <- visual.info$shape.censor.mark
-  size.censor.mark      <- visual.info$size.censor.mark
-  addCompetingRiskMark  <- visual.info$addCompetingRiskMark
-  competing.risk.time   <- visual.info$competing.risk.time
-  shape.competing.risk.mark <- visual.info$shape.competing.risk.mark
-  size.competing.risk.mark  <- visual.info$size.competing.risk.mark
-  addIntercurrentEventMark  <- visual.info$addIntercurrentEventMark
-  intercurrent.event.time   <- visual.info$intercurrent.event.time
-  shape.intercurrent.event.mark <- visual.info$shape.intercurrent.event.mark
-  size.intercurrent.event.mark  <- visual.info$size.intercurrent.event.mark
-  addQuantileLine        <- visual.info$addQuantileLine
-  quantile               <- visual.info$quantile
-
-  error     <- survfit.info$error     %||% error
-  conf.type <- survfit.info$conf.type %||% conf.type
-  conf.int  <- survfit.info$conf.int  %||% conf.int
+  # ここから下は「もともと cifplot_single がやってたこと」を続けるだけ
+  # （outcome.type の確定、printEachEvent=TRUE のときの分岐、survfit を作る、最後に call_ggsurvfit() へ渡す等）
 
   level_input <- axis.info$level.strata
   order_input <- axis.info$order.strata
@@ -819,14 +680,14 @@ cifplot_single <- function(
     outcome.type <- match.arg(outcome.type, c("COMPETING-RISK","SURVIVAL"))
   }
 
-#  if (inherits(formula_or_fit, "survfit")) {
-#    if (!is.null(label.strata))
-#    {
-#      formula_or_fit <- plot_survfit_strata_labels(formula_or_fit, label.strata)
-#    } else {
-#      label.strata <- names(formula_or_fit$strata)
-#    }
-#  }
+  #  if (inherits(formula_or_fit, "survfit")) {
+  #    if (!is.null(label.strata))
+  #    {
+  #      formula_or_fit <- plot_survfit_strata_labels(formula_or_fit, label.strata)
+  #    } else {
+  #      label.strata <- names(formula_or_fit$strata)
+  #    }
+  #  }
 
   if (isTRUE(printEachEvent)) {
     if (inherits(formula_or_fit, "survfit")) {
@@ -942,45 +803,19 @@ cifplot_single <- function(
     formula_or_fit <- plot_survfit_short_strata_names(formula_or_fit)
   }
   p <- call_ggsurvfit(
-    survfit_object                = formula_or_fit,
-    out_readSurv                  = NULL,
-    conf.type                     = conf.type,
-    addConfidenceInterval         = addConfidenceInterval,
-    addRiskTable                  = addRiskTable,
-    addEstimateTable              = addEstimateTable,
-    addCensorMark                 = addCensorMark,
-    shape.censor.mark             = shape.censor.mark,
-    size.censor.mark              = size.censor.mark,
-    addCompetingRiskMark          = addCompetingRiskMark,
-    competing.risk.time           = competing.risk.time,
-    shape.competing.risk.mark     = shape.competing.risk.mark,
-    size.competing.risk.mark      = size.competing.risk.mark,
-    addIntercurrentEventMark      = addIntercurrentEventMark,
-    intercurrent.event.time       = intercurrent.event.time,
-    shape.intercurrent.event.mark = shape.intercurrent.event.mark,
-    size.intercurrent.event.mark  = size.intercurrent.event.mark,
-    addQuantileLine               = addQuantileLine,
-    quantile                      = quantile,
-    type.y                        = type.y,
-    label.x                       = label.x,
-    label.y                       = label.y,
-    label.strata                  = label.strata,
-    level.strata                  = level.strata,
-    order.strata                  = order.strata,
-    limits.x                      = limits.x,
-    limits.y                      = limits.y,
-    breaks.x                      = breaks.x,
-    breaks.y                      = breaks.y,
-    use_coord_cartesian           = use_coord_cartesian,
-    style                         = style,
-    palette                       = palette,
-    font.family                   = font.family,
-    font.size                     = font.size,
-    legend.position               = legend.position
+    survfit_object = if (inherits(formula_or_fit, "survfit")) formula_or_fit else stop("..."),
+    out_readSurv   = NULL,
+    survfit.info   = survfit.info,
+    axis.info      = axis.info,
+    visual.info    = visual.info,
+    panel.info     = panel.info,
+    style.info     = style.info,
+    ggsave.info    = ggsave.info
   )
   if (!is.null(filename.ggsave)) ggplot2::ggsave(filename.ggsave, plot = p, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave, units = ggsave.units)
   return(p)
 }
+
 
 cifplot_printEachVar <- function(
     rows.columns.panel = NULL,
@@ -1069,13 +904,11 @@ cifplot_printEachVar <- function(
     limits.y          = limits.y,
     breaks.x          = breaks.x,
     breaks.y          = breaks.y,
-    use_coord_cartesian = use_coord_cartesian,
-    touch_colour      = TRUE
+    use_coord_cartesian = use_coord_cartesian
   ), axis.info %||% list())
 
   visual.info <- modifyList(list(
     addConfidenceInterval    = addConfidenceInterval,
-    ci.alpha                 = 0.25,
     addRiskTable             = addRiskTable,
     addEstimateTable         = addEstimateTable,
     addCensorMark            = addCensorMark,
@@ -1114,8 +947,6 @@ cifplot_printEachVar <- function(
     dpi.ggsave      = dpi.ggsave,
     units           = "in"
   ), ggsave.info %||% list())
-
-  axis.info$touch_colour <- axis.info$touch_colour %||% TRUE
 
   style.info$font.family <- style.info$font.family %||% "sans"
   style.info$font.size   <- style.info$font.size   %||% 12
@@ -1382,116 +1213,109 @@ cifplot_printEachVar <- function(
 call_ggsurvfit <- function(
     survfit_object,
     out_readSurv = NULL,
-    conf.type = NULL,
-    addConfidenceInterval = TRUE,
-    addRiskTable = TRUE,
-    addEstimateTable = FALSE,
-    addCensorMark = TRUE,
-    shape.censor.mark = 3,
-    size.censor.mark = 2,
-    addCompetingRiskMark = TRUE,
-    competing.risk.time = list(),
-    shape.competing.risk.mark = 16,
-    size.competing.risk.mark = 2,
-    addIntercurrentEventMark = TRUE,
-    intercurrent.event.time = list(),
-    shape.intercurrent.event.mark = 1,
-    size.intercurrent.event.mark = 2,
-    addQuantileLine = FALSE,
-    quantile = 0.5,
-    type.y = NULL,
-    label.x = "Time",
-    label.y = NULL,
-    label.strata = NULL,
-    level.strata = NULL,
-    order.strata = NULL,
-    limits.x = NULL,
-    limits.y = NULL,
-    breaks.x = NULL,
-    breaks.y = NULL,
-    use_coord_cartesian = FALSE,
-    style = "CLASSIC",
-    palette = NULL,
-    font.family = "sans",
-    font.size = 14,
-    legend.position = "top"
+    survfit.info = NULL,
+    axis.info    = NULL,
+    visual.info  = NULL,
+    panel.info   = NULL,
+    style.info   = NULL,
+    ggsave.info  = NULL
 ){
+  # 0) デフォルト化
+  survfit.info <- survfit.info %||% list()
+  axis.info    <- axis.info    %||% list()
+  visual.info  <- visual.info  %||% list()
+  panel.info   <- panel.info   %||% list()
+  style.info   <- style.info   %||% list()
+  ggsave.info  <- ggsave.info  %||% list()
+
+  #############################################################
+  # 1) survfit.info
+  #############################################################
+  error     <- survfit.info$error
+  conf.type <- survfit.info$conf.type
+  conf.int  <- survfit.info$conf.int
+
+  #############################################################
+  # 2) axis.info
+  #############################################################
+  type.y              <- axis.info$type.y
+  label.x             <- axis.info$label.x
+  label.y             <- axis.info$label.y
+  label.strata        <- axis.info$label.strata
+  level.strata        <- axis.info$level.strata
+  order.strata        <- axis.info$order.strata
+  limits.x            <- axis.info$limits.x
+  limits.y            <- axis.info$limits.y
+  breaks.x            <- axis.info$breaks.x
+  breaks.y            <- axis.info$breaks.y
+  use_coord_cartesian <- isTRUE(axis.info$use_coord_cartesian)
+
+  #############################################################
+  # 3) visual.info
+  #############################################################
+  addConfidenceInterval         <- visual.info$addConfidenceInterval
+  addRiskTable                  <- visual.info$addRiskTable
+  addEstimateTable              <- visual.info$addEstimateTable
+  addCensorMark                 <- visual.info$addCensorMark
+  shape.censor.mark             <- visual.info$shape.censor.mark
+  size.censor.mark              <- visual.info$size.censor.mark
+  addCompetingRiskMark          <- visual.info$addCompetingRiskMark
+  competing.risk.time           <- visual.info$competing.risk.time
+  shape.competing.risk.mark     <- visual.info$shape.competing.risk.mark
+  size.competing.risk.mark      <- visual.info$size.competing.risk.mark
+  addIntercurrentEventMark      <- visual.info$addIntercurrentEventMark
+  intercurrent.event.time       <- visual.info$intercurrent.event.time
+  shape.intercurrent.event.mark <- visual.info$shape.intercurrent.event.mark
+  size.intercurrent.event.mark  <- visual.info$size.intercurrent.event.mark
+  addQuantileLine               <- visual.info$addQuantileLine
+  quantile                      <- visual.info$quantile
+
+  #############################################################
+  # 4) panel.info
+  #############################################################
+  printEachEvent     <- isTRUE(panel.info$printEachEvent)
+  printEachVar       <- isTRUE(panel.info$printEachVar)
+  rows.columns.panel <- panel.info$rows.columns.panel
+
+  #############################################################
+  # 5) style.info
+  #############################################################
+  style           <- style.info$style
+  palette         <- style.info$palette
+  font.family     <- style.info$font.family
+  font.size       <- style.info$font.size
+  legend.position <- style.info$legend.position
+
+  #############################################################
+  # 6) ggsave.info（ここで取り出すだけ。保存は親でやる想定）
+  #############################################################
+  filename.ggsave <- ggsave.info$filename.ggsave
+  width.ggsave    <- ggsave.info$width.ggsave
+  height.ggsave   <- ggsave.info$height.ggsave
+  dpi.ggsave      <- ggsave.info$dpi.ggsave
+  ggsave.units    <- ggsave.info$units %||% "in"
+
+  # =========================================================
+  # ここから元の描画ロジック
+  # =========================================================
+
   label.strata.map <- plot_make_label.strata.map(
     survfit_object = survfit_object,
     label.strata   = label.strata,
     level.strata   = level.strata
   )
-  print("BEFORE")
-  print("names(survfit_object$strata)")
-  print(names(survfit_object$strata))
-
-  print("survfit_object$strata")
-  print(survfit_object$strata)
-
-# 1) まず必要なら survfit を上書きする
-#  if (plot_needs_survfit_label_update(
-#    survfit_object,
-#    label.strata = label.strata,
-#    order.strata = order.strata,
-#    level.strata = level.strata
-#  )) {
-#    survfit_object <- plot_survfit_strata_labels(survfit_object, label.strata)
-#  }
-
-  print("AF")
-  print("names(survfit_object$strata)")
-  print(names(survfit_object$strata))
-
-  print("survfit_object$strata")
-  print(survfit_object$strata)
-
-  # 2) ★ここで初めて今のsurvfitからレベルをとる
-#  cur_lvls_full  <- NULL
-#  cur_lvls_short <- NULL
-#  if (!is.null(survfit_object$strata)) {
-#    cur_lvls_full <- unique(names(survfit_object$strata))
-#    if (any(grepl("=", cur_lvls_full, fixed = TRUE))) {
-#      cur_lvls_short <- sub(".*?=", "", cur_lvls_full)
-#    } else {
-#      cur_lvls_short <- NULL
-#    }
-#  }
-
-  print("before plot_reconcile_order_and_labels")
-#  print(names(survfit_object$strata))
-#  print(cur_lvls_full)
-#  print(cur_lvls_short)
-  print(label.strata)
-  print(level.strata)
-  print(order.strata)
 
   out_cg <- check_ggsurvfit(
-    survfit_object                = survfit_object,
-    type.y                        = type.y,
-    conf.type                     = conf.type,
-    label.y                       = label.y,
-    limits.x                      = limits.x,
-    limits.y                      = limits.y,
-    breaks.x                      = breaks.x,
-    breaks.y                      = breaks.y,
-    addConfidenceInterval         = addConfidenceInterval,
-    addCensorMark                 = addCensorMark,
-    addCompetingRiskMark          = addCompetingRiskMark,
-    addIntercurrentEventMark      = addIntercurrentEventMark,
-    shape.censor.mark             = shape.censor.mark,
-    shape.competing.risk.mark     = shape.competing.risk.mark,
-    shape.intercurrent.event.mark = shape.intercurrent.event.mark,
-    out_readSurv                  = out_readSurv,
-    use_coord_cartesian           = use_coord_cartesian,
-    style                         = style,
-    palette                       = palette
+    survfit_object = survfit_object,
+    survfit.info   = survfit.info,
+    axis.info      = axis.info,
+    visual.info    = visual.info,
+    style.info     = style.info,
+    out_readSurv   = out_readSurv
   )
 
-  limits_arg <- NULL
-  forbid_limits_due_to_order <- FALSE
-
   res <- plot_reconcile_order_and_labels(
-    survfit_object    = survfit_object,
+    survfit_object   = survfit_object,
     label.strata.map = label.strata.map,
     level.strata     = level.strata,
     order.strata     = order.strata
@@ -1502,41 +1326,64 @@ call_ggsurvfit <- function(
   strata_levels_final    <- res$strata_levels_final
   strata_labels_final    <- res$strata_labels_final
   forbid_limits_due_to_order <- res$forbid_limits_due_to_order
-  n_strata_effective <- length(limits_arg)
-#  n_strata_effective <- if (!is.null(cur_lvls_full)) length(cur_lvls_full) else 1
+  n_strata_effective     <- length(limits_arg)
 
-#  strata_levels_final <- c("0", "1")
-#  strata_labels_final <- c("Hi", "China")
-#  limits_arg          <- c("x=1", "x=0") # this should be compatible with names(survfit_object$strata)
-
-  print("strata_levels_final")
-  print(strata_levels_final)
-  print("strata_labels_final")
-  print(strata_labels_final)
-  print("limits_arg")
-  print(limits_arg)
-
+  # ベースの plot
   p <- out_cg$out_survfit_object +
-  ggplot2::labs(x = label.x, y = out_cg$label.y)
+    ggplot2::labs(x = label.x, y = out_cg$label.y)
 
-  if (isTRUE(addConfidenceInterval)) p <- p + add_confidence_interval()
-  if (isTRUE(addCensorMark))         p <- p + add_censor_mark(shape = shape.censor.mark, size = size.censor.mark)
-  if (isTRUE(addQuantileLine))       p <- p + ggsurvfit::add_quantile(y_value=quantile)
-
-  if (isTRUE(addEstimateTable) && isTRUE(addRiskTable)) {
-    p <- p + add_risktable(risktable_stats = c("n.risk", "{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"), stats_label=c("No. at risk", "Estimate (95% CI)"), theme=plot_theme_risktable_font(font.family=font.family, plot.title.size=font.size), risktable_group = "risktable_stats")
-  } else if (isTRUE(addEstimateTable)) {
-    p <- p + add_risktable(risktable_stats = c("{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"), stats_label=c("Estimate (95% CI)"), theme=plot_theme_risktable_font(font.family=font.family, plot.title.size=font.size), )
-  } else if (isTRUE(addRiskTable)) {
-    p <- p + add_risktable(risktable_stats = c("n.risk"), stats_label=c("No. at risk"), theme=plot_theme_risktable_font(font.family=font.family, plot.title.size=font.size))
+  # レイヤー追加
+  if (isTRUE(addConfidenceInterval)) {
+    p <- p + add_confidence_interval()
   }
+  if (isTRUE(addCensorMark)) {
+    p <- p + add_censor_mark(shape = shape.censor.mark, size = size.censor.mark)
+  }
+  if (isTRUE(addQuantileLine)) {
+    p <- p + ggsurvfit::add_quantile(y_value = quantile)
+  }
+
+  # リスクテーブル・推定テーブル
+  if (isTRUE(addEstimateTable) && isTRUE(addRiskTable)) {
+    p <- p + add_risktable(
+      risktable_stats = c("n.risk", "{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"),
+      stats_label     = c("No. at risk", "Estimate (95% CI)"),
+      theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size),
+      risktable_group = "risktable_stats"
+    )
+  } else if (isTRUE(addEstimateTable)) {
+    p <- p + add_risktable(
+      risktable_stats = c("{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"),
+      stats_label     = c("Estimate (95% CI)"),
+      theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size)
+    )
+  } else if (isTRUE(addRiskTable)) {
+    p <- p + add_risktable(
+      risktable_stats = c("n.risk"),
+      stats_label     = c("No. at risk"),
+      theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size)
+    )
+  }
+
+  # マーク描画
   if (isTRUE(addCompetingRiskMark) && length(competing.risk.time)) {
-    p <- plot_draw_marks(p, survfit_object, competing.risk.time, out_cg$type.y, shape = shape.competing.risk.mark, size = size.competing.risk.mark)
+    p <- plot_draw_marks(
+      p, survfit_object,
+      competing.risk.time, out_cg$type.y,
+      shape = shape.competing.risk.mark,
+      size  = size.competing.risk.mark
+    )
   }
   if (isTRUE(addIntercurrentEventMark) && length(intercurrent.event.time)) {
-    p <- plot_draw_marks(p, survfit_object, intercurrent.event.time, out_cg$type.y, shape = shape.intercurrent.event.mark, size = size.intercurrent.event.mark)
+    p <- plot_draw_marks(
+      p, survfit_object,
+      intercurrent.event.time, out_cg$type.y,
+      shape = shape.intercurrent.event.mark,
+      size  = size.intercurrent.event.mark
+    )
   }
 
+  # 軸スケール
   x_max <- plot_make_x_max(survfit_object)
   if (isTRUE(use_coord_cartesian)) {
     if (!is.null(breaks.x)) p <- p + ggplot2::scale_x_continuous(breaks = breaks.x)
@@ -1567,15 +1414,16 @@ call_ggsurvfit <- function(
     }
   }
 
+  # スタイル / スケール
   if (!identical(style, "GGSURVFIT")) {
     p <- plot_apply_style(
       p,
-      style = style,
-      font.family = font.family,
-      font.size = font.size,
-      legend.position = legend.position,
-      n_strata = n_strata_effective,
-      palette_colors = palette,
+      style               = style,
+      font.family         = font.family,
+      font.size           = font.size,
+      legend.position     = legend.position,
+      n_strata            = n_strata_effective,
+      palette_colors      = palette,
       strata_levels_final = strata_levels_final,
       strata_labels_final = strata_labels_final
     )
@@ -1583,12 +1431,12 @@ call_ggsurvfit <- function(
 
   p <- plot_apply_all_scales(
     p,
-    style = style,
-    palette = palette,
-    n_strata = n_strata_effective,
+    style               = style,
+    palette             = palette,
+    n_strata            = n_strata_effective,
     strata_levels_final = strata_levels_final,
     strata_labels_final = strata_labels_final,
-    limits_arg = limits_arg
+    limits_arg          = limits_arg
   )
 
   p <- p + ggplot2::guides(fill = "none", alpha = "none", shape = "none") +
@@ -1596,29 +1444,196 @@ call_ggsurvfit <- function(
 
   p <- plot_fix_palette_vector_arg(p)
 
-  #  use.polyreg <- FALSE
-  #  time.point.polyreg <- NULL
-  #  if (use.polyreg==TRUE & !is.null(time.point.polyreg) & length(levels(out_readSurv$strata))==2) {
-  #    risk_ratio <- vector("numeric", length = length(time.point.polyreg))
-  #    for (i in 1:length(time.point.polyreg)) {
-  #      out_polyreg <- polyreg(nuisance.model = update.formula(formula, ~1), exposure = out_readSurv$strata_name, data = data, time.point = time.point.polyreg[i], outcome.type='SURVIVAL')
-  #      risk_ratio[i] <- create_rr_text(out_polyreg$coefficient, out_polyreg$cov, 2)
-  #      p <- p + geom_vline(xintercept = time.point.polyreg[i], linetype = "dashed", color = "black", size = 1)
-  #    }
-  #    if (text.position.polyreg=="bottom") {
-  #      annotations <- data.frame(x=time.point.polyreg*1.02, y=rep(0, length(time.point.polyreg)), label = risk_ratio)
-  #      p <- p + geom_text(data=annotations, aes(x=x, y=y, label=label), size = 4, color = "black", hjust = 0, vjust = 0)
-  #    }
-  #    if (text.position.polyreg=="top") {
-  #      annotations <- data.frame(x=time.point.polyreg*1.02, y=rep(0.9, length(time.point.polyreg)), label = risk_ratio)
-  #      p <- p + geom_text(data=annotations, aes(x=x, y=y, label=label), size = 4, color = "black", hjust = 0, vjust = 0)
-  #    }
-  #  }
+  p
+}
 
-#  str(ggplot2::ggplot_build(p)$data)
-#  str(ggplot2::ggplot_build(p)$plot$scales$scales)
+check_ggsurvfit <- function(
+    survfit_object,
+    survfit.info = NULL,
+    axis.info    = NULL,
+    visual.info  = NULL,
+    style.info   = NULL,
+    out_readSurv = NULL
+){
+  # 0) デフォルト化
+  survfit.info <- survfit.info %||% list()
+  axis.info    <- axis.info    %||% list()
+  visual.info  <- visual.info  %||% list()
+  style.info   <- style.info   %||% list()
 
-  return(p)
+  #############################################################
+  # 1) survfit.info
+  #############################################################
+  conf.type <- survfit.info$conf.type
+  # error, conf.int もあっていいけどここでは conf.type だけ使ってる
+  # error     <- survfit.info$error
+  # conf.int  <- survfit.info$conf.int
+
+  #############################################################
+  # 2) axis.info
+  #############################################################
+  type.y              <- axis.info$type.y
+  label.y             <- axis.info$label.y
+  limits.x            <- axis.info$limits.x
+  limits.y            <- axis.info$limits.y
+  breaks.x            <- axis.info$breaks.x
+  breaks.y            <- axis.info$breaks.y
+  use_coord_cartesian <- isTRUE(axis.info$use_coord_cartesian)
+
+  #############################################################
+  # 3) visual.info
+  #############################################################
+  addConfidenceInterval         <- visual.info$addConfidenceInterval
+  addCensorMark                 <- visual.info$addCensorMark
+  addCompetingRiskMark          <- visual.info$addCompetingRiskMark
+  addIntercurrentEventMark      <- visual.info$addIntercurrentEventMark
+  shape.censor.mark             <- visual.info$shape.censor.mark
+  shape.competing.risk.mark     <- visual.info$shape.competing.risk.mark
+  shape.intercurrent.event.mark <- visual.info$shape.intercurrent.event.mark
+
+  #############################################################
+  # 4) style.info
+  #############################################################
+  style   <- style.info$style
+  palette <- style.info$palette
+  #############################################################
+
+  # ===== ここから下は元のロジックそのまま =====
+
+  if (isTRUE(addCensorMark) && isTRUE(addIntercurrentEventMark) &&
+      identical(shape.censor.mark, shape.intercurrent.event.mark)) {
+    .warn("shape_identical", a = "shape.censor.mark", b = "shape.intercurrent.event.mark")
+  }
+  if (isTRUE(addCensorMark) && isTRUE(addCompetingRiskMark) &&
+      identical(shape.censor.mark, shape.competing.risk.mark)) {
+    .warn("shape_identical", a = "shape.censor.mark", b = "shape.competing.risk.mark")
+  }
+  if (isTRUE(addCompetingRiskMark) && isTRUE(addIntercurrentEventMark) &&
+      identical(shape.competing.risk.mark, shape.intercurrent.event.mark)) {
+    .warn("shape_identical", a = "shape.competing.risk.mark", b = "shape.intercurrent.event.mark")
+  }
+
+  is_len2_num <- function(x) is.numeric(x) && length(x) == 2L && all(is.finite(x))
+  is_nondec   <- function(x) all(diff(x) >= 0, na.rm = TRUE)
+
+  # ---- limits.x ----
+  if (!is.null(limits.x)) {
+    if (!(is.numeric(limits.x) && length(limits.x) == 2L && all(is.finite(limits.x)))) {
+      .warn("limits_len2", arg = "limits.x")
+    } else if (!all(diff(limits.x) > 0)) {
+      .warn("limits_increasing", arg = "limits.x")
+    }
+    tmax <- suppressWarnings(max(survfit_object$time, na.rm = TRUE))
+    if (is.finite(tmax)) {
+      if (tmax < limits.x[1] || tmax > limits.x[2]) {
+        .warn("limits_x_outside", tmax = signif(tmax, 6), arg = "limits.x",
+              a = signif(limits.x[1], 6), b = signif(limits.x[2], 6))
+      }
+    }
+  } else if (!is.null(out_readSurv) && !is.null(out_readSurv$t)) {
+    tmax <- suppressWarnings(max(out_readSurv$t, na.rm = TRUE))
+    if (!is.finite(tmax) || tmax <= 0) .warn("ors_tmax_bad")
+  }
+
+  # ---- limits.y ----
+  if (!is.null(limits.y)) {
+    if (!(is.numeric(limits.y) && length(limits.y) == 2L && all(is.finite(limits.y)))) {
+      .warn("limits_len2", arg = "limits.y")
+    } else if (!all(diff(limits.y) > 0)) {
+      .warn("limits_increasing", arg = "limits.y")
+    }
+
+    surv  <- survfit_object$surv
+    upper <- survfit_object$upper
+    lower <- survfit_object$lower
+
+    if (identical(type.y, "risk")) {
+      surv  <- 1 - surv
+      if (!is.null(upper)) upper <- 1 - upper
+      if (!is.null(lower)) lower <- 1 - lower
+    }
+
+    if (any(surv < limits.y[1] | surv > limits.y[2], na.rm = TRUE))
+      .warn("est_outside_limits_y", arg = "limits.y", a = limits.y[1], b = limits.y[2])
+
+    if (isTRUE(addConfidenceInterval)) {
+      if (!is.null(upper) && any(upper < limits.y[1] | upper > limits.y[2], na.rm = TRUE))
+        .warn("upper_outside_limits_y", arg = "limits.y", a = limits.y[1], b = limits.y[2])
+      if (!is.null(lower) && any(lower < limits.y[1] | lower > limits.y[2], na.rm = TRUE))
+        .warn("lower_outside_limits_y", arg = "limits.y", a = limits.y[1], b = limits.y[2])
+    }
+  }
+
+  # ---- breaks check ----
+  check_breaks <- function(bk, nm, lims) {
+    if (is.null(bk) || is.function(bk)) return(invisible())
+    if (!is.numeric(bk)) {
+      warning(sprintf("`%s` should be numeric (or a function).", nm), call. = FALSE); return(invisible())
+    }
+    if (!is_nondec(bk)) {
+      warning(sprintf("`%s` must be non-decreasing.", nm), call. = FALSE)
+    }
+    if (!is.null(lims) && is_len2_num(lims)) {
+      if (any(bk < lims[1] | bk > lims[2], na.rm = TRUE)) {
+        warning(sprintf("Some `%s` are outside plotting range [%g, %g].", nm, lims[1], lims[2]), call. = FALSE)
+      }
+    }
+    invisible()
+  }
+  check_breaks(breaks.x, "breaks.x", limits.x)
+  check_breaks(breaks.y, "breaks.y", limits.y)
+
+  # ---- label.y の自動決定 ----
+  if (is.null(label.y)) {
+    auto_label <- plot_default_y_label(survfit_object$type, type.y)
+    if (!is.null(auto_label)) label.y <- auto_label
+  }
+
+  # ---- 信頼区間を補う ----
+  coerce_conf <- function(survfit_object, conf.type) {
+    if (!is.null(survfit_object$lower) && !is.null(survfit_object$upper)) return(survfit_object)
+    if (conf.type %in% c("none", "n") || length(survfit_object$strata) > 2) {
+      x <- survfit_object
+      x$lower <- x$surv
+      x$upper <- x$surv
+      return(x)
+    }
+    survfit_object
+  }
+  survfit_object <- coerce_conf(survfit_object, conf.type)
+
+  # ---- type.y を確定 ----
+  type.y <- plot_normalize_type_y(type.y)
+  target_type <- switch(
+    survfit_object$type,
+    "kaplan-meier"   = if (identical(type.y, "risk")) "risk" else "survival",
+    "aalen-johansen" = if (identical(type.y, "survival")) "survival" else "risk",
+    if (identical(type.y, "risk")) "risk" else "survival"
+  )
+  type.y <- if (identical(target_type, "risk")) "risk" else "survival"
+
+  # ---- 色が1色しかないときは線種を立てる ----
+  decide_linetype_flag <- function(style, palette) {
+    if (identical(style, "MONOCHROME")) return(TRUE)
+    if (is.null(palette)) return(FALSE)
+    pal <- palette
+    pal <- ifelse(grepl("^#", pal), pal, plot_validate_fix_color(pal))
+    length(unique(tolower(pal))) == 1L
+  }
+  linetype_aes_flag <- decide_linetype_flag(style, palette)
+
+  old_opt <- getOption("ggsurvfit.switch-color-linetype", FALSE)
+  out_plot <- ggsurvfit::ggsurvfit(
+    survfit_object,
+    type        = target_type,
+    linetype_aes = linetype_aes_flag
+  )
+
+  list(
+    out_survfit_object = out_plot,
+    label.y            = label.y,
+    type.y             = type.y
+  )
 }
 
 create_rr_text <- function(coefficient, cov, index, omit.conf.int=TRUE, conf.int=0.95) {
@@ -1639,142 +1654,3 @@ create_rr_text <- function(coefficient, cov, index, omit.conf.int=TRUE, conf.int
   return(text)
 }
 
-check_ggsurvfit <- function(
-    survfit_object,
-    type.y,
-    conf.type,
-    label.y,
-    limits.x, limits.y,
-    breaks.x,  breaks.y,
-    addConfidenceInterval,
-    addCensorMark,
-    addCompetingRiskMark,
-    addIntercurrentEventMark,
-    shape.censor.mark,
-    shape.competing.risk.mark,
-    shape.intercurrent.event.mark,
-    out_readSurv,
-    use_coord_cartesian,
-    style,
-    palette
-){
-  if (isTRUE(addCensorMark) && isTRUE(addIntercurrentEventMark) &&
-      identical(shape.censor.mark, shape.intercurrent.event.mark)) {
-    .warn("shape_identical", a = "shape.censor.mark", b = "shape.intercurrent.event.mark")
-  }
-  if (isTRUE(addCensorMark) && isTRUE(addCompetingRiskMark) &&
-      identical(shape.censor.mark, shape.competing.risk.mark)) {
-    .warn("shape_identical", a = "shape.censor.mark", b = "shape.competing.risk.mark")
-  }
-  if (isTRUE(addCompetingRiskMark) && isTRUE(addIntercurrentEventMark) &&
-      identical(shape.competing.risk.mark, shape.intercurrent.event.mark)) {
-    .warn("shape_identical", a = "shape.competing.risk.mark", b = "shape.intercurrent.event.mark")
-  }
-
-  is_len2_num <- function(x) is.numeric(x) && length(x) == 2L && all(is.finite(x))
-  is_increasing <- function(x) all(diff(x) > 0, na.rm = TRUE)
-  is_nondec <- function(x) all(diff(x) >= 0, na.rm = TRUE)
-
-  if (!is.null(limits.x)) {
-    if (!(is.numeric(limits.x) && length(limits.x) == 2L && all(is.finite(limits.x)))) {
-      .warn("limits_len2", arg = "limits.x")
-    } else if (!all(diff(limits.x) > 0)) {
-      .warn("limits_increasing", arg = "limits.x")
-    }
-    tmax <- suppressWarnings(max(survfit_object$time, na.rm = TRUE))
-    if (is.finite(tmax)) {
-      if (tmax < limits.x[1] || tmax > limits.x[2]) {
-        .warn("limits_x_outside", tmax = signif(tmax, 6), arg = "limits.x",
-              a = signif(limits.x[1], 6), b = signif(limits.x[2], 6))
-      }
-    }
-  } else if (!is.null(out_readSurv) && !is.null(out_readSurv$t)) {
-    tmax <- suppressWarnings(max(out_readSurv$t, na.rm = TRUE))
-    if (!is.finite(tmax) || tmax <= 0) .warn("ors_tmax_bad")
-  }
-
-  if (!is.null(limits.y)) {
-    if (!(is.numeric(limits.y) && length(limits.y) == 2L && all(is.finite(limits.y)))) {
-      .warn("limits_len2", arg = "limits.y")
-    } else if (!all(diff(limits.y) > 0)) {
-      .warn("limits_increasing", arg = "limits.y")
-    }
-    surv  <- survfit_object$surv
-    upper <- survfit_object$upper
-    lower <- survfit_object$lower
-    if (identical(type.y, "risk")) {
-      surv  <- 1 - surv
-      if (!is.null(upper)) upper <- 1 - upper
-      if (!is.null(lower)) lower <- 1 - lower
-    }
-    if (any(surv < limits.y[1] | surv > limits.y[2], na.rm = TRUE))
-      .warn("est_outside_limits_y", arg = "limits.y", a = limits.y[1], b = limits.y[2])
-    if (isTRUE(addConfidenceInterval)) {
-      if (!is.null(upper) && any(upper < limits.y[1] | upper > limits.y[2], na.rm = TRUE))
-        .warn("upper_outside_limits_y", arg = "limits.y", a = limits.y[1], b = limits.y[2])
-      if (!is.null(lower) && any(lower < limits.y[1] | lower > limits.y[2], na.rm = TRUE))
-        .warn("lower_outside_limits_y", arg = "limits.y", a = limits.y[1], b = limits.y[2])
-    }
-  }
-
-  check_breaks <- function(bk, nm, lims) {
-    if (is.null(bk) || is.function(bk)) return(invisible())
-    if (!is.numeric(bk)) {
-      warning(sprintf("`%s` should be numeric (or a function).", nm), call. = FALSE); return(invisible())
-    }
-    if (!is_nondec(bk)) {
-      warning(sprintf("`%s` must be non-decreasing.", nm), call. = FALSE)
-    }
-    if (!is.null(lims) && is_len2_num(lims)) {
-      if (any(bk < lims[1] | bk > lims[2], na.rm = TRUE)) {
-        warning(sprintf("Some `%s` are outside plotting range [%g, %g].", nm, lims[1], lims[2]), call. = FALSE)
-      }
-    }
-    invisible()
-  }
-  check_breaks(breaks.x, "breaks.x", limits.x)
-  check_breaks(breaks.y, "breaks.y", limits.y)
-
-  if (is.null(label.y)) {
-    auto_label <- plot_default_y_label(survfit_object$type, type.y)
-    if (!is.null(auto_label)) label.y <- auto_label
-  }
-
-  coerce_conf <- function(survfit_object, conf.type) {
-    if (!is.null(survfit_object$lower) && !is.null(survfit_object$upper)) return(survfit_object)
-    if (conf.type %in% c("none","n") || length(survfit_object$strata) > 2) {
-      x <- survfit_object
-      x$lower <- x$surv
-      x$upper <- x$surv
-      return(x)
-    }
-    survfit_object
-  }
-  survfit_object <- coerce_conf(survfit_object, conf.type)
-
-  type.y <- plot_normalize_type_y(type.y)
-  target_type <- switch(
-    survfit_object$type,
-    "kaplan-meier"   = if (identical(type.y, "risk")) "risk" else "survival",
-    "aalen-johansen" = if (identical(type.y, "survival")) "survival" else "risk",
-    if (identical(type.y, "risk")) "risk" else "survival"
-  )
-  type.y <- if (identical(target_type, "risk")) "risk" else "survival"
-
-  decide_linetype_flag <- function(style, palette) {
-    if (identical(style, "MONOCHROME")) return(TRUE)
-    if (is.null(palette)) return(FALSE)
-    pal <- palette
-    pal <- ifelse(grepl("^#", pal), pal, plot_validate_fix_color(pal))
-    length(unique(tolower(pal))) == 1L
-  }
-  linetype_aes_flag <- decide_linetype_flag(style, palette)
-  old_opt <- getOption("ggsurvfit.switch-color-linetype", FALSE)
-  out_plot <- ggsurvfit(
-    survfit_object,
-    type = target_type,
-    linetype_aes = linetype_aes_flag
-  )
-
-  list(out_survfit_object = out_plot, label.y = label.y, type.y = type.y)
-}

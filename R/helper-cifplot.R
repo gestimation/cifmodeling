@@ -1101,3 +1101,133 @@ plot_survfit_short_strata_names <- function(survfit_object) {
   names(survfit_object$strata) <- nn
   survfit_object
 }
+
+cifplot_build_info <- function(
+  error,
+  conf.type,
+  conf.int,
+
+  type.y,
+  label.x,
+  label.y,
+  level.strata,
+  label.strata,
+  order.strata,
+  limits.x,
+  limits.y,
+  breaks.x,
+  breaks.y,
+  use_coord_cartesian,
+
+  addConfidenceInterval,
+  addRiskTable,
+  addEstimateTable,
+  addCensorMark,
+  shape.censor.mark,
+  size.censor.mark,
+  addCompetingRiskMark,
+  competing.risk.time,
+  shape.competing.risk.mark,
+  size.competing.risk.mark,
+  addIntercurrentEventMark,
+  intercurrent.event.time,
+  shape.intercurrent.event.mark,
+  size.intercurrent.event.mark,
+  addQuantileLine,
+  quantile,
+
+  printEachEvent,
+  printEachVar,
+  rows.columns.panel,
+
+  style,
+  palette,
+  font.family,
+  font.size,
+  legend.position,
+
+  filename.ggsave,
+  width.ggsave,
+  height.ggsave,
+  dpi.ggsave,
+
+  # ユーザーがすでに info を渡してきた場合
+  survfit.info = NULL,
+  axis.info    = NULL,
+  visual.info  = NULL,
+  panel.info   = NULL,
+  style.info   = NULL,
+  ggsave.info  = NULL
+) {
+
+  survfit.info <- modifyList(list(
+    error     = error,
+    conf.type = conf.type,
+    conf.int  = conf.int
+  ), survfit.info %||% list())
+
+  axis.info <- modifyList(list(
+    type.y              = type.y,
+    label.x             = label.x,
+    label.y             = label.y,
+    level.strata        = level.strata,
+    label.strata        = label.strata,
+    order.strata        = order.strata,
+    limits.x            = limits.x,
+    limits.y            = limits.y,
+    breaks.x            = breaks.x,
+    breaks.y            = breaks.y,
+    use_coord_cartesian = use_coord_cartesian
+  ), axis.info %||% list())
+
+  visual.info <- modifyList(list(
+    addConfidenceInterval        = addConfidenceInterval,
+    addRiskTable                 = addRiskTable,
+    addEstimateTable             = addEstimateTable,
+    addCensorMark                = addCensorMark,
+    shape.censor.mark            = shape.censor.mark,
+    size.censor.mark             = size.censor.mark,
+    addCompetingRiskMark         = addCompetingRiskMark,
+    competing.risk.time          = competing.risk.time,
+    shape.competing.risk.mark    = shape.competing.risk.mark,
+    size.competing.risk.mark     = size.competing.risk.mark,
+    addIntercurrentEventMark     = addIntercurrentEventMark,
+    intercurrent.event.time      = intercurrent.event.time,
+    shape.intercurrent.event.mark= shape.intercurrent.event.mark,
+    size.intercurrent.event.mark = size.intercurrent.event.mark,
+    addQuantileLine              = addQuantileLine,
+    quantile                     = quantile
+  ), visual.info %||% list())
+
+  panel.info <- modifyList(list(
+    printEachEvent     = printEachEvent,
+    printEachVar       = printEachVar,
+    rows.columns.panel = rows.columns.panel
+  ), panel.info %||% list())
+
+  style.info <- modifyList(list(
+    style           = style,
+    palette         = palette,
+    font.family     = font.family %||% "sans",
+    font.size       = font.size   %||% 12,
+    legend.position = legend.position
+  ), style.info %||% list())
+
+  ggsave.info <- modifyList(list(
+    filename.ggsave = filename.ggsave,
+    width.ggsave    = width.ggsave,
+    height.ggsave   = height.ggsave,
+    dpi.ggsave      = dpi.ggsave,
+    units           = "in"
+  ), ggsave.info %||% list())
+
+  list(
+    survfit.info = survfit.info,
+    axis.info    = axis.info,
+    visual.info  = visual.info,
+    panel.info   = panel.info,
+    style.info   = style.info,
+    ggsave.info  = ggsave.info
+  )
+}
+
