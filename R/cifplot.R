@@ -394,11 +394,6 @@ cifplot <- function(
   level_input <- axis.info$level.strata
   order_input <- axis.info$order.strata
 
-  print("before normalize_strata_info")
-  print(level.strata)
-  print(label.strata)
-  print(order.strata)
-
   norm <- normalize_strata_info(
     level.strata = axis.info$level.strata,
     label.strata = axis.info$label.strata,
@@ -639,11 +634,6 @@ cifplot_single <- function(
   level_input <- axis.info$level.strata
   order_input <- axis.info$order.strata
 
-  print("before normalize_strata_info")
-  print(axis.info$level.strata)
-  print(axis.info$order.strata)
-  print(axis.info$label.strata)
-
   norm <- normalize_strata_info(
     level.strata = axis.info$level.strata,
     label.strata = axis.info$label.strata,
@@ -653,11 +643,6 @@ cifplot_single <- function(
   axis.info$level.strata <- norm$level
   axis.info$order.strata <- norm$order_data
   axis.info$label.strata <- norm$label_map
-
-  print("after normalize_strata_info")
-  print(axis.info$level.strata)
-  print(axis.info$order.strata)
-  print(axis.info$label.strata)
 
   if (!is.null(axis.info$label.strata)) {
     stopifnot(!is.null(names(axis.info$label.strata)))
@@ -801,6 +786,11 @@ cifplot_single <- function(
                                outcome.type = outcome.type, code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
                                error = error, conf.type = conf.type, conf.int = conf.int)
     formula_or_fit <- plot_survfit_short_strata_names(formula_or_fit)
+#    if (!is.null(axis.info$label.strata) && !is.null(formula_or_fit$strata)) {
+#      formula_or_fit <- plot_survfit_strata_labels(
+#        formula_or_fit, axis.info$label.strata
+#      )
+#    }
   }
   p <- call_ggsurvfit(
     survfit_object = if (inherits(formula_or_fit, "survfit")) formula_or_fit else stop("..."),
@@ -815,7 +805,6 @@ cifplot_single <- function(
   if (!is.null(filename.ggsave)) ggplot2::ggsave(filename.ggsave, plot = p, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave, units = ggsave.units)
   return(p)
 }
-
 
 cifplot_printEachVar <- function(
     rows.columns.panel = NULL,
@@ -967,8 +956,6 @@ cifplot_printEachVar <- function(
   printEachVar   <- isTRUE(panel.info$printEachVar)
   rows.columns.panel <- panel.info$rows.columns.panel
 
-  use_coord_cartesian <- isTRUE(axis.info$use_coord_cartesian)
-
   type.y <- axis.info$type.y
   label.x <- axis.info$label.x
   label.y <- axis.info$label.y
@@ -979,6 +966,7 @@ cifplot_printEachVar <- function(
   limits.y <- axis.info$limits.y
   breaks.x <- axis.info$breaks.x
   breaks.y <- axis.info$breaks.y
+  use_coord_cartesian <- isTRUE(axis.info$use_coord_cartesian)
 
   addConfidenceInterval <- visual.info$addConfidenceInterval
   addRiskTable          <- visual.info$addRiskTable
@@ -1220,6 +1208,7 @@ call_ggsurvfit <- function(
     style.info   = NULL,
     ggsave.info  = NULL
 ){
+  print("call?")
   # 0) デフォルト化
   survfit.info <- survfit.info %||% list()
   axis.info    <- axis.info    %||% list()
@@ -1363,6 +1352,8 @@ call_ggsurvfit <- function(
       stats_label     = c("No. at risk"),
       theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size)
     )
+    #p <- p + add_risktable_strata_symbol(symbol = "\U25CF", size = 14)
+    p <- p + add_risktable_strata_symbol(symbol = "\U25A0", size = 14)
   }
 
   # マーク描画
@@ -1428,6 +1419,16 @@ call_ggsurvfit <- function(
       strata_labels_final = strata_labels_final
     )
   }
+  built <- ggplot2::ggplot_build(p)
+  print("ggplot2::ggplot_build(p)$data")
+  print(built$data[[1]]$group)
+  print(strata_labels_final)
+  print(strata_levels_final)
+  print(limits_arg)
+
+#  strata_labels_final <- c("Hi", "China")
+#  strata_levels_final <- c("0", "1")
+#  limits_arg <- c("0", "1")
 
   p <- plot_apply_all_scales(
     p,
