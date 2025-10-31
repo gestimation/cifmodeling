@@ -1340,12 +1340,14 @@ call_ggsurvfit <- function(
       theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size),
       risktable_group = "risktable_stats"
     )
+    p <- p + add_risktable_strata_symbol(symbol = "\U25A0", size = 14)
   } else if (isTRUE(addEstimateTable)) {
     p <- p + add_risktable(
       risktable_stats = c("{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"),
       stats_label     = c("Estimate (95% CI)"),
       theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size)
     )
+    p <- p + add_risktable_strata_symbol(symbol = "\U25A0", size = 14)
   } else if (isTRUE(addRiskTable)) {
     p <- p + add_risktable(
       risktable_stats = c("n.risk"),
@@ -1419,12 +1421,13 @@ call_ggsurvfit <- function(
       strata_labels_final = strata_labels_final
     )
   }
-  built <- ggplot2::ggplot_build(p)
-  print("ggplot2::ggplot_build(p)$data")
-  print(built$data[[1]]$group)
-  print(strata_labels_final)
-  print(strata_levels_final)
-  print(limits_arg)
+
+#  built <- ggplot2::ggplot_build(p)
+#  print("ggplot2::ggplot_build(p)$data")
+#  print(built$data[[1]]$group)
+#  print(strata_labels_final)
+#  print(strata_levels_final)
+#  print(limits_arg)
 
 #  strata_labels_final <- c("Hi", "China")
 #  strata_levels_final <- c("0", "1")
