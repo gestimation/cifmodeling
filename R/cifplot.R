@@ -738,22 +738,22 @@ cifplot_single <- function(
           breaks.y      = breaks.y
         ))
         visual.info.panel <- modifyList(visual.info, list(
-          addConfidenceInterval    = addConfidenceInterval,
-          addRiskTable             = addRiskTable,
-          addEstimateTable         = addEstimateTable,
-          addCensorMark            = addCensorMark,
-          shape.censor.mark        = shape.censor.mark,
-          size.censor.mark         = size.censor.mark,
-          addCompetingRiskMark     = addCompetingRiskMark,
-          competing.risk.time      = competing.risk.time,
-          shape.competing.risk.mark= shape.competing.risk.mark,
-          size.competing.risk.mark = size.competing.risk.mark,
-          addIntercurrentEventMark = addIntercurrentEventMark,
-          intercurrent.event.time  = intercurrent.event.time,
+          addConfidenceInterval         = addConfidenceInterval,
+          addRiskTable                  = addRiskTable,
+          addEstimateTable              = addEstimateTable,
+          addCensorMark                 = addCensorMark,
+          shape.censor.mark             = shape.censor.mark,
+          size.censor.mark              = size.censor.mark,
+          addCompetingRiskMark          = addCompetingRiskMark,
+          competing.risk.time           = competing.risk.time,
+          shape.competing.risk.mark     = shape.competing.risk.mark,
+          size.competing.risk.mark      = size.competing.risk.mark,
+          addIntercurrentEventMark      = addIntercurrentEventMark,
+          intercurrent.event.time       = intercurrent.event.time,
           shape.intercurrent.event.mark = shape.intercurrent.event.mark,
           size.intercurrent.event.mark  = size.intercurrent.event.mark,
-          addQuantileLine          = addQuantileLine,
-          quantile                 = quantile
+          addQuantileLine               = addQuantileLine,
+          quantile                      = quantile
         ))
         panel.info.panel <- modifyList(panel.info, list(
           rows.columns.panel = if (is.null(rows.columns.panel)) c(1L, 2L) else rows.columns.panel
@@ -765,6 +765,17 @@ cifplot_single <- function(
           dpi.ggsave      = dpi.ggsave,
           units           = ggsave.units
         ))
+
+        style_cur <- style.info$style
+
+        ## ここで print すれば毎回値がある
+        message("A. cifplot_single(): style = ", style.info$style)
+        message("B. cifplot_single(): style_cur = ", style)
+        palette_cur <- style.info$palette
+        ff_cur <- style.info$font.family
+        fs_cur <- style.info$font.size
+        lg_cur <- style.info$legend.position
+
         panel_args <- list(
           formula      = formula_or_fit,
           data         = data,
@@ -773,15 +784,19 @@ cifplot_single <- function(
           axis.info    = axis.info.panel,
           visual.info  = visual.info.panel,
           panel.info   = panel.info.panel,
-          style.info   = style.info,
+          style.info   = list(
+            style           = style_cur,
+            palette         = palette_cur,
+            font.family     = ff_cur,
+            font.size       = fs_cur,
+            legend.position = lg_cur
+          ),
           ggsave.info  = ggsave.info.panel,
           survfit.info = survfit.info
         )
+
         if (is.null(dots$rows.columns.panel)) dots$rows.columns.panel <- panel.info.panel$rows.columns.panel
         if (is.null(dots$legend.collect))     dots$legend.collect     <- TRUE
-        if (is.null(dots$style))              dots$style              <- style
-        if (is.null(dots$font.family))        dots$font.family        <- font.family
-        if (is.null(dots$font.size))          dots$font.size          <- font.size
         if (is.null(dots$print.panel))        dots$print.panel        <- FALSE
 
         panel_out <- do.call(cifpanel, c(panel_args, dots))

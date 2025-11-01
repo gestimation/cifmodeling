@@ -254,6 +254,7 @@
 #' @name cifpanel
 #' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifplot()] for display of a CIF; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
+
 cifpanel <- function(
     plots                   = NULL,
     formula                 = NULL,
@@ -286,6 +287,11 @@ cifpanel <- function(
     caption.panel           = NULL,
     tag_levels.panel        = NULL,
     title.plot              = NULL,
+    # ★ ここでユーザーが指定するstyle系を受けておく
+    style                   = "CLASSIC",
+    palette                 = NULL,
+    font.family             = "sans",
+    font.size               = 12,
     legend.position         = "top",
     legend.collect          = FALSE,
     use_inset_element       = FALSE,
@@ -313,6 +319,7 @@ cifpanel <- function(
   inset.align_to <- match.arg(inset.align_to)
   dots <- list(...)
 
+  # --- 1) ユーザーが渡してきたinfo類を退避（そのまま）
   survfit.info.user <- survfit.info
   axis.info.user    <- axis.info
   visual.info.user  <- visual.info
@@ -322,6 +329,7 @@ cifpanel <- function(
   print.info.user   <- print.info
   ggsave.info.user  <- ggsave.info
 
+  # --- 2) survfit / axis / visual / panel は今まで通り ---
   survfit.info <- modifyList(list(
     error     = error,
     conf.type = conf.type,
@@ -375,16 +383,30 @@ cifpanel <- function(
     title.plot         = title.plot
   ), panel.info %||% list())
 
+  # --- 3) ★ここが今回の一番の修正ポイント ---
+  # まず style.info を必ずlistに
+  style.info <- style.info %||% list()
+
+  # ユーザーが top-level で指定した style系を、style.info に先に吸収する
+  # （←これを先にやらないと、あとで modifyList(default, style.info) したときに消える）
+  style.info$style           <- style.info$style           %||% style
+  style.info$palette         <- style.info$palette         %||% palette
+  style.info$font.family     <- style.info$font.family     %||% font.family
+  style.info$font.size       <- style.info$font.size       %||% font.size
+  style.info$legend.position <- style.info$legend.position %||% legend.position
+  style.info$legend.collect  <- style.info$legend.collect  %||% legend.collect
+
+  # ここでようやく「デフォルト」をマージする（ユーザー指定を潰さない順番）
   style.info <- modifyList(list(
     style           = "CLASSIC",
     palette         = NULL,
     font.family     = "sans",
     font.size       = 12,
-    legend.position = legend.position,
-    legend.collect  = legend.collect
-  ), style.info %||% list())
+    legend.position = "top",
+    legend.collect  = FALSE
+  ), style.info)
 
-  inset.align_to <- match.arg(inset.align_to)
+  # --- 4) 以下はほぼ元のまま ---
   inset.info <- modifyList(list(
     use_inset_element     = use_inset_element,
     inset.align_to        = inset.align_to,
@@ -438,7 +460,7 @@ cifpanel <- function(
   fonts <- panel_extract_fonts(c(style.info, dots))
   style.info$font.family <- fonts$family
   style.info$font.size   <- fonts$size
-  theme.panel.unified <- panel_build_theme(font.family = fonts$family, font.size = fonts$size)
+  theme.panel.unified    <- panel_build_theme(font.family = fonts$family, font.size = fonts$size)
 
   nrow <- as.integer(rows.columns.panel[1]); ncol <- as.integer(rows.columns.panel[2])
   n_slots <- nrow * ncol
@@ -667,14 +689,14 @@ cifpanel <- function(
   if (!is.null(addCR.list))       kill_names <- c(kill_names, "addCompetingRiskMark")
   if (!is.null(addIC.list))       kill_names <- c(kill_names, "addIntercurrentEventMark")
   if (!is.null(addQ.list))        kill_names <- c(kill_names, "addQuantileLine")
-  kill_names <- c(kill_names, "style", "font.family", "font.size", "legend.position", "legend.collect")
+#  kill_names <- c(kill_names, "style", "font.family", "font.size", "legend.position", "legend.collect")
 
   dots <- panel_strip_overrides_from_dots(dots, unique(kill_names))
 
   fonts <- panel_extract_fonts(c(style.info, dots))
   style.info$font.family <- fonts$family
   style.info$font.size   <- fonts$size
-  theme.panel.unified <- panel_build_theme(font.family = fonts$family, font.size = fonts$size)
+  theme.panel.unified    <- panel_build_theme(font.family = fonts$family, font.size = fonts$size)
 
   prep <- panel_prepare(
     K               = K,
@@ -699,27 +721,32 @@ cifpanel <- function(
     strata.list     = strata.list,
     legend.position = legend.position,
     survfit.info    = survfit.info,
+    style.info      = style.info,
     dots            = dots,
     fonts           = fonts
   )
   plots <- lapply(seq_len(prep$K), function(i) {
     pa <- prep$plot_args[[i]]
 
+    # パネル全体で決めた label / order を優先的に上書き
     if (!is.null(labelstrata.list))  pa$label.strata <- labelstrata.list[[i]]
     if (!is.null(orderstrata.list))  pa$order.strata <- orderstrata.list[[i]]
 
-    if (!is.null(pa$label.strata) && !is.null(names(pa$label.strata))) {
-      if (all(!nzchar(names(pa$label.strata)))) names(pa$label.strata) <- NULL
-    }
+    # ★ ここが重要：cifpanelで決めたstyle.infoを各パネルに渡す
+    pa$style.info <- style.info
 
+    # cifplot_singleが受け取れる名前だけ残す
     allowed <- setdiff(names(formals(cifplot_single)), "...")
     if (!is.null(names(pa))) {
       pa <- pa[intersect(names(pa), allowed)]
     }
 
-    args_i <- c(list(formula_or_fit = prep$curves[[i]]), pa)
+    # 念のため formula_or_fit がなければ付ける
+    if (!"formula_or_fit" %in% names(pa)) {
+      pa <- c(list(formula_or_fit = prep$curves[[i]]), pa)
+    }
 
-    do.call(cifplot_single, args_i)
+    do.call(cifplot_single, pa)
   })
 
   plots <- apply_strata_to_plots(
