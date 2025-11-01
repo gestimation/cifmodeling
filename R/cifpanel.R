@@ -346,22 +346,22 @@ cifpanel <- function(
   ), axis.info %||% list())
 
   visual.info <- modifyList(list(
-    addConfidenceInterval    = if (is.null(addConfidenceInterval)) NULL else isTRUE(addConfidenceInterval),
+    addConfidenceInterval    = addConfidenceInterval,
     ci.alpha                 = 0.25,
     addRiskTable             = FALSE,
     addEstimateTable         = FALSE,
-    addCensorMark            = if (is.null(addCensorMark)) NULL else isTRUE(addCensorMark),
+    addCensorMark            = addCensorMark,
     shape.censor.mark        = 3,
     size.censor.mark         = 2,
-    addCompetingRiskMark     = isTRUE(addCompetingRiskMark),
+    addCompetingRiskMark     = addCompetingRiskMark,
     competing.risk.time      = list(),
     shape.competing.risk.mark= 16,
     size.competing.risk.mark = 2,
-    addIntercurrentEventMark = isTRUE(addIntercurrentEventMark),
+    addIntercurrentEventMark = addIntercurrentEventMark,
     intercurrent.event.time  = list(),
     shape.intercurrent.event.mark = 1,
     size.intercurrent.event.mark  = 2,
-    addQuantileLine          = isTRUE(addQuantileLine),
+    addQuantileLine          = addQuantileLine,
     quantile                 = 0.5,
     line.size                = 0.9,
     symbol.risktable         = NULL,
@@ -648,6 +648,12 @@ cifpanel <- function(
   addIC.list   <- toL(addIntercurrentEventMark); if (!is.null(addIC.list))   addIC.list   <- rec(addIC.list, K)
   addQ.list    <- toL(addQuantileLine);          if (!is.null(addQ.list))    addQ.list    <- rec(addQ.list, K)
 
+  if (!is.null(addCI.list))   visual.info$addConfidenceInterval    <- NULL
+  if (!is.null(addCen.list))  visual.info$addCensorMark            <- NULL
+  if (!is.null(addCR.list))   visual.info$addCompetingRiskMark     <- NULL
+  if (!is.null(addIC.list))   visual.info$addIntercurrentEventMark <- NULL
+  if (!is.null(addQ.list))    visual.info$addQuantileLine          <- NULL
+
   # outcome.flag 判定
   infer_flag_by_codes <- function(v) if (length(v) == 2L) "S" else if (length(v) == 3L) "C" else NA_character_
   if (!is.null(outcome.list)) {
@@ -711,14 +717,47 @@ cifpanel <- function(
     fonts           = fonts
   )
 
+
   plots <- lapply(seq_len(prep$K), function(i) {
     pa <- prep$plot_args[[i]]
 
-    # panel 全体の設定をパネルに上書きする
-    pa$axis.info    <- modifyList(pa$axis.info %||% list(), axis.info)
-    pa$visual.info  <- modifyList(pa$visual.info %||% list(), visual.info)
-    pa$style.info   <- modifyList(pa$style.info %||% list(), style.info)
-    pa$survfit.info <- modifyList(pa$survfit.info %||% list(), survfit.info)
+    # 1) 全体設定をまず入れる
+    pa$axis.info    <- modifyList(axis.info,    pa$axis.info %||% list())
+    pa$visual.info  <- modifyList(visual.info,  pa$visual.info %||% list())
+    pa$style.info   <- modifyList(style.info,   pa$style.info %||% list())
+    pa$survfit.info <- modifyList(survfit.info, pa$survfit.info %||% list())
+
+    # 2) ここで「このパネルだけの表示系」をもう一度上書きする
+    if (!is.null(labelx.list)) {
+      pa$label.x <- labelx.list[[i]]
+      pa$axis.info$label.x <- labelx.list[[i]]
+    }
+    if (!is.null(labely.list)) {
+      pa$label.y <- labely.list[[i]]
+      pa$axis.info$label.y <- labely.list[[i]]
+    }
+
+    # （ここにさっきの addXXX の上書きも並んでる想定）
+    if (!is.null(addCI.list)) {
+      pa$addConfidenceInterval <- isTRUE(addCI.list[[i]])
+      pa$visual.info$addConfidenceInterval <- isTRUE(addCI.list[[i]])
+    }
+    if (!is.null(addCen.list)) {
+      pa$addCensorMark <- isTRUE(addCen.list[[i]])
+      pa$visual.info$addCensorMark <- isTRUE(addCen.list[[i]])
+    }
+    if (!is.null(addCR.list)) {
+      pa$addCompetingRiskMark <- isTRUE(addCR.list[[i]])
+      pa$visual.info$addCompetingRiskMark <- isTRUE(addCR.list[[i]])
+    }
+    if (!is.null(addIC.list)) {
+      pa$addIntercurrentEventMark <- isTRUE(addIC.list[[i]])
+      pa$visual.info$addIntercurrentEventMark <- isTRUE(addIC.list[[i]])
+    }
+    if (!is.null(addQ.list)) {
+      pa$addQuantileLine <- isTRUE(addQ.list[[i]])
+      pa$visual.info$addQuantileLine <- isTRUE(addQ.list[[i]])
+    }
 
     # --- ここで competing.risk.time を自動生成 ---
     if (isTRUE(pa$addCompetingRiskMark)) {
