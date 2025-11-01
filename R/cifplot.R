@@ -592,15 +592,10 @@ cifplot_single <- function(
     units           = "in"
   ), ggsave.info)
 
-  ## ここで print すれば毎回値がある
-  message("cifplot_single(): style = ", style.info$style)
-
-  # 1) survfit.info 展開
   error     <- survfit.info$error
   conf.type <- survfit.info$conf.type
   conf.int  <- survfit.info$conf.int
 
-  # 2) axis.info 展開
   type.y            <- axis.info$type.y
   label.x           <- axis.info$label.x
   label.y           <- axis.info$label.y
@@ -613,7 +608,6 @@ cifplot_single <- function(
   breaks.y          <- axis.info$breaks.y
   use_coord_cartesian <- isTRUE(axis.info$use_coord_cartesian)
 
-  # 3) visual.info 展開（※さっきデフォルトを入れたのでここでNULLにならない）
   addConfidenceInterval        <- visual.info$addConfidenceInterval
   addRiskTable                 <- visual.info$addRiskTable
   symbol.risktable             <- visual.info$symbol.risktable
@@ -633,27 +627,21 @@ cifplot_single <- function(
   addQuantileLine              <- visual.info$addQuantileLine
   quantile                     <- visual.info$quantile
 
-  # 4) panel.info
   printEachEvent     <- isTRUE(panel.info$printEachEvent)
   printEachVar       <- isTRUE(panel.info$printEachVar)
   rows.columns.panel <- panel.info$rows.columns.panel
 
-  # 5) style.info
   style           <- style.info$style
   palette         <- style.info$palette
   font.family     <- style.info$font.family
   font.size       <- style.info$font.size
   legend.position <- style.info$legend.position
 
-  # 6) ggsave.info
   filename.ggsave <- ggsave.info$filename.ggsave
   width.ggsave    <- ggsave.info$width.ggsave
   height.ggsave   <- ggsave.info$height.ggsave
   dpi.ggsave      <- ggsave.info$dpi.ggsave
   ggsave.units    <- ggsave.info$units %||% "in"
-
-  # ここから下は「もともと cifplot_single がやってたこと」を続けるだけ
-  # （outcome.type の確定、printEachEvent=TRUE のときの分岐、survfit を作る、最後に call_ggsurvfit() へ渡す等）
 
   level_input <- axis.info$level.strata
   order_input <- axis.info$order.strata
@@ -688,15 +676,6 @@ cifplot_single <- function(
   } else {
     outcome.type <- match.arg(outcome.type, c("COMPETING-RISK","SURVIVAL"))
   }
-
-  #  if (inherits(formula_or_fit, "survfit")) {
-  #    if (!is.null(label.strata))
-  #    {
-  #      formula_or_fit <- plot_survfit_strata_labels(formula_or_fit, label.strata)
-  #    } else {
-  #      label.strata <- names(formula_or_fit$strata)
-  #    }
-  #  }
 
   if (isTRUE(printEachEvent)) {
     if (inherits(formula_or_fit, "survfit")) {
@@ -767,10 +746,6 @@ cifplot_single <- function(
         ))
 
         style_cur <- style.info$style
-
-        ## ここで print すれば毎回値がある
-        message("A. cifplot_single(): style = ", style.info$style)
-        message("B. cifplot_single(): style_cur = ", style)
         palette_cur <- style.info$palette
         ff_cur <- style.info$font.family
         fs_cur <- style.info$font.size
@@ -1247,7 +1222,6 @@ call_ggsurvfit <- function(
     style.info   = NULL,
     ggsave.info  = NULL
 ){
-  # 0) デフォルト化
   survfit.info <- survfit.info %||% list()
   axis.info    <- axis.info    %||% list()
   visual.info  <- visual.info  %||% list()
@@ -1255,16 +1229,10 @@ call_ggsurvfit <- function(
   style.info   <- style.info   %||% list()
   ggsave.info  <- ggsave.info  %||% list()
 
-  #############################################################
-  # 1) survfit.info
-  #############################################################
   error     <- survfit.info$error
   conf.type <- survfit.info$conf.type
   conf.int  <- survfit.info$conf.int
 
-  #############################################################
-  # 2) axis.info
-  #############################################################
   type.y              <- axis.info$type.y
   label.x             <- axis.info$label.x
   label.y             <- axis.info$label.y
@@ -1277,12 +1245,11 @@ call_ggsurvfit <- function(
   breaks.y            <- axis.info$breaks.y
   use_coord_cartesian <- isTRUE(axis.info$use_coord_cartesian)
 
-  #############################################################
-  # 3) visual.info
-  #############################################################
   addConfidenceInterval         <- visual.info$addConfidenceInterval
   addRiskTable                  <- visual.info$addRiskTable
+  symbol.risktable              <- visual.info$symbol.risktable
   addEstimateTable              <- visual.info$addEstimateTable
+  symbol.estimatetable          <- visual.info$symbol.risktable
   addCensorMark                 <- visual.info$addCensorMark
   shape.censor.mark             <- visual.info$shape.censor.mark
   size.censor.mark              <- visual.info$size.censor.mark
@@ -1297,48 +1264,35 @@ call_ggsurvfit <- function(
   addQuantileLine               <- visual.info$addQuantileLine
   quantile                      <- visual.info$quantile
 
-  #############################################################
-  # 4) panel.info
-  #############################################################
   printEachEvent     <- isTRUE(panel.info$printEachEvent)
   printEachVar       <- isTRUE(panel.info$printEachVar)
   rows.columns.panel <- panel.info$rows.columns.panel
 
-  #############################################################
-  # 5) style.info
-  #############################################################
-  style           <- style.info$style
-  palette         <- style.info$palette
-  font.family     <- style.info$font.family
-  font.size       <- style.info$font.size
-  legend.position <- style.info$legend.position
+  style              <- style.info$style
+  palette            <- style.info$palette
+  font.family        <- style.info$font.family
+  font.size          <- style.info$font.size
+  legend.position    <- style.info$legend.position
 
-  #############################################################
-  # 6) ggsave.info（ここで取り出すだけ。保存は親でやる想定）
-  #############################################################
-  filename.ggsave <- ggsave.info$filename.ggsave
-  width.ggsave    <- ggsave.info$width.ggsave
-  height.ggsave   <- ggsave.info$height.ggsave
-  dpi.ggsave      <- ggsave.info$dpi.ggsave
-  ggsave.units    <- ggsave.info$units %||% "in"
+  filename.ggsave    <- ggsave.info$filename.ggsave
+  width.ggsave       <- ggsave.info$width.ggsave
+  height.ggsave      <- ggsave.info$height.ggsave
+  dpi.ggsave         <- ggsave.info$dpi.ggsave
+  ggsave.units       <- ggsave.info$units %||% "in"
 
-  # =========================================================
-  # ここから元の描画ロジック
-  # =========================================================
-
-  label.strata.map <- plot_make_label.strata.map(
-    survfit_object = survfit_object,
-    label.strata   = label.strata,
-    level.strata   = level.strata
+  label.strata.map   <- plot_make_label.strata.map(
+    survfit_object   = survfit_object,
+    label.strata     = label.strata,
+    level.strata     = level.strata
   )
 
   out_cg <- check_ggsurvfit(
-    survfit_object = survfit_object,
-    survfit.info   = survfit.info,
-    axis.info      = axis.info,
-    visual.info    = visual.info,
-    style.info     = style.info,
-    out_readSurv   = out_readSurv
+    survfit_object   = survfit_object,
+    survfit.info     = survfit.info,
+    axis.info        = axis.info,
+    visual.info      = visual.info,
+    style.info       = style.info,
+    out_readSurv     = out_readSurv
   )
 
   res <- plot_reconcile_order_and_labels(
@@ -1348,18 +1302,16 @@ call_ggsurvfit <- function(
     order.strata     = order.strata
   )
 
-  limits_arg             <- res$limits_arg
-  label.strata.map       <- res$label.strata.map
-  strata_levels_final    <- res$strata_levels_final
-  strata_labels_final    <- res$strata_labels_final
+  limits_arg                 <- res$limits_arg
+  label.strata.map           <- res$label.strata.map
+  strata_levels_final        <- res$strata_levels_final
+  strata_labels_final        <- res$strata_labels_final
   forbid_limits_due_to_order <- res$forbid_limits_due_to_order
-  n_strata_effective     <- length(limits_arg)
+  n_strata_effective         <- length(limits_arg)
 
-  # ベースの plot
   p <- out_cg$out_survfit_object +
     ggplot2::labs(x = label.x, y = out_cg$label.y)
 
-  # レイヤー追加
   if (isTRUE(addConfidenceInterval)) {
     p <- p + add_confidence_interval()
   }
@@ -1370,7 +1322,17 @@ call_ggsurvfit <- function(
     p <- p + ggsurvfit::add_quantile(y_value = quantile)
   }
 
-  # リスクテーブル・推定テーブル
+  apply_add_risktable_strata_symbol <- function (p, symbol.risktable) {
+    if (symbol.risktable=="square") {
+      p <- p + add_risktable_strata_symbol(symbol = "\U25A0", size = 14)
+    } else if (symbol.risktable=="circle") {
+      p <- p + add_risktable_strata_symbol(symbol = "\U25CF", size = 14)
+    } else if (symbol.risktable=="triangle") {
+      p <- p + add_risktable_strata_symbol(symbol = "\U25CF", size = 14)
+    }
+    return(p)
+  }
+
   if (isTRUE(addEstimateTable) && isTRUE(addRiskTable)) {
     p <- p + add_risktable(
       risktable_stats = c("n.risk", "{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"),
@@ -1378,25 +1340,24 @@ call_ggsurvfit <- function(
       theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size),
       risktable_group = "risktable_stats"
     )
-    p <- p + add_risktable_strata_symbol(symbol = "\U25A0", size = 14)
+    p <- apply_add_risktable_strata_symbol(p, symbol.risktable)
+#    p <- apply_add_risktable_strata_symbol(p, symbol.estimatetable)
   } else if (isTRUE(addEstimateTable)) {
     p <- p + add_risktable(
       risktable_stats = c("{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"),
       stats_label     = c("Estimate (95% CI)"),
       theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size)
     )
-    p <- p + add_risktable_strata_symbol(symbol = "\U25A0", size = 14)
+    p <- apply_add_risktable_strata_symbol(p, symbol.estimatetable)
   } else if (isTRUE(addRiskTable)) {
     p <- p + add_risktable(
       risktable_stats = c("n.risk"),
       stats_label     = c("No. at risk"),
       theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size)
     )
-    #p <- p + add_risktable_strata_symbol(symbol = "\U25CF", size = 14)
-    p <- p + add_risktable_strata_symbol(symbol = "\U25A0", size = 14)
+    p <- apply_add_risktable_strata_symbol(p, symbol.risktable)
   }
 
-  # マーク描画
   if (isTRUE(addCompetingRiskMark) && length(competing.risk.time)) {
     p <- plot_draw_marks(
       p, survfit_object,
@@ -1414,7 +1375,6 @@ call_ggsurvfit <- function(
     )
   }
 
-  # 軸スケール
   x_max <- plot_make_x_max(survfit_object)
   if (isTRUE(use_coord_cartesian)) {
     if (!is.null(breaks.x)) p <- p + ggplot2::scale_x_continuous(breaks = breaks.x)
@@ -1445,7 +1405,6 @@ call_ggsurvfit <- function(
     }
   }
 
-  # スタイル / スケール
   if (!identical(style, "GGSURVFIT")) {
     p <- plot_apply_style(
       p,
@@ -1485,8 +1444,7 @@ call_ggsurvfit <- function(
     ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(fill = NA)))
 
   p <- plot_fix_palette_vector_arg(p)
-
-  p
+  return(p)
 }
 
 check_ggsurvfit <- function(

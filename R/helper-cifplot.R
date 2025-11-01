@@ -154,30 +154,6 @@ plot_apply_style <- function(
   p
 }
 
-plot_apply_style_old <- function(
-    p,
-    style = c("CLASSIC", "BOLD", "FRAMED", "GRID", "GRAY"),
-    font.family = "sans",
-    font.size = 14,
-    legend.position = "top",
-    n_strata = 6,
-    palette_colors = NULL,
-    strata_levels_final = NULL,
-    strata_labels_final = NULL
-) {
-  if (style=="G") style <- "GRID"
-  style <- match.arg(style)
-  style_theme <- switch(
-    style,
-    CLASSIC    = plot_style_classic(font.family, font.size, legend.position),
-    BOLD       = plot_style_bold(font.family, font.size, legend.position),
-    FRAMED     = plot_style_framed(font.family, font.size, legend.position),
-    GRID       = plot_style_grid(font.family, font.size, legend.position),
-    GRAY       = plot_style_gray(font.family, font.size, legend.position)
-  )
-  p + style_theme
-}
-
 plot_apply_all_scales <- function(
     p,
     style,
