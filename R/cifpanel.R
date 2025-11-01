@@ -717,47 +717,31 @@ cifpanel <- function(
     fonts           = fonts
   )
 
-
   plots <- lapply(seq_len(prep$K), function(i) {
     pa <- prep$plot_args[[i]]
 
-    # 1) 全体設定をまず入れる
+    # ① 親を入れる（順番は親→子）
     pa$axis.info    <- modifyList(axis.info,    pa$axis.info %||% list())
     pa$visual.info  <- modifyList(visual.info,  pa$visual.info %||% list())
     pa$style.info   <- modifyList(style.info,   pa$style.info %||% list())
     pa$survfit.info <- modifyList(survfit.info, pa$survfit.info %||% list())
 
-    # 2) ここで「このパネルだけの表示系」をもう一度上書きする
-    if (!is.null(labelx.list)) {
-      pa$label.x <- labelx.list[[i]]
-      pa$axis.info$label.x <- labelx.list[[i]]
-    }
-    if (!is.null(labely.list)) {
-      pa$label.y <- labely.list[[i]]
-      pa$axis.info$label.y <- labely.list[[i]]
-    }
-
-    # （ここにさっきの addXXX の上書きも並んでる想定）
-    if (!is.null(addCI.list)) {
-      pa$addConfidenceInterval <- isTRUE(addCI.list[[i]])
-      pa$visual.info$addConfidenceInterval <- isTRUE(addCI.list[[i]])
-    }
-    if (!is.null(addCen.list)) {
-      pa$addCensorMark <- isTRUE(addCen.list[[i]])
-      pa$visual.info$addCensorMark <- isTRUE(addCen.list[[i]])
-    }
-    if (!is.null(addCR.list)) {
-      pa$addCompetingRiskMark <- isTRUE(addCR.list[[i]])
-      pa$visual.info$addCompetingRiskMark <- isTRUE(addCR.list[[i]])
-    }
-    if (!is.null(addIC.list)) {
-      pa$addIntercurrentEventMark <- isTRUE(addIC.list[[i]])
-      pa$visual.info$addIntercurrentEventMark <- isTRUE(addIC.list[[i]])
-    }
-    if (!is.null(addQ.list)) {
-      pa$addQuantileLine <- isTRUE(addQ.list[[i]])
-      pa$visual.info$addQuantileLine <- isTRUE(addQ.list[[i]])
-    }
+    # ② ★ここでパネルのものを全部たたき込む（これが最優先）
+    pa <- panel_force_apply(
+      pa,
+      i,
+      labelx.list = labelx.list,
+      labely.list = labely.list,
+      limsx.list  = limsx.list,
+      limsy.list  = limsy.list,
+      breakx.list = breakx.list,
+      breaky.list = breaky.list,
+      addCI.list  = addCI.list,
+      addCen.list = addCen.list,
+      addCR.list  = addCR.list,
+      addIC.list  = addIC.list,
+      addQ.list   = addQ.list
+    )
 
     # --- ここで competing.risk.time を自動生成 ---
     if (isTRUE(pa$addCompetingRiskMark)) {
@@ -915,6 +899,80 @@ cifpanel <- function(
     ggsave.info  = ggsave.info
   ))
 }
+
+panel_force_apply <- function(
+    pa,
+    i,
+    labelx.list = NULL,
+    labely.list = NULL,
+    limsx.list  = NULL,
+    limsy.list  = NULL,
+    breakx.list = NULL,
+    breaky.list = NULL,
+    addCI.list  = NULL,
+    addCen.list = NULL,
+    addCR.list  = NULL,
+    addIC.list  = NULL,
+    addQ.list   = NULL
+) {
+  # 軸ラベル
+  if (!is.null(labelx.list)) {
+    pa$label.x <- labelx.list[[i]]
+    pa$axis.info$label.x <- labelx.list[[i]]
+  }
+  if (!is.null(labely.list)) {
+    pa$label.y <- labely.list[[i]]
+    pa$axis.info$label.y <- labely.list[[i]]
+  }
+
+  # limits / breaks
+  if (!is.null(limsx.list)) {
+    pa$limits.x <- limsx.list[[i]]
+    pa$axis.info$limits.x <- limsx.list[[i]]
+  }
+  if (!is.null(limsy.list)) {
+    pa$limits.y <- limsy.list[[i]]
+    pa$axis.info$limits.y <- limsy.list[[i]]
+  }
+  if (!is.null(breakx.list)) {
+    pa$breaks.x <- breakx.list[[i]]
+    pa$axis.info$breaks.x <- breakx.list[[i]]
+  }
+  if (!is.null(breaky.list)) {
+    pa$breaks.y <- breaky.list[[i]]
+    pa$axis.info$breaks.y <- breaky.list[[i]]
+  }
+
+  # 表示系 add*
+  if (!is.null(addCI.list)) {
+    v <- isTRUE(addCI.list[[i]])
+    pa$addConfidenceInterval <- v
+    pa$visual.info$addConfidenceInterval <- v
+  }
+  if (!is.null(addCen.list)) {
+    v <- isTRUE(addCen.list[[i]])
+    pa$addCensorMark <- v
+    pa$visual.info$addCensorMark <- v
+  }
+  if (!is.null(addCR.list)) {
+    v <- isTRUE(addCR.list[[i]])
+    pa$addCompetingRiskMark <- v
+    pa$visual.info$addCompetingRiskMark <- v
+  }
+  if (!is.null(addIC.list)) {
+    v <- isTRUE(addIC.list[[i]])
+    pa$addIntercurrentEventMark <- v
+    pa$visual.info$addIntercurrentEventMark <- v
+  }
+  if (!is.null(addQ.list)) {
+    v <- isTRUE(addQ.list[[i]])
+    pa$addQuantileLine <- v
+    pa$visual.info$addQuantileLine <- v
+  }
+
+  pa
+}
+
 
 call_ggsurvfit <- function(
     survfit_object,
