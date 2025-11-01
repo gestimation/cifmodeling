@@ -232,9 +232,9 @@ cifplot <- function(
     use_coord_cartesian = FALSE,
     addConfidenceInterval = TRUE,
     addRiskTable = TRUE,
-    symbol.risktable = "square",
     addEstimateTable = FALSE,
-    symbol.estimatetable = "square",
+    symbol.risktable = "square",
+    font.size.risktable = 3,
     addCensorMark = TRUE,
     shape.censor.mark = 3,
     size.censor.mark = 2,
@@ -308,7 +308,7 @@ cifplot <- function(
     addRiskTable              = addRiskTable,
     symbol.risktable          = symbol.risktable,
     addEstimateTable          = addEstimateTable,
-    symbol.estimatetable      = symbol.estimatetable,
+    font.size.risktable       = font.size.risktable,
     addCensorMark             = addCensorMark,
     shape.censor.mark         = shape.censor.mark,
     size.censor.mark          = size.censor.mark,
@@ -552,9 +552,9 @@ cifplot_single <- function(
   visual.info <- modifyList(list(
     addConfidenceInterval     = TRUE,
     addRiskTable              = FALSE,
-    symbol.risktable          = "square",
     addEstimateTable          = FALSE,
-    symbol.estimatetable      = "square",
+    symbol.risktable          = "square",
+    font.size.risktable       = 3,
     addCensorMark             = TRUE,
     shape.censor.mark         = 3,
     size.censor.mark          = 2,
@@ -610,9 +610,9 @@ cifplot_single <- function(
 
   addConfidenceInterval        <- visual.info$addConfidenceInterval
   addRiskTable                 <- visual.info$addRiskTable
-  symbol.risktable             <- visual.info$symbol.risktable
   addEstimateTable             <- visual.info$addEstimateTable
-  symbol.estimatetable         <- visual.info$symbol.estimatetable
+  symbol.risktable             <- visual.info$symbol.risktable
+  font.size.risktable          <- visual.info$font.size.risktable
   addCensorMark                <- visual.info$addCensorMark
   shape.censor.mark            <- visual.info$shape.censor.mark
   size.censor.mark             <- visual.info$size.censor.mark
@@ -1247,9 +1247,9 @@ call_ggsurvfit <- function(
 
   addConfidenceInterval         <- visual.info$addConfidenceInterval
   addRiskTable                  <- visual.info$addRiskTable
-  symbol.risktable              <- visual.info$symbol.risktable
   addEstimateTable              <- visual.info$addEstimateTable
-  symbol.estimatetable          <- visual.info$symbol.risktable
+  symbol.risktable              <- visual.info$symbol.risktable
+  font.size.risktable           <- visual.info$font.size.risktable
   addCensorMark                 <- visual.info$addCensorMark
   shape.censor.mark             <- visual.info$shape.censor.mark
   size.censor.mark              <- visual.info$size.censor.mark
@@ -1338,22 +1338,24 @@ call_ggsurvfit <- function(
       risktable_stats = c("n.risk", "{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"),
       stats_label     = c("No. at risk", "Estimate (95% CI)"),
       theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size),
-      risktable_group = "risktable_stats"
+      risktable_group = "risktable_stats",
+      size            = font.size.risktable
     )
     p <- apply_add_risktable_strata_symbol(p, symbol.risktable)
-#    p <- apply_add_risktable_strata_symbol(p, symbol.estimatetable)
   } else if (isTRUE(addEstimateTable)) {
     p <- p + add_risktable(
       risktable_stats = c("{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"),
       stats_label     = c("Estimate (95% CI)"),
-      theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size)
+      theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size),
+      size            = font.size.risktable
     )
-    p <- apply_add_risktable_strata_symbol(p, symbol.estimatetable)
+    p <- apply_add_risktable_strata_symbol(p, symbol.risktable)
   } else if (isTRUE(addRiskTable)) {
     p <- p + add_risktable(
       risktable_stats = c("n.risk"),
       stats_label     = c("No. at risk"),
-      theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size)
+      theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size),
+      size            = font.size.risktable
     )
     p <- apply_add_risktable_strata_symbol(p, symbol.risktable)
   }

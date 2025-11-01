@@ -1097,9 +1097,9 @@ cifplot_build_info <- function(
 
   addConfidenceInterval,
   addRiskTable,
-  symbol.risktable,
   addEstimateTable,
-  symbol.estimatetable,
+  symbol.risktable,
+  font.size.risktable,
   addCensorMark,
   shape.censor.mark,
   size.censor.mark,
@@ -1161,9 +1161,9 @@ cifplot_build_info <- function(
   visual.info <- modifyList(list(
     addConfidenceInterval        = addConfidenceInterval,
     addRiskTable                 = addRiskTable,
-    symbol.risktable             = symbol.risktable,
     addEstimateTable             = addEstimateTable,
-    symbol.estimatetable         = symbol.estimatetable,
+    symbol.risktable             = symbol.risktable,
+    font.size.risktable          = font.size.risktable,
     addCensorMark                = addCensorMark,
     shape.censor.mark            = shape.censor.mark,
     size.censor.mark             = size.censor.mark,
