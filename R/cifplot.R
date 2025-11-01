@@ -207,74 +207,74 @@
 #' @export
 cifplot <- function(
     formula_or_fit,
-    data = NULL,
-    weights = NULL,
-    subset.condition = NULL,
-    na.action = na.omit,
-    outcome.type = c("COMPETING-RISK", "SURVIVAL"),
-    code.event1 = 1,
-    code.event2 = 2,
-    code.censoring = 0,
-    code.events = NULL,
-    error = NULL,
-    conf.type = "arcsine-square root",
-    conf.int = 0.95,
-    type.y = NULL,
-    label.x = "Time",
-    label.y = NULL,
-    level.strata = NULL,
-    label.strata = NULL,
-    order.strata = NULL,
-    limits.x = NULL,
-    limits.y = NULL,
-    breaks.x = NULL,
-    breaks.y = NULL,
-    use_coord_cartesian = FALSE,
-    addConfidenceInterval = TRUE,
-    addRiskTable = TRUE,
-    addEstimateTable = FALSE,
-    symbol.risktable = "square",
-    font.size.risktable = 3,
-    addCensorMark = TRUE,
-    shape.censor.mark = 3,
-    size.censor.mark = 2,
-    addCompetingRiskMark = FALSE,
-    competing.risk.time = list(),
-    shape.competing.risk.mark = 16,
-    size.competing.risk.mark = 2,
-    addIntercurrentEventMark = FALSE,
-    intercurrent.event.time = list(),
+    data                          = NULL,
+    weights                       = NULL,
+    subset.condition              = NULL,
+    na.action                     = na.omit,
+    outcome.type                  = c("COMPETING-RISK", "SURVIVAL"),
+    code.event1                   = 1,
+    code.event2                   = 2,
+    code.censoring                = 0,
+    code.events                   = NULL,
+    error                         = NULL,
+    conf.type                     = "arcsine-square root",
+    conf.int                      = 0.95,
+    type.y                        = NULL,
+    label.x                       = "Time",
+    label.y                       = NULL,
+    level.strata                  = NULL,
+    label.strata                  = NULL,
+    order.strata                  = NULL,
+    limits.x                      = NULL,
+    limits.y                      = NULL,
+    breaks.x                      = NULL,
+    breaks.y                      = NULL,
+    use_coord_cartesian           = FALSE,
+    addConfidenceInterval         = TRUE,
+    addRiskTable                  = TRUE,
+    addEstimateTable              = FALSE,
+    symbol.risktable              = "square",
+    font.size.risktable           = 3,
+    addCensorMark                 = TRUE,
+    shape.censor.mark             = 3,
+    size.censor.mark              = 2,
+    addCompetingRiskMark          = FALSE,
+    competing.risk.time           = list(),
+    shape.competing.risk.mark     = 16,
+    size.competing.risk.mark      = 2,
+    addIntercurrentEventMark      = FALSE,
+    intercurrent.event.time       = list(),
     shape.intercurrent.event.mark = 1,
-    size.intercurrent.event.mark = 2,
-    addQuantileLine = FALSE,
-    quantile = 0.5,
-    printEachEvent = FALSE,
-    printEachVar = FALSE,
-    rows.columns.panel = NULL,
-    style = "CLASSIC",
-    palette = NULL,
-    font.family = "sans",
-    font.size = 12,
-    legend.position = "top",
-    filename.ggsave = NULL,
-    width.ggsave = 6,
-    height.ggsave = 6,
-    dpi.ggsave = 300,
-    survfit.info = NULL,
-    axis.info = NULL,
-    visual.info = NULL,
-    panel.info = NULL,
-    style.info = NULL,
-    inset.info = NULL,
-    print.info = NULL,
-    ggsave.info = NULL,
+    size.intercurrent.event.mark  = 2,
+    addQuantileLine               = FALSE,
+    quantile                      = 0.5,
+    printEachEvent                = FALSE,
+    printEachVar                  = FALSE,
+    rows.columns.panel            = NULL,
+    style                         = "CLASSIC",
+    palette                       = NULL,
+    font.family                   = "sans",
+    font.size                     = 12,
+    legend.position               = "top",
+    filename.ggsave               = NULL,
+    width.ggsave                  = 6,
+    height.ggsave                 = 6,
+    dpi.ggsave                    = 300,
+    survfit.info                  = NULL,
+    axis.info                     = NULL,
+    visual.info                   = NULL,
+    panel.info                    = NULL,
+    style.info                    = NULL,
+    inset.info                    = NULL,
+    print.info                    = NULL,
+    ggsave.info                   = NULL,
     ...
 ) {
   dots <- list(...)
 
   print_panel <- isTRUE(printEachVar) || isTRUE(printEachEvent)
   if (print_panel) {
-    legend.position <- "none"
+    legend.position  <- "none"
     addRiskTable     <- FALSE
     addEstimateTable <- FALSE
     if (!is.null(label.strata)) {
@@ -285,39 +285,37 @@ cifplot <- function(
     }
   }
 
-
-  # 1) まずはすべて info にまとめる（ユーザ直指定 > info 引数 > デフォルト）
   infos <- cifplot_build_info(
-    error     = error,
-    conf.type = conf.type,
-    conf.int  = conf.int,
+    error                         = error,
+    conf.type                     = conf.type,
+    conf.int                      = conf.int,
 
-    type.y    = type.y,
-    label.x   = label.x,
-    label.y   = label.y,
-    level.strata = level.strata,
-    label.strata = label.strata,
-    order.strata = order.strata,
-    limits.x  = limits.x,
-    limits.y  = limits.y,
-    breaks.x  = breaks.x,
-    breaks.y  = breaks.y,
-    use_coord_cartesian = use_coord_cartesian,
+    type.y                        = type.y,
+    label.x                       = label.x,
+    label.y                       = label.y,
+    level.strata                  = level.strata,
+    label.strata                  = label.strata,
+    order.strata                  = order.strata,
+    limits.x                      = limits.x,
+    limits.y                      = limits.y,
+    breaks.x                      = breaks.x,
+    breaks.y                      = breaks.y,
+    use_coord_cartesian           = use_coord_cartesian,
 
-    addConfidenceInterval     = addConfidenceInterval,
-    addRiskTable              = addRiskTable,
-    symbol.risktable          = symbol.risktable,
-    addEstimateTable          = addEstimateTable,
-    font.size.risktable       = font.size.risktable,
-    addCensorMark             = addCensorMark,
-    shape.censor.mark         = shape.censor.mark,
-    size.censor.mark          = size.censor.mark,
-    addCompetingRiskMark      = addCompetingRiskMark,
-    competing.risk.time       = competing.risk.time,
-    shape.competing.risk.mark = shape.competing.risk.mark,
-    size.competing.risk.mark  = size.competing.risk.mark,
-    addIntercurrentEventMark  = addIntercurrentEventMark,
-    intercurrent.event.time   = intercurrent.event.time,
+    addConfidenceInterval         = addConfidenceInterval,
+    addRiskTable                  = addRiskTable,
+    symbol.risktable              = symbol.risktable,
+    addEstimateTable              = addEstimateTable,
+    font.size.risktable           = font.size.risktable,
+    addCensorMark                 = addCensorMark,
+    shape.censor.mark             = shape.censor.mark,
+    size.censor.mark              = size.censor.mark,
+    addCompetingRiskMark          = addCompetingRiskMark,
+    competing.risk.time           = competing.risk.time,
+    shape.competing.risk.mark     = shape.competing.risk.mark,
+    size.competing.risk.mark      = size.competing.risk.mark,
+    addIntercurrentEventMark      = addIntercurrentEventMark,
+    intercurrent.event.time       = intercurrent.event.time,
     shape.intercurrent.event.mark = shape.intercurrent.event.mark,
     size.intercurrent.event.mark  = size.intercurrent.event.mark,
     addQuantileLine               = addQuantileLine,
@@ -353,11 +351,9 @@ cifplot <- function(
   style.info   <- infos$style.info
   ggsave.info  <- infos$ggsave.info
 
-  # 2) 最低保証
   style.info$font.family <- style.info$font.family %||% "sans"
   style.info$font.size   <- style.info$font.size   %||% 12
 
-  # 3) strata 情報を正規化（ここで level/order/label の対応を1回で確定させる）
   level_input <- axis.info$level.strata
   order_input <- axis.info$order.strata
 
@@ -381,18 +377,15 @@ cifplot <- function(
     }
   }
 
-  # 4) printEachVarとprintEachEventの排他チェック
   .assert(!(isTRUE(panel.info$printEachVar) && isTRUE(panel.info$printEachEvent)),
           "incompatible_flags",
           which = "printEachVar and printEachEvent")
 
-  # 5) outcome.type をここで決める
   outcome.type <- util_check_outcome_type(
     outcome.type, formula = if (inherits(formula_or_fit, "survfit")) NULL else formula_or_fit,
     data = data
   )
 
-  # 6) code.events を code.event1.. に落とし込む（単一描画のときも EachVar のときも使うのでここで）
   if (!is.null(code.events)) {
     ce <- plot_check_code_events(code.events)
     .assert(length(ce) == 3L, "code_events_len_vec")
@@ -403,7 +396,12 @@ cifplot <- function(
     code.censoring <- ce[3L]
   }
 
-  # 7) printEachVar = TRUE のときは info をそのまま渡して終了
+  if (isTRUE(addCompetingRiskMark) && length(competing.risk.time) == 0) {
+    visual.info$competing.risk.time <- extract_time_to_event(
+      formula_or_fit, data=data, subset.condition=subset.condition, na.action=na.action, which_event="event2",
+      code.event1=code.event1, code.event2=code.event2, code.censoring=code.censoring)
+  }
+
   if (isTRUE(panel.info$printEachVar)) {
     .assert(!inherits(formula_or_fit, "survfit"), "need_formula_for_printEachVar")
     .assert(inherits(formula_or_fit, "formula"),  "formula_must_be")
@@ -420,19 +418,18 @@ cifplot <- function(
         code.event1     = code.event1,
         code.event2     = code.event2,
         code.censoring  = code.censoring,
-        code.events     = NULL,     # ここは各パネル側で使わないのでNULLでよい
+        code.events     = NULL,
         survfit.info    = survfit.info,
         axis.info       = axis.info,
         visual.info     = visual.info,
         panel.info      = panel.info,
         style.info      = style.info,
         ggsave.info     = ggsave.info,
-        !!!dots         # dotsも渡しておく
+        !!!dots
       )
     )
   }
 
-  # 8) ここからは「単一プロット」のときだけ
   dots_clean <- plot_make_dots_clean(dots)
   args_single <- c(
     list(
@@ -457,40 +454,31 @@ cifplot <- function(
   )
 
   out_plot <- do.call(cifplot_single, args_single)
-
-  # strata の order/label を最後に一応適用
-  out_plot <- apply_strata_to_plots(
-    list(out_plot),
-    order_data = axis.info$order.strata,
-    label_map  = axis.info$label.strata
-  )[[1]]
-
+  out_plot <- apply_strata_to_plots(list(out_plot),order_data = axis.info$order.strata,label_map  = axis.info$label.strata)[[1]]
   out_plot
 }
 
 cifplot_single <- function(
     formula_or_fit,
-    data = NULL,
-    weights = NULL,
+    data             = NULL,
+    weights          = NULL,
     subset.condition = NULL,
-    na.action = na.omit,
-    outcome.type = c("COMPETING-RISK", "SURVIVAL"),
-    code.event1 = 1,
-    code.event2 = 2,
-    code.censoring = 0,
-    code.events = NULL,
-    # info 系
-    survfit.info = NULL,
-    axis.info    = NULL,
-    visual.info  = NULL,
-    panel.info   = NULL,
-    style.info   = NULL,
-    ggsave.info  = NULL,
+    na.action        = na.omit,
+    outcome.type     = c("COMPETING-RISK", "SURVIVAL"),
+    code.event1      = 1,
+    code.event2      = 2,
+    code.censoring   = 0,
+    code.events      = NULL,
+    survfit.info     = NULL,
+    axis.info        = NULL,
+    visual.info      = NULL,
+    panel.info       = NULL,
+    style.info       = NULL,
+    ggsave.info      = NULL,
     ...
 ) {
-  dots <- list(...)
+  dots         <- list(...)
 
-  ## 0) まず全部を list にしておく
   survfit.info <- survfit.info %||% list()
   axis.info    <- axis.info    %||% list()
   visual.info  <- visual.info  %||% list()
@@ -498,7 +486,6 @@ cifplot_single <- function(
   style.info   <- style.info   %||% list()
   ggsave.info  <- ggsave.info  %||% list()
 
-  # 0.1) 万一listじゃなかったときに包む
   if (!is.list(survfit.info)) survfit.info <- list(value = survfit.info)
   if (!is.list(axis.info))    axis.info    <- list(value = axis.info)
   if (!is.list(visual.info))  visual.info  <- list(value = visual.info)
@@ -506,7 +493,6 @@ cifplot_single <- function(
   if (!is.list(style.info))   style.info   <- list(style = style.info)
   if (!is.list(ggsave.info))  ggsave.info  <- list(value = ggsave.info)
 
-  # 0.2) ... に style / palette / font.* / legend.position が来てたら style.info に吸収
   if (!is.null(dots$style)) {
     style.info$style <- dots$style
     dots$style <- NULL
@@ -528,7 +514,6 @@ cifplot_single <- function(
     dots$legend.position <- NULL
   }
 
-  ## 0.5) ここで必ずデフォルトをマージする（←これがなかった）
   survfit.info <- modifyList(list(
     error     = NULL,
     conf.type = "arcsine-square root",
@@ -550,24 +535,24 @@ cifplot_single <- function(
   ), axis.info)
 
   visual.info <- modifyList(list(
-    addConfidenceInterval     = TRUE,
-    addRiskTable              = FALSE,
-    addEstimateTable          = FALSE,
-    symbol.risktable          = "square",
-    font.size.risktable       = 3,
-    addCensorMark             = TRUE,
-    shape.censor.mark         = 3,
-    size.censor.mark          = 2,
-    addCompetingRiskMark      = FALSE,
-    competing.risk.time       = list(),
-    shape.competing.risk.mark = 16,
-    size.competing.risk.mark  = 2,
-    addIntercurrentEventMark  = FALSE,
-    intercurrent.event.time   = list(),
+    addConfidenceInterval         = TRUE,
+    addRiskTable                  = FALSE,
+    addEstimateTable              = FALSE,
+    symbol.risktable              = "square",
+    font.size.risktable           = 3,
+    addCensorMark                 = TRUE,
+    shape.censor.mark             = 3,
+    size.censor.mark              = 2,
+    addCompetingRiskMark          = FALSE,
+    competing.risk.time           = list(),
+    shape.competing.risk.mark     = 16,
+    size.competing.risk.mark      = 2,
+    addIntercurrentEventMark      = FALSE,
+    intercurrent.event.time       = list(),
     shape.intercurrent.event.mark = 1,
     size.intercurrent.event.mark  = 2,
-    addQuantileLine           = FALSE,
-    quantile                  = 0.5
+    addQuantileLine               = FALSE,
+    quantile                      = 0.5
   ), visual.info)
 
   panel.info <- modifyList(list(
@@ -596,16 +581,16 @@ cifplot_single <- function(
   conf.type <- survfit.info$conf.type
   conf.int  <- survfit.info$conf.int
 
-  type.y            <- axis.info$type.y
-  label.x           <- axis.info$label.x
-  label.y           <- axis.info$label.y
-  label.strata      <- axis.info$label.strata
-  level.strata      <- axis.info$level.strata
-  order.strata      <- axis.info$order.strata
-  limits.x          <- axis.info$limits.x
-  limits.y          <- axis.info$limits.y
-  breaks.x          <- axis.info$breaks.x
-  breaks.y          <- axis.info$breaks.y
+  type.y              <- axis.info$type.y
+  label.x             <- axis.info$label.x
+  label.y             <- axis.info$label.y
+  label.strata        <- axis.info$label.strata
+  level.strata        <- axis.info$level.strata
+  order.strata        <- axis.info$order.strata
+  limits.x            <- axis.info$limits.x
+  limits.y            <- axis.info$limits.y
+  breaks.x            <- axis.info$breaks.x
+  breaks.y            <- axis.info$breaks.y
   use_coord_cartesian <- isTRUE(axis.info$use_coord_cartesian)
 
   addConfidenceInterval        <- visual.info$addConfidenceInterval
@@ -643,8 +628,8 @@ cifplot_single <- function(
   dpi.ggsave      <- ggsave.info$dpi.ggsave
   ggsave.units    <- ggsave.info$units %||% "in"
 
-  level_input <- axis.info$level.strata
-  order_input <- axis.info$order.strata
+  level_input     <- axis.info$level.strata
+  order_input     <- axis.info$order.strata
 
   norm <- normalize_strata_info(
     level.strata = axis.info$level.strata,
@@ -745,35 +730,36 @@ cifplot_single <- function(
           units           = ggsave.units
         ))
 
-        style_cur <- style.info$style
+        style_cur   <- style.info$style
         palette_cur <- style.info$palette
-        ff_cur <- style.info$font.family
-        fs_cur <- style.info$font.size
-        lg_cur <- style.info$legend.position
+        ff_cur      <- style.info$font.family
+        fs_cur      <- style.info$font.size
+        lg_cur      <- style.info$legend.position
 
-        panel_args <- list(
-          formula      = formula_or_fit,
-          data         = data,
-          outcome.type = "COMPETING-RISK",
-          code.events  = list(ce_panel, c(ce_panel[2L], ce_panel[1L], ce_panel[3L])),
-          axis.info    = axis.info.panel,
-          visual.info  = visual.info.panel,
-          panel.info   = panel.info.panel,
-          style.info   = list(
+        panel_args  <- list(
+          formula           = formula_or_fit,
+          data              = data,
+          outcome.type      = "COMPETING-RISK",
+          code.events       = list(ce_panel, c(ce_panel[2L], ce_panel[1L], ce_panel[3L])),
+          axis.info         = axis.info.panel,
+          visual.info       = visual.info.panel,
+          panel.info        = panel.info.panel,
+          style.info        = list(
             style           = style_cur,
             palette         = palette_cur,
             font.family     = ff_cur,
             font.size       = fs_cur,
             legend.position = lg_cur
           ),
-          ggsave.info  = ggsave.info.panel,
-          survfit.info = survfit.info
+          ggsave.info       = ggsave.info.panel,
+          survfit.info      = survfit.info
         )
 
         if (is.null(dots$rows.columns.panel)) dots$rows.columns.panel <- panel.info.panel$rows.columns.panel
         if (is.null(dots$legend.collect))     dots$legend.collect     <- TRUE
         if (is.null(dots$print.panel))        dots$print.panel        <- FALSE
 
+        dots$visual.info <- NULL
         panel_out <- do.call(cifpanel, c(panel_args, dots))
 
         if (is.list(panel_out) && !is.null(panel_out$out_patchwork)) {
@@ -789,13 +775,13 @@ cifplot_single <- function(
     if (is.null(data)) stop("When `formula` is a formula, `data` must be provided.")
     norm_inputs <- plot_normalize_formula_data(formula_or_fit, data)
     data_working <- norm_inputs$data
-    if (!isTRUE(printEachEvent) &&
-        isTRUE(addCompetingRiskMark) &&
-        length(competing.risk.time) == 0) {
-      competing.risk.time <- extract_time_to_event(
-        formula_or_fit, data = data_working, which_event = "event2",
-        code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring)
-    }
+#    if (!isTRUE(printEachEvent) &&
+#        isTRUE(addCompetingRiskMark) &&
+#        length(competing.risk.time) == 0) {
+#      competing.risk.time <- extract_time_to_event(
+#        formula_or_fit, data = data_working, which_event = "event2",
+#        code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring)
+#    }
     formula_or_fit <- cifcurve(formula_or_fit, data = data_working, weights = weights, subset.condition = subset.condition, na.action = na.action,
                                outcome.type = outcome.type, code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
                                error = error, conf.type = conf.type, conf.int = conf.int)
@@ -806,6 +792,7 @@ cifplot_single <- function(
 #      )
 #    }
   }
+
   p <- call_ggsurvfit(
     survfit_object = if (inherits(formula_or_fit, "survfit")) formula_or_fit else stop("..."),
     out_readSurv   = NULL,
@@ -1155,8 +1142,33 @@ cifplot_printEachVar <- function(
       dots
     )
     plot_i <- do.call(cifplot_single, args_var)
+###############################################################
     plot_i + ggplot2::ggtitle(var_name) +
-      ggplot2::labs(color = var_name, fill = var_name, linetype = var_name, shape = var_name)
+      ggplot2::labs(color = var_name, fill = var_name)
+
+
+    # ここから：存在するスケールにだけラベルを足す -----------------
+    scs <- plot_i$scales
+
+    if (!is.null(scs$get_scales("colour"))) {
+      plot_i <- plot_i + ggplot2::labs(color = var_name)
+    }
+    if (!is.null(scs$get_scales("fill"))) {
+      plot_i <- plot_i + ggplot2::labs(fill = var_name)
+    }
+    # -----------------------------------------------------------
+    if (isTRUE(addQuantileLine)) {
+      plot_i <- plot_i + ggsurvfit::add_quantile(y_value = quantile)
+    }
+
+    plot_i <- plot_i + ggplot2::ggtitle(var_name)
+
+    # ★ ここで cifplot() の “いつもの” 末尾の飾りをできる範囲でかける
+    plot_i <- .cifplot_basic_decor(
+      plot_i,
+      legend.position = legend.position
+    )
+    plot_i
   })
 
   nrow <- ncol <- NULL
@@ -1168,6 +1180,23 @@ cifplot_printEachVar <- function(
   patch <- patchwork::wrap_plots(plots, nrow = nrow, ncol = ncol, guides = "keep")
   attr(patch, "plots") <- plots
   return(patch)
+}
+
+# cifplot() の末尾でやってることの「軽量版」
+# ここでは n_strata や strata_labels_final がないので、
+# 使えるところだけやる
+.cifplot_basic_decor <- function(p, legend.position = "top") {
+  # 不要なガイドを落とす
+  p <- p +
+    ggplot2::guides(fill = "none", alpha = "none") +
+    ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(fill = NA))) +
+    ggplot2::theme(legend.position = legend.position)
+
+  # パレットの長さズレなどを直す（パッケージ内の既存関数をそのまま使う想定）
+  if (exists("plot_fix_palette_vector_arg", mode = "function")) {
+    p <- plot_fix_palette_vector_arg(p)
+  }
+  p
 }
 
 #' Plot survival or cumulative incidence curves with ggsurvfit
@@ -1222,16 +1251,16 @@ call_ggsurvfit <- function(
     style.info   = NULL,
     ggsave.info  = NULL
 ){
-  survfit.info <- survfit.info %||% list()
-  axis.info    <- axis.info    %||% list()
-  visual.info  <- visual.info  %||% list()
-  panel.info   <- panel.info   %||% list()
-  style.info   <- style.info   %||% list()
-  ggsave.info  <- ggsave.info  %||% list()
+  survfit.info        <- survfit.info %||% list()
+  axis.info           <- axis.info    %||% list()
+  visual.info         <- visual.info  %||% list()
+  panel.info          <- panel.info   %||% list()
+  style.info          <- style.info   %||% list()
+  ggsave.info         <- ggsave.info  %||% list()
 
-  error     <- survfit.info$error
-  conf.type <- survfit.info$conf.type
-  conf.int  <- survfit.info$conf.int
+  error               <- survfit.info$error
+  conf.type           <- survfit.info$conf.type
+  conf.int            <- survfit.info$conf.int
 
   type.y              <- axis.info$type.y
   label.x             <- axis.info$label.x
@@ -1360,7 +1389,7 @@ call_ggsurvfit <- function(
     p <- apply_add_risktable_strata_symbol(p, symbol.risktable)
   }
 
-  if (isTRUE(addCompetingRiskMark) && length(competing.risk.time)) {
+  if (isTRUE(addCompetingRiskMark) && length(competing.risk.time)>0) {
     p <- plot_draw_marks(
       p, survfit_object,
       competing.risk.time, out_cg$type.y,
@@ -1368,7 +1397,7 @@ call_ggsurvfit <- function(
       size  = size.competing.risk.mark
     )
   }
-  if (isTRUE(addIntercurrentEventMark) && length(intercurrent.event.time)) {
+  if (isTRUE(addIntercurrentEventMark) && length(intercurrent.event.time)>0) {
     p <- plot_draw_marks(
       p, survfit_object,
       intercurrent.event.time, out_cg$type.y,
@@ -1457,23 +1486,15 @@ check_ggsurvfit <- function(
     style.info   = NULL,
     out_readSurv = NULL
 ){
-  # 0) デフォルト化
   survfit.info <- survfit.info %||% list()
   axis.info    <- axis.info    %||% list()
   visual.info  <- visual.info  %||% list()
   style.info   <- style.info   %||% list()
 
-  #############################################################
-  # 1) survfit.info
-  #############################################################
   conf.type <- survfit.info$conf.type
-  # error, conf.int もあっていいけどここでは conf.type だけ使ってる
   # error     <- survfit.info$error
   # conf.int  <- survfit.info$conf.int
 
-  #############################################################
-  # 2) axis.info
-  #############################################################
   type.y              <- axis.info$type.y
   label.y             <- axis.info$label.y
   limits.x            <- axis.info$limits.x
@@ -1482,9 +1503,6 @@ check_ggsurvfit <- function(
   breaks.y            <- axis.info$breaks.y
   use_coord_cartesian <- isTRUE(axis.info$use_coord_cartesian)
 
-  #############################################################
-  # 3) visual.info
-  #############################################################
   addConfidenceInterval         <- visual.info$addConfidenceInterval
   addCensorMark                 <- visual.info$addCensorMark
   addCompetingRiskMark          <- visual.info$addCompetingRiskMark
@@ -1493,14 +1511,8 @@ check_ggsurvfit <- function(
   shape.competing.risk.mark     <- visual.info$shape.competing.risk.mark
   shape.intercurrent.event.mark <- visual.info$shape.intercurrent.event.mark
 
-  #############################################################
-  # 4) style.info
-  #############################################################
   style   <- style.info$style
   palette <- style.info$palette
-  #############################################################
-
-  # ===== ここから下は元のロジックそのまま =====
 
   if (isTRUE(addCensorMark) && isTRUE(addIntercurrentEventMark) &&
       identical(shape.censor.mark, shape.intercurrent.event.mark)) {
@@ -1518,7 +1530,6 @@ check_ggsurvfit <- function(
   is_len2_num <- function(x) is.numeric(x) && length(x) == 2L && all(is.finite(x))
   is_nondec   <- function(x) all(diff(x) >= 0, na.rm = TRUE)
 
-  # ---- limits.x ----
   if (!is.null(limits.x)) {
     if (!(is.numeric(limits.x) && length(limits.x) == 2L && all(is.finite(limits.x)))) {
       .warn("limits_len2", arg = "limits.x")
@@ -1537,7 +1548,6 @@ check_ggsurvfit <- function(
     if (!is.finite(tmax) || tmax <= 0) .warn("ors_tmax_bad")
   }
 
-  # ---- limits.y ----
   if (!is.null(limits.y)) {
     if (!(is.numeric(limits.y) && length(limits.y) == 2L && all(is.finite(limits.y)))) {
       .warn("limits_len2", arg = "limits.y")
@@ -1566,7 +1576,6 @@ check_ggsurvfit <- function(
     }
   }
 
-  # ---- breaks check ----
   check_breaks <- function(bk, nm, lims) {
     if (is.null(bk) || is.function(bk)) return(invisible())
     if (!is.numeric(bk)) {
@@ -1585,13 +1594,11 @@ check_ggsurvfit <- function(
   check_breaks(breaks.x, "breaks.x", limits.x)
   check_breaks(breaks.y, "breaks.y", limits.y)
 
-  # ---- label.y の自動決定 ----
   if (is.null(label.y)) {
     auto_label <- plot_default_y_label(survfit_object$type, type.y)
     if (!is.null(auto_label)) label.y <- auto_label
   }
 
-  # ---- 信頼区間を補う ----
   coerce_conf <- function(survfit_object, conf.type) {
     if (!is.null(survfit_object$lower) && !is.null(survfit_object$upper)) return(survfit_object)
     if (conf.type %in% c("none", "n") || length(survfit_object$strata) > 2) {
@@ -1604,7 +1611,6 @@ check_ggsurvfit <- function(
   }
   survfit_object <- coerce_conf(survfit_object, conf.type)
 
-  # ---- type.y を確定 ----
   type.y <- plot_normalize_type_y(type.y)
   target_type <- switch(
     survfit_object$type,
@@ -1614,7 +1620,6 @@ check_ggsurvfit <- function(
   )
   type.y <- if (identical(target_type, "risk")) "risk" else "survival"
 
-  # ---- 色が1色しかないときは線種を立てる ----
   decide_linetype_flag <- function(style, palette) {
     if (identical(style, "MONOCHROME")) return(TRUE)
     if (is.null(palette)) return(FALSE)
