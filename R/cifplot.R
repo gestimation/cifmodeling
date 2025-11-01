@@ -1241,7 +1241,7 @@ cifplot_printEachVar <- function(
 #' @return A \code{ggplot} object.
 #' @keywords internal
 #' @noRd
-call_ggsurvfit <- function(
+call_ggsurvfit_cifplot <- function(
     survfit_object,
     out_readSurv = NULL,
     survfit.info = NULL,
@@ -1340,6 +1340,9 @@ call_ggsurvfit <- function(
 
   p <- out_cg$out_survfit_object +
     ggplot2::labs(x = label.x, y = out_cg$label.y)
+  print(label.x)
+  print(label.y)
+  print(p)
 
   if (isTRUE(addConfidenceInterval)) {
     p <- p + add_confidence_interval()

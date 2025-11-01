@@ -259,6 +259,8 @@ cifpanel <- function(
     formula                 = NULL,
     formulas                = NULL,
     data                    = NULL,
+    subset.condition        = NULL,
+    na.action               = na.omit,
     outcome.type            = NULL,
     code.events             = NULL,
     error                   = NULL,
@@ -312,13 +314,12 @@ cifpanel <- function(
     inset.info              = NULL,
     print.info              = NULL,
     ggsave.info             = NULL,
-    engine                  = "cifplot",  # ★ 追加：描画エンジン ("cifplot" or "ggsurvfit")
+    engine                  = "cifplot",
     ...
 ){
   inset.align_to <- match.arg(inset.align_to)
   dots <- list(...)
 
-  # --- 入力listのバックアップ（必要なら使う） -------------------
   survfit.info.user <- survfit.info
   axis.info.user    <- axis.info
   visual.info.user  <- visual.info
@@ -328,7 +329,6 @@ cifpanel <- function(
   print.info.user   <- print.info
   ggsave.info.user  <- ggsave.info
 
-  # --- info を一旦まとめる ---------------------------------------
   survfit.info <- modifyList(list(
     error     = error,
     conf.type = conf.type,
@@ -369,7 +369,6 @@ cifpanel <- function(
     addQuantileLine          = isTRUE(addQuantileLine),
     quantile                 = 0.5,
     line.size                = 0.9,
-    # ggsurvfit用にも使えるように少し余計に入れておく
     symbol.risktable         = NULL,
     font.size.risktable      = NULL
   ), visual.info %||% list())
@@ -424,7 +423,6 @@ cifpanel <- function(
     units           = "in"
   ), ggsave.info %||% list())
 
-  # --- パネル全体で使う情報を再展開 -----------------------
   inset.info$inset.align_to <- match.arg(inset.info$inset.align_to, c("panel","plot","full"))
 
   rows.columns.panel <- panel.info$rows.columns.panel
@@ -453,7 +451,6 @@ cifpanel <- function(
   dpi.ggsave         <- ggsave.info$dpi.ggsave
   ggsave.units       <- ggsave.info$units %||% "in"
 
-  # フォントを一元的に
   fonts <- panel_extract_fonts(c(style.info, dots))
   style.info$font.family <- fonts$family
   style.info$font.size   <- fonts$size
@@ -462,7 +459,6 @@ cifpanel <- function(
   nrow <- as.integer(rows.columns.panel[1]); ncol <- as.integer(rows.columns.panel[2])
   n_slots <- nrow * ncol
 
-  # ここで strata を正規化（後で apply_strata_to_plots に使う）
   level_input <- axis.info$level.strata
   order_input <- axis.info$order.strata
 
@@ -724,22 +720,37 @@ cifpanel <- function(
     fonts           = fonts
   )
 
-  # ---- パネルを1枚ずつ生成 --------------------------------
   plots <- lapply(seq_len(prep$K), function(i) {
     pa <- prep$plot_args[[i]]
 
-    # パネル全体で決めた label / order を優先的に上書き
-    if (!is.null(labelstrata.list))  pa$label.strata <- labelstrata.list[[i]]
-    if (!is.null(orderstrata.list))  pa$order.strata <- orderstrata.list[[i]]
+    # panel 全体の設定をパネルに上書きする
+    pa$axis.info    <- modifyList(pa$axis.info %||% list(), axis.info)
+    pa$visual.info  <- modifyList(pa$visual.info %||% list(), visual.info)
+    pa$style.info   <- modifyList(pa$style.info %||% list(), style.info)
+    pa$survfit.info <- modifyList(pa$survfit.info %||% list(), survfit.info)
 
-    # パネル全体の visual.info / style.info を注入（cifplotでもggsurvfitでも使う）
-    pa$visual.info <- modifyList(visual.info, pa$visual.info %||% list())
-    pa$style.info  <- modifyList(style.info,  pa$style.info  %||% list())
+    # --- ここで competing.risk.time を自動生成 ---
+    if (isTRUE(pa$addCompetingRiskMark)) {
+      ce <- code.events[[i]]
+      has_event2 <- !is.null(ce) && length(ce) >= 3L && !is.na(ce[2])
+      has_time   <- !is.null(pa$competing.risk.time) && length(pa$competing.risk.time) > 0
 
+      if (has_event2 && !has_time) {
+        pa$visual.info$competing.risk.time <- extract_time_to_event(
+          formula          = formulas[[i]],
+          data             = data,
+          subset.condition = subset.condition,
+          na.action        = na.action,
+          which_event      = "event2",
+          code.event1      = ce[1],
+          code.event2      = ce[2],
+          code.censoring   = ce[3]
+        )
+      }
+    }
     eng_i <- engine.list[[i]]
 
     if (identical(eng_i, "ggsurvfit")) {
-      # ----- ggsurvfit で描くとき -------------------------
       sf_i <- prep$curves[[i]]
 
       axis_i <- list(
@@ -756,7 +767,6 @@ cifpanel <- function(
         use_coord_cartesian = pa$use_coord_cartesian
       )
 
-      # visual は panel 固有の pa.* をマージ
       visual_i <- modifyList(visual.info, list(
         addConfidenceInterval    = pa$addConfidenceInterval,
         addRiskTable             = pa$addRiskTable,
@@ -792,9 +802,7 @@ cifpanel <- function(
         ggsave.info      = ggsave.info
       )
       return(p_i)
-      # ---------------------------------------------------
     } else {
-      # ----- 通常の cifplot_single で描くとき --------------
       allowed <- setdiff(names(formals(cifplot_single)), "...")
       if (!is.null(names(pa))) {
         pa <- pa[intersect(names(pa), allowed)]
@@ -803,23 +811,18 @@ cifpanel <- function(
         pa <- c(list(formula_or_fit = prep$curves[[i]]), pa)
       }
       return(do.call(cifplot_single, pa))
-      # ---------------------------------------------------
     }
   })
 
-  # ggsurvfit が混じってるときは shape/linetype をさわらないほうが無難
   has_ggsurvfit <- any(vapply(engine.list, identical, logical(1), y = "ggsurvfit"))
 
   plots <- apply_strata_to_plots(
     plots,
     order_data   = axis.info$order.strata,
     label_map    = axis.info$label.strata,
-    touch_colour = !has_ggsurvfit  # ggsurvfit混在なら色だけにする
+    touch_colour = !has_ggsurvfit
   )
 
-  # ------------------------------------------------------------
-  # 最後にパッチワークで並べるのは従来通り
-  # ------------------------------------------------------------
   if (isTRUE(use_inset_element)) {
     if (length(plots) < 2L) .err("inset_need_two")
     if (length(plots) > 2L) .warn("inset_extra_drop")
@@ -904,7 +907,6 @@ call_ggsurvfit <- function(
   conf.type           <- survfit.info$conf.type
   conf.int            <- survfit.info$conf.int
 
-  # ★ ユーザー指定をちゃんと拾っておく
   type.y              <- axis.info$type.y
   label.x.user        <- axis.info$label.x
   label.y.user        <- axis.info$label.y
@@ -979,7 +981,6 @@ call_ggsurvfit <- function(
   strata_labels_final        <- res$strata_labels_final
   n_strata_effective         <- length(limits_arg)
 
-  # ★ ここを修正：yはユーザー優先、なければggsurvfitが決めたやつ
   p <- out_cg$out_survfit_object +
     ggplot2::labs(
       x = label.x.user %||% "Time",
@@ -1112,559 +1113,6 @@ call_ggsurvfit <- function(
   p
 }
 
-cifpanel_old <- function(
-    plots                   = NULL,
-    formula                 = NULL,
-    formulas                = NULL,
-    data                    = NULL,
-    outcome.type            = NULL,
-    code.events             = NULL,
-    error                   = NULL,
-    conf.type               = NULL,
-    conf.int                = NULL,
-    type.x                  = NULL,
-    type.y                  = NULL,
-    label.x                 = NULL,
-    label.y                 = NULL,
-    label.strata            = NULL,
-    order.strata            = NULL,
-    level.strata            = NULL,
-    limits.x                = NULL,
-    limits.y                = NULL,
-    breaks.x                = NULL,
-    breaks.y                = NULL,
-    addConfidenceInterval   = NULL,
-    addCensorMark           = NULL,
-    addCompetingRiskMark    = NULL,
-    addIntercurrentEventMark= NULL,
-    addQuantileLine         = NULL,
-    rows.columns.panel      = c(1, 1),
-    title.panel             = NULL,
-    subtitle.panel          = NULL,
-    caption.panel           = NULL,
-    tag_levels.panel        = NULL,
-    title.plot              = NULL,
-    style                   = "CLASSIC",
-    palette                 = NULL,
-    font.family             = "sans",
-    font.size               = 12,
-    legend.position         = "top",
-    legend.collect          = FALSE,
-    use_inset_element       = FALSE,
-    inset.left              = 0.60,
-    inset.bottom            = 0.05,
-    inset.right             = 0.98,
-    inset.top               = 0.45,
-    inset.align_to          = c("panel","plot","full"),
-    inset.legend.position   = NULL,
-    print.panel             = TRUE,
-    filename.ggsave         = NULL,
-    width.ggsave            = NULL,
-    height.ggsave           = NULL,
-    dpi.ggsave              = 300,
-    survfit.info            = NULL,
-    axis.info               = NULL,
-    visual.info             = NULL,
-    panel.info              = NULL,
-    style.info              = NULL,
-    inset.info              = NULL,
-    print.info              = NULL,
-    ggsave.info             = NULL,
-    ...
-){
-  inset.align_to <- match.arg(inset.align_to)
-  dots <- list(...)
-
-  survfit.info.user <- survfit.info
-  axis.info.user    <- axis.info
-  visual.info.user  <- visual.info
-  panel.info.user   <- panel.info
-  style.info.user   <- style.info
-  inset.info.user   <- inset.info
-  print.info.user   <- print.info
-  ggsave.info.user  <- ggsave.info
-
-  survfit.info <- modifyList(list(
-    error     = error,
-    conf.type = conf.type,
-    conf.int  = conf.int
-  ), survfit.info %||% list())
-
-  axis.info <- modifyList(list(
-    type.x            = type.x,
-    type.y            = type.y,
-    label.x           = label.x,
-    label.y           = label.y,
-    level.strata      = level.strata,
-    order.strata      = order.strata,
-    label.strata      = label.strata,
-    limits.x          = limits.x,
-    limits.y          = limits.y,
-    breaks.x          = breaks.x,
-    breaks.y          = breaks.y,
-    use_coord_cartesian = get0("use_coord_cartesian", ifnotfound = NULL)
-  ), axis.info %||% list())
-
-  visual.info <- modifyList(list(
-    addConfidenceInterval    = if (is.null(addConfidenceInterval)) NULL else isTRUE(addConfidenceInterval),
-    ci.alpha                 = 0.25,
-    addRiskTable             = FALSE,
-    addEstimateTable         = FALSE,
-    addCensorMark            = if (is.null(addCensorMark)) NULL else isTRUE(addCensorMark),
-    shape.censor.mark        = 3,
-    size.censor.mark         = 2,
-    addCompetingRiskMark     = isTRUE(addCompetingRiskMark),
-    competing.risk.time      = list(),
-    shape.competing.risk.mark= 16,
-    size.competing.risk.mark = 2,
-    addIntercurrentEventMark = isTRUE(addIntercurrentEventMark),
-    intercurrent.event.time  = list(),
-    shape.intercurrent.event.mark = 1,
-    size.intercurrent.event.mark  = 2,
-    addQuantileLine          = isTRUE(addQuantileLine),
-    quantile                 = 0.5,
-    line.size                = 0.9
-  ), visual.info %||% list())
-
-  panel.info <- modifyList(list(
-    printEachEvent     = FALSE,
-    printEachVar       = FALSE,
-    rows.columns.panel = rows.columns.panel,
-    title.panel        = title.panel,
-    subtitle.panel     = subtitle.panel,
-    caption.panel      = caption.panel,
-    tag_levels.panel   = tag_levels.panel,
-    title.plot         = title.plot
-  ), panel.info %||% list())
-
-  style.info <- style.info %||% list()
-
-  style.info$style           <- style.info$style           %||% style
-  style.info$palette         <- style.info$palette         %||% palette
-  style.info$font.family     <- style.info$font.family     %||% font.family
-  style.info$font.size       <- style.info$font.size       %||% font.size
-  style.info$legend.position <- style.info$legend.position %||% legend.position
-  style.info$legend.collect  <- style.info$legend.collect  %||% legend.collect
-
-  style.info <- modifyList(list(
-    style           = "CLASSIC",
-    palette         = NULL,
-    font.family     = "sans",
-    font.size       = 12,
-    legend.position = "top",
-    legend.collect  = FALSE
-  ), style.info)
-
-  inset.info <- modifyList(list(
-    use_inset_element     = use_inset_element,
-    inset.align_to        = inset.align_to,
-    inset.left            = inset.left,
-    inset.bottom          = inset.bottom,
-    inset.right           = inset.right,
-    inset.top             = inset.top,
-    inset.legend.position = inset.legend.position
-  ), inset.info %||% list())
-
-  print.info <- modifyList(list(
-    print.panel = print.panel
-  ), print.info %||% list())
-
-  ggsave.info <- modifyList(list(
-    filename.ggsave = filename.ggsave,
-    width.ggsave    = width.ggsave,
-    height.ggsave   = height.ggsave,
-    dpi.ggsave      = dpi.ggsave,
-    units           = "in"
-  ), ggsave.info %||% list())
-
-  inset.info$inset.align_to <- match.arg(inset.info$inset.align_to, c("panel","plot","full"))
-
-  rows.columns.panel <- panel.info$rows.columns.panel
-  title.panel        <- panel.info$title.panel
-  subtitle.panel     <- panel.info$subtitle.panel
-  caption.panel      <- panel.info$caption.panel
-  tag_levels.panel   <- panel.info$tag_levels.panel
-  title.plot         <- panel.info$title.plot
-
-  legend.position    <- style.info$legend.position
-  legend.collect     <- isTRUE(style.info$legend.collect)
-
-  use_inset_element  <- isTRUE(inset.info$use_inset_element)
-  inset.align_to     <- inset.info$inset.align_to
-  inset.left         <- inset.info$inset.left
-  inset.bottom       <- inset.info$inset.bottom
-  inset.right        <- inset.info$inset.right
-  inset.top          <- inset.info$inset.top
-  inset.legend.position <- inset.info$inset.legend.position
-
-  print.panel        <- isTRUE(print.info$print.panel)
-
-  filename.ggsave    <- ggsave.info$filename.ggsave
-  width.ggsave       <- ggsave.info$width.ggsave
-  height.ggsave      <- ggsave.info$height.ggsave
-  dpi.ggsave         <- ggsave.info$dpi.ggsave
-  ggsave.units       <- ggsave.info$units %||% "in"
-
-  fonts <- panel_extract_fonts(c(style.info, dots))
-  style.info$font.family <- fonts$family
-  style.info$font.size   <- fonts$size
-  theme.panel.unified    <- panel_build_theme(font.family = fonts$family, font.size = fonts$size)
-
-  nrow <- as.integer(rows.columns.panel[1]); ncol <- as.integer(rows.columns.panel[2])
-  n_slots <- nrow * ncol
-
-  level_input <- axis.info$level.strata
-  order_input <- axis.info$order.strata
-
-  norm <- normalize_strata_info(
-    level.strata = axis.info$level.strata,
-    order.strata = axis.info$order.strata,
-    label.strata = axis.info$label.strata
-  )
-
-  axis.info$level.strata <- norm$level
-  axis.info$order.strata <- norm$order_data
-  axis.info$label.strata <- norm$label_map
-
-  if (!is.null(axis.info$label.strata)) {
-    stopifnot(!is.null(names(axis.info$label.strata)))
-  }
-  if (!is.null(order_input) && !is.null(level_input)) {
-    if (!all(as.character(order_input) %in% as.character(level_input))) {
-      warning("order.strata has unknown levels; ignoring order/label application.")
-      axis.info$order.strata <- NULL
-      axis.info$label.strata <- NULL
-    }
-  }
-
-  type.x                <- axis.info$type.x
-  type.y                <- axis.info$type.y
-  label.x               <- axis.info$label.x
-  label.y               <- axis.info$label.y
-  label.strata          <- axis.info$label.strata
-  order.strata          <- axis.info$order.strata
-  limits.x              <- axis.info$limits.x
-  limits.y              <- axis.info$limits.y
-  breaks.x              <- axis.info$breaks.x
-  breaks.y              <- axis.info$breaks.y
-  use_coord_cartesian   <- axis.info$use_coord_cartesian
-
-  addConfidenceInterval    <- visual.info$addConfidenceInterval
-  addCensorMark            <- visual.info$addCensorMark
-  addCompetingRiskMark     <- visual.info$addCompetingRiskMark
-  addIntercurrentEventMark <- visual.info$addIntercurrentEventMark
-  addQuantileLine          <- visual.info$addQuantileLine
-
-  if (!is.null(plots)) {
-    if (!is.list(plots)) {
-      stop("`plots` must be a list of ggplot objects.")
-    }
-    if (length(plots) && !all(vapply(plots, function(p) inherits(p, "ggplot"), logical(1)))) {
-      stop("All elements of `plots` must inherit from 'ggplot'.")
-    }
-
-    plots <- apply_strata_to_plots(
-      plots,
-      order_data   = axis.info$order.strata,
-      label_map    = axis.info$label.strata
-    )
-
-    plots_out <- plots
-    if (isTRUE(use_inset_element)) {
-      if (length(plots) < 2L) .err("inset_need_two")
-      if (length(plots) > 2L) .warn("inset_extra_drop")
-      p_base  <- plots[[1]] + theme(legend.position = legend.position)
-      if (!is.null(title.plot) && length(title.plot) >= 1L) {
-        p_base <- p_base + labs(title = title.plot[[1]])
-      }
-      p_inset <- plots[[2]] + theme(legend.position = inset.legend.position)
-      if (!is.null(title.plot) && length(title.plot) >= 2L) {
-        p_inset <- p_inset + labs(title = title.plot[[2]])
-      }
-      out_patchwork <- p_base +
-        patchwork::inset_element(
-          p_inset,
-          left = inset.left,
-          bottom = inset.bottom,
-          right = inset.right,
-          top = inset.top,
-          align_to = inset.align_to
-        )
-    } else {
-      plots2 <- plots
-      if (length(plots2) < n_slots) {
-        plots2 <- c(
-          plots2,
-          rep(list(ggplot() + theme_void()), n_slots - length(plots2))
-        )
-      } else if (length(plots2) > n_slots) {
-        .warn("plots_extra_dropped", n_plots = length(plots2), n_slots = n_slots)
-        plots2 <- plots2[seq_len(n_slots)]
-      }
-      out_patchwork <- patchwork::wrap_plots(plots2, nrow = nrow, ncol = ncol)
-      if (isTRUE(legend.collect)) {
-        out_patchwork <- out_patchwork +
-          patchwork::plot_layout(guides = "collect") &
-          theme(legend.position = legend.position)
-      } else {
-        out_patchwork <- out_patchwork &
-          theme(legend.position = legend.position)
-      }
-      plots_out <- plots2
-    }
-
-    out_patchwork <- out_patchwork + patchwork::plot_annotation(
-      title      = title.panel,
-      subtitle   = subtitle.panel,
-      caption    = caption.panel,
-      tag_levels = tag_levels.panel,
-      theme      = theme.panel.unified
-    )
-
-    if (isTRUE(print.panel)) print(out_patchwork)
-    if (!is.null(filename.ggsave)) {
-      if (is.null(width.ggsave))  width.ggsave  <- if (isTRUE(use_inset_element)) 6 else max(6, 5 * rows.columns.panel[2])
-      if (is.null(height.ggsave)) height.ggsave <- if (isTRUE(use_inset_element)) 6 else max(6, 5 * rows.columns.panel[1])
-      ggsave(filename.ggsave, plot = out_patchwork, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave, units = ggsave.units)
-    }
-
-    return(invisible(list(
-      plots = plots_out,
-      out_patchwork = out_patchwork,
-      axis.info = axis.info,
-      survfit.info = survfit.info,
-      visual.info = visual.info,
-      panel.info = panel.info,
-      style.info = style.info,
-      inset.info = inset.info,
-      print.info = print.info,
-      ggsave.info = ggsave.info
-    )))
-  }
-
-
-  if (is.null(data)) stop("data must be provided.")
-  if (is.null(code.events) || !is.list(code.events) || length(code.events) == 0)
-    .err("need_code_events")
-  if (!is.null(formulas) && !is.null(formula))
-    .warn("both_formula_forms")
-  if (is.null(formulas) && is.null(formula))
-    .err("need_formula_or_formulas")
-
-  K <- max(n_slots, length(code.events))
-  code.events <- panel_recycle_to(code.events, K)
-
-  use_formula_list <- !is.null(formulas)
-  if (use_formula_list) {
-    stopifnot(is.list(formulas))
-    formulas <- lapply(formulas, panel_as_formula_global)
-    formulas <- panel_recycle_to(formulas, K)
-  } else {
-    formula  <- panel_as_formula_global(formula)
-    formulas <- rep(list(formula), K)
-  }
-
-  toL <- panel_to_list; rec <- panel_recycle_to
-
-  outcome.list <- toL(outcome.type);      if (!is.null(outcome.list)) outcome.list <- rec(outcome.list, K)
-  typey.list   <- toL(type.y);            if (!is.null(typey.list))   typey.list   <- rec(typey.list, K)
-  labely.list  <- toL(label.y);           if (!is.null(labely.list))  labely.list  <- rec(labely.list, K)
-  typex.list   <- toL(type.x);            if (!is.null(typex.list))   typex.list   <- rec(typex.list, K)
-  labelx.list  <- toL(label.x);           if (!is.null(labelx.list))  labelx.list  <- rec(labelx.list, K)
-
-  make_panel_list_preserve_vector <- function(x, K) {
-    if (is.null(x)) return(NULL)
-    if (is.list(x)) return(panel_recycle_to(x, K))
-    rep(list(x), K)
-  }
-  labelstrata.list  <- make_panel_list_preserve_vector(label.strata,  K)
-  orderstrata.list  <- make_panel_list_preserve_vector(order.strata,  K)
-
-  limsx.list <- NULL
-  if (!is.null(limits.x)) {
-    limsx.list <- if (is.list(limits.x)) limits.x else list(limits.x)
-    limsx.list <- rec(limsx.list, K)
-    for (i in seq_len(K)) {
-      li <- limsx.list[[i]]
-      if (!is.null(li) && (!is.numeric(li) || length(li) != 2))
-        stop(sprintf("limits.x[[%d]] must be numeric length-2 or NULL.", i))
-    }
-  }
-  limsy.list <- NULL
-  if (!is.null(limits.y)) {
-    limsy.list <- if (is.list(limits.y)) limits.y else list(limits.y)
-    limsy.list <- rec(limsy.list, K)
-    for (i in seq_len(K)) {
-      li <- limsy.list[[i]]
-      if (!is.null(li) && (!is.numeric(li) || length(li) != 2))
-        stop(sprintf("limits.y[[%d]] must be numeric length-2 or NULL.", i))
-    }
-  }
-
-  breakx.list <- toL(breaks.x); if (!is.null(breakx.list)) breakx.list <- rec(breakx.list, K)
-  breaky.list <- toL(breaks.y); if (!is.null(breaky.list)) breaky.list <- rec(breaky.list, K)
-
-  addCI.list   <- toL(addConfidenceInterval);    if (!is.null(addCI.list))   addCI.list   <- rec(addCI.list, K)
-  addCen.list  <- toL(addCensorMark);            if (!is.null(addCen.list))  addCen.list  <- rec(addCen.list, K)
-  addCR.list   <- toL(addCompetingRiskMark);     if (!is.null(addCR.list))   addCR.list   <- rec(addCR.list, K)
-  addIC.list   <- toL(addIntercurrentEventMark); if (!is.null(addIC.list))   addIC.list   <- rec(addIC.list, K)
-  addQ.list    <- toL(addQuantileLine);          if (!is.null(addQ.list))    addQ.list    <- rec(addQ.list, K)
-  strata.list  <- make_panel_list_preserve_vector(label.strata, K)
-
-  infer_flag_by_codes <- function(v) if (length(v) == 2L) "S" else if (length(v) == 3L) "C" else NA_character_
-  if (!is.null(outcome.list)) {
-    outcome.flags <- vapply(outcome.list, panel_norm_outcome, character(1))
-  } else {
-    outcome.flags <- vapply(code.events, infer_flag_by_codes, character(1))
-    if (anyNA(outcome.flags)) .err("infer_outcome_fail")
-  }
-  panel_validate_code_events(code.events, outcome.flags)
-
-  kill_names <- c()
-  if (!is.null(outcome.list))     kill_names <- c(kill_names, "outcome.type")
-  if (!is.null(typey.list))       kill_names <- c(kill_names, "type.y")
-  if (!is.null(labely.list))      kill_names <- c(kill_names, "label.y")
-  if (!is.null(limsy.list))       kill_names <- c(kill_names, "limits.y")
-  if (!is.null(typex.list))       kill_names <- c(kill_names, "type.x")
-  if (!is.null(labelx.list))      kill_names <- c(kill_names, "label.x")
-  if (!is.null(limsx.list))       kill_names <- c(kill_names, "limits.x")
-  if (!is.null(labelstrata.list)) kill_names <- c(kill_names, "label.strata")
-  if (!is.null(orderstrata.list)) kill_names <- c(kill_names, "order.strata")
-  if (!is.null(breakx.list))      kill_names <- c(kill_names, "breaks.x","breaks.x")
-  if (!is.null(breaky.list))      kill_names <- c(kill_names, "breaks.y","breaks.y")
-  if (!is.null(addCI.list))       kill_names <- c(kill_names, "addConfidenceInterval")
-  if (!is.null(addCen.list))      kill_names <- c(kill_names, "addCensorMark")
-  if (!is.null(addCR.list))       kill_names <- c(kill_names, "addCompetingRiskMark")
-  if (!is.null(addIC.list))       kill_names <- c(kill_names, "addIntercurrentEventMark")
-  if (!is.null(addQ.list))        kill_names <- c(kill_names, "addQuantileLine")
-#  kill_names <- c(kill_names, "style", "font.family", "font.size", "legend.position", "legend.collect")
-
-  dots <- panel_strip_overrides_from_dots(dots, unique(kill_names))
-
-  fonts <- panel_extract_fonts(c(style.info, dots))
-  style.info$font.family <- fonts$family
-  style.info$font.size   <- fonts$size
-  theme.panel.unified    <- panel_build_theme(font.family = fonts$family, font.size = fonts$size)
-
-  prep <- panel_prepare(
-    K               = K,
-    formulas        = formulas,
-    data            = data,
-    code.events     = code.events,
-    outcome.flags   = outcome.flags,
-    outcome.list    = outcome.list,
-    typey.list      = typey.list,
-    labely.list     = labely.list,
-    typex.list      = typex.list,
-    labelx.list     = labelx.list,
-    limsx.list      = limsx.list,
-    limsy.list      = limsy.list,
-    breakx.list     = breakx.list,
-    breaky.list     = breaky.list,
-    addCI.list      = addCI.list,
-    addCen.list     = addCen.list,
-    addCR.list      = addCR.list,
-    addIC.list      = addIC.list,
-    addQ.list       = addQ.list,
-    strata.list     = strata.list,
-    legend.position = legend.position,
-    survfit.info    = survfit.info,
-    style.info      = style.info,
-    dots            = dots,
-    fonts           = fonts
-  )
-
-  plots <- lapply(seq_len(prep$K), function(i) {
-    pa <- prep$plot_args[[i]]
-
-    # パネル全体で決めた label / order を優先的に上書き
-    if (!is.null(labelstrata.list))  pa$label.strata <- labelstrata.list[[i]]
-    if (!is.null(orderstrata.list))  pa$order.strata <- orderstrata.list[[i]]
-
-    # ★ ここを追加：panel で組んだ visual.info を各パネルにも注入する
-    pa$visual.info <- modifyList(visual.info, pa$visual.info %||% list())
-
-    # これまで通り style も注入
-    pa$style.info <- modifyList(style.info, pa$style.info %||% list())
-
-    # cifplot_singleが受け取れる名前だけ残す
-    allowed <- setdiff(names(formals(cifplot_single)), "...")
-    if (!is.null(names(pa))) {
-      pa <- pa[intersect(names(pa), allowed)]
-    }
-
-    if (!"formula_or_fit" %in% names(pa)) {
-      pa <- c(list(formula_or_fit = prep$curves[[i]]), pa)
-    }
-
-    do.call(cifplot_single, pa)
-  })
-
-  plots <- apply_strata_to_plots(
-    plots,
-    order_data   = axis.info$order.strata,
-    label_map    = axis.info$label.strata
-  )
-
-  if (isTRUE(use_inset_element)) {
-    if (length(plots) < 2L) .err("inset_need_two")
-    if (length(plots) > 2L) .warn("inset_extra_drop")
-    p_base  <- plots[[1]] + theme(legend.position = legend.position)
-    p_inset <- plots[[2]] + theme(legend.position = inset.legend.position)
-    if (!is.null(title.plot)) {
-      if (length(title.plot) >= 1L) p_base  <- p_base  + labs(title = title.plot[[1]])
-      if (length(title.plot) >= 2L) p_inset <- p_inset + labs(title = title.plot[[2]])
-    }
-    out_patchwork <- p_base +
-      patchwork::inset_element(
-        p_inset, left = inset.left, bottom = inset.bottom,
-        right = inset.right, top = inset.top, align_to = inset.align_to
-      )
-  } else {
-    if (length(plots) < n_slots) {
-      plots <- c(plots, rep(list(ggplot() + theme_void()), n_slots - length(plots)))
-    } else if (length(plots) > n_slots) {
-      .warn("plots_extra_dropped", n_plots = length(plots), n_slots = n_slots)
-      plots <- plots[seq_len(n_slots)]
-    }
-    out_patchwork <- patchwork::wrap_plots(plots, nrow = nrow, ncol = ncol)
-    if (isTRUE(legend.collect)) {
-      out_patchwork <- out_patchwork +
-        patchwork::plot_layout(guides = "collect") &
-        theme(legend.position = legend.position)
-    } else {
-      out_patchwork <- out_patchwork &
-        theme(legend.position = legend.position)
-    }
-  }
-
-  out_patchwork <- out_patchwork + patchwork::plot_annotation(
-    title      = title.panel,
-    subtitle   = subtitle.panel,
-    caption    = caption.panel,
-    tag_levels = tag_levels.panel,
-    theme      = theme.panel.unified
-  )
-
-  if (isTRUE(print.panel)) print(out_patchwork)
-  if (!is.null(filename.ggsave)) {
-    if (is.null(width.ggsave))  width.ggsave  <- if (isTRUE(use_inset_element)) 6 else max(6, 5 * rows.columns.panel[2])
-    if (is.null(height.ggsave)) height.ggsave <- if (isTRUE(use_inset_element)) 6 else max(6, 5 * rows.columns.panel[1])
-    ggsave(filename.ggsave, plot = out_patchwork, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave, units = ggsave.units)
-  }
-  invisible(list(
-    plots = plots,
-    out_patchwork = out_patchwork,
-    axis.info = axis.info,
-    survfit.info = survfit.info,
-    visual.info = visual.info,
-    panel.info = panel.info,
-    style.info = style.info,
-    inset.info = inset.info,
-    print.info = print.info,
-    ggsave.info = ggsave.info
-  ))
-}
 
 normalize_strata_info <- function(level.strata = NULL,
                                   order.strata = NULL,
