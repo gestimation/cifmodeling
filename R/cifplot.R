@@ -883,7 +883,6 @@ cifplot_printEachVar <- function(
   ), survfit.info %||% list())
 
   axis.info <- modifyList(list(
-    type.x            = NULL,
     type.y            = type.y,
     label.x           = label.x,
     label.y           = label.y,

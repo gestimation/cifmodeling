@@ -23,9 +23,6 @@
 #'   \code{patchwork::inset_element()}. Only the first two plots are used; extra plots are ignored.
 #'
 #' \strong{Notes:}
-#' - \code{type.x} is reserved for future x-scale control (currently not applied).
-#' - If both \code{formula} and \code{formulas} are provided, the latter takes precedence.
-#'
 #' @param plots list of ggplot objects. If supplied, \code{cifpanel()} will skip
 #'   estimation/plotting and only compose the provided plots.
 #' @param formula A single model formula evaluated in \code{data}, used for all panels
@@ -266,7 +263,6 @@ cifpanel <- function(
     error                   = NULL,
     conf.type               = NULL,
     conf.int                = NULL,
-    type.x                  = NULL,
     type.y                  = NULL,
     label.x                 = NULL,
     label.y                 = NULL,
@@ -336,7 +332,6 @@ cifpanel <- function(
   ), survfit.info %||% list())
 
   axis.info <- modifyList(list(
-    type.x            = type.x,
     type.y            = type.y,
     label.x           = label.x,
     label.y           = label.y,
@@ -483,7 +478,6 @@ cifpanel <- function(
     }
   }
 
-  type.x              <- axis.info$type.x
   type.y              <- axis.info$type.y
   label.x             <- axis.info$label.x
   label.y             <- axis.info$label.y
@@ -624,11 +618,9 @@ cifpanel <- function(
   outcome.list <- toL(outcome.type);      if (!is.null(outcome.list)) outcome.list <- rec(outcome.list, K)
   typey.list   <- toL(type.y);            if (!is.null(typey.list))   typey.list   <- rec(typey.list, K)
   labely.list  <- toL(label.y);           if (!is.null(labely.list))  labely.list  <- rec(labely.list, K)
-  typex.list   <- toL(type.x);            if (!is.null(typex.list))   typex.list   <- rec(typex.list, K)
   labelx.list  <- toL(label.x);           if (!is.null(labelx.list))  labelx.list  <- rec(labelx.list, K)
 
   make_panel_list_preserve_vector <- function(x, K) {
-    if (is.null(x)) return(NULL)
     if (is.list(x)) return(panel_recycle_to(x, K))
     rep(list(x), K)
   }
@@ -672,7 +664,6 @@ cifpanel <- function(
   if (!is.null(typey.list))       kill_names <- c(kill_names, "type.y")
   if (!is.null(labely.list))      kill_names <- c(kill_names, "label.y")
   if (!is.null(limsy.list))       kill_names <- c(kill_names, "limits.y")
-  if (!is.null(typex.list))       kill_names <- c(kill_names, "type.x")
   if (!is.null(labelx.list))      kill_names <- c(kill_names, "label.x")
   if (!is.null(limsx.list))       kill_names <- c(kill_names, "limits.x")
   if (!is.null(labelstrata.list)) kill_names <- c(kill_names, "label.strata")
@@ -1003,7 +994,7 @@ call_ggsurvfit <- function(
     } else if (symbol.risktable=="circle") {
       p <- p + add_risktable_strata_symbol(symbol = "\U25CF", size = 14)
     } else if (symbol.risktable=="triangle") {
-      p <- p + add_risktable_strata_symbol(symbol = "\U25CF", size = 14)
+      p <- p + add_risktable_strata_symbol(symbol = "\U25B2", size = 14)
     }
     p
   }
@@ -1124,9 +1115,7 @@ normalize_strata_info <- function(level.strata = NULL,
     return(list(level = NULL, order_data = NULL, label_map = NULL))
   }
 
-  ## --- ラベル処理 ---
   if (!is.null(label.strata)) {
-    # 1) 名前がない or 全部空文字のとき（位置対応）
     if (is.null(names(label.strata)) || !any(nzchar(names(label.strata)))) {
       if (length(label.strata) == length(level)) {
         label_map <- stats::setNames(as.character(label.strata), level)
@@ -1134,34 +1123,27 @@ normalize_strata_info <- function(level.strata = NULL,
         label_map <- stats::setNames(level, level)
       }
     } else {
-      # 2) 名前つきのときは names を落とさないように扱う
       lab_names <- names(label.strata)
       lab_vals  <- as.character(unname(label.strata))
 
-      # lab_names と level の共通部分だけ使う
       keep <- intersect(lab_names, level)
 
-      # 名前でマップを作る
       label_map <- stats::setNames(label.strata[keep], keep)
 
-      # 足りない level にはデフォルトで level 名を入れる
       miss <- setdiff(level, names(label_map))
       if (length(miss)) {
         label_map <- c(label_map, stats::setNames(miss, miss))
       }
 
-      # level の順に並べ直す
       label_map <- label_map[level]
     }
   } else {
     label_map <- stats::setNames(level, level)
   }
 
-  ## --- 並び順処理 ---
   ord <- ch(order.strata)
   if (is.null(ord)) ord <- level
 
-  # order.strata に謎のレベルが混じってたら安全に落とす
   if (!all(ord %in% level)) {
     return(list(level = level, order_data = NULL, label_map = NULL))
   }
