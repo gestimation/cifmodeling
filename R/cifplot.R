@@ -580,8 +580,6 @@ plot_printEachVar <- function(
   res
 }
 
-
-
 plot_printEachEvent <- function(
     formula,
     data,

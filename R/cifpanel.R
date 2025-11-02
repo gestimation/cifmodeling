@@ -603,6 +603,11 @@ cifpanel <- function(
     )))
   }
 
+  rows.columns.panel <- panel.info$rows.columns.panel
+  nrow   <- as.integer(rows.columns.panel[1])
+  ncol   <- as.integer(rows.columns.panel[2])
+  n_slots <- nrow * ncol
+
   # ------------------------------------------------------------
   # 2) ここから「推定して描く」通常モード
   # ------------------------------------------------------------
@@ -614,8 +619,32 @@ cifpanel <- function(
   if (is.null(formulas) && is.null(formula))
     .err("need_formula_or_formulas")
 
-  K <- max(n_slots, length(code.events))
+  # ★ ここで「formulasの長さ」も見ておく
+  len_formulas <- if (!is.null(formulas)) length(formulas) else 0L
+
+  # ★ Kを決めるときに len_formulas も入れる ← これが今回の本丸
+  K <- max(n_slots, length(code.events), len_formulas)
+
+  # code.events を K に合わせてリサイクル
   code.events <- panel_recycle_to(code.events, K)
+
+  # ★ rows.columns.panel がデフォルト(1,1)で、かつ K>1 なら自動で決める
+  if (length(panel.info$rows.columns.panel) == 2L &&
+      all(is.finite(panel.info$rows.columns.panel)) &&
+      all(panel.info$rows.columns.panel == 1) &&
+      K > 1L) {
+
+    if (K %% 2L == 0L) {
+      panel.info$rows.columns.panel <- c(K %/% 2L, 2L)
+    } else {
+      panel.info$rows.columns.panel <- c((K + 1L) %/% 2L, 2L)
+    }
+  }
+
+  # ★ 自動決定した rows.columns.panel で、改めて nrow/ncol/n_slots を決め直す
+  nrow   <- as.integer(panel.info$rows.columns.panel[1])
+  ncol   <- as.integer(panel.info$rows.columns.panel[2])
+  n_slots <- nrow * ncol
 
   use_formula_list <- !is.null(formulas)
   if (use_formula_list) {
