@@ -35,18 +35,15 @@
 #' @param type.y \code{NULL} (survival) or \code{"risk"} (display \code{1 - survival} i.e. CIF).
 #' @param label.x Character x-axis labels (default \code{"Time"}).
 #' @param label.y Character y-axis labels (default internally set to \code{"Survival"} or \code{"Cumulative incidence"}).
-#' @param label.strata Character vector of labels for strata. When \code{printEachVar = TRUE}, you may
-#'   also supply a named list \code{list(var = c("L1","L2", ...))}.
-#' @param order.strata Optional ordering of strata levels.
-#'   - When \code{printEachVar = TRUE}, supply a named list
-#'     \code{list(var = c("L1","L2",...))} for each RHS variable; unmatched levels are dropped.
-#'   - When \code{printEachVar = FALSE}, supply a character vector \code{c("L1","L2",...)}
-#'     that specifies the display order (legend/risktable) of the single stratification factor.
-#'     Levels not listed are dropped.
-#'   If \code{label.strata} is a named vector, its names must match the (re-ordered) levels.
+#' @param label.strata Character vector of labels for strata. Labels for strata is not shown When \code{printEachEvent = TRUE} or \code{printEachVar = TRUE}.
+#' @param order.strata Optional ordering of strata levels. Supply a character vector \code{c("L1","L2",...)}
+#'   that specifies the display order (legend/risktable) of the single stratification factor.
+#'   Levels not listed are dropped. If \code{label.strata} is a named vector, its names must match the (re-ordered) levels.
+#'   Labels for strata is not shown When \code{printEachEvent = TRUE} or \code{printEachVar = TRUE}.
 #' @param level.strata Optional character vector giving the full set of strata levels
 #'   expected in the data. When provided, \code{order.strata} and \code{label.strata} are
 #'   validated against these levels before being applied.
+#'   Labels for strata is not shown When \code{printEachEvent = TRUE} or \code{printEachVar = TRUE}.
 #' @param limits.x Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,max(out_readSurv$t))}.
 #' @param limits.y Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,1)}.
 #' @param breaks.x Numeric vectors for axis breaks (default \code{NULL}).
@@ -56,8 +53,10 @@
 #' @param addConfidenceInterval Logical add \code{add_confidence_interval()} to plot.
 #' It calls geom_ribbon() (default \code{TRUE}).
 #' @param addRiskTable Logical add \code{add_risktable(risktable_stats="n.risk")} to plot (default \code{TRUE}).
+#'   Risk table is not shown When \code{printEachEvent = TRUE} or \code{printEachVar = TRUE}.
 #' @param addEstimateTable Logical add \code{add_risktable(risktable_stats="estimate (conf.low, conf.high)")}
 #' to plot (default \code{FALSE}).
+#'   Estimate table is not shown When \code{printEachEvent = TRUE} or \code{printEachVar = TRUE}.
 #' @param addCensorMark Logical add \code{add_censor_mark()} to plot. It calls geom_point() (default \code{TRUE}).
 #' @param shape.censor.mark Integer point shape for censor marks (default \code{3}).
 #' @param size.censor.mark Numeric point size for censor marks (default \code{2}).

@@ -777,8 +777,7 @@ cifpanel <- function(
       }
     }
     eng_i <- engine.list[[i]]
-
-    if (identical(eng_i, "ggsurvfit")) {
+    p_i <- if (identical(eng_i, "ggsurvfit")) {
       sf_i <- prep$curves[[i]]
 
       axis_i <- list(
@@ -820,7 +819,7 @@ cifpanel <- function(
         rows.columns.panel = NULL
       )
 
-      p_i <- call_ggsurvfit(
+      call_ggsurvfit(
         survfit_object   = sf_i,
         survfit.info     = survfit.info,
         axis.info        = axis_i,
@@ -829,7 +828,6 @@ cifpanel <- function(
         style.info       = style.info,
         ggsave.info      = ggsave.info
       )
-      return(p_i)
     } else {
       allowed <- setdiff(names(formals(cifplot_single)), "...")
       if (!is.null(names(pa))) {
@@ -838,8 +836,19 @@ cifpanel <- function(
       if (!"formula_or_fit" %in% names(pa)) {
         pa <- c(list(formula_or_fit = prep$curves[[i]]), pa)
       }
-      return(do.call(cifplot_single, pa))
+      do.call(cifplot_single, pa)
     }
+    if (!is.null(title.plot)) {
+      if (is.list(title.plot)) {
+        title_k <- title.plot[[ min(i, length(title.plot)) ]]
+      } else {
+        title_k <- title.plot[ min(i, length(title.plot)) ]
+      }
+      if (!is.null(title_k) && !identical(title_k, "")) {
+        p_i <- p_i + ggplot2::labs(title = title_k)
+      }
+    }
+    p_i
   })
 
   has_ggsurvfit <- any(vapply(engine.list, identical, logical(1), y = "ggsurvfit"))
@@ -850,6 +859,19 @@ cifpanel <- function(
     label_map    = axis.info$label.strata,
     touch_colour = !has_ggsurvfit
   )
+
+  if (!is.null(title.plot)) {
+    for (i in seq_along(plots)) {
+      if (is.list(title.plot)) {
+        title_k <- title.plot[[ min(i, length(title.plot)) ]]
+      } else {
+        title_k <- title.plot[ min(i, length(title.plot)) ]
+      }
+      if (!is.null(title_k) && !identical(title_k, "")) {
+        plots[[i]] <- plots[[i]] + ggplot2::labs(title = title_k)
+      }
+    }
+  }
 
   if (isTRUE(use_inset_element)) {
     if (length(plots) < 2L) .err("inset_need_two")
@@ -1089,6 +1111,7 @@ call_ggsurvfit <- function(
     strata_labels_final        <- NULL
     n_strata_effective         <- NULL
   }
+
 
   p <- out_cg$out_survfit_object +
     ggplot2::labs(
