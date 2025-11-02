@@ -248,7 +248,9 @@ cifplot <- function(
     addQuantileLine               = FALSE,
     quantile                      = 0.5,
     printEachEvent                = FALSE,
+    printCensoring                = FALSE,
     printEachVar                  = FALSE,
+    printPanel                    = FALSE,
     rows.columns.panel            = NULL,
     style                         = "CLASSIC",
     palette                       = NULL,
@@ -271,7 +273,7 @@ cifplot <- function(
 ) {
   dots <- list(...)
 
-  print_panel <- isTRUE(printEachVar) || isTRUE(printEachEvent)
+  print_panel <- isTRUE(printEachVar) || isTRUE(printEachEvent) || isTRUE(printCensoring)
   if (print_panel) {
     if (!is.null(label.strata)) {
       .warn("panel_disables_labelstrata")
@@ -322,6 +324,7 @@ cifplot <- function(
     quantile                      = quantile,
 
     printEachEvent                = printEachEvent,
+    printCensoring                = printCensoring,
     printEachVar                  = printEachVar,
     rows.columns.panel            = rows.columns.panel,
 
@@ -377,9 +380,9 @@ cifplot <- function(
     }
   }
 
-  .assert(!(isTRUE(panel.info$printEachVar) && isTRUE(panel.info$printEachEvent)),
+  .assert(!(isTRUE(panel.info$printEachVar) && isTRUE(panel.info$printEachEvent) && isTRUE(panel.info$printCensoring)),
           "incompatible_flags",
-          which = "printEachVar and printEachEvent")
+          which = "printEachVar, printEachEvent and printCensoring")
 
   outcome.type <- util_check_outcome_type(
     outcome.type, formula = if (inherits(formula_or_fit, "survfit")) NULL else formula_or_fit,
@@ -402,7 +405,20 @@ cifplot <- function(
       code.event1=code.event1, code.event2=code.event2, code.censoring=code.censoring)
   }
 
+  panel_mode <- plot_decide_panel_mode(
+    formula_or_fit = formula_or_fit,
+    data           = data,
+    outcome.type   = outcome.type,
+    panel.info     = panel.info,
+    printPanel     = printPanel
+  )
+
+  panel.info$printEachVar     <- identical(panel_mode, "each_var")
+  panel.info$printEachEvent   <- identical(panel_mode, "each_event")
+  panel.info$printCensoring   <- identical(panel_mode, "censoring")
+
   if (isTRUE(panel.info$printEachVar)) {
+    style.info$legend.position <- "none"
     .assert(!inherits(formula_or_fit, "survfit"), "need_formula_for_printEachVar")
     .assert(inherits(formula_or_fit, "formula"),  "formula_must_be")
     .assert(!is.null(data),                       "need_data")
@@ -431,10 +447,38 @@ cifplot <- function(
   }
 
   if (isTRUE(panel.info$printEachEvent)) {
+    style.info$legend.position <- "none"
     if (inherits(formula_or_fit, "survfit")) {
       warning("printEachEvent=TRUE requires a formula interface; falling back to single-plot.")
     } else {
       out_pe <- plot_printEachEvent(
+        formula            = formula_or_fit,
+        data               = data,
+        axis.info          = axis.info,
+        visual.info        = visual.info,
+        panel.info         = panel.info,
+        style.info         = style.info,
+        ggsave.info        = ggsave.info,
+        survfit.info       = survfit.info,
+        dots               = dots,
+        code.event1        = code.event1,
+        code.event2        = code.event2,
+        code.censoring     = code.censoring,
+        outcome.type       = outcome.type,
+        rows.columns.panel = rows.columns.panel,
+        subset.condition   = subset.condition,
+        na.action          = na.action
+      )
+      if (!is.null(out_pe)) return(out_pe)
+    }
+  }
+
+  if (isTRUE(panel.info$printCensoring)) {
+    style.info$legend.position <- "none"
+    if (inherits(formula_or_fit, "survfit")) {
+      warning("printCensoring=TRUE requires a formula interface; falling back to single-plot.")
+    } else {
+      out_pe <- plot_printCensoring(
         formula            = formula_or_fit,
         data               = data,
         axis.info          = axis.info,
@@ -547,6 +591,7 @@ plot_printEachVar <- function(
   }
   panel.info$printEachVar   <- FALSE
   panel.info$printEachEvent <- FALSE
+  panel.info$printCensoring <- FALSE
   if (is.null(panel.info$title.plot)) {
     panel.info$title.plot <- vars
   }
@@ -607,15 +652,16 @@ plot_printEachEvent <- function(
 
   if (!is.null(dots$title.plot)) dots$title.plot <- NULL
 
-  ylabs_vec <- axis.info$label.y
-  if (is.null(ylabs_vec) && !is.null(dots$label.y)) ylabs_vec <- dots$label.y
-  if (is.null(ylabs_vec)) {
-    ylabs_vec <- plot_default_event_y_labels()
-  } else {
-    if (length(ylabs_vec) == 1L) ylabs_vec <- rep(ylabs_vec, 2L)
-    if (length(ylabs_vec)  > 2L) ylabs_vec <- ylabs_vec[1:2]
-  }
+#  ylabs_vec <- axis.info$label.y
+#  if (is.null(ylabs_vec) && !is.null(dots$label.y)) ylabs_vec <- dots$label.y
+#  if (is.null(ylabs_vec)) {
+#    ylabs_vec <- plot_default_event_y_labels()
+#  } else {
+#    if (length(ylabs_vec) == 1L) ylabs_vec <- rep(ylabs_vec, 2L)
+#    if (length(ylabs_vec)  > 2L) ylabs_vec <- ylabs_vec[1:2]
+#  }
   if (!is.null(dots$label.y)) dots$label.y <- NULL
+  ylabs_vec <- c("CIF for event of interest", "CIF for competing risk")
 
   axis.info.panel <- modifyList(axis.info, list(
     label.y      = ylabs_vec,
@@ -643,8 +689,8 @@ plot_printEachEvent <- function(
   panel_args  <- list(
     formula           = formula,
     data              = data,
-    subset.condition  = subset.condition,  # ★ 追加
-    na.action         = na.action,         # ★ 追加
+    subset.condition  = subset.condition,
+    na.action         = na.action,
     outcome.type      = "COMPETING-RISK",
     code.events       = list(ce_panel, c(ce_panel[2L], ce_panel[1L], ce_panel[3L])),
     axis.info         = axis.info.panel,
@@ -675,6 +721,75 @@ plot_printEachEvent <- function(
   panel_out
 }
 
+plot_printCensoring <- function(
+    formula,
+    data,
+    axis.info,
+    visual.info,
+    panel.info,
+    style.info,
+    ggsave.info,
+    survfit.info,
+    dots,
+    code.event1,
+    code.event2,
+    code.censoring,
+    outcome.type,
+    rows.columns.panel,
+    subset.condition = NULL,
+    na.action = na.omit
+) {
+  if (is.null(outcome.type) || outcome.type != "SURVIVAL") {
+    warning("printCensoring=TRUE is only for SURVIVAL outcome; falling back to single-plot.")
+    return(NULL)
+  }
+
+  if (!is.null(dots$title.plot)) dots$title.plot <- NULL
+
+  ylabs_vec <- c("Survival for event of interest", "Survival with censoring as event")
+
+  axis.info.panel <- modifyList(axis.info, list(
+    label.y      = ylabs_vec,
+    label.strata = axis.info$label.strata,
+    order.strata = axis.info$order.strata,
+    level.strata = axis.info$level.strata
+  ))
+
+  panel.info.panel <- modifyList(panel.info, list(
+    rows.columns.panel = if (is.null(rows.columns.panel)) c(1L, 2L) else rows.columns.panel
+  ))
+
+  panel_args  <- list(
+    formula           = formula,
+    data              = data,
+    subset.condition  = subset.condition,
+    na.action         = na.action,
+    outcome.type      = "SURVIVAL",
+    code.events       = list(
+      c(code.event1,    code.censoring),
+      c(code.censoring, code.event1)
+    ),
+    axis.info         = axis.info.panel,
+    visual.info       = visual.info,
+    panel.info        = panel.info.panel,
+    style.info        = style.info,
+    ggsave.info       = ggsave.info,
+    survfit.info      = survfit.info
+  )
+
+  if (is.null(dots$rows.columns.panel)) dots$rows.columns.panel <- panel.info.panel$rows.columns.panel
+  if (is.null(dots$legend.collect))     dots$legend.collect     <- TRUE
+  if (is.null(dots$print.panel))        dots$print.panel        <- FALSE
+  dots$visual.info <- NULL
+
+  panel_out <- do.call(cifpanel, c(panel_args, dots))
+
+  if (is.list(panel_out) && !is.null(panel_out$out_patchwork)) {
+    attr(panel_out$out_patchwork, "plots") <- panel_out$plots
+    return(panel_out$out_patchwork)
+  }
+  panel_out
+}
 
 
 cifplot_single <- function(
@@ -696,11 +811,10 @@ cifplot_single <- function(
     ggsave.info      = NULL,
     ...
 ) {
-  if (isTRUE(panel.info$printEachVar) || isTRUE(panel.info$printEachEvent)) {
-    warning("printEachVar/Event is handled in `cifplot()`. Ignoring in `cifplot_single()`.")
-    panel.info$printEachVar   <- FALSE
-    panel.info$printEachEvent <- FALSE
-  }
+  n_panel_flags <- sum(isTRUE(panel.info$printEachVar), isTRUE(panel.info$printEachEvent), isTRUE(panel.info$printCensoring))
+  .assert(n_panel_flags <= 1,
+          "incompatible_flags",
+          which = "printEachVar, printEachEvent, printCensoring")
 
   dots         <- list(...)
 
@@ -782,6 +896,7 @@ cifplot_single <- function(
 
   panel.info <- modifyList(list(
     printEachEvent     = FALSE,
+    printCensoring     = FALSE,
     printEachVar       = FALSE,
     rows.columns.panel = NULL
   ), panel.info)
@@ -838,6 +953,7 @@ cifplot_single <- function(
   quantile                     <- visual.info$quantile
 
   printEachEvent     <- isTRUE(panel.info$printEachEvent)
+  printCensoring     <- isTRUE(panel.info$printCensoring)
   printEachVar       <- isTRUE(panel.info$printEachVar)
   rows.columns.panel <- panel.info$rows.columns.panel
 
@@ -923,24 +1039,6 @@ cifplot_single <- function(
   return(p)
 }
 
-
-# cifplot() の末尾でやってることの「軽量版」
-# ここでは n_strata や strata_labels_final がないので、
-# 使えるところだけやる
-.cifplot_basic_decor <- function(p, legend.position = "top") {
-  # 不要なガイドを落とす
-  p <- p +
-    ggplot2::guides(fill = "none", alpha = "none") +
-    ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(fill = NA))) +
-    ggplot2::theme(legend.position = legend.position)
-
-  # パレットの長さズレなどを直す（パッケージ内の既存関数をそのまま使う想定）
-  if (exists("plot_fix_palette_vector_arg", mode = "function")) {
-    p <- plot_fix_palette_vector_arg(p)
-  }
-  p
-}
-
 #' Plot survival or cumulative incidence curves with ggsurvfit
 #'
 #' @param survfit_object A \code{survfit} object.
@@ -983,7 +1081,7 @@ cifplot_single <- function(
 #' @return A \code{ggplot} object.
 #' @keywords internal
 #' @noRd
-call_ggsurvfit_cifplot <- function(
+call_ggsurvfit <- function(
     survfit_object,
     out_readSurv = NULL,
     survfit.info = NULL,
@@ -1005,8 +1103,8 @@ call_ggsurvfit_cifplot <- function(
   conf.int            <- survfit.info$conf.int
 
   type.y              <- axis.info$type.y
-  label.x             <- axis.info$label.x
-  label.y             <- axis.info$label.y
+  label.x.user        <- axis.info$label.x
+  label.y.user        <- axis.info$label.y
   label.strata        <- axis.info$label.strata
   level.strata        <- axis.info$level.strata
   order.strata        <- axis.info$order.strata
@@ -1036,8 +1134,8 @@ call_ggsurvfit_cifplot <- function(
   quantile                      <- visual.info$quantile
 
   printEachEvent     <- isTRUE(panel.info$printEachEvent)
+  printCensoring     <- isTRUE(panel.info$printCensoring)
   printEachVar       <- isTRUE(panel.info$printEachVar)
-  rows.columns.panel <- panel.info$rows.columns.panel
 
   style              <- style.info$style
   palette            <- style.info$palette
@@ -1051,7 +1149,7 @@ call_ggsurvfit_cifplot <- function(
   dpi.ggsave         <- ggsave.info$dpi.ggsave
   ggsave.units       <- ggsave.info$units %||% "in"
 
-  if (!identical(legend.position, "none")) {
+  if (!identical(style.info$legend.position, "none")) {
     label.strata.map   <- plot_make_label.strata.map(
       survfit_object   = survfit_object,
       label.strata     = label.strata,
@@ -1068,25 +1166,33 @@ call_ggsurvfit_cifplot <- function(
     out_readSurv     = out_readSurv
   )
 
-  res <- plot_reconcile_order_and_labels(
-    survfit_object   = survfit_object,
-    label.strata.map = label.strata.map,
-    level.strata     = level.strata,
-    order.strata     = order.strata
-  )
+  if (!identical(legend.position, "none")) {
+    res <- plot_reconcile_order_and_labels(
+      survfit_object   = survfit_object,
+      label.strata.map = label.strata.map,
+      level.strata     = level.strata,
+      order.strata     = order.strata
+    )
 
-  limits_arg                 <- res$limits_arg
-  label.strata.map           <- res$label.strata.map
-  strata_levels_final        <- res$strata_levels_final
-  strata_labels_final        <- res$strata_labels_final
-  forbid_limits_due_to_order <- res$forbid_limits_due_to_order
-  n_strata_effective         <- length(limits_arg)
+    limits_arg                 <- res$limits_arg
+    label.strata.map           <- res$label.strata.map
+    strata_levels_final        <- res$strata_levels_final
+    strata_labels_final        <- res$strata_labels_final
+    n_strata_effective         <- length(limits_arg)
+  } else {
+    limits_arg                 <- NULL
+    label.strata.map           <- NULL
+    strata_levels_final        <- NULL
+    strata_labels_final        <- NULL
+    n_strata_effective         <- NULL
+  }
+
 
   p <- out_cg$out_survfit_object +
-    ggplot2::labs(x = label.x, y = out_cg$label.y)
-  print(label.x)
-  print(label.y)
-  print(p)
+    ggplot2::labs(
+      x = label.x.user %||% "Time",
+      y = label.y.user %||% out_cg$label.y
+    )
 
   if (isTRUE(addConfidenceInterval)) {
     p <- p + add_confidence_interval()
@@ -1104,9 +1210,9 @@ call_ggsurvfit_cifplot <- function(
     } else if (symbol.risktable=="circle") {
       p <- p + add_risktable_strata_symbol(symbol = "\U25CF", size = 14)
     } else if (symbol.risktable=="triangle") {
-      p <- p + add_risktable_strata_symbol(symbol = "\U25CF", size = 14)
+      p <- p + add_risktable_strata_symbol(symbol = "\U25B2", size = 14)
     }
-    return(p)
+    p
   }
 
   if (isTRUE(addEstimateTable) && isTRUE(addRiskTable)) {
@@ -1197,17 +1303,6 @@ call_ggsurvfit_cifplot <- function(
     )
   }
 
-#  built <- ggplot2::ggplot_build(p)
-#  print("ggplot2::ggplot_build(p)$data")
-#  print(built$data[[1]]$group)
-#  print(strata_labels_final)
-#  print(strata_levels_final)
-#  print(limits_arg)
-
-#  strata_labels_final <- c("Hi", "China")
-#  strata_levels_final <- c("0", "1")
-#  limits_arg <- c("0", "1")
-
   p <- plot_apply_all_scales(
     p,
     style               = style,
@@ -1222,8 +1317,9 @@ call_ggsurvfit_cifplot <- function(
     ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(fill = NA)))
 
   p <- plot_fix_palette_vector_arg(p)
-  return(p)
+  p
 }
+
 
 check_ggsurvfit <- function(
     survfit_object,

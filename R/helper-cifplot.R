@@ -993,7 +993,6 @@ plot_needs_survfit_label_update <- function(
   cand <- cand[!is.na(cand) & nzchar(cand)]
 
   if (!length(cand)) {
-    print("C")
     return(FALSE)
   }
 
@@ -1012,14 +1011,50 @@ plot_needs_survfit_label_update <- function(
 }
 
 
-# =========================================================
-# 凡例を最後にゴリッと復活させるやつ
-# =========================================================
+plot_decide_panel_mode <- function(
+    formula_or_fit,
+    data,
+    outcome.type,
+    panel.info,
+    printPanel
+) {
+  if (isTRUE(panel.info$printEachVar))   return("each_var")
+  if (isTRUE(panel.info$printEachEvent)) return("each_event")
+  if (isTRUE(panel.info$printCensoring)) return("censoring")
+
+  if (!isTRUE(printPanel)) {
+    return("none")
+  }
+
+  if (inherits(formula_or_fit, "survfit")) {
+    return("none")
+  }
+
+  if (!inherits(formula_or_fit, "formula")) {
+    return("none")
+  }
+
+  tt   <- terms(formula_or_fit)
+  vars <- attr(tt, "term.labels")
+  n_rhs <- length(vars)
+
+  if (n_rhs >= 2L) {
+    return("each_var")
+  }
+
+  if (identical(outcome.type, "COMPETING-RISK")) {
+    return("each_event")
+  } else if (identical(outcome.type, "SURVIVAL")) {
+    return("censoring")
+  }
+
+  return("none")
+}
+
 plot_force_strata_legend <- function(p,
                                      strata_levels = NULL,
                                      strata_labels = NULL) {
 
-  # 1) まず colour の scale を拾う
   scs <- p$scales$scales
   has_colour <- FALSE
   if (length(scs)) {
@@ -1027,10 +1062,8 @@ plot_force_strata_legend <- function(p,
       sc <- scs[[i]]
       aes <- tryCatch(sc$aesthetics, error = function(e) NULL)
       if (!is.null(aes) && any(aes %in% c("colour", "color"))) {
-        # ここでガイドを legend に戻す
         sc$guide <- "legend"
 
-        # 上流から渡ってきた順番やラベルがあればここで上書き
         if (!is.null(strata_levels)) sc$limits <- strata_levels
         if (!is.null(strata_labels)) sc$labels <- strata_labels
 
@@ -1040,7 +1073,6 @@ plot_force_strata_legend <- function(p,
     }
   }
 
-  # 2) それでも無いときは scale_color_discrete を1本足す
   if (!has_colour) {
     p <- p + ggplot2::scale_color_discrete(
       limits = strata_levels,
@@ -1050,13 +1082,12 @@ plot_force_strata_legend <- function(p,
     )
   }
 
-  # 3) guides() でもう一度強制
   p <- p + ggplot2::guides(
     colour  = ggplot2::guide_legend(override.aes = list(fill = NA)),
     linetype = ggplot2::guide_legend()
   )
 
-  p
+  return(p)
 }
 
 plot_survfit_short_strata_names <- function(survfit_object) {
@@ -1065,7 +1096,6 @@ plot_survfit_short_strata_names <- function(survfit_object) {
   nm <- names(survfit_object$strata)
   if (is.null(nm) || !length(nm)) return(survfit_object)
 
-  # "=something" の形式だけを対象にする
   idx <- grepl("=", nm, fixed = TRUE)
   if (!any(idx)) return(survfit_object)
 
@@ -1115,6 +1145,7 @@ cifplot_build_info <- function(
   quantile,
 
   printEachEvent,
+  printCensoring,
   printEachVar,
   rows.columns.panel,
 
@@ -1129,7 +1160,6 @@ cifplot_build_info <- function(
   height.ggsave,
   dpi.ggsave,
 
-  # ユーザーがすでに info を渡してきた場合
   survfit.info = NULL,
   axis.info    = NULL,
   visual.info  = NULL,
@@ -1181,6 +1211,7 @@ cifplot_build_info <- function(
 
   panel.info <- modifyList(list(
     printEachEvent     = printEachEvent,
+    printCensoring     = printCensoring,
     printEachVar       = printEachVar,
     rows.columns.panel = rows.columns.panel
   ), panel.info %||% list())

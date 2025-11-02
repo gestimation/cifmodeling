@@ -196,6 +196,48 @@ panel_extract_fonts <- function(dots) {
     size   = dots$font.size   %||% 12
   )
 }
+
+#------------------------------------------------------------
+# パネル数 K と rows.columns.panel を自動決定する関数
+#------------------------------------------------------------
+panel_update_rows.columns.panel <- function(
+    formulas = NULL,
+    code.events = NULL,
+    panel.info = list(rows.columns.panel = c(1, 1)),
+    n_slots = 1
+) {
+  # formulas の長さ
+  len_formulas <- if (!is.null(formulas)) length(formulas) else 0L
+
+  # K を決定
+  K <- max(n_slots, length(code.events), len_formulas)
+
+  # rows.columns.panel がデフォルト (1,1) で K>1 のとき自動レイアウト
+  rc <- panel.info$rows.columns.panel
+  if (length(rc) == 2L && all(is.finite(rc)) && all(rc == 1) && K > 1L) {
+    if (K %% 2L == 0L) {
+      rc <- c(K %/% 2L, 2L)
+    } else {
+      rc <- c((K + 1L) %/% 2L, 2L)
+    }
+  }
+
+  # nrow, ncol, n_slots を再計算
+  nrow <- as.integer(rc[1])
+  ncol <- as.integer(rc[2])
+  n_slots <- nrow * ncol
+
+  # 更新したものを返す
+  list(
+    K = K,
+    code.events = panel_recycle_to(code.events, K),
+    rows.columns.panel = rc,
+    nrow = nrow,
+    ncol = ncol,
+    n_slots = n_slots
+  )
+}
+
 panel_build_theme <- function(font.family = "sans", font.size = 12) {
   base  <- font.size
   big   <- base * 1.20
