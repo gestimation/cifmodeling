@@ -277,6 +277,10 @@ cifpanel <- function(
     addCensorMark           = NULL,
     addCompetingRiskMark    = NULL,
     addIntercurrentEventMark= NULL,
+    addRiskTable            = TRUE,
+    addEstimateTable        = FALSE,
+    symbol.risktable        = "square",
+    font.size.risktable     = 3,
     addQuantileLine         = NULL,
     rows.columns.panel      = c(1, 1),
     title.panel             = NULL,
@@ -313,7 +317,17 @@ cifpanel <- function(
     engine                  = "cifplot",
     ...
 ){
+  if (!is.null(label.strata)) {
+    .warn("panel_disables_labelstrata")
+  }
+  if (isTRUE(addRiskTable) || isTRUE(addEstimateTable)) {
+    .warn("panel_disables_tables")
+  }
+  legend.position  <- "none"
+  addRiskTable     <- FALSE
+  addEstimateTable <- FALSE
   inset.align_to <- match.arg(inset.align_to)
+
   dots <- list(...)
 
   survfit.info.user <- survfit.info
@@ -915,7 +929,6 @@ panel_force_apply <- function(
     addIC.list  = NULL,
     addQ.list   = NULL
 ) {
-  # 軸ラベル
   if (!is.null(labelx.list)) {
     pa$label.x <- labelx.list[[i]]
     pa$axis.info$label.x <- labelx.list[[i]]
@@ -925,7 +938,6 @@ panel_force_apply <- function(
     pa$axis.info$label.y <- labely.list[[i]]
   }
 
-  # limits / breaks
   if (!is.null(limsx.list)) {
     pa$limits.x <- limsx.list[[i]]
     pa$axis.info$limits.x <- limsx.list[[i]]
@@ -943,7 +955,6 @@ panel_force_apply <- function(
     pa$axis.info$breaks.y <- breaky.list[[i]]
   }
 
-  # 表示系 add*
   if (!is.null(addCI.list)) {
     v <- isTRUE(addCI.list[[i]])
     pa$addConfidenceInterval <- v
@@ -1041,11 +1052,13 @@ call_ggsurvfit <- function(
   dpi.ggsave         <- ggsave.info$dpi.ggsave
   ggsave.units       <- ggsave.info$units %||% "in"
 
-  label.strata.map   <- plot_make_label.strata.map(
-    survfit_object   = survfit_object,
-    label.strata     = label.strata,
-    level.strata     = level.strata
-  )
+  if (!identical(legend.position, "none")) {
+    label.strata.map   <- plot_make_label.strata.map(
+      survfit_object   = survfit_object,
+      label.strata     = label.strata,
+      level.strata     = level.strata
+    )
+  }
 
   out_cg <- check_ggsurvfit(
     survfit_object   = survfit_object,
@@ -1056,18 +1069,26 @@ call_ggsurvfit <- function(
     out_readSurv     = out_readSurv
   )
 
-  res <- plot_reconcile_order_and_labels(
-    survfit_object   = survfit_object,
-    label.strata.map = label.strata.map,
-    level.strata     = level.strata,
-    order.strata     = order.strata
-  )
+  if (!identical(legend.position, "none")) {
+    res <- plot_reconcile_order_and_labels(
+      survfit_object   = survfit_object,
+      label.strata.map = label.strata.map,
+      level.strata     = level.strata,
+      order.strata     = order.strata
+    )
 
-  limits_arg                 <- res$limits_arg
-  label.strata.map           <- res$label.strata.map
-  strata_levels_final        <- res$strata_levels_final
-  strata_labels_final        <- res$strata_labels_final
-  n_strata_effective         <- length(limits_arg)
+    limits_arg                 <- res$limits_arg
+    label.strata.map           <- res$label.strata.map
+    strata_levels_final        <- res$strata_levels_final
+    strata_labels_final        <- res$strata_labels_final
+    n_strata_effective         <- length(limits_arg)
+  } else {
+    limits_arg                 <- NULL
+    label.strata.map           <- NULL
+    strata_levels_final        <- NULL
+    strata_labels_final        <- NULL
+    n_strata_effective         <- NULL
+  }
 
   p <- out_cg$out_survfit_object +
     ggplot2::labs(
