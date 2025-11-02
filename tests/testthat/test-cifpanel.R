@@ -280,7 +280,7 @@ test_that("cifplot(printEachEvent=TRUE) creates 2-event panel", {
     outcome.type     = "COMPETING-RISK",
     code.events      = c(1, 2, 0),
     printEachEvent   = TRUE,
-    label.y          = c("Event 1 CIF", "Event 2 CIF"),
+    label.y          = c("CIF for event of interest", "CIF for competing risk"),
     print.panel      = FALSE
   )
 
