@@ -71,7 +71,7 @@
 #' @param printEachVar Logical. **Explicit panel mode.** If \code{TRUE} and the right-hand side
 #'   of the formula has multiple covariates (e.g. \code{~ a + b + c}), the function produces
 #'   a panel where each variable in RHS is used once as the stratification factor.
-#' @param panel.mode Character specifyng **Automatic panel mode.** If \code{"auto"} and none of
+#' @param panel.mode Character specifying **Automatic panel mode.** If \code{"auto"} and none of
 #'   \code{printEachVar}, \code{printEachEvent}, \code{printCensoring} has been set to \code{TRUE},
 #'   the function chooses a suitable panel mode automatically:
 #'   (i) if the formula RHS has 2+ variables, it behaves like \code{printEachVar = TRUE};
