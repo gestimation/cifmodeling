@@ -30,7 +30,7 @@
 #' -   `printEachVar` produces multiple survival/CIF curves per stratification variable specified in the formula
 #' -   `printEachEvent` produces CIF curves for each event type
 #' -   `printCensoring` produces KM-type curves for (event, censor) and (censor, event) so that censoring patterns can be inspected
-#' -   `printPanel` automatic panel mode
+#' -   `panel.mode` uses automatic panel mode
 #'
 #' @inheritParams cif-stat-arguments
 #' @inheritParams cif-visual-arguments
@@ -51,7 +51,7 @@
 #'   Names (if present) must match the (re-ordered) underlying strata levels.
 #'   **Note:** when any of the panel modes is active
 #'   (\code{printEachVar = TRUE}, \code{printEachEvent = TRUE}, \code{printCensoring = TRUE},
-#'   or \code{printPanel = TRUE} and it actually dispatches to a panel),
+#'   or \code{panel.mode = "auto"} and it actually dispatches to a panel),
 #'   strata labels are suppressed to avoid duplicated legends across sub-plots.
 #' @param level.strata Optional character vector giving the full set of expected strata levels.
 #'   When provided, both \code{order.strata} and \code{label.strata} are validated against it
@@ -71,14 +71,14 @@
 #' @param printEachVar Logical. **Explicit panel mode.** If \code{TRUE} and the right-hand side
 #'   of the formula has multiple covariates (e.g. \code{~ a + b + c}), the function produces
 #'   a panel where each variable in RHS is used once as the stratification factor.
-#' @param printPanel Logical. **Automatic panel mode.** If \code{TRUE} and none of
+#' @param panel.mode Character specifying **Automatic panel mode.** If \code{"auto"} and none of
 #'   \code{printEachVar}, \code{printEachEvent}, \code{printCensoring} has been set to \code{TRUE},
 #'   the function chooses a suitable panel mode automatically:
 #'   (i) if the formula RHS has 2+ variables, it behaves like \code{printEachVar = TRUE};
 #'   (ii) otherwise, if \code{outcome.type == "COMPETING-RISK"}, it behaves like
 #'   \code{printEachEvent = TRUE}; (iii) otherwise, if \code{outcome.type == "SURVIVAL"}, it
 #'   behaves like \code{printCensoring = TRUE}. If a panel mode is explicitly specified,
-#'   \code{printPanel} is ignored.
+#'   \code{panel.mode} is ignored.
 #'
 #' @details
 #' This function calls an internal helper \code{call_ggsurvfit()} which adds confidence intervals,
@@ -139,9 +139,9 @@
 #' | `printEachVar` | One panel per stratification variable |
 #' | `printEachEvent` | For competing risks, show CIFs of event 1 and event 2 |
 #' | `printCensoring` | For survival, show (event, censor) vs (censor, event) |
-#' | `printPanel` with 2+ stratification variables | Behave like `printEachVar` |
-#' | `printPanel` with outcome.type = "COMPETING-RISK" | Behave like `printEachEvent` |
-#' | `printPanel` with outcome.type = "SURVIVAL" | Behave like `printCensoring` |
+#' | `panel.mode` with 2+ stratification variables | Behave like `printEachVar` |
+#' | `panel.mode` with outcome.type = "COMPETING-RISK" | Behave like `printEachEvent` |
+#' | `panel.mode` with outcome.type = "SURVIVAL" | Behave like `printCensoring` |
 #'
 #' #### Axes and legend
 #'
@@ -238,7 +238,7 @@ cifplot <- function(
     printEachEvent                = FALSE,
     printCensoring                = FALSE,
     printEachVar                  = FALSE,
-    printPanel                    = FALSE,
+    panel.mode                    = "auto",
     rows.columns.panel            = NULL,
     style                         = "CLASSIC",
     palette                       = NULL,
@@ -399,7 +399,7 @@ cifplot <- function(
     data           = data,
     outcome.type   = outcome.type,
     panel.info     = panel.info,
-    printPanel     = printPanel
+    panel.mode     = panel.mode
   )
 
   panel.info$printEachVar     <- identical(panel_mode, "each_var")
