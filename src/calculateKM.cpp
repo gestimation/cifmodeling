@@ -838,6 +838,20 @@ struct RecW {
        }
      }
 
+     // --- shift se_cif_* one step forward on the ALL grid (t -> t+1) ---
+     if (Uall >= 2) {
+       if (need_cif_aalen) {
+         std::vector<double> tmp = se_cif_aalen;          // copy
+         for (int j = 0; j < Uall - 1; ++j) se_cif_aalen[j] = tmp[j + 1];
+         se_cif_aalen[Uall - 1] = tmp[Uall - 1];          // keep last (no t_max+1)
+       }
+       if (need_cif_delta) {
+         std::vector<double> tmp = se_cif_delta;          // copy
+         for (int j = 0; j < Uall - 1; ++j) se_cif_delta[j] = tmp[j + 1];
+         se_cif_delta[Uall - 1] = tmp[Uall - 1];          // keep last
+       }
+     }
+
      // choose SE for CI on S(t) / CIF
      std::vector<double> SE_cif(Uall, 0.0);
      if      (ERROR=="aalen") SE_cif = se_cif_aalen;
