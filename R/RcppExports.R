@@ -5,6 +5,10 @@ calculateKM <- function(t, d, w = as.numeric( c()), strata = as.integer( c()), e
     .Call(`_cifmodeling_calculateKM`, t, d, w, strata, error)
 }
 
+calculateAJ_Rcpp <- function(t, epsilon, w = NULL, strata = NULL, error = "greenwood", conf_type = "arcsin", return_if = TRUE, conf_int = 0.95) {
+    .Call(`_cifmodeling_calculateAJ_Rcpp`, t, epsilon, w, strata, error, conf_type, return_if, conf_int)
+}
+
 calculateIFofAJ <- function(t, epsilon, strata) {
     .Call(`_cifmodeling_calculateIFofAJ`, t, epsilon, strata)
 }

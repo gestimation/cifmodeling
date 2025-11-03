@@ -25,6 +25,24 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// calculateAJ_Rcpp
+Rcpp::List calculateAJ_Rcpp(Rcpp::NumericVector t, Rcpp::IntegerVector epsilon, Rcpp::Nullable<Rcpp::NumericVector> w, Rcpp::Nullable<Rcpp::IntegerVector> strata, std::string error, std::string conf_type, bool return_if, double conf_int);
+RcppExport SEXP _cifmodeling_calculateAJ_Rcpp(SEXP tSEXP, SEXP epsilonSEXP, SEXP wSEXP, SEXP strataSEXP, SEXP errorSEXP, SEXP conf_typeSEXP, SEXP return_ifSEXP, SEXP conf_intSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type t(tSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type epsilon(epsilonSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type w(wSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type strata(strataSEXP);
+    Rcpp::traits::input_parameter< std::string >::type error(errorSEXP);
+    Rcpp::traits::input_parameter< std::string >::type conf_type(conf_typeSEXP);
+    Rcpp::traits::input_parameter< bool >::type return_if(return_ifSEXP);
+    Rcpp::traits::input_parameter< double >::type conf_int(conf_intSEXP);
+    rcpp_result_gen = Rcpp::wrap(calculateAJ_Rcpp(t, epsilon, w, strata, error, conf_type, return_if, conf_int));
+    return rcpp_result_gen;
+END_RCPP
+}
 // calculateIFofAJ
 List calculateIFofAJ(NumericVector t, IntegerVector epsilon, IntegerVector strata);
 RcppExport SEXP _cifmodeling_calculateIFofAJ(SEXP tSEXP, SEXP epsilonSEXP, SEXP strataSEXP) {
@@ -119,6 +137,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_cifmodeling_calculateKM", (DL_FUNC) &_cifmodeling_calculateKM, 5},
+    {"_cifmodeling_calculateAJ_Rcpp", (DL_FUNC) &_cifmodeling_calculateAJ_Rcpp, 8},
     {"_cifmodeling_calculateIFofAJ", (DL_FUNC) &_cifmodeling_calculateIFofAJ, 3},
     {"_cifmodeling_calculateIFofNA", (DL_FUNC) &_cifmodeling_calculateIFofNA, 3},
     {"_cifmodeling_calculateWeightedAverageLinear", (DL_FUNC) &_cifmodeling_calculateWeightedAverageLinear, 9},
