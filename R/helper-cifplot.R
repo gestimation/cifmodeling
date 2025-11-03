@@ -1014,13 +1014,13 @@ plot_decide_panel_mode <- function(
     data,
     outcome.type,
     panel.info,
-    printPanel
+    panel.mode
 ) {
   if (isTRUE(panel.info$printEachVar))   return("each_var")
   if (isTRUE(panel.info$printEachEvent)) return("each_event")
   if (isTRUE(panel.info$printCensoring)) return("censoring")
 
-  if (!isTRUE(printPanel)) {
+  if (panel.mode=="auto") {
     return("none")
   }
 

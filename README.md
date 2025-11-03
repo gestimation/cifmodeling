@@ -127,7 +127,7 @@ survfit-compatible object directly.
   - `printEachEvent` produces CIF curves for each event type
   - `printCensoring` produces KM-type curves for (event, censor) and
     (censor, event) so that censoring patterns can be inspected
-  - `printPanel` automatic panel mode
+  - `panel.mode` uses automatic panel mode
 
 **Return**
 

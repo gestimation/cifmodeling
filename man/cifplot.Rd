@@ -51,7 +51,7 @@ cifplot(
   printEachEvent = FALSE,
   printCensoring = FALSE,
   printEachVar = FALSE,
-  printPanel = FALSE,
+  panel.mode = "auto",
   rows.columns.panel = NULL,
   style = "CLASSIC",
   palette = NULL,
@@ -120,7 +120,7 @@ and \code{type.y}, e.g. \dQuote{Survival} or \dQuote{Cumulative incidence}).}
 Names (if present) must match the (re-ordered) underlying strata levels.
 \strong{Note:} when any of the panel modes is active
 (\code{printEachVar = TRUE}, \code{printEachEvent = TRUE}, \code{printCensoring = TRUE},
-or \code{printPanel = TRUE} and it actually dispatches to a panel),
+or \code{panel.mode = "auto"} and it actually dispatches to a panel),
 strata labels are suppressed to avoid duplicated legends across sub-plots.}
 
 \item{level.strata}{Optional character vector giving the full set of expected strata levels.
@@ -207,14 +207,14 @@ censoring patterns can be inspected.}
 of the formula has multiple covariates (e.g. \code{~ a + b + c}), the function produces
 a panel where each variable in RHS is used once as the stratification factor.}
 
-\item{printPanel}{Logical. \strong{Automatic panel mode.} If \code{TRUE} and none of
+\item{panel.mode}{Logical. \strong{Automatic panel mode.} If \code{"auto"} and none of
 \code{printEachVar}, \code{printEachEvent}, \code{printCensoring} has been set to \code{TRUE},
 the function chooses a suitable panel mode automatically:
 (i) if the formula RHS has 2+ variables, it behaves like \code{printEachVar = TRUE};
 (ii) otherwise, if \code{outcome.type == "COMPETING-RISK"}, it behaves like
 \code{printEachEvent = TRUE}; (iii) otherwise, if \code{outcome.type == "SURVIVAL"}, it
 behaves like \code{printCensoring = TRUE}. If a panel mode is explicitly specified,
-\code{printPanel} is ignored.}
+\code{panel.mode} is ignored.}
 
 \item{rows.columns.panel}{Optional integer vector \code{c(nrow, ncol)} controlling
 the layout of the panel returned by the panel modes. If \code{NULL}, an automatic
@@ -285,7 +285,7 @@ This function returns a regular \code{ggplot} object (compatible with \code{+} a
 \item \code{printEachVar} produces multiple survival/CIF curves per stratification variable specified in the formula
 \item \code{printEachEvent} produces CIF curves for each event type
 \item \code{printCensoring} produces KM-type curves for (event, censor) and (censor, event) so that censoring patterns can be inspected
-\item \code{printPanel} automatic panel mode
+\item \code{panel.mode} uses automatic panel mode
 }
 }
 \details{
@@ -346,9 +346,9 @@ The arguments below fine-tune internal estimation and figure appearance.
    \code{printEachVar} \tab One panel per stratification variable \cr
    \code{printEachEvent} \tab For competing risks, show CIFs of event 1 and event 2 \cr
    \code{printCensoring} \tab For survival, show (event, censor) vs (censor, event) \cr
-   \code{printPanel} with 2+ stratification variables \tab Behave like \code{printEachVar} \cr
-   \code{printPanel} with outcome.type = "COMPETING-RISK" \tab Behave like \code{printEachEvent} \cr
-   \code{printPanel} with outcome.type = "SURVIVAL" \tab Behave like \code{printCensoring} \cr
+   \code{panel.mode} with 2+ stratification variables \tab Behave like \code{printEachVar} \cr
+   \code{panel.mode} with outcome.type = "COMPETING-RISK" \tab Behave like \code{printEachEvent} \cr
+   \code{panel.mode} with outcome.type = "SURVIVAL" \tab Behave like \code{printCensoring} \cr
 }
 
 }
