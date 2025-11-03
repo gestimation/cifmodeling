@@ -79,6 +79,7 @@
 #'   \code{printEachEvent = TRUE}; (iii) otherwise, if \code{outcome.type == "SURVIVAL"}, it
 #'   behaves like \code{printCensoring = TRUE}. If a panel mode is explicitly specified,
 #'   \code{panel.mode} is ignored.
+#'
 #' @details
 #' This function calls an internal helper \code{call_ggsurvfit()} which adds confidence intervals,
 #' risk table, censoring marks, and optional competing-risk and intercurrent-event marks.
