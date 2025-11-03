@@ -458,27 +458,38 @@ calculateCovSurvival <- function(objget_results, estimand, boot.method, prob.bou
   iv <- estimand$index.vector
   n <- length(t)
 
-  censoring_dna	<- calculateNelsonAalen(t,y_0_)
+  censoring_dna <- calculateNelsonAalen(t, y_0_)
   censoring_martingale <- diag(y_0_) - (outer(t, t, ">") * censoring_dna)
   censoring_km <- calculateKaplanMeier(t, y_0_)
-  censoring_km[censoring_km == 0] <- 1e-5
+  censoring_km[censoring_km == 0] <- prob.bound
   censoring_mkm <- censoring_martingale / censoring_km
+
   y_12 <- (y_1 > 0)
   survival_km <- calculateKaplanMeier(t, y_12)
+  survival_km[survival_km == 0] <- prob.bound  # 念のためのクランプ
+
   wy_1 <- w11 * y_1
   x_la <- cbind(x_l, x_a)
-  AB1 <- score[1:n, 1:iv[3]]
-  for (i_para in 1:iv[2]) {
+  AB1 <- score[1:n, 1:iv[3], drop = FALSE]
+
+  use <- if (is.null(estimand$time.point)) rep(TRUE, n) else (t <= estimand$time.point)
+
+  for (i_para in seq_len(iv[2])) {
     tmp0 <- x_la[, i_para]
-    use <- (t <= estimand$time.point)
-    tmp1 <- colSums((use * tmp0) * (outer(t, t, ">=") * wy_1))
+
+    kernel  <- sweep(outer(t, t, ">="), 1, wy_1, `*`)
+    kernel2 <- sweep(kernel, 1, use * tmp0, `*`)
+
+    tmp1 <- colSums(kernel2)
     tmp1 <- tmp1 / survival_km / n
-    integrand1 <- tmp1 * censoring_mkm
-    for (i_score in 1:n) {
-      integral1 <- cumsum(integrand1[i_score, ])
-      AB1[i_score, i_para] <- AB1[i_score, i_para] + integral1[n]
+
+    integrand1 <- sweep(censoring_mkm, 2, tmp1, `*`)
+
+    for (i_score in seq_len(n)) {
+      AB1[i_score, i_para] <- AB1[i_score, i_para] + cumsum(integrand1[i_score, ])[n]
     }
   }
+
   out_calculateDSurvival <- calculateDSurvival(potential.CIFs, x_a, x_l, estimand, prob.bound)
   hesse <- crossprod(x_la, w11 * out_calculateDSurvival) / n
 
@@ -487,24 +498,32 @@ calculateCovSurvival <- function(objget_results, estimand, boot.method, prob.bou
 
   cov_estimated <- NULL
   cov_bootstrap <- NULL
-  if (isTRUE(boot.method$report.sandwich.conf))
-  {
+  if (isTRUE(boot.method$report.sandwich.conf)) {
     cov_estimated <- crossprod(influence.function) / n^2
   }
-  if (isTRUE(boot.method$report.boot.conf))
-  {
-    cov_bootstrap <- cov_wild_bootstrap(influence.function=influence.function, multiplier=boot.method$boot.multiplier, R=boot.method$boot.replications, seed=boot.method$boot.seed)
+  if (isTRUE(boot.method$report.boot.conf)) {
+    cov_bootstrap <- cov_wild_bootstrap(
+      influence.function = influence.function,
+      multiplier = boot.method$boot.multiplier,
+      R = boot.method$boot.replications,
+      seed = boot.method$boot.seed
+    )
   }
 
-  qa <- ncol(x_a)
-  ql <- ncol(x_l)
+  qa <- ncol(x_a); ql <- ncol(x_l)
   if (ncol(influence.function) > 0) {
     intercept_name <- if (ql >= 1L) "intercept" else character(0)
-    covar_names <- if (ql > 1L) paste0("covariate", seq_len(ql - 1L)) else character(0)
+    covar_names    <- if (ql > 1L) paste0("covariate", seq_len(ql - 1L)) else character(0)
     exposure_names <- if (qa == 1L) "exposure" else paste0("exposure", seq_len(qa))
     colnames(influence.function) <- c(intercept_name, covar_names, exposure_names)
   }
-  return(list(cov_estimated = cov_estimated, cov_bootstrap = cov_bootstrap, score.function = total_score, influence.function = influence.function))
+
+  list(
+    cov_estimated = cov_estimated,
+    cov_bootstrap = cov_bootstrap,
+    score.function = total_score,
+    influence.function = influence.function
+  )
 }
 
 calculateDSurvival <- function(potential.CIFs, x_a, x_l, estimand, prob.bound) {
