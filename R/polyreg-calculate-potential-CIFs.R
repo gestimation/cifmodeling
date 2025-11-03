@@ -87,6 +87,111 @@ calculatePotentialRisk <- function(alpha_beta, x_a, x_l, offset, estimand) {
   return(cbind(p_10, p_11))
 }
 
+getPotentialRisk <- function(alpha_beta, x_a, x_l, offset, estimand, optim.method, prob.bound, initial.Risk = NULL) {
+  if (estimand$exposure.levels == 2L && estimand$effect.measure1 %in% c("RR", "OR")) {
+    risk <- calculatePotentialRisk(alpha_beta, x_a, x_l, offset, estimand)
+    attr(risk, "solver") <- "closed-form"
+    return(risk)
+  }
+  calculatePotentialRisk_LM(
+    alpha_beta = alpha_beta,
+    x_a = x_a,
+    x_l = x_l,
+    offset = offset,
+    estimand = estimand,
+    optim.method = optim.method,
+    prob.bound = prob.bound,
+    initial.Risk = initial.Risk
+  )
+}
+
+calculatePotentialRisk_LM <- function(alpha_beta, x_a, x_l, offset, estimand, optim.method, prob.bound, initial.Risk = NULL) {
+  K <- estimand$exposure.levels
+  if (K < 2) stop("exposure.levels must be at least 2.")
+
+  iv <- estimand$index.vector
+  alpha_1 <- alpha_beta[seq_len(iv[1])]
+  beta_tmp_1 <- alpha_beta[seq.int(iv[2], iv[3])]
+
+  n <- nrow(x_l)
+  alpha_tmp_1 <- as.numeric(x_l %*% matrix(alpha_1, ncol = 1) + offset)
+
+  make_initial_risk <- function(pref, betas, effect.measure) {
+    risk <- rep(pref, length(betas) + 1L)
+    if (!length(betas)) return(risk)
+    transform_rr <- function(base, b) clampP(base * exp(b), prob.bound)
+    transform_or <- function(base, b) {
+      odds_base <- base / (1 - base)
+      odds <- odds_base * exp(b)
+      odds / (1 + odds)
+    }
+    transform_shr <- function(base, b) {
+      one_minus_base <- 1 - base
+      adj <- one_minus_base^(exp(b))
+      1 - adj
+    }
+    for (j in seq_along(betas)) {
+      b <- betas[j]
+      risk[j + 1L] <- switch(
+        estimand$effect.measure1,
+        "RR"  = transform_rr(pref, b),
+        "OR"  = transform_or(pref, b),
+        "SHR" = transform_shr(pref, b),
+        stop("effect.measure1 must be RR, OR, or SHR.")
+      )
+    }
+    clampP(risk, prob.bound)
+  }
+
+  risk0 <- NULL
+  if (!is.null(initial.Risk)) {
+    risk0 <- clampP(as.matrix(initial.Risk), prob.bound)
+    if (!identical(dim(risk0), c(n, K))) {
+      stop(sprintf("initial.Risk must be an %d x %d matrix.", n, K))
+    }
+  }
+
+  keys <- apply(x_l, 1, function(r) paste0(r, collapse = "\r"))
+  uniq <- match(keys, unique(keys))
+  cache_log_risk <- vector("list", length = max(uniq))
+
+  potential.Risk <- matrix(NA_real_, nrow = n, ncol = K)
+  for (i in seq_len(n)) {
+    k <- uniq[i]
+    if (!is.null(cache_log_risk[[k]])) {
+      log_risk <- cache_log_risk[[k]]
+    } else {
+      init_vec <- if (!is.null(risk0)) {
+        as.numeric(risk0[i, , drop = FALSE])
+      } else {
+        base_pref <- clampP(stats::plogis(alpha_tmp_1[i]), prob.bound)
+        make_initial_risk(base_pref, beta_tmp_1, estimand$effect.measure1)
+      }
+      log_risk0 <- log(clampP(init_vec, prob.bound))
+      log_risk <- callLevenbergMarquardt(
+        log_CIFs0 = log_risk0,
+        alpha1 = alpha_tmp_1[i],
+        beta1 = beta_tmp_1,
+        alpha2 = NULL,
+        beta2 = NULL,
+        estimand = estimand,
+        optim.method = optim.method,
+        prob.bound = prob.bound,
+        n_outcomes = 1L
+      )
+      cache_log_risk[[k]] <- log_risk
+    }
+    potential.Risk[i, ] <- clampP(exp(log_risk), prob.bound)
+  }
+  attr(potential.Risk, "solver") <- "LM"
+  potential.Risk
+}
+
+calculatePotentialRiskK_LM <- function(alpha_beta, x_a, x_l, offset, estimand, optim.method, prob.bound, initial.Risk = NULL) {
+  .Deprecated("calculatePotentialRisk_LM")
+  calculatePotentialRisk_LM(alpha_beta, x_a, x_l, offset, estimand, optim.method, prob.bound, initial.Risk)
+}
+
 residuals_CIFs <- function(log_CIFs, alpha1, beta1, alpha2, beta2, estimand, prob.bound) {
   K <- estimand$exposure.levels
   clog_CIFs <- clampLogP(as.numeric(log_CIFs))
@@ -302,10 +407,15 @@ LevenbergMarquardt <- function(start,
   return(lp)
 }
 
-callLevenbergMarquardt <- function(log_CIFs0, alpha1, beta1, alpha2, beta2, optim.method, estimand, prob.bound)
+callLevenbergMarquardt <- function(log_CIFs0, alpha1, beta1, alpha2, beta2, optim.method, estimand, prob.bound, n_outcomes = 2L)
 {
-  res_fun <- function(lp) residuals_CIFs(lp, alpha1, beta1, alpha2, beta2, estimand, prob.bound)
-  jac_fun <- function(lp) jacobian_CIFs(lp, alpha1, beta1, alpha2, beta2, estimand, prob.bound)
+  if (n_outcomes == 1L) {
+    res_fun <- function(lp) residuals_risk(lp, alpha1, beta1, estimand, prob.bound)
+    jac_fun <- function(lp) jacobian_risk(lp, alpha1, beta1, estimand, prob.bound)
+  } else {
+    res_fun <- function(lp) residuals_CIFs(lp, alpha1, beta1, alpha2, beta2, estimand, prob.bound)
+    jac_fun <- function(lp) jacobian_CIFs(lp, alpha1, beta1, alpha2, beta2, estimand, prob.bound)
+  }
   out_LevenbergMarquardt <- LevenbergMarquardt(
     start         = log_CIFs0,
     res_fun       = res_fun,
@@ -324,5 +434,86 @@ callLevenbergMarquardt <- function(log_CIFs0, alpha1, beta1, alpha2, beta2, opti
     verbose       = FALSE
   )
   return(out_LevenbergMarquardt)
+}
+
+residuals_risk <- function(log_risk, alpha1, beta1, estimand, prob.bound) {
+  K <- estimand$exposure.levels
+  clog_risk <- clampLogP(as.numeric(log_risk))
+  if (length(clog_risk) != K) stop("log_risk length must equal exposure levels.")
+
+  p1 <- exp(clog_risk)
+  p0 <- pmax(1 - p1, prob.bound)
+  logp0 <- log(p0)
+
+  if (K < 2) stop("exposure.levels must be at least 2.")
+
+  r <- numeric(2 * (K - 1))
+  for (k in 2:K) {
+    idx <- k - 1
+    r[idx] <- alpha1 - clog_risk[1] - clog_risk[k] + logp0[1] + logp0[k]
+  }
+
+  calculateResidualBeta <- function(effect.measure, pref, pL, clogpref, clogpL, beta) {
+    if (length(beta) != length(pL) || length(beta) != length(clogpL)) {
+      stop("beta, pL, and clogpL must have the same length.")
+    }
+    if (effect.measure == "RR") {
+      beta - clogpL + clogpref
+    } else if (effect.measure == "OR") {
+      beta - (log(pL) - log1p(-pL)) + (log(pref) - log1p(-pref))
+    } else if (effect.measure == "SHR") {
+      Bi <- log1p(-pref)
+      Bj <- log1p(-pL)
+      exp(beta) - (Bj / Bi)
+    } else stop("effect.measure must be RR, OR, or SHR.")
+  }
+
+  beta_idx <- (K - 1) + seq_len(K - 1)
+  r[beta_idx] <- calculateResidualBeta(estimand$effect.measure1, p1[1], p1[2:K], clog_risk[1], clog_risk[2:K], beta1)
+  r
+}
+
+jacobian_risk <- function(log_risk, alpha1, beta1, estimand, prob.bound) {
+  K <- estimand$exposure.levels
+  clog_risk <- clampLogP(as.numeric(log_risk))
+  if (length(clog_risk) != K) stop("log_risk length must equal exposure levels.")
+
+  p1 <- exp(clog_risk)
+  p0 <- pmax(1 - p1, prob.bound)
+
+  dlogrem_dlp <- -p1 / p0
+
+  if (K < 2) stop("exposure.levels must be at least 2.")
+
+  J <- matrix(0.0, nrow = 2 * (K - 1), ncol = K)
+  for (k in 2:K) {
+    r1 <- k - 1
+    J[r1, 1] <- -1 + dlogrem_dlp[1]
+    J[r1, k] <- -1 + dlogrem_dlp[k]
+  }
+
+  row_beta_start <- K
+  idx_L <- 2:K
+  pL <- p1[2:K]
+
+  for (k in seq_along(idx_L)) {
+    row <- row_beta_start + k - 1
+    idx <- idx_L[k]
+    if (estimand$effect.measure1 == "RR") {
+      J[row, 1] <- 1
+      J[row, idx] <- -1
+    } else if (estimand$effect.measure1 == "OR") {
+      pl <- pL[k]
+      J[row, 1] <- 1 + p1[1] / (1 - p1[1])
+      J[row, idx] <- -1 - pl / (1 - pl)
+    } else if (estimand$effect.measure1 == "SHR") {
+      Bi <- log1p(-p1[1])
+      Bj <- log1p(-pL[k])
+      pl <- pL[k]
+      J[row, 1] <- -Bj * p1[1] / ((1 - p1[1]) * Bi^2)
+      J[row, idx] <- pl / ((1 - pl) * Bi)
+    } else stop("effect.measure must be RR, OR, or SHR.")
+  }
+  J
 }
 

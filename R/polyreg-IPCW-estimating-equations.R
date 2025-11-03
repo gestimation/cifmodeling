@@ -56,11 +56,8 @@ estimating_equation_ipcw <- function(
     y_0_ <- ifelse(epsilon == estimand$code.censoring, 1, 0)
     y_1_ <- ifelse(epsilon == estimand$code.event1,   1, 0)
 
-    potential.CIFs <- calculatePotentialRisk(alpha_beta, x_a, x_l, offset, estimand)
-
-    one <- rep(1, nrow(x_l))
-    a <- as.vector(x_a)  # Binary exposure
-    ey_1 <- potential.CIFs[,2]*a + potential.CIFs[,1]*(one - a)
+    potential.Risk <- getPotentialRisk(alpha_beta, x_a, x_l, offset, estimand, optim.method, prob.bound)
+    ey_1 <- calculateEY1(potential.Risk, x_a)
 
     ip.weight <- if (is.null(ip.weight.matrix)) rep(1, nrow(x_l)) else as.vector(ip.weight.matrix)
 
@@ -88,7 +85,7 @@ estimating_equation_ipcw <- function(
       y_1_  = y_1_,
       x_a   = x_a,
       x_l   = x_l,
-      potential.CIFs = potential.CIFs,
+      potential.CIFs = potential.Risk,
       ip.weight = ip.weight
     ))
   }
@@ -101,8 +98,6 @@ estimating_equation_ipcw <- function(
     y_0_ <- ifelse(epsilon == estimand$code.censoring, 1, 0)
     y_1_ <- ifelse(epsilon == estimand$code.event1,   1, 0)
 
-    one <- rep(1, nrow(x_l))
-    a <- as.vector(x_a)  # Binary exposure
     score_beta <- NULL
     score_alpha1 <- 0
     i_time <- 0
@@ -119,8 +114,8 @@ estimating_equation_ipcw <- function(
       y_0 <- ifelse(epsilon == estimand$code.censoring | t > specific.time, 1, 0)
       y_1 <- ifelse(epsilon == estimand$code.event1   & t <= specific.time, 1, 0)
 
-      potential.CIFs <- calculatePotentialRisk(alpha_beta_i, x_a, x_l, offset, estimand)
-      ey_1 <- potential.CIFs[,2]*a + potential.CIFs[,1]*(one - a)
+      potential.Risk <- getPotentialRisk(alpha_beta_i, x_a, x_l, offset, estimand, optim.method, prob.bound)
+      ey_1 <- calculateEY1(potential.Risk, x_a)
 
       w11 <- 1 / (ey_1 * (1 - ey_1))
       wy_1 <- ip.weight.matrix[,i_time] * y_1
@@ -294,6 +289,15 @@ calculateEY <- function(potential.CIFs, x_a) {
   ey_1 <- CIF1[cbind(seq_len(n), index)]
   ey_2 <- CIF2[cbind(seq_len(n), index)]
   return(list(ey_1 = ey_1, ey_2 = ey_2))
+}
+
+calculateEY1 <- function(potential.Risk, x_a) {
+  n <- nrow(x_a)
+  K <- ncol(x_a) + 1
+  if (nrow(potential.Risk) != n) stop("Row dimension of potential.Risk is inconsistent with x_a")
+  if (ncol(potential.Risk) != K) stop("Column dimension of potential.Risk must equal exposure levels")
+  index <- max.col(cbind(0, x_a), ties.method = "first")
+  potential.Risk[cbind(seq_len(n), index)]
 }
 
 calculateCov <- function(objget_results, estimand, boot.method, prob.bound)
@@ -492,10 +496,13 @@ calculateCovSurvival <- function(objget_results, estimand, boot.method, prob.bou
     cov_bootstrap <- cov_wild_bootstrap(influence.function=influence.function, multiplier=boot.method$boot.multiplier, R=boot.method$boot.replications, seed=boot.method$boot.seed)
   }
 
-  if (ncol(influence.function)==2) {
-    colnames(influence.function) <- c("intercept", "exposure")
-  } else if (ncol(influence.function)>2) {
-    colnames(influence.function) <- c("intercept", paste("covariate", 1:(ncol(influence.function) - 2), sep = ""), "exposure")
+  qa <- ncol(x_a)
+  ql <- ncol(x_l)
+  if (ncol(influence.function) > 0) {
+    intercept_name <- if (ql >= 1L) "intercept" else character(0)
+    covar_names <- if (ql > 1L) paste0("covariate", seq_len(ql - 1L)) else character(0)
+    exposure_names <- if (qa == 1L) "exposure" else paste0("exposure", seq_len(qa))
+    colnames(influence.function) <- c(intercept_name, covar_names, exposure_names)
   }
   return(list(cov_estimated = cov_estimated, cov_bootstrap = cov_bootstrap, score.function = total_score, influence.function = influence.function))
 }
