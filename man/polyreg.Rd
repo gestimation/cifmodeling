@@ -234,7 +234,7 @@ for event1 and event2 (\code{"RR"}, \code{"OR"} or \code{"SHR"}).
 \code{"BINOMIAL"}, \code{"PROPORTIONAL-SURVIVAL"} or \code{"PROPORTIONAL-COMPETING-RISK"}).
 \item \code{time.point} — specifies time point at which the exposure effect is evaluated.
 Required for \code{"COMPETING-RISK"} and \code{"SURVIVAL"} outcomes.
-\item \code{strata} — specifies a stratification variable used to adjust for dependent censoring.
+\item \code{strata} — specifies a stratification variable used for IPCW adjustment for dependent censoring.
 }
 }
 
@@ -348,7 +348,6 @@ use-specified initial values, or reducing the number of nuisance parameters
 \item Set \code{boot.seed} for reproducible bootstrap results.
 \item Match CDISC ADaM conventions via \code{code.event1 = 0}, \code{code.censoring = 1}
 (and, if applicable, \code{code.event2} for competing events).
-\item Use \code{strata} when censoring may depend on baseline covariates (IPCW stratification).
 }
 }
 }
