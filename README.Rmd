@@ -96,13 +96,14 @@ This function produces the **Kaplan–Meier survival** or **Aalen–Johansen cum
 
 -   **Plot customization**
     -   `type.y` chooses y-axis. (`"surv"` for survival curves and `"risk"` for CIFs)
-    -   `limits.x`, `limits.y`, `breaks.x`, `breaks.y` — axis control
+    -   `limits.x`, `limits.y`, `breaks.x`, `breaks.y` numeric vectors for axis control
     -   `style` specifies the appearance of plot (`"CLASSIC"`, `"BOLD"`, `"FRAMED"`, `"GRID"`, `"GRAY"` or `"GGSURVFIT"`)
-    -   Standard `ggplot2` arguments such as `theme()`, `labs()`, and `scale_y_continuous()` apply
 
--   **Panel**
-    -   `printEachVar` automatically produces multiple survival/CIF curves per stratification variable specified in the formula
-    -   `printEachEvent` automatically produces CIF curves for each event type
+-   **Panel display**
+    -   `printEachVar` produces multiple survival/CIF curves per stratification variable specified in the formula
+    -   `printEachEvent` produces CIF curves for each event type
+    -   `printCensoring` produces KM-type curves for (event, censor) and (censor, event) so that censoring patterns can be inspected
+    -   `printPanel` automatic panel mode
 
 **Return**
 
@@ -149,7 +150,7 @@ cifplot(Event(t,epsilon) ~ fruitq, data=diabetes.complications,
 -   `use_inset_element` — selects inset layout.
 -   `title.panel`, `subtitle.panel`, `caption.panel`, `title.plot` — overall titles and captions.
 -   `tag_levels.panel` — panel tag style (e.g., "A", "a", "1").
--   `label.x`, `label.y`, `label.strata`, `limits.x`, `limits.y`, `breaks.x`, `breaks.y` — shared axis control unless a list is supplied for per-panel control. 
+-   `label.x`, `label.y`, `limits.x`, `limits.y`, `breaks.x`, `breaks.y` — shared axis control unless a list is supplied for per-panel control. 
 
 **Return**
 
@@ -485,6 +486,13 @@ Input pre-processing mirrors the survival workflow by calling `checkInput()` to 
 
 The weighted estimating equations are then solved by `solveEstimatingEquation()`, which dispatches to specific score functions such as `estimating_equation_ipcw()`, `estimating_equation_survival()`, and `estimating_equation_proportional()` and iterates with `nleqslv`/Levenberg–Marquardt updates until the convergence criteria in `assessConvergence()` are met. Sandwich variances come from `calculateCov()` or `calculateCovSurvival()` and are rescaled back to the original covariate scale by `reg_normalize_estimate()`, while optional bootstrap intervals reuse the same solver inside the `boot` resampling loop. The resulting influence functions, weights, and fitted cumulative incidence probabilities are retained in `diagnostic.statistics` for downstream diagnostics.
 
+### Reproducibility and conventions for polyreg()
+
+ - If convergence warnings appear, relax/tighten tolerances or cap the parameter bound (`optim.parameter1` to `3`) and inspect `report.optim.convergence = TRUE`.
+ - If necessary, try modifying other `optim.parameter`, providing use-specified initial values, or reducing the number of nuisance parameters (e.g. provide `time.point` contributing to estimation when using `“PROPORTIONAL-SURVIVAL”` and `“PROPORTIONAL-COMPETING-RISK”`).
+ - Set `boot.seed` for reproducible bootstrap results.
+ - Match CDISC ADaM conventions via `code.event1 = 0`, `code.censoring = 1` (and, if applicable, `code.event2` for competing events).
+
 ### Key arguments of msummary() that are helpful when reporting polyreg() results
 
 -   `output` – controls the destination of the table (e.g., `"markdown"`, `"latex"`, `"html"`, or a file path such as `'results/cif_table.docx'`).
@@ -499,31 +507,30 @@ You can also supply multiple model summaries as a named list to compare estimate
 
 -   `formula` A model formula specifying the outcome and (optionally) `strata()`.
 -   `data` A data frame containing variables in `formula`.
--   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative; strictly positive is recommended.
+-   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative.
 -   `subset.condition` Optional character expression to subset `data` before analysis.
 -   `na.action` Function to handle missing values (default: `na.omit`).
 -   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"SURVIVAL"` (Kaplan–Meier type) or `"COMPETING-RISK"` (Aalen–Johansen type). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"COMPETING-RISK"` is assumed; otherwise, `"SURVIVAL"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
 -   `code.event1` Integer code of the event of interest (default `1`).
 -   `code.event2` Integer code of the competing event (default `2`).
 -   `code.censoring` Integer code of censoring (default `0`).
--   `error` Character specifying variance type used internally. For `"SURVIVAL"` typically `"greenwood"`. For `"COMPETING-RISK"` pass options supported by `calculateAalenDeltaSE()` (`"aalen"`, `"delta"`, `"none"`).
+-   `error` Character specifying the method for variance and standard error used internally. For `"SURVIVAL"` typically `"greenwood"`. For `"COMPETING-RISK"` pass options supported by `calculateAalenDeltaSE()` (`"aalen"`, `"delta"`, `"none"`).
 -   `conf.type` Character transformation for CI on the probability scale (default `"arcsine-square root"`).
 -   `conf.int` numeric two-sided confidence level (default `0.95`).
 -   `report.survfit.std.err` If `TRUE`, report SE on the log-survival scale (survfit's convention). Otherwise SE is on the probability scale.
 
 ### cifplot()
 
--   `x` A model formula or a survfit object.
+-   `formula_or_fit` A model formula or a survfit object. Note: When a formula is supplied, the left-hand side must be `Event(time, status)` or `Surv(time, status)`.
 -   `data` A data frame containing variables in `formula`.
--   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative; strictly positive is recommended.
+-   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative.
 -   `subset.condition` Optional character expression to subset `data` before analysis.
 -   `na.action` Function to handle missing values (default: `na.omit`).
 -   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"SURVIVAL"` (Kaplan–Meier type) or `"COMPETING-RISK"` (Aalen–Johansen type). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"COMPETING-RISK"` is assumed; otherwise, `"SURVIVAL"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
 -   `code.event1` Integer code of the event of interest (default `1`).
 -   `code.event2` Integer code of the competing event (default `2`).
 -   `code.censoring` Integer code of censoring (default `0`).
--   `code.events` Optional numeric length-3 vector `c(event1, event2, censoring)`. When supplied, it overrides `code.event1`, `code.event2`, and `code.censoring`(primarily used when `printEachEvent = TRUE`).
--   `error` Character specifying variance type used internally. For `"SURVIVAL"` typically `"greenwood"`. For `"COMPETING-RISK"` pass options supported by `calculateAalenDeltaSE()` (`"aalen"`, `"delta"`, `"none"`).
+-   `error` Character specifying the method for variance and standard error used internally. For `"SURVIVAL"` typically `"greenwood"`. For `"COMPETING-RISK"` pass options supported by `calculateAalenDeltaSE()` (`"aalen"`, `"delta"`, `"none"`).
 -   `conf.type` Character transformation for CI on the probability scale (default `"arcsine-square root"`).
 -   `conf.int` numeric two-sided confidence level (default `0.95`).
 -   `type.y` `NULL` (survival) or `"risk"` (display `1 - survival` i.e. CIF).
@@ -539,6 +546,8 @@ You can also supply multiple model summaries as a named list to compare estimate
 -   `addConfidenceInterval` Logical add `add_confidence_interval()` to plot. It calls `geom_ribbon()` (default `TRUE`).
 -   `addRiskTable` Logical add `add_risktable(risktable_stats="n.risk")` to plot (default `TRUE`).
 -   `addEstimateTable` Logical add `add_risktable(risktable_stats="estimate (conf.low, conf.high)")` to plot (default `FALSE`).
+-   `symbol.risktable` Character specifying the symbol used in the risk table to denote strata: `"square"`, `"circle"`, or `"triangle"` (default `"square"`).
+-   `font.size.risktable` Numeric font size for texts in risk / estimate tables (default `3`).
 -   `addCensorMark` Logical add `add_censor_mark()` to plot. It calls `geom_point()` (default `TRUE`).
 -   `shape.censor.mark` Integer point shape for censor marks (default `3`).
 -   `size.censor.mark` Numeric point size for censor marks (default `2`).
@@ -569,9 +578,29 @@ You can also supply multiple model summaries as a named list to compare estimate
 
 -   `formula` A single model formula evaluated in `data`, used for all panels when `formulas` is not provided.
 -   `formulas` A list of formulas (one per panel). If provided, overrides `formula`.
--   `data` A data.frame containing variables used in the formula(s).
--   `outcome.type` Optional vector/list of outcome types per panel. One of `"SURVIVAL"` or `"COMPETING-RISK"`. If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"COMPETING-RISK"` is assumed; otherwise, `"SURVIVAL"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
--   `code.events` A list of numeric vectors per panel. For `SURVIVAL`: `c(code.event1, code.censoring)`. For `COMPETING-RISK`: `c(code.event1, code.event2, code.censoring)`.
+-   `data` A data frame containing variables in `formula`.
+-   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative.
+-   `subset.condition` Optional character expression to subset `data` before analysis.
+-   `na.action` Function to handle missing values (default: `na.omit`).
+-   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"SURVIVAL"` (Kaplan–Meier type) or `"COMPETING-RISK"` (Aalen–Johansen type). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"COMPETING-RISK"` is assumed; otherwise, `"SURVIVAL"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
+-   `code.event1` Integer code of the event of interest (default `1`).
+-   `code.event2` Integer code of the competing event (default `2`).
+-   `code.censoring` Integer code of censoring (default `0`).
+-   `error` Character specifying the method for variance and standard error used internally. For `"SURVIVAL"` typically `"greenwood"`. For `"COMPETING-RISK"` pass options supported by `calculateAalenDeltaSE()` (`"aalen"`, `"delta"`, `"none"`).
+-   `conf.type` Character transformation for CI on the probability scale (default `"arcsine-square root"`).
+-   `conf.int` numeric two-sided confidence level (default `0.95`).
+-   `data` A data frame containing variables in `formula`.
+-   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative.
+-   `subset.condition` Optional character expression to subset `data` before analysis.
+-   `na.action` Function to handle missing values (default: `na.omit`).
+-   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"SURVIVAL"` (Kaplan–Meier type) or `"COMPETING-RISK"` (Aalen–Johansen type). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"COMPETING-RISK"` is assumed; otherwise, `"SURVIVAL"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
+-   `code.event1` Integer code of the event of interest (default `1`).
+-   `code.event2` Integer code of the competing event (default `2`).
+-   `code.censoring` Integer code of censoring (default `0`).
+-   `error` Character specifying the method for variance and standard error used internally. For `"SURVIVAL"` typically `"greenwood"`. For `"COMPETING-RISK"` pass options supported by `calculateAalenDeltaSE()` (`"aalen"`, `"delta"`, `"none"`).
+-   `conf.type` Character transformation for CI on the probability scale (default `"arcsine-square root"`).
+-   `conf.int` numeric two-sided confidence level (default `0.95`).
+-   `code.events` Optional numeric length-3 vector `c(event1, event2, censoring)`. When supplied, it overrides `code.event1`, `code.event2`, and `code.censoring` (primarily used when `cifpanel()` is called or when `printEachEvent = TRUE`).
 -   `type.y` Optional vector/list per panel: `"surv"` or `"risk"`.
 -   `label.x`, `label.y` Optional vectors/lists of axis labels per panel.
 -   `label.strata` Optional list of character vectors for legend labels per panel (passed to `cifplot()`).
@@ -589,7 +618,6 @@ You can also supply multiple model summaries as a named list to compare estimate
 -   `inset.left`, `inset.bottom`, `inset.right`, `inset.top` Numeric positions (0–1) of the inset box.
 -   `inset.align_to` One of `"panel"`, `"plot"`, or `"full"`.
 -   `inset.legend.position` Legend position for the inset plot (e.g., `"none"`).
--   `print.panel` If `TRUE`, print the composed panel.
 -   `filename.ggsave` Character save the composed panel with the path and name specified.
 -   `width.ggsave` Numeric specify width of the composed panel.
 -   `height.ggsave` Numeric specify height of the composed panel.

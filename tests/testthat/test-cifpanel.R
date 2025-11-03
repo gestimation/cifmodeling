@@ -178,10 +178,13 @@ test_that("panel_prepare() returns per-panel objects with expected structure", {
   expect_true(identical(prep$plot_args[[2]]$label.y, inputs$labely.list[[2]]))
 })
 
+# tests/testthat/test-cifpanel.R
+
 test_that("cifpanel() with two formulas shows per-plot titles", {
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
 
+  # 最小データ
   df <- data.frame(
     t       = c(5, 7, 9, 10, 3, 4, 6, 8),
     epsilon = c(1, 0, 2, 0, 1, 2, 0, 1),
@@ -201,6 +204,7 @@ test_that("cifpanel() with two formulas shows per-plot titles", {
 
   expect_type(res, "list")
   expect_length(res$plots, 2)
+  # 各 ggplot の title を見る
   expect_equal(res$plots[[1]]$labels$title, "Plot-x1")
   expect_equal(res$plots[[2]]$labels$title, "Plot-x2")
 })
@@ -225,6 +229,7 @@ test_that("cifpanel() applies panel-level tag_levels", {
     print.panel  = FALSE
   )
 
+  # patchwork の annotation をチェック
   ann <- res$out_patchwork$patches$annotation
   expect_false(is.null(ann))
   expect_equal(ann$tag_levels, "A")
@@ -289,8 +294,8 @@ test_that("cifplot(printEachEvent=TRUE) creates 2-event panel", {
   expect_equal(length(plots), 2)
 
   # yラベルがパネルごとに設定されていることを確認
-  expect_equal(plots[[1]]$labels$y, "Event 1 CIF")
-  expect_equal(plots[[2]]$labels$y, "Event 2 CIF")
+  expect_equal(plots[[1]]$labels$y, "CIF for event of interest")
+  expect_equal(plots[[2]]$labels$y, "CIF for competing risk")
 })
 
 test_that("cifpanel() can take per-panel label.x/label.y", {

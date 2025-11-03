@@ -1,87 +1,103 @@
-#' @title Generates a multi-panel figure for survival or cumulative incidence curves,
-#' arranged either in a grid layout or as an inset overlay
+#' @title Arrange multiple survival / CIF plots in a panel display
+#'
 #' @description
-#' Build a panel of publication-ready time-to-event plots by combining
-#' \code{{cifcurve}} (estimation) and \code{{cifplot}} (rendering).
-#' Supports grid layout or an inset plot overlay. Panel-wise overrides for
-#' y-scale type, labels, limits, and various plot decorations are supported.
+#' \code{cifpanel()} is the panel-building counterpart of \code{cifplot()}.
+#' It takes one or more model formulas (or, alternatively, one formula and several
+#' event-coding specifications) and returns a multi-panel figure, typically as a
+#' \pkg{patchwork} object. Most display options (axis labels, marks, style, ggsave options)
+#' are shared with \code{cifplot()}, but per-panel legends and risk tables are
+#' suppressed to avoid duplicated display.
 #'
-#' @details
-#' \strong{How it works:}
-#' For each panel slot, the function first calls \code{{cifcurve}} to obtain
-#' a \code{survfit}-like object, and then calls \code{{cifplot}} to render it.
-#' You can pass \code{code.events = list(c(e1, e2, c), ...)} for competing risks
-#' (Aalen–Johansen), or \code{code.events = list(c(e1, c), ...)} for standard
-#' survival (Kaplan–Meier). If \code{outcome.type} is not specified, each panel's
-#' outcome is inferred from the length of its \code{code.events[[i]]}.
+#' Panel layout is specified by length-2 vector \code{rows.columns.panel}.
+#' This function can also automatically determine the panel count in the following order:
+#' (1) if \code{plots} is supplied, its length defines the number of plots,
+#' (2) else if \code{formulas} is supplied, its length defines the number of plots,
+#' (3) else if \code{code.events} is supplied, its length defines the number of plots
+#' together with formula, and (4) otherwise \code{rows.columns.panel=c(1,1)}.
 #'
-#' \strong{Grid vs inset:}
-#' - \code{use_inset_element = FALSE} (default): arrange plots in a grid using
-#'   \pkg{patchwork} \code{wrap_plots()}. With \code{legend.collect = TRUE}, legends are
-#'   collected across panels.
-#' - \code{use_inset_element = TRUE}: overlay the second plot into the first one using
-#'   \code{patchwork::inset_element()}. Only the first two plots are used; extra plots are ignored.
+#' -   `formula` or `formulas` — one formula or a list of formulas; each entry creates a panel.
+#' -   `data`, `outcome.type`, `code.events`, `type.y` — recycled across panels unless a list is supplied for per-panel control.
+#' -   `rows.columns.panel` — selects grid layout by c(rows, cols).
+#' -   `use_inset_element` — selects inset layout.
+#' -   `title.panel`, `subtitle.panel`, `caption.panel`, `title.plot` — overall titles and captions.
+#' -   `tag_levels.panel` — panel tag style (e.g., "A", "a", "1").
+#' -   `label.x`, `label.y`, `limits.x`, `limits.y`, `breaks.x`, `breaks.y` — shared axis control unless a list is supplied for per-panel control.
 #'
-#' \strong{Notes:}
-#' @param plots list of ggplot objects. If supplied, \code{cifpanel()} will skip
-#'   estimation/plotting and only compose the provided plots.
-#' @param formula A single model formula evaluated in \code{data}, used for all panels
-#'   when \code{formulas} is not provided.
-#' @param formulas A list of formulas (one per panel). If provided, overrides \code{formula}.
-#' @param data A data.frame containing variables used in the formula(s).
-#' @param outcome.type Optional vector/list of outcome types per panel.
-#' One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
-#' If \code{NULL} (default), the function automatically infers the outcome type
-#' from the data: if the event variable has more than two unique levels,
-#' \code{"COMPETING-RISK"} is assumed; otherwise, \code{"SURVIVAL"} is used.
-#' You can also use abbreviations such as \code{"S"} or \code{"C"}.
-#' Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic
-#' detection based on the event coding in \code{data}.
-
-#' @param code.events A list of numeric vectors per panel.
-#'   For SURVIVAL: \code{c(code.event1, code.censoring)};
-#'   for COMPETING-RISK: \code{c(code.event1, code.event2, code.censoring)}.
-#' @param type.x Reserved for future x-scale control (currently ignored).
-#' @param type.y Optional vector/list per panel: \code{NULL} (survival) or \code{"risk"} (1-survival).
-#' @param label.x,label.y Optional vectors/lists of axis labels per panel.
-#' @param label.strata Optional list of character vectors for legend labels per panel
-#'   (passed to [cifplot()]).
-#' @param order.strata Optional list of character vectors for ordering labels per panel
-#'   (passed to [cifplot()]).
-#' @param level.strata Optional character vector describing the full set of strata
-#'   levels expected in the plots. When supplied, `order.strata` and
-#'   `label.strata` are validated against these levels before being applied.
-#' @param limits.x,limits.y Optional vectors/lists of numeric length-2 axis limits per panel.
-#' @param breaks.x,breaks.y Optional vectors/lists of axis breaks per panel (forwarded to
-#'   \code{breaks.x} / \code{breaks.y} in [cifplot()]).
-#' @param addConfidenceInterval,addCensorMark,addCompetingRiskMark,addIntercurrentEventMark,addQuantileLine
-#'   Optional logical vectors/lists per panel to toggle features in [cifplot()].
-#'   If \code{NULL}, sensible defaults are used (CI/Censor on; others off).
-#' @param rows.columns.panel Integer vector \code{c(nrow, ncol)} specifying the grid size.
-#' @param title.panel,subtitle.panel,caption.panel Optional strings for panel annotation.
-#' @param tag_levels.panel Passed to \code{patchwork::plot_annotation(tag_levels = ...)}.
-#' @param title.plot Optional length-2 character vector, titles for base/inset plots when
-#'   \code{use_inset_element = TRUE}.
-#' @param legend.position Position of legends: \code{"top"}, \code{"right"}, \code{"bottom"},
-#'   \code{"left"}, or \code{"none"}.
-#' @param legend.collect If \code{TRUE} (grid mode), collect legends across subplots.
-#' @param use_inset_element If \code{TRUE}, place the second plot as an inset over the first.
-#' @param inset.left,inset.bottom,inset.right,inset.top Numeric positions (0–1) of the inset box.
-#' @param inset.align_to One of \code{"panel"}, \code{"plot"}, or \code{"full"}.
-#' @param inset.legend.position Legend position for the inset plot (e.g., \code{"none"}).
-#' @param print.panel If \code{TRUE}, print the composed panel.
-#' @param filename.ggsave Character save the composed panel with the path and name specified.
-#' @param width.ggsave Numeric specify width of the composed panel.
-#' @param height.ggsave Numeric specify height of the composed panel.
-#' @param dpi.ggsave Numeric specify dpi of the composed panel.
-#' @param survfit.info,axis.info,visual.info,panel.info,style.info,inset.info,print.info,ggsave.info
-#'   Optional lists of settings. Each list is merged with the corresponding scalar
-#'   arguments (e.g., `axis.info$list` overrides `label.x`, `limits.x`, etc.) so that
-#'   existing code using scalar inputs continues to work while bulk updates can be
-#'   provided via a single structure.
-#' @param ... Additional arguments forwarded to \code{{cifplot}} (e.g., \code{style},
-#'   \code{font.family}, \code{font.size}, etc.). Panel-wise overrides provided via explicit
-#'   arguments take precedence over \code{...}.
+#' @inheritParams cif-stat-arguments
+#' @inheritParams cif-visual-arguments
+#'
+#' @param plots Optional list of already-built \code{ggplot} objects to be arranged.
+#'   If supplied, these are used as-is (no fitting is done).
+#' @param formula A single formula of the form \code{Event(t, status) ~ x} or
+#'   \code{Surv(t, status) ~ x}. This is typically used together with
+#'   \code{code.events = list(...)} to produce multiple event-specific panels from the
+#'   same data and outcome.
+#' @param formulas Optional list of formulas. When given, each formula defines
+#'   **one panel**. This is the most common way to create “one variable per plot”
+#'   panels.
+#' @param code.events Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
+#'   When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
+#'   (primarily used when \code{cifpanel()} is called or when \code{printEachEvent = TRUE}).
+#' @param legend.collect Logical; if \code{TRUE}, try to collect a single legend
+#'   for all panels (passed to \pkg{patchwork}). Default \code{TRUE}.
+#'
+#' @param use_inset_element Logical. If \code{FALSE} (default), all panels are arranged
+#'   in a regular grid using \code{patchwork::wrap_plots()} and \code{plot_layout()}.
+#'   If \code{TRUE}, the function switches to “inset mode”: the **first** plot becomes
+#'   the main plot and the **second** plot (only the second) is drawn on top of it
+#'   as an inset. Additional plots beyond the second are ignored in inset mode.
+#'   Use grid mode to display more than two panels (use_inset_element = FALSE).
+#'
+#' @param inset.left,inset.bottom,inset.right,inset.top Numeric values in the range
+#'   \code{[0, 1]} that define the inset box as fractions of the reference area.
+#'   \code{inset.left} / \code{inset.right} control the horizontal position,
+#'   \code{inset.bottom} / \code{inset.top} control the vertical position.
+#'   Values are interpreted as “from the left/bottom” of the reference.
+#'   For example, \code{inset.left = 0.4}, \code{inset.right = 1.0} draws the inset
+#'   over the right 60% of the reference area.
+#'
+#' @param inset.align_to Character string specifying the coordinate system for the
+#'   inset box. One of:
+#'   \itemize{
+#'     \item \code{"panel"} (default): the box is placed relative to the **panel area**
+#'       (i.e. the plotting region, excluding outer titles/margins);
+#'     \item \code{"plot"}: the box is placed relative to the **entire plot** area,
+#'       including axes and titles of the main plot;
+#'     \item \code{"full"}: the box is placed relative to the **full patchwork canvas**.
+#'   }
+#'   This argument is passed to \code{patchwork::inset_element()}.
+#'
+#' @param inset.legend.position Optional legend position **for the inset plot only**.
+#'   If \code{NULL} (default), the inset plot keeps whatever legend position was
+#'   defined for it (often this means a legend will also be inset).
+#'   Set, for example, \code{"none"} to hide the legend inside the inset,
+#'   while still showing the main plot's legend.
+#'
+#' @param title.panel,subtitle.panel,caption.panel Character annotations applied to the
+#'   **whole** panel layout (not to individual plots). These are passed to
+#'   \code{patchwork::plot_annotation()} and are useful for creating figure-like
+#'   outputs (title + subfigures + caption).
+#'
+#' @param tag_levels.panel Passed to \code{patchwork::plot_annotation()} to auto-label
+#'   individual panels (e.g. \code{"A"}, \code{"B"}, \code{"C"}). Typical values are
+#'   \code{"A"}, \code{"1"}, or \code{"a"}. See \code{?patchwork::plot_annotation}.
+#'
+#' @param title.plot Character vector of titles for **each panel** in the order they
+#'   are drawn. Length-1 values are recycled to all panels. In inset mode, the first
+#'   element refers to the main plot and the second (if present) to the inset.
+#'
+#' @param engine Character scalar selecting the internal plotting engine.
+#'   Currently only \code{"cifplot"} is supported and used to construct each panel
+#'   via \code{cifplot_single()}. This argument is reserved for future extensions.
+#'
+#' @param print.panel Logical. If \code{TRUE}, the composed patchwork object is
+#'   printed immediately (for interactive use). If \code{FALSE}, the object is
+#'   returned invisibly so that it can be assigned, modified, or saved. Kept for
+#'   backward compatibility.
+#'
+#' @param ... Additional arguments forwarded to the internal \code{cifplot_single()}
+#'   calls that build each panel. Use this to pass low-level options such as
+#'   \code{competing.risk.time}, \code{intercurrent.event.time}, or styling overrides.
 #'
 #' @details
 #'
@@ -180,6 +196,12 @@
 
 #' @importFrom patchwork wrap_plots plot_layout inset_element plot_annotation
 #' @return An invisible list: \code{list(plots = <list of ggplot objects>, out_patchwork = <patchwork object>)}.
+#' Print the returned object to display the panel, or access individual panels via
+#' `out_patchwork$plots[[1]]`, `out_patchwork$plots[[2]]`, ...
+#'
+#' @keywords internal
+#' @param survfit.info,axis.info,visual.info,panel.info,style.info,print.info,ggsave.info,inset.info
+#'   Internal lists used for programmatic control. Not intended for direct user input.
 #'
 #' @examples
 #' data(diabetes.complications)
@@ -252,69 +274,79 @@
 #' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifplot()] for display of a CIF; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 cifpanel <- function(
-    plots                   = NULL,
-    formula                 = NULL,
-    formulas                = NULL,
-    data                    = NULL,
-    subset.condition        = NULL,
-    na.action               = na.omit,
-    outcome.type            = NULL,
-    code.events             = NULL,
-    error                   = NULL,
-    conf.type               = NULL,
-    conf.int                = NULL,
-    type.y                  = NULL,
-    label.x                 = NULL,
-    label.y                 = NULL,
-    label.strata            = NULL,
-    order.strata            = NULL,
-    level.strata            = NULL,
-    limits.x                = NULL,
-    limits.y                = NULL,
-    breaks.x                = NULL,
-    breaks.y                = NULL,
-    addConfidenceInterval   = NULL,
-    addCensorMark           = NULL,
-    addCompetingRiskMark    = NULL,
-    addIntercurrentEventMark= NULL,
-    addRiskTable            = TRUE,
-    addEstimateTable        = FALSE,
-    symbol.risktable        = "square",
-    font.size.risktable     = 3,
-    addQuantileLine         = NULL,
-    rows.columns.panel      = c(1, 1),
-    title.panel             = NULL,
-    subtitle.panel          = NULL,
-    caption.panel           = NULL,
-    tag_levels.panel        = NULL,
-    title.plot              = NULL,
-    style                   = "CLASSIC",
-    palette                 = NULL,
-    font.family             = "sans",
-    font.size               = 12,
-    legend.position         = "top",
-    legend.collect          = FALSE,
-    use_inset_element       = FALSE,
-    inset.left              = 0.60,
-    inset.bottom            = 0.05,
-    inset.right             = 0.98,
-    inset.top               = 0.45,
-    inset.align_to          = c("panel","plot","full"),
-    inset.legend.position   = NULL,
-    print.panel             = TRUE,
-    filename.ggsave         = NULL,
-    width.ggsave            = NULL,
-    height.ggsave           = NULL,
-    dpi.ggsave              = 300,
-    survfit.info            = NULL,
-    axis.info               = NULL,
-    visual.info             = NULL,
-    panel.info              = NULL,
-    style.info              = NULL,
-    inset.info              = NULL,
-    print.info              = NULL,
-    ggsave.info             = NULL,
-    engine                  = "cifplot",
+    plots                         = NULL,
+    formula                       = NULL,
+    formulas                      = NULL,
+    data                          = NULL,
+    weights                       = NULL,
+    subset.condition              = NULL,
+    na.action                     = na.omit,
+    outcome.type                  = NULL,
+    code.events                   = NULL,
+    error                         = NULL,
+    conf.type                     = NULL,
+    conf.int                      = NULL,
+    type.y                        = NULL,
+    label.x                       = NULL,
+    label.y                       = NULL,
+    label.strata                  = NULL,
+    order.strata                  = NULL,
+    level.strata                  = NULL,
+    limits.x                      = NULL,
+    limits.y                      = NULL,
+    breaks.x                      = NULL,
+    breaks.y                      = NULL,
+    addConfidenceInterval         = NULL,
+    addRiskTable                  = NULL,
+    addEstimateTable              = NULL,
+    symbol.risktable              = NULL,
+    font.size.risktable           = NULL,
+    addCensorMark                 = NULL,
+    shape.censor.mark             = NULL,
+    size.censor.mark              = NULL,
+    addCompetingRiskMark          = NULL,
+    competing.risk.time           = NULL,
+    shape.competing.risk.mark     = NULL,
+    size.competing.risk.mark      = NULL,
+    addIntercurrentEventMark      = NULL,
+    intercurrent.event.time       = NULL,
+    shape.intercurrent.event.mark = NULL,
+    size.intercurrent.event.mark  = NULL,
+    addQuantileLine               = NULL,
+    quantile                      = NULL,
+    rows.columns.panel            = c(1, 1),
+    title.panel                   = NULL,
+    subtitle.panel                = NULL,
+    caption.panel                 = NULL,
+    tag_levels.panel              = NULL,
+    title.plot                    = NULL,
+    style                         = "CLASSIC",
+    palette                       = NULL,
+    font.family                   = "sans",
+    font.size                     = 8,
+    legend.position               = "top",
+    legend.collect                = TRUE,
+    use_inset_element             = FALSE,
+    inset.left                    = 0.60,
+    inset.bottom                  = 0.05,
+    inset.right                   = 0.98,
+    inset.top                     = 0.45,
+    inset.align_to                = c("panel","plot","full"),
+    inset.legend.position         = NULL,
+    print.panel                   = TRUE,
+    filename.ggsave               = NULL,
+    width.ggsave                  = NULL,
+    height.ggsave                 = NULL,
+    dpi.ggsave                    = 300,
+    survfit.info                  = NULL,
+    axis.info                     = NULL,
+    visual.info                   = NULL,
+    panel.info                    = NULL,
+    style.info                    = NULL,
+    inset.info                    = NULL,
+    print.info                    = NULL,
+    ggsave.info                   = NULL,
+    engine                        = "cifplot",
     ...
 ){
   if (!is.null(label.strata)) {

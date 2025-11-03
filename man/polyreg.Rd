@@ -258,7 +258,7 @@ The \code{outcome.type} argument must be set to:
    PROPORTIONAL-SURVIVAL  (default) \tab \code{code.event1=1}, \code{code.censoring=0} \tab event / censoring \cr
    PROPORTIONAL-SURVIVAL (ADaM-ADTTE) \tab \code{code.event1=0}, \code{code.censoring=1} \tab set to match ADaM convention \cr
    PROPORTIONAL-COMPETING-RISK \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censoring \cr
-   PROPORTIONAL-COMPETING-RISK (default) \tab \code{code.event1=1}, \code{code.event2=2}, \code{code.censoring1} \tab event of interest / competing event / censoring \cr
+   PROPORTIONAL-COMPETING-RISK (default) \tab \code{code.event1=1}, \code{code.event2=2}, \code{code.censoring=0} \tab event of interest / competing event / censoring \cr
 }
 
 }
@@ -284,6 +284,7 @@ Choose the effect scale for event 1 and (optionally) event 2:\tabular{llll}{
    \code{report.sandwich.conf} \tab Sandwich variance CIs \tab \code{TRUE} \cr
    \code{report.boot.conf} \tab Bootstrap CIs (use if \code{"PROPORTIONAL-SURVIVAL"} or \code{"PROPORTIONAL-COMPETING-RISK"}) \tab \code{NULL} \cr
    \code{boot.bca} \tab Use BCa intervals (else normal approximation) \tab \code{FALSE} \cr
+   \code{boot.multiplier} \tab Method for wild bootstrap (\code{"rademacher"}, \code{"mammen"}, or \code{"gaussian"}) \tab \code{rademacher} \cr
    \code{boot.replications} \tab Bootstrap reps \tab \code{200} \cr
    \code{boot.seed} \tab Seed for resampling \tab \code{46} \cr
 }
@@ -302,12 +303,6 @@ Choose the effect scale for event 1 and (optionally) event 2:\tabular{llll}{
    \code{optim.parameter6:13} \tab Levenberg–Marquardt controls (iters/tolerances/lambda) \tab see defaults \cr
 }
 
-
-Tips:
-\itemize{
-\item If convergence warnings appear, relax/tighten tolerances or cap the parameter
-bound (\code{optim.parameter3}). Inspect \code{report.optim.convergence = TRUE}.
-}
 }
 
 \subsection{Data handling and stability}{\tabular{lll}{
@@ -344,6 +339,12 @@ predicted values of the potential outcomes of individual observations.
 
 \subsection{Reproducibility and conventions}{
 \itemize{
+\item If convergence warnings appear, relax/tighten tolerances or cap the parameter
+bound (\code{optim.parameter1} to \code{3}) and inspect \code{report.optim.convergence = TRUE}.
+\item If necessary, try modifying other \code{optim.parameter}, providing
+use-specified initial values, or reducing the number of nuisance parameters
+(e.g. provide \code{time.point} contributing to estimation when using
+\verb{“PROPORTIONAL-SURVIVAL”} and \verb{“PROPORTIONAL-COMPETING-RISK”}).
 \item Set \code{boot.seed} for reproducible bootstrap results.
 \item Match CDISC ADaM conventions via \code{code.event1 = 0}, \code{code.censoring = 1}
 (and, if applicable, \code{code.event2} for competing events).

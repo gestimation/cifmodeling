@@ -2,39 +2,61 @@
 % Please edit documentation in R/cifpanel.R
 \name{cifpanel}
 \alias{cifpanel}
-\title{Generates a multi-panel figure for survival or cumulative incidence curves,
-arranged either in a grid layout or as an inset overlay}
+\title{Arrange multiple survival / CIF plots in a panel display}
 \usage{
 cifpanel(
   plots = NULL,
   formula = NULL,
   formulas = NULL,
   data = NULL,
+  weights = NULL,
+  subset.condition = NULL,
+  na.action = na.omit,
   outcome.type = NULL,
   code.events = NULL,
-  type.x = NULL,
+  error = NULL,
+  conf.type = NULL,
+  conf.int = NULL,
   type.y = NULL,
   label.x = NULL,
   label.y = NULL,
   label.strata = NULL,
   order.strata = NULL,
+  level.strata = NULL,
   limits.x = NULL,
   limits.y = NULL,
   breaks.x = NULL,
   breaks.y = NULL,
   addConfidenceInterval = NULL,
+  addRiskTable = NULL,
+  addEstimateTable = NULL,
+  symbol.risktable = NULL,
+  font.size.risktable = NULL,
   addCensorMark = NULL,
+  shape.censor.mark = NULL,
+  size.censor.mark = NULL,
   addCompetingRiskMark = NULL,
+  competing.risk.time = NULL,
+  shape.competing.risk.mark = NULL,
+  size.competing.risk.mark = NULL,
   addIntercurrentEventMark = NULL,
+  intercurrent.event.time = NULL,
+  shape.intercurrent.event.mark = NULL,
+  size.intercurrent.event.mark = NULL,
   addQuantileLine = NULL,
+  quantile = NULL,
   rows.columns.panel = c(1, 1),
   title.panel = NULL,
   subtitle.panel = NULL,
   caption.panel = NULL,
   tag_levels.panel = NULL,
   title.plot = NULL,
+  style = "CLASSIC",
+  palette = NULL,
+  font.family = "sans",
+  font.size = 8,
   legend.position = "top",
-  legend.collect = FALSE,
+  legend.collect = TRUE,
   use_inset_element = FALSE,
   inset.left = 0.6,
   inset.bottom = 0.05,
@@ -47,122 +69,229 @@ cifpanel(
   width.ggsave = NULL,
   height.ggsave = NULL,
   dpi.ggsave = 300,
+  survfit.info = NULL,
+  axis.info = NULL,
+  visual.info = NULL,
+  panel.info = NULL,
+  style.info = NULL,
+  inset.info = NULL,
+  print.info = NULL,
+  ggsave.info = NULL,
+  engine = "cifplot",
   ...
 )
 }
 \arguments{
-\item{plots}{list of ggplot objects. If supplied, \code{cifpanel()} will skip
-estimation/plotting and only compose the provided plots.}
+\item{plots}{Optional list of already-built \code{ggplot} objects to be arranged.
+If supplied, these are used as-is (no fitting is done).}
 
-\item{formula}{A single model formula evaluated in \code{data}, used for all panels
-when \code{formulas} is not provided.}
+\item{formula}{A single formula of the form \code{Event(t, status) ~ x} or
+\code{Surv(t, status) ~ x}. This is typically used together with
+\code{code.events = list(...)} to produce multiple event-specific panels from the
+same data and outcome.}
 
-\item{formulas}{A list of formulas (one per panel). If provided, overrides \code{formula}.}
+\item{formulas}{Optional list of formulas. When given, each formula defines
+\strong{one panel}. This is the most common way to create “one variable per plot”
+panels.}
 
-\item{data}{A data.frame containing variables used in the formula(s).}
+\item{data}{A data frame containing variables in the formula.}
 
-\item{outcome.type}{Optional vector/list of outcome types per panel.
+\item{weights}{Optional name of the weight variable in \code{data}. Weights must be nonnegative.}
+
+\item{subset.condition}{Optional character expression to subset \code{data} before analysis.}
+
+\item{na.action}{Function to handle missing values (default: \code{na.omit}).}
+
+\item{outcome.type}{Character string specifying the type of time-to-event outcome.
 One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
-If \code{NULL} (default), the function automatically infers the outcome type
-from the data: if the event variable has more than two unique levels,
-\code{"COMPETING-RISK"} is assumed; otherwise, \code{"SURVIVAL"} is used.
-You can also use abbreviations such as \code{"S"} or \code{"C"}.
-Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic
-detection based on the event coding in \code{data}.}
+If \code{NULL} (default), the function automatically infers the outcome type from the data:
+if the event variable has more than two unique levels, \code{"COMPETING-RISK"} is assumed;
+otherwise, \code{"SURVIVAL"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
+Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detection based on the event coding.}
 
-\item{code.events}{A list of numeric vectors per panel.
-For SURVIVAL: \code{c(code.event1, code.censoring)};
-for COMPETING-RISK: \code{c(code.event1, code.event2, code.censoring)}.}
+\item{code.events}{Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
+When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
+(primarily used when \code{cifpanel()} is called or when \code{printEachEvent = TRUE}).}
 
-\item{type.x}{Reserved for future x-scale control (currently ignored).}
+\item{error}{Character specifying the method for variance and standard error  used internally.}
 
-\item{type.y}{Optional vector/list per panel: \code{NULL} (survival) or \code{"risk"} (1-survival).}
+\item{conf.type}{Character specifying the method of transformation for confidence intervals  used internally.}
 
-\item{label.x, label.y}{Optional vectors/lists of axis labels per panel.}
+\item{conf.int}{Numeric two-sided confidence level  (default \code{0.95}).}
 
-\item{label.strata}{Optional list of character vectors for legend labels per panel
-(passed to \code{\link[=cifplot]{cifplot()}}).}
+\item{type.y}{Either \code{NULL} (plot on the survival scale) or \code{"risk"} (plot on the
+cumulative-incidence / failure scale, i.e. \code{1 - survival}).}
 
-\item{order.strata}{Optional list of character vectors for ordering labels per panel
-(passed to \code{\link[=cifplot]{cifplot()}}).}
+\item{label.x}{Character x-axis label (default \code{"Time"}).}
 
-\item{limits.x, limits.y}{Optional vectors/lists of numeric length-2 axis limits per panel.}
+\item{label.y}{Character y-axis label (default is chosen automatically from \code{outcome.type}
+and \code{type.y}, e.g. \dQuote{Survival} or \dQuote{Cumulative incidence}).}
 
-\item{breaks.x, breaks.y}{Optional vectors/lists of axis breaks per panel (forwarded to
-\code{breaks.x} / \code{breaks.y} in \code{\link[=cifplot]{cifplot()}}).}
+\item{limits.x}{Numeric length-2 vector specifying x-axis limits. If \code{NULL}, it is
+set from the fitted object (typically \code{c(0, max(time))}).}
 
-\item{addConfidenceInterval, addCensorMark, addCompetingRiskMark, addIntercurrentEventMark, addQuantileLine}{Optional logical vectors/lists per panel to toggle features in \code{\link[=cifplot]{cifplot()}}.
-If \code{NULL}, sensible defaults are used (CI/Censor on; others off).}
+\item{limits.y}{Numeric length-2 vector specifying y-axis limits. If \code{NULL}, it is
+set to \code{c(0, 1)} for probability-type outcomes.}
 
-\item{rows.columns.panel}{Integer vector \code{c(nrow, ncol)} specifying the grid size.}
+\item{breaks.x}{Numeric vector of x-axis breaks (default \code{NULL}).}
 
-\item{title.panel, subtitle.panel, caption.panel}{Optional strings for panel annotation.}
+\item{breaks.y}{Numeric vector of y-axis breaks (default \code{NULL}).}
 
-\item{tag_levels.panel}{Passed to \code{patchwork::plot_annotation(tag_levels = ...)}.}
+\item{addConfidenceInterval}{Logical; if \code{TRUE}, adds a confidence-interval ribbon
+(via \code{ggsurvfit::add_confidence_interval()}). Default \code{TRUE}.}
 
-\item{title.plot}{Optional length-2 character vector, titles for base/inset plots when
-\code{use_inset_element = TRUE}.}
+\item{addCensorMark}{Logical; if \code{TRUE}, draws censoring marks on each curve
+(via \code{ggsurvfit::add_censor_mark()}). Default \code{TRUE}.}
 
-\item{legend.position}{Position of legends: \code{"top"}, \code{"right"}, \code{"bottom"},
-\code{"left"}, or \code{"none"}.}
+\item{shape.censor.mark}{Integer point shape used for censoring marks (default \code{3}).}
 
-\item{legend.collect}{If \code{TRUE} (grid mode), collect legends across subplots.}
+\item{size.censor.mark}{Numeric point size used for censoring marks (default \code{2}).}
 
-\item{use_inset_element}{If \code{TRUE}, place the second plot as an inset over the first.}
+\item{addCompetingRiskMark}{Logical; if \code{TRUE}, draws time marks for the competing event
+(event 2). If no times are supplied via \code{competing.risk.time}, the function tries to
+extract them automatically from the data. Default \code{FALSE}.}
 
-\item{inset.left, inset.bottom, inset.right, inset.top}{Numeric positions (0–1) of the inset box.}
+\item{competing.risk.time}{A \strong{named list} of numeric vectors. Each name must correspond to a
+strata label, and its numeric vector gives the times at which the competing event occurred
+in that stratum. Typically left as \code{list()} and filled internally.}
 
-\item{inset.align_to}{One of \code{"panel"}, \code{"plot"}, or \code{"full"}.}
+\item{shape.competing.risk.mark}{Integer point shape for competing-risk marks (default \code{16}).}
 
-\item{inset.legend.position}{Legend position for the inset plot (e.g., \code{"none"}).}
+\item{size.competing.risk.mark}{Numeric point size for competing-risk marks (default \code{2}).}
 
-\item{print.panel}{If \code{TRUE}, print the composed panel.}
+\item{addIntercurrentEventMark}{Logical; if \code{TRUE}, overlays user-specified intercurrent-event
+times per stratum. Default \code{FALSE}.}
 
-\item{filename.ggsave}{Character save the composed panel with the path and name specified.}
+\item{intercurrent.event.time}{A \strong{named list} of numeric vectors for intercurrent events
+(names must match strata labels).}
 
-\item{width.ggsave}{Numeric specify width of the composed panel.}
+\item{shape.intercurrent.event.mark}{Integer point shape for intercurrent-event marks
+(default \code{1}).}
 
-\item{height.ggsave}{Numeric specify height of the composed panel.}
+\item{size.intercurrent.event.mark}{Numeric point size for intercurrent-event marks
+(default \code{2}).}
 
-\item{dpi.ggsave}{Numeric specify dpi of the composed panel.}
+\item{addQuantileLine}{Logical; if \code{TRUE}, adds a quantile line (via
+\code{ggsurvfit::add_quantile()}). Default \code{FALSE}.}
 
-\item{...}{Additional arguments forwarded to \code{{cifplot}} (e.g., \code{style},
-\code{font.family}, \code{font.size}, etc.). Panel-wise overrides provided via explicit
-arguments take precedence over \code{...}.}
+\item{quantile}{Numeric quantile to be shown (default \code{0.5} for median).}
+
+\item{rows.columns.panel}{Optional integer vector \code{c(nrow, ncol)} controlling
+the layout of the panel returned by the panel modes. If \code{NULL}, an automatic
+layout is determined from the number of subplots.}
+
+\item{title.panel, subtitle.panel, caption.panel}{Character annotations applied to the
+\strong{whole} panel layout (not to individual plots). These are passed to
+\code{patchwork::plot_annotation()} and are useful for creating figure-like
+outputs (title + subfigures + caption).}
+
+\item{tag_levels.panel}{Passed to \code{patchwork::plot_annotation()} to auto-label
+individual panels (e.g. \code{"A"}, \code{"B"}, \code{"C"}). Typical values are
+\code{"A"}, \code{"1"}, or \code{"a"}. See \code{?patchwork::plot_annotation}.}
+
+\item{title.plot}{Character vector of titles for \strong{each panel} in the order they
+are drawn. Length-1 values are recycled to all panels. In inset mode, the first
+element refers to the main plot and the second (if present) to the inset.}
+
+\item{style}{Character choosing the base plot style: \code{"CLASSIC"}, \code{"BOLD"},
+\code{"FRAMED"}, \code{"GRID"}, \code{"GRAY"} or \code{"GGSURVFIT"} (default \code{"CLASSIC"}).
+Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also accepted.}
+
+\item{palette}{Optional character vector specifying the color palette to use across strata.}
+
+\item{font.family}{Character specifying the font family: \code{"sans"},  \code{"serif"}, or
+\code{"mono"} (default \code{"sans"}).}
+
+\item{font.size}{Integer specifying the base font size (default \code{12}).}
+
+\item{legend.collect}{Logical; if \code{TRUE}, try to collect a single legend
+for all panels (passed to \pkg{patchwork}). Default \code{TRUE}.}
+
+\item{use_inset_element}{Logical. If \code{FALSE} (default), all panels are arranged
+in a regular grid using \code{patchwork::wrap_plots()} and \code{plot_layout()}.
+If \code{TRUE}, the function switches to “inset mode”: the \strong{first} plot becomes
+the main plot and the \strong{second} plot (only the second) is drawn on top of it
+as an inset. Additional plots beyond the second are ignored in inset mode.
+Use grid mode to display more than two panels (use_inset_element = FALSE).}
+
+\item{inset.left, inset.bottom, inset.right, inset.top}{Numeric values in the range
+\code{[0, 1]} that define the inset box as fractions of the reference area.
+\code{inset.left} / \code{inset.right} control the horizontal position,
+\code{inset.bottom} / \code{inset.top} control the vertical position.
+Values are interpreted as “from the left/bottom” of the reference.
+For example, \code{inset.left = 0.4}, \code{inset.right = 1.0} draws the inset
+over the right 60\% of the reference area.}
+
+\item{inset.align_to}{Character string specifying the coordinate system for the
+inset box. One of:
+\itemize{
+\item \code{"panel"} (default): the box is placed relative to the \strong{panel area}
+(i.e. the plotting region, excluding outer titles/margins);
+\item \code{"plot"}: the box is placed relative to the \strong{entire plot} area,
+including axes and titles of the main plot;
+\item \code{"full"}: the box is placed relative to the \strong{full patchwork canvas}.
+}
+This argument is passed to \code{patchwork::inset_element()}.}
+
+\item{inset.legend.position}{Optional legend position \strong{for the inset plot only}.
+If \code{NULL} (default), the inset plot keeps whatever legend position was
+defined for it (often this means a legend will also be inset).
+Set, for example, \code{"none"} to hide the legend inside the inset,
+while still showing the main plot's legend.}
+
+\item{print.panel}{Logical. If \code{TRUE}, the composed patchwork object is
+printed immediately (for interactive use). If \code{FALSE}, the object is
+returned invisibly so that it can be assigned, modified, or saved. Kept for
+backward compatibility.}
+
+\item{filename.ggsave}{Character; if non-\code{NULL}, save the plot to this file.}
+
+\item{width.ggsave}{Numeric width passed to \code{ggplot2::ggsave()} (default \code{6}).}
+
+\item{height.ggsave}{Numeric height passed to \code{ggplot2::ggsave()} (default \code{6}).}
+
+\item{dpi.ggsave}{Numeric DPI passed to \code{ggplot2::ggsave()} (default \code{300}).}
+
+\item{survfit.info, axis.info, visual.info, panel.info, style.info, print.info, ggsave.info, inset.info}{Internal lists used for programmatic control. Not intended for direct user input.}
+
+\item{engine}{Character scalar selecting the internal plotting engine.
+Currently only \code{"cifplot"} is supported and used to construct each panel
+via \code{cifplot_single()}. This argument is reserved for future extensions.}
+
+\item{...}{Additional arguments forwarded to the internal \code{cifplot_single()}
+calls that build each panel. Use this to pass low-level options such as
+\code{competing.risk.time}, \code{intercurrent.event.time}, or styling overrides.}
 }
 \value{
 An invisible list: \code{list(plots = <list of ggplot objects>, out_patchwork = <patchwork object>)}.
+Print the returned object to display the panel, or access individual panels via
+\code{out_patchwork$plots[[1]]}, \code{out_patchwork$plots[[2]]}, ...
 }
 \description{
-Build a panel of publication-ready time-to-event plots by combining
-\code{{cifcurve}} (estimation) and \code{{cifplot}} (rendering).
-Supports grid layout or an inset plot overlay. Panel-wise overrides for
-y-scale type, labels, limits, and various plot decorations are supported.
+\code{cifpanel()} is the panel-building counterpart of \code{cifplot()}.
+It takes one or more model formulas (or, alternatively, one formula and several
+event-coding specifications) and returns a multi-panel figure, typically as a
+\pkg{patchwork} object. Most display options (axis labels, marks, style, ggsave options)
+are shared with \code{cifplot()}, but per-panel legends and risk tables are
+suppressed to avoid duplicated display.
+
+Panel layout is specified by length-2 vector \code{rows.columns.panel}.
+This function can also automatically determine the panel count in the following order:
+(1) if \code{plots} is supplied, its length defines the number of plots,
+(2) else if \code{formulas} is supplied, its length defines the number of plots,
+(3) else if \code{code.events} is supplied, its length defines the number of plots
+together with formula, and (4) otherwise \code{rows.columns.panel=c(1,1)}.
+\itemize{
+\item \code{formula} or \code{formulas} — one formula or a list of formulas; each entry creates a panel.
+\item \code{data}, \code{outcome.type}, \code{code.events}, \code{type.y} — recycled across panels unless a list is supplied for per-panel control.
+\item \code{rows.columns.panel} — selects grid layout by c(rows, cols).
+\item \code{use_inset_element} — selects inset layout.
+\item \code{title.panel}, \code{subtitle.panel}, \code{caption.panel}, \code{title.plot} — overall titles and captions.
+\item \code{tag_levels.panel} — panel tag style (e.g., "A", "a", "1").
+\item \code{label.x}, \code{label.y}, \code{limits.x}, \code{limits.y}, \code{breaks.x}, \code{breaks.y} — shared axis control unless a list is supplied for per-panel control.
+}
 }
 \details{
-\strong{How it works:}
-For each panel slot, the function first calls \code{{cifcurve}} to obtain
-a \code{survfit}-like object, and then calls \code{{cifplot}} to render it.
-You can pass \code{code.events = list(c(e1, e2, c), ...)} for competing risks
-(Aalen–Johansen), or \code{code.events = list(c(e1, c), ...)} for standard
-survival (Kaplan–Meier). If \code{outcome.type} is not specified, each panel's
-outcome is inferred from the length of its \code{code.events[[i]]}.
-
-\strong{Grid vs inset:}
-\itemize{
-\item \code{use_inset_element = FALSE} (default): arrange plots in a grid using
-\pkg{patchwork} \code{wrap_plots()}. With \code{legend.collect = TRUE}, legends are
-collected across panels.
-\item \code{use_inset_element = TRUE}: overlay the second plot into the first one using
-\code{patchwork::inset_element()}. Only the first two plots are used; extra plots are ignored.
-}
-
-\strong{Notes:}
-\itemize{
-\item \code{type.x} is reserved for future x-scale control (currently not applied).
-\item If both \code{formula} and \code{formulas} are provided, the latter takes precedence.
-}
-
 \subsection{Overview}{
 
 \code{cifpanel()} composes multiple survival/CIF plots into a single figure.
@@ -248,7 +377,7 @@ can be given via \code{...} if needed; names must match strata labels.)}
 \subsection{Export (optional)}{
 
 If \code{filename.ggsave} is non-\code{NULL}, the composed panel is saved with
-\code{ggplot2::ggsave()} using \code{width.ggsave}, \code{height.ggsave}, and \code{dpi.ggsave}.
+\code{ggsave()} using \code{width.ggsave}, \code{height.ggsave}, and \code{dpi.ggsave}.
 Otherwise, the function returns objects without saving.
 }
 
@@ -342,3 +471,4 @@ cifpanel(plots = output3,
 \seealso{
 \code{\link[=polyreg]{polyreg()}} for log-odds product modeling of CIFs; \code{\link[=cifcurve]{cifcurve()}} for KM/AJ estimators; \code{\link[=cifplot]{cifplot()}} for display of a CIF; \link[ggsurvfit:ggsurvfit]{ggsurvfit::ggsurvfit}, \link[patchwork:patchwork-package]{patchwork::patchwork} and \link[modelsummary:modelsummary]{modelsummary::modelsummary} for display helpers.
 }
+\keyword{internal}
