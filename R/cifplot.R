@@ -650,7 +650,7 @@ plot_printEachEvent <- function(
 #    if (length(ylabs_vec)  > 2L) ylabs_vec <- ylabs_vec[1:2]
 #  }
   if (!is.null(dots$label.y)) dots$label.y <- NULL
-  ylabs_vec <- c("CIF for event of interest", "CIF for competing risk")
+  ylabs_vec <- c("Cumulative incidence of interest", "Cumulative incidence of competing risk")
 
   axis.info.panel <- modifyList(axis.info, list(
     label.y      = ylabs_vec,

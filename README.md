@@ -1309,7 +1309,9 @@ layout and styling options.
 - `boot.replications` Integer giving the number of bootstrap
   replications. Defaults to `200`.
 - `boot.seed` Numeric seed used for resampling of bootstrap.
-- `nleqslv.method Character string defining the solver used by`nleqslv}`. Available choices include`“nleqslv”`,`“Broyden”`,`“Newton”`,`“optim”`,`“BFGS”`and`“SANN”\`.
+- `nleqslv.method` Character string defining the solver used by
+  `nleqslv}`. Available choices include `"nleqslv"`, `"Broyden"`,
+  `"Newton"`, `"optim"`, `"BFGS"` and `"SANN"`.
 - `optim.parameter1` Numeric tolerance for convergence of the outer
   loop. Defaults to `1e-6`.
 - `optim.parameter2` Numeric tolerance for convergence of the inner

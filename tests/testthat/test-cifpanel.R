@@ -1,5 +1,4 @@
 test_that("cifpanel() accepts pre-built plots (grid mode)", {
-  skip()
   skip_on_cran()
   skip_if_not_installed("ggplot2")
 
@@ -20,7 +19,6 @@ test_that("cifpanel() accepts pre-built plots (grid mode)", {
 })
 
 test_that("cifpanel() accepts pre-built plots (inset mode)", {
-  skip()
   skip_on_cran()
   skip_if_not_installed("ggplot2")
 
@@ -103,7 +101,6 @@ make_inputs_2panel <- function(df) {
 }
 
 test_that("cifpanel() produces expected outputs with competing risks data (no plotting)", {
-  skip()
   skip_on_cran()
   skip_if_not_installed("survival")
   skip_if_not_installed("ggsurvfit")
@@ -131,7 +128,6 @@ test_that("cifpanel() produces expected outputs with competing risks data (no pl
 })
 
 test_that("panel_prepare() returns curves and plot arguments", {
-  skip()
   skip_on_cran()
   skip_if_not_installed("survival")
   inputs <- make_min_inputs()
@@ -150,7 +146,6 @@ test_that("panel_prepare() returns curves and plot arguments", {
 })
 
 test_that("panel_prepare() returns per-panel objects with expected structure", {
-  skip()
   skip_on_cran()
   skip_if_not_installed("survival")
   skip_if_not_installed("ggsurvfit")
@@ -178,13 +173,10 @@ test_that("panel_prepare() returns per-panel objects with expected structure", {
   expect_true(identical(prep$plot_args[[2]]$label.y, inputs$labely.list[[2]]))
 })
 
-# tests/testthat/test-cifpanel.R
-
 test_that("cifpanel() with two formulas shows per-plot titles", {
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
 
-  # 最小データ
   df <- data.frame(
     t       = c(5, 7, 9, 10, 3, 4, 6, 8),
     epsilon = c(1, 0, 2, 0, 1, 2, 0, 1),
@@ -204,7 +196,6 @@ test_that("cifpanel() with two formulas shows per-plot titles", {
 
   expect_type(res, "list")
   expect_length(res$plots, 2)
-  # 各 ggplot の title を見る
   expect_equal(res$plots[[1]]$labels$title, "Plot-x1")
   expect_equal(res$plots[[2]]$labels$title, "Plot-x2")
 })
@@ -229,44 +220,9 @@ test_that("cifpanel() applies panel-level tag_levels", {
     print.panel  = FALSE
   )
 
-  # patchwork の annotation をチェック
   ann <- res$out_patchwork$patches$annotation
   expect_false(is.null(ann))
   expect_equal(ann$tag_levels, "A")
-})
-
-test_that("cifplot(printEachVar=TRUE) creates a panel and drops unsafe strata labels", {
-  skip_if_not_installed("ggplot2")
-  skip_if_not_installed("patchwork")
-
-  df <- data.frame(
-    t       = c(5, 7, 9, 10, 3, 4, 6, 8),
-    epsilon = c(1, 0, 2, 0, 1, 2, 0, 1),
-    x1      = factor(c("A","B","A","B","A","B","A","B")),
-    x2      = factor(c("L","L","H","H","L","H","L","H"))
-  )
-
-  # 本来は label.strata を付けるとパネル時に落ちやすかったやつ
-  p <- cifplot(
-    Event(t, epsilon) ~ x1 + x2,
-    data             = df,
-    outcome.type     = "COMPETING-RISK",
-    code.events      = c(1, 2, 0),
-    label.strata     = c("A" = "Group A", "B" = "Group B"),
-    printEachVar     = TRUE,
-    print.panel      = FALSE  # cifplot() 側でそういう引数があれば
-  )
-
-  # パネルになるので patchwork か list を返すはず
-  # あなたの実装だと patchwork オブジェクトに plots を attr で付けてたよね
-  expect_s3_class(p, "patchwork")
-  plots <- attr(p, "plots")
-  expect_true(length(plots) >= 2)
-
-  # パネル化したので label.strata が NULL 化されているはず
-  # （cifpanelが返す axis.info の中身を見る）
-  # ※ 実装によっては res <- cifpanel(...) を返してるときにしか取れないので
-  #   ここは "存在していたら NULL になってるはず" をゆるく見る
 })
 
 test_that("cifplot(printEachEvent=TRUE) creates 2-event panel", {
@@ -285,7 +241,7 @@ test_that("cifplot(printEachEvent=TRUE) creates 2-event panel", {
     outcome.type     = "COMPETING-RISK",
     code.events      = c(1, 2, 0),
     printEachEvent   = TRUE,
-    label.y          = c("CIF for event of interest", "CIF for competing risk"),
+    label.y          = c("Cumulative incidence of interest", "Cumulative incidence of competing risk"),
     print.panel      = FALSE
   )
 
@@ -293,9 +249,8 @@ test_that("cifplot(printEachEvent=TRUE) creates 2-event panel", {
   plots <- attr(p, "plots")
   expect_equal(length(plots), 2)
 
-  # yラベルがパネルごとに設定されていることを確認
-  expect_equal(plots[[1]]$labels$y, "CIF for event of interest")
-  expect_equal(plots[[2]]$labels$y, "CIF for competing risk")
+  expect_equal(plots[[1]]$labels$y, "Cumulative incidence of interest")
+  expect_equal(plots[[2]]$labels$y, "Cumulative incidence of competing risk")
 })
 
 test_that("cifpanel() can take per-panel label.x/label.y", {

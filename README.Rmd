@@ -647,10 +647,10 @@ You can also supply multiple model summaries as a named list to compare estimate
 -   `report.optim.convergence` Logical if `TRUE`, optimisation convergence summaries are returned. Defaults to `FALSE`.
 -   `report.sandwich.conf` Logical or `NULL`. When `TRUE`, confidence intervals based on sandwich variance are computed. When `FALSE`, they are omitted. Defaults to `TRUE`.
 -   `report.boot.conf` Logical or `NULL`. When `TRUE`, bootstrap confidence intervals are computed. When `FALSE`, they are omitted. If `NULL`, the function chooses based on `outcome.type`.
--   ` boot.bca` Logical indicating the bootstrap confidence interval method. Use `TRUE` for bias-corrected and accelerated intervals or `FALSE` for the normal approximation. Defaults to `FALSE`.
+-   `boot.bca` Logical indicating the bootstrap confidence interval method. Use `TRUE` for bias-corrected and accelerated intervals or `FALSE` for the normal approximation. Defaults to `FALSE`.
 -   `boot.replications` Integer giving the number of bootstrap replications. Defaults to `200`.
 -   `boot.seed` Numeric seed used for resampling of bootstrap.
--   `nleqslv.method Character string defining the solver used by `nleqslv}`. Available choices include `"nleqslv"`, `"Broyden"`, `"Newton"`, `"optim"`, `"BFGS"` and `"SANN"`.
+-   `nleqslv.method` Character string defining the solver used by `nleqslv}`. Available choices include `"nleqslv"`, `"Broyden"`, `"Newton"`, `"optim"`, `"BFGS"` and `"SANN"`.
 -   `optim.parameter1` Numeric tolerance for convergence of the outer loop. Defaults to `1e-6`.
 -   `optim.parameter2` Numeric tolerance for convergence of the inner loop. Defaults to `1e-6`.
 -   `optim.parameter3` Numeric constraint on the absolute value of parameters. Defaults to `100`.
