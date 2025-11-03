@@ -13,30 +13,58 @@ In medical and epidemiological research, analysts often need to handle
 censoring, competing risks, and intercurrent events (e.g., treatment
 switching), but existing R packages typically separate these tasks into
 different interfaces. `cifmodeling` provides a **unified,
-publication-ready toolkit** that integrates nonparametric estimation,
-regression modeling, and visualization for survival and competing risks
-data. It covers both nonparametric estimation and regression modeling of
-cumulative incidence functions (CIFs), centered around three tightly
-connected functions.
+publication-ready toolkit** that integrates description of survival and
+cumulative incidence function (CIF) curves, regression modeling, and
+visualization for survival and competing risks data. It covers both
+nonparametric estimation and regression modeling of CIFs, centered
+around three tightly connected functions.
 
-- `cifplot()` generates a survival or cumulative incidence curve with
-  marks that represent censoring, competing risks and intercurrent
-  events. Multiple variance estimators and confidence interval methods
-  are supported. Visualization relies on `ggsurvfit/ggplot2`.
+- `cifplot()` typically generates a survival or cumulative incidence
+  curve with marks that represent censoring, competing risks and
+  intercurrent events. Multiple variance estimators and confidence
+  interval methods are supported. Visualization relies on
+  `ggsurvfit/ggplot2`.
 
 - `cifpanel()` generates a multi-panel figure for survival/CIF curves,
   arranged either in a grid layout or as an inset overlay.
 
-- `polyreg()` fits regression models of cumulative incidence functions
-  based on polytomous log odds products and stratified IPCW estimator.
-  This function is particularly well-suited for causal inference in
-  terms of common effect measures, namely risk ratios, odds ratios, and
+- `polyreg()` fits coherent regression models of CIFs based on
+  polytomous log odds products and the stratified IPCW estimator. This
+  function is particularly well-suited for causal inference in terms of
+  typical effect measures, namely risk ratios, odds ratios, and
   subdistribution hazard ratios, with a competing risks, survival, or
   binary outcome.
 
 These functions adopt a formula + data syntax, return tidy,
 publication-ready outputs, and integrate seamlessly with `ggsurvfit` and
 `modelsummary` for visualization.
+
+## Quality control
+
+`cifmodeling` includes an extensive test suite built with **testthat**,
+ensuring the numerical accuracy and graphical consistency of all core
+functions (`cifcurve`, `cifplot`, `cifpanel`, and `polyreg`). The
+package is continuously tested on GitHub Actions (Windows, macOS, Linux)
+to maintain reproducibility and CRAN-level compliance.
+
+## Installation
+
+The package is implemented in R and relies on `Rcpp`, `nleqslv` and
+`boot` for the numerical back-end. The examples in this README also use
+`ggplot2`, `ggsurvfit`, `patchwork` and `modelsummary` for tabulation
+and plotting. Install the core package and these companion packages
+with:
+
+``` r
+install.packages("Rcpp")
+install.packages("nleqslv")
+install.packages("boot")
+install.packages("ggplot2")
+install.packages("ggsurvfit")
+install.packages("patchwork")
+install.packages("modelsummary")
+devtools::install_github("gestimation/cifmodeling")
+```
 
 ## Main functions
 
@@ -52,7 +80,7 @@ survfit-compatible object directly.
 
 **Typical use cases**
 
-- Draw one survival/CIF curve set by groups (e.g., treatment vs
+- Draw one survival/CIF curve set by exposure groups (e.g., treatment vs
   control).
 - Call `cifpanel()` with a simplified code to create a panel displaying
   plots of multiple stratified survival/CIF curves or CIF curves for
@@ -89,16 +117,17 @@ survfit-compatible object directly.
 - **Plot customization**
   - `type.y` chooses y-axis. (`"surv"` for survival curves and `"risk"`
     for CIFs)
-  - `limits.x`, `limits.y`, `breaks.x`, `breaks.y` — axis control
+  - `limits.x`, `limits.y`, `breaks.x`, `breaks.y` numeric vectors for
+    axis control
   - `style` specifies the appearance of plot (`"CLASSIC"`, `"BOLD"`,
     `"FRAMED"`, `"GRID"`, `"GRAY"` or `"GGSURVFIT"`)
-  - Standard `ggplot2` arguments such as `theme()`, `labs()`, and
-    `scale_y_continuous()` apply
-- **Panel**
-  - `printEachVar` automatically produces multiple survival/CIF curves
-    per stratification variable specified in the formula
-  - `printEachEvent` automatically produces CIF curves for each event
-    type
+- **Panel display**
+  - `printEachVar` produces multiple survival/CIF curves per
+    stratification variable specified in the formula
+  - `printEachEvent` produces CIF curves for each event type
+  - `printCensoring` produces KM-type curves for (event, censor) and
+    (censor, event) so that censoring patterns can be inspected
+  - `printPanel` automatic panel mode
 
 **Return**
 
@@ -107,9 +136,9 @@ survfit-compatible object directly.
 **Under the hood: cifcurve()**
 
 `cifplot()` is a streamlined, opinionated wrapper around `cifcurve()`,
-which calculate the Kaplan–Meier estimator and the Aalen–Johansen
-estimator. `cifcurve()` returns a survfit-compatible object, enabling
-use of standard methods such as:
+which calculates the Kaplan–Meier estimator and the Aalen–Johansen
+estimator. `cifcurve()` returns a survfit-compatible object, enabling an
+independent use of standard methods such as:
 
 - `summary()` — time-by-time estimates with standard errors and
   confidence intervals
@@ -151,9 +180,13 @@ time scales, or strata. The inset feature also allows you to display
 another plot within a plot.
 
 **Typical use cases** - Compare CIF (event 1) vs CIF (event 2) in a 1×2
-layout. - Compare survival/CIF curves across strata with a shared legend
-and matched axes. - Display a plot with an enlarged y-axis within a plot
-scaled from 0 to 100%.
+layout.
+
+- Compare survival/CIF curves across strata with a shared legend and
+  matched axes.
+
+- Display a plot with an enlarged y-axis within a plot scaled from 0 to
+  100%.
 
 **Key arguments**
 
@@ -166,9 +199,8 @@ scaled from 0 to 100%.
 - `title.panel`, `subtitle.panel`, `caption.panel`, `title.plot` —
   overall titles and captions.
 - `tag_levels.panel` — panel tag style (e.g., “A”, “a”, “1”).
-- `label.x`, `label.y`, `label.strata`, `limits.x`, `limits.y`,
-  `breaks.x`, `breaks.y` — shared axis control unless a list is supplied
-  for per-panel control.
+- `label.x`, `label.y`, `limits.x`, `limits.y`, `breaks.x`, `breaks.y` —
+  shared axis control unless a list is supplied for per-panel control.
 
 **Return**
 
@@ -266,16 +298,18 @@ such as **modelsummary** or **broom** for reporting.
 
 - `nuisance.model` — a formula describing the outcome and nuisance
   covariates, excluding the exposure of interest.
-- `exposure` — specifies the categorical exposure variable
-- `effect.measure1` and `effect.measure2` — specifies the effect
-  measures for event1 and event2 (`"RR"`, `"OR"` or `"SHR"`).
-- `outcome.type` selects the outcome type (`"COMPETING-RISK"`,
-  `"SURVIVAL"`, `"BINOMIAL"`, `"PROPORTIONAL-SURVIVAL"` or
-  `"PROPORTIONAL-COMPETING-RISK"`).
-- `time.point` — specifies time point at which the exposure effect is
-  evaluated. Required for `"COMPETING-RISK"` and `"SURVIVAL"` outcomes.
-- `strata` — specifies a stratification variable used to adjust for
-  dependent censoring.
+- `exposure` — specifies the exposure variable. This argument accepts
+  one binary or categorical variable.
+
+the categorical exposure variable - `effect.measure1` and
+`effect.measure2` — specifies the effect measures for event1 and event2
+(`"RR"`, `"OR"` or `"SHR"`). - `outcome.type` selects the outcome type
+(`"COMPETING-RISK"`, `"SURVIVAL"`, `"BINOMIAL"`,
+`"PROPORTIONAL-SURVIVAL"` or `"PROPORTIONAL-COMPETING-RISK"`). -
+`time.point` — specifies time points at which the exposure effect is
+evaluated. Required for `"COMPETING-RISK"` and `"SURVIVAL"` outcomes. -
+`strata` — specifies the stratification variable used to adjust for
+dependent censoring.
 
 **Return**
 
@@ -297,38 +331,11 @@ output <- polyreg(nuisance.model=Event(t,epsilon) ~ +1, exposure="fruitq",
           effect.measure2="RR", time.point=8, outcome.type="COMPETING-RISK")
 ```
 
-## Quality assurance
-
-`cifmodeling` includes an extensive test suite built with **testthat**,
-ensuring the numerical accuracy and graphical consistency of all core
-functions (`cifcurve`, `cifplot`, `cifpanel`, and `polyreg`). The
-package is continuously tested on GitHub Actions (Windows, macOS, Linux)
-to maintain reproducibility and CRAN-level compliance.
-
-## Installation
-
-The package is implemented in R and relies on `Rcpp`, `nleqslv` and
-`boot` for the numerical back-end. The examples in this README also use
-`ggplot2`, `ggsurvfit`, `patchwork` and `modelsummary` for tabulation
-and plotting. Install the core package and these companion packages
-with:
-
-``` r
-install.packages("Rcpp")
-install.packages("nleqslv")
-install.packages("boot")
-install.packages("ggplot2")
-install.packages("ggsurvfit")
-install.packages("patchwork")
-install.packages("modelsummary")
-devtools::install_github("gestimation/cifmodeling")
-```
-
 If you only need the core functionality of `cifcurve()` and `polyreg()`,
 installing `Rcpp` and `nleqslv` are enough; the other packages are
 optional but recommended to reproduce the examples below.
 
-## Model specification of polyreg()
+## Direct polytomous modeling of CIFs
 
 The model for `polyreg()` is specified by three main components:
 
@@ -341,7 +348,7 @@ The model for `polyreg()` is specified by three main components:
 - Censoring adjustment: Specifies strata for inverse probability
   weighting to adjust for dependent censoring.
 
-### 1. Nuisance Model
+**1. Nuisance Model**
 
 The `nuisance.model` argument specifies the formula linking the outcome
 to covariates. Its format depends on the outcome type:
@@ -377,7 +384,7 @@ Event codes can be customized using `code.event1`, `code.event2`, and
 Covariates included in `nuisance.model` should adjust for confounding
 factors to obtain unbiased exposure effect estimates.
 
-### 2. Effect measures and time points
+**2. Effect measures and time points**
 
 Three effect measures available:
 
@@ -391,13 +398,13 @@ Set the desired measure using `effect.measure1` and, for competing risks
 analysis, `effect.measure2`. The `time.point` argument specifies the
 follow-up time at which effects are estimated.
 
-### 3. Censoring adjustment
+**3. Censoring adjustment**
 
 Inverse probability weights adjust for dependent censoring. Use
 `strata=` to specify stratification variables. If no strata are
 specified, Kaplan-Meier weights are used.
 
-## Return
+**Return**
 
 This function returns a list object that includes:
 
@@ -967,6 +974,20 @@ resampling loop. The resulting influence functions, weights, and fitted
 cumulative incidence probabilities are retained in
 `diagnostic.statistics` for downstream diagnostics.
 
+### Reproducibility and conventions for polyreg()
+
+- If convergence warnings appear, relax/tighten tolerances or cap the
+  parameter bound (`optim.parameter1` to `3`) and inspect
+  `report.optim.convergence = TRUE`.
+- If necessary, try modifying other `optim.parameter`, providing
+  use-specified initial values, or reducing the number of nuisance
+  parameters (e.g. provide `time.point` contributing to estimation when
+  using `“PROPORTIONAL-SURVIVAL”` and `“PROPORTIONAL-COMPETING-RISK”`).
+- Set `boot.seed` for reproducible bootstrap results.
+- Match CDISC ADaM conventions via `code.event1 = 0`,
+  `code.censoring = 1` (and, if applicable, `code.event2` for competing
+  events).
+
 ### Key arguments of msummary() that are helpful when reporting polyreg() results
 
 - `output` – controls the destination of the table (e.g., `"markdown"`,
@@ -993,7 +1014,7 @@ layout and styling options.
   `strata()`.
 - `data` A data frame containing variables in `formula`.
 - `weights` Optional name of the weight variable in `data`. Weights must
-  be nonnegative; strictly positive is recommended.
+  be nonnegative.
 - `subset.condition` Optional character expression to subset `data`
   before analysis.
 - `na.action` Function to handle missing values (default: `na.omit`).
@@ -1008,10 +1029,10 @@ layout and styling options.
 - `code.event1` Integer code of the event of interest (default `1`).
 - `code.event2` Integer code of the competing event (default `2`).
 - `code.censoring` Integer code of censoring (default `0`).
-- `error` Character specifying variance type used internally. For
-  `"SURVIVAL"` typically `"greenwood"`. For `"COMPETING-RISK"` pass
-  options supported by `calculateAalenDeltaSE()` (`"aalen"`, `"delta"`,
-  `"none"`).
+- `error` Character specifying the method for variance and standard
+  error used internally. For `"SURVIVAL"` typically `"greenwood"`. For
+  `"COMPETING-RISK"` pass options supported by `calculateAalenDeltaSE()`
+  (`"aalen"`, `"delta"`, `"none"`).
 - `conf.type` Character transformation for CI on the probability scale
   (default `"arcsine-square root"`).
 - `conf.int` numeric two-sided confidence level (default `0.95`).
@@ -1021,10 +1042,12 @@ layout and styling options.
 
 ### cifplot()
 
-- `x` A model formula or a survfit object.
+- `formula_or_fit` A model formula or a survfit object. Note: When a
+  formula is supplied, the left-hand side must be `Event(time, status)`
+  or `Surv(time, status)`.
 - `data` A data frame containing variables in `formula`.
 - `weights` Optional name of the weight variable in `data`. Weights must
-  be nonnegative; strictly positive is recommended.
+  be nonnegative.
 - `subset.condition` Optional character expression to subset `data`
   before analysis.
 - `na.action` Function to handle missing values (default: `na.omit`).
@@ -1039,14 +1062,10 @@ layout and styling options.
 - `code.event1` Integer code of the event of interest (default `1`).
 - `code.event2` Integer code of the competing event (default `2`).
 - `code.censoring` Integer code of censoring (default `0`).
-- `code.events` Optional numeric length-3 vector
-  `c(event1, event2, censoring)`. When supplied, it overrides
-  `code.event1`, `code.event2`, and `code.censoring`(primarily used when
-  `printEachEvent = TRUE`).
-- `error` Character specifying variance type used internally. For
-  `"SURVIVAL"` typically `"greenwood"`. For `"COMPETING-RISK"` pass
-  options supported by `calculateAalenDeltaSE()` (`"aalen"`, `"delta"`,
-  `"none"`).
+- `error` Character specifying the method for variance and standard
+  error used internally. For `"SURVIVAL"` typically `"greenwood"`. For
+  `"COMPETING-RISK"` pass options supported by `calculateAalenDeltaSE()`
+  (`"aalen"`, `"delta"`, `"none"`).
 - `conf.type` Character transformation for CI on the probability scale
   (default `"arcsine-square root"`).
 - `conf.int` numeric two-sided confidence level (default `0.95`).
@@ -1079,6 +1098,11 @@ layout and styling options.
 - `addEstimateTable` Logical add
   `add_risktable(risktable_stats="estimate (conf.low, conf.high)")` to
   plot (default `FALSE`).
+- `symbol.risktable` Character specifying the symbol used in the risk
+  table to denote strata: `"square"`, `"circle"`, or `"triangle"`
+  (default `"square"`).
+- `font.size.risktable` Numeric font size for texts in risk / estimate
+  tables (default `3`).
 - `addCensorMark` Logical add `add_censor_mark()` to plot. It calls
   `geom_point()` (default `TRUE`).
 - `shape.censor.mark` Integer point shape for censor marks (default
@@ -1135,18 +1159,58 @@ layout and styling options.
   panels when `formulas` is not provided.
 - `formulas` A list of formulas (one per panel). If provided, overrides
   `formula`.
-- `data` A data.frame containing variables used in the formula(s).
-- `outcome.type` Optional vector/list of outcome types per panel. One of
-  `"SURVIVAL"` or `"COMPETING-RISK"`. If `NULL` (default), the function
-  automatically infers the outcome type from the data: if the event
-  variable has more than two unique levels, `"COMPETING-RISK"` is
-  assumed; otherwise, `"SURVIVAL"` is used. You can also use
-  abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g.,
-  `c("S", "C")`) trigger automatic detection based on the event coding
-  in `data`.
-- `code.events` A list of numeric vectors per panel. For `SURVIVAL`:
-  `c(code.event1, code.censoring)`. For `COMPETING-RISK`:
-  `c(code.event1, code.event2, code.censoring)`.
+- `data` A data frame containing variables in `formula`.
+- `weights` Optional name of the weight variable in `data`. Weights must
+  be nonnegative.
+- `subset.condition` Optional character expression to subset `data`
+  before analysis.
+- `na.action` Function to handle missing values (default: `na.omit`).
+- `outcome.type` Character string specifying the type of time-to-event
+  outcome. One of `"SURVIVAL"` (Kaplan–Meier type) or `"COMPETING-RISK"`
+  (Aalen–Johansen type). If `NULL` (default), the function automatically
+  infers the outcome type from the data: if the event variable has more
+  than two unique levels, `"COMPETING-RISK"` is assumed; otherwise,
+  `"SURVIVAL"` is used. You can also use abbreviations such as `"S"` or
+  `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger
+  automatic detection based on the event coding in `data`.
+- `code.event1` Integer code of the event of interest (default `1`).
+- `code.event2` Integer code of the competing event (default `2`).
+- `code.censoring` Integer code of censoring (default `0`).
+- `error` Character specifying the method for variance and standard
+  error used internally. For `"SURVIVAL"` typically `"greenwood"`. For
+  `"COMPETING-RISK"` pass options supported by `calculateAalenDeltaSE()`
+  (`"aalen"`, `"delta"`, `"none"`).
+- `conf.type` Character transformation for CI on the probability scale
+  (default `"arcsine-square root"`).
+- `conf.int` numeric two-sided confidence level (default `0.95`).
+- `data` A data frame containing variables in `formula`.
+- `weights` Optional name of the weight variable in `data`. Weights must
+  be nonnegative.
+- `subset.condition` Optional character expression to subset `data`
+  before analysis.
+- `na.action` Function to handle missing values (default: `na.omit`).
+- `outcome.type` Character string specifying the type of time-to-event
+  outcome. One of `"SURVIVAL"` (Kaplan–Meier type) or `"COMPETING-RISK"`
+  (Aalen–Johansen type). If `NULL` (default), the function automatically
+  infers the outcome type from the data: if the event variable has more
+  than two unique levels, `"COMPETING-RISK"` is assumed; otherwise,
+  `"SURVIVAL"` is used. You can also use abbreviations such as `"S"` or
+  `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger
+  automatic detection based on the event coding in `data`.
+- `code.event1` Integer code of the event of interest (default `1`).
+- `code.event2` Integer code of the competing event (default `2`).
+- `code.censoring` Integer code of censoring (default `0`).
+- `error` Character specifying the method for variance and standard
+  error used internally. For `"SURVIVAL"` typically `"greenwood"`. For
+  `"COMPETING-RISK"` pass options supported by `calculateAalenDeltaSE()`
+  (`"aalen"`, `"delta"`, `"none"`).
+- `conf.type` Character transformation for CI on the probability scale
+  (default `"arcsine-square root"`).
+- `conf.int` numeric two-sided confidence level (default `0.95`).
+- `code.events` Optional numeric length-3 vector
+  `c(event1, event2, censoring)`. When supplied, it overrides
+  `code.event1`, `code.event2`, and `code.censoring` (primarily used
+  when `cifpanel()` is called or when `printEachEvent = TRUE`).
 - `type.y` Optional vector/list per panel: `"surv"` or `"risk"`.
 - `label.x`, `label.y` Optional vectors/lists of axis labels per panel.
 - `label.strata` Optional list of character vectors for legend labels
@@ -1180,7 +1244,6 @@ layout and styling options.
 - `inset.align_to` One of `"panel"`, `"plot"`, or `"full"`.
 - `inset.legend.position` Legend position for the inset plot (e.g.,
   `"none"`).
-- `print.panel` If `TRUE`, print the composed panel.
 - `filename.ggsave` Character save the composed panel with the path and
   name specified.
 - `width.ggsave` Numeric specify width of the composed panel.
@@ -1246,7 +1309,9 @@ layout and styling options.
 - `boot.replications` Integer giving the number of bootstrap
   replications. Defaults to `200`.
 - `boot.seed` Numeric seed used for resampling of bootstrap.
-- `nleqslv.method Character string defining the solver used by`nleqslv}`. Available choices include`“nleqslv”`,`“Broyden”`,`“Newton”`,`“optim”`,`“BFGS”`and`“SANN”\`.
+- `nleqslv.method` Character string defining the solver used by
+  `nleqslv}`. Available choices include `"nleqslv"`, `"Broyden"`,
+  `"Newton"`, `"optim"`, `"BFGS"` and `"SANN"`.
 - `optim.parameter1` Numeric tolerance for convergence of the outer
   loop. Defaults to `1e-6`.
 - `optim.parameter2` Numeric tolerance for convergence of the inner

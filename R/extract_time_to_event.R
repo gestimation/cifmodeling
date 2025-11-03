@@ -53,11 +53,17 @@
 #' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifplot()] for display of a CIF; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 extract_time_to_event <- function(
-    formula, data,
-    subset.condition = NULL, na.action = na.omit,
+    formula,
+    data,
+    subset.condition = NULL,
+    na.action = na.omit,
     which_event = c("event2", "event1", "censor", "censoring", "user_specified"),
-    code.event1 = 1, code.event2 = 2, code.censoring = 0, user_specified_code = NULL,
-    readUniqueTime = TRUE, dropEmpty = TRUE
+    code.event1 = 1,
+    code.event2 = 2,
+    code.censoring = 0,
+    user_specified_code = NULL,
+    readUniqueTime = TRUE,
+    dropEmpty = TRUE
 ){
   which_event <- match.arg(which_event)
   out_readSurv <- util_read_surv(

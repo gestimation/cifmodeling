@@ -2,7 +2,7 @@
 % Please edit documentation in R/cifcurve.R
 \name{cifcurve}
 \alias{cifcurve}
-\title{Calculate the Kaplan–Meier estimator and the Aalen–Johansen estimator with various SE and CI methods.}
+\title{Calculate the Kaplan–Meier estimator and the Aalen–Johansen estimator}
 \usage{
 cifcurve(
   formula,
@@ -21,39 +21,43 @@ cifcurve(
 )
 }
 \arguments{
-\item{formula}{A model formula specifying the outcome and (optionally) \code{strata()}.}
+\item{formula}{A model formula specifying the time-to-event outcome on the
+left-hand side (typically \code{Event(time, status)} or \code{Surv(time, status)})
+and, optionally, a stratification variable on the right-hand side.
+Unlike \code{\link{cifplot}}, this function does not accept a fitted
+\code{survfit} object.}
 
-\item{data}{A data frame containing variables in \code{formula}.}
+\item{data}{A data frame containing variables in the formula.}
 
-\item{weights}{Optional name of the weight variable in \code{data}. Weights must be nonnegative; strictly positive is recommended.}
+\item{weights}{Optional name of the weight variable in \code{data}. Weights must be nonnegative.}
 
 \item{subset.condition}{Optional character expression to subset \code{data} before analysis.}
 
-\item{na.action}{Function to handle missing values (default: \code{na.omit} in \pkg{stats}).}
+\item{na.action}{Function to handle missing values (default: \code{na.omit}).}
 
 \item{outcome.type}{Character string specifying the type of time-to-event outcome.
 One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
-If \code{NULL} (default), the function automatically infers the outcome type
-from the data: if the event variable has more than two unique levels,
-\code{"COMPETING-RISK"} is assumed; otherwise, \code{"SURVIVAL"} is used.
-You can also use abbreviations such as \code{"S"} or \code{"C"}.
-Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic
-detection based on the event coding in \code{data}.}
+If \code{NULL} (default), the function automatically infers the outcome type from the data:
+if the event variable has more than two unique levels, \code{"COMPETING-RISK"} is assumed;
+otherwise, \code{"SURVIVAL"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
+Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detection based on the event coding.}
 
-\item{code.event1}{Integer code of the event of interest (default \code{1}).}
+\item{code.event1}{Integer code of the event of interest.}
 
-\item{code.event2}{Integer code of the competing event (default \code{2}).}
+\item{code.event2}{Integer code of the competing event.}
 
-\item{code.censoring}{Integer code of censoring (default \code{0}).}
+\item{code.censoring}{Integer code of censoring.}
 
-\item{error}{Character specifying variance type used internally. For \code{"SURVIVAL"} typically \code{"greenwood"}.
-For \code{"COMPETING-RISK"} pass options supported by \code{calculateAalenDeltaSE()} (\code{"aalen"}, \code{"delta"}, \code{"none"}).}
+\item{error}{Character specifying the method for variance and standard error  used internally.}
 
-\item{conf.type}{Character transformation for CI on the probability scale (default \code{"arcsine-square root"}).}
+\item{conf.type}{Character specifying the method of transformation for confidence intervals  used internally.}
 
-\item{conf.int}{numeric two-sided confidence level (default \code{0.95}).}
+\item{conf.int}{Numeric two-sided confidence level  (default \code{0.95}).}
 
-\item{report.survfit.std.err}{If \code{TRUE}, report SE on the log-survival scale (survfit's convention). Otherwise SE is on the probability scale.}
+\item{report.survfit.std.err}{Logical. If \code{TRUE}, standard errors are
+reported on the \emph{log-survival} scale, matching \code{survfit()}'s
+default behaviour. If \code{FALSE} (default), SEs are on the probability
+scale, which is often more convenient when displaying CIFs.}
 }
 \value{
 A \code{survfit} object. For \code{outcome.type="SURVIVAL"}, \code{$surv} is the survival function.
@@ -61,20 +65,43 @@ For \code{outcome.type="COMPETING-RISK"}, \code{$surv} equals \code{1 - CIF} for
 Standard error and CIs are provided per \code{conf.type}. Note that some methods for \code{survfit} (e.g., \code{residuals.survfit}) may not be supported.
 }
 \description{
-Estimate and plot survival curves using the Kaplan–Meier estimator or
-cumulative incidence curves under competing risks using the Aalen–Johansen estimator.
-Returns a \code{survfit}-compatible object and, by default, draws a publication-ready plot via \pkg{ggsurvfit}.
+Core estimation routine that computes a \code{survfit}-compatible object
+from a formula + data interface (\code{Event()} or \code{Surv()} on
+the left-hand side, and a stratification variable on the right-hand side if necessary).
+Use this when you want \strong{numbers only} (KM / CIF + SE + CI) and
+you will plot it yourself (for example with \code{ggsurvfit} or \code{\link{cifplot}}).
+
+\strong{Outcome type and estimator}
+\itemize{
+\item \code{outcome.type = "SURVIVAL"} → Kaplan–Meier estimator
+\item \code{outcome.type = "COMPETING-RISK"} → Aalen–Johansen estimator
+}
+
+\strong{Confidence intervals}
+\itemize{
+\item \code{conf.int} sets the two-sided level (default 0.95)
+\item \code{conf.type} chooses the transformation (\code{"arcsin"}, \code{"plain"}, \code{"log"}, \code{"log-log"}, \code{"logit"}, or \code{"none"})
+\item \code{error} chooses the estimator for standard error (\code{"greenwood"} or \code{"tsiatis"} for survival curves and \code{"delta"} or \code{"aalen"} for CIFs)
+}
 }
 \details{
-\strong{Estimation:}
 \itemize{
-\item \code{outcome.type = "SURVIVAL"}: Kaplan–Meier estimator with Greenwood-type variance.
-\item \code{outcome.type = "COMPETING-RISK"}: Aalen–Johansen estimator for CIF of \code{code.event1}
-using IPCW for the censoring distribution. The returned \code{surv} corresponds to \code{1 - CIF}.
+\item When \code{outcome.type = "SURVIVAL"}, this is a thin wrapper around KM with the
+chosen variance / CI transformation.
+\item When \code{outcome.type = "COMPETING-RISK"}, this computes the Aalen–Johansen
+cumulative incidence for \code{code.event1}. The returned \code{$surv} is
+\code{1 - CIF}, i.e. in the format that \pkg{ggsurvfit} expects.
+\item Use \code{\link{cifplot}} if you want to go straight to a figure; use
+\code{cifcurve()} if you only want the numbers.
 }
-\strong{Confidence intervals:}
-Constructed on the probability scale with the specified \code{conf.type}.
-If \code{conf.type \%in\% c("none","n")}, the plot suppresses CI bands.
+\subsection{Standard error and confidence intervals}{\tabular{lll}{
+   Argument \tab Description \tab Default \cr
+   \code{error} \tab Standard error for KM: \code{"greenwood"}, \code{"tsiatis"}. For CIF: \code{"aalen"}, \code{"delta"}, \code{"none"}. \tab \code{"greenwood"} or \code{"delta"} \cr
+   \code{conf.type} \tab Transformation for confidence intervals: \code{"plain"}, \code{"log"}, \code{"log-log"}, \code{"arcsin"}, \code{"logit"}, or \code{"none"}. \tab \code{"arcsin"} \cr
+   \code{conf.int} \tab Two-sided confidence interval level. \tab \code{0.95} \cr
+}
+
+}
 }
 \examples{
 data(diabetes.complications)

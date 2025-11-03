@@ -35,7 +35,7 @@ plot_make_dots_clean <- function(dots) {
   plot_drop_panel_only_args <- function(dots) {
     panel_only <- c(
       "rows.columns.panel", "legend.collect", "title.panel", "subtitle.panel",
-      "caption.panel", "print.panel", "title.plot", "zoom.position"
+      "caption.panel", "title.plot", "zoom.position"
     )
     if (length(dots) && !is.null(names(dots))) {
       dots[setdiff(names(dots), panel_only)]
@@ -125,7 +125,7 @@ plot_apply_style <- function(
     p,
     style = c("CLASSIC", "BOLD", "FRAMED", "GRID", "GRAY"),
     font.family = "sans",
-    font.size = 14,
+    font.size = 12,
     legend.position = "top",
     n_strata = 6,
     palette_colors = NULL,
@@ -142,10 +142,91 @@ plot_apply_style <- function(
     GRID       = plot_style_grid(font.family, font.size, legend.position),
     GRAY       = plot_style_gray(font.family, font.size, legend.position)
   )
-  p + style_theme
+
+  # ★ここで「レジェンドを絶対に出す」方向に倒す
+  p <- p + style_theme
+
+  # strata が分かれてるなら、ここで上書き
+  if (!is.null(strata_levels_final) && length(strata_levels_final) > 1L) {
+    p <- p + ggplot2::theme(legend.position = legend.position %||% "top")
+  }
+
+  p
 }
 
 plot_apply_all_scales <- function(
+    p,
+    style,
+    palette,
+    n_strata,
+    strata_levels_final,
+    strata_labels_final,
+    limits_arg = NULL
+) {
+  p <- plot_strip_mapped_scales(p)
+
+  lvls <- limits_arg
+  labs <- if (is.null(lvls) || identical(lvls, character())) NULL else strata_labels_final
+
+  n_effective <- if (!is.null(lvls) && length(lvls)) length(lvls) else n_strata %||% 1L
+  n_effective <- max(1L, n_effective)
+
+  use_manual <- !is.null(palette)
+  palette_info <- plot_resolve_palette_color(lvls, palette, n_effective)
+  col_values   <- unname(rep_len(palette_info$values, n_effective))
+  if (!is.null(lvls) && length(lvls)) {
+    names(col_values) <- NULL
+  }
+
+  if (use_manual) {
+    color_scale <- ggplot2::scale_color_manual(
+      values = col_values,
+      limits = lvls,
+      labels = labs,
+      drop   = FALSE
+    )
+    fill_scale <- ggplot2::scale_fill_manual(
+      values = col_values,
+      limits = lvls,
+      labels = labs,
+      drop   = FALSE,
+      guide  = "none"
+    )
+
+    color_scale$scale_name <- "manual"
+    fill_scale$scale_name  <- "manual"
+    if (!inherits(color_scale, "ScaleDiscreteManual")) {
+      class(color_scale) <- c("ScaleDiscreteManual", class(color_scale))
+    }
+    if (!inherits(fill_scale, "ScaleDiscreteManual")) {
+      class(fill_scale) <- c("ScaleDiscreteManual", class(fill_scale))
+    }
+  } else {
+    color_scale <- ggplot2::scale_color_discrete(
+      limits = lvls, labels = labs, drop = FALSE
+    )
+    fill_scale <- ggplot2::scale_fill_discrete(
+      limits = lvls, labels = labs, drop = FALSE, guide = "none"
+    )
+  }
+
+  p +
+    color_scale +
+    fill_scale +
+    ggplot2::scale_linetype_discrete(
+      limits = lvls,
+      labels = labs,
+      drop = FALSE
+    ) +
+    ggplot2::scale_shape_discrete(
+      limits = lvls,
+      labels = labs,
+      drop = FALSE,
+      guide = "none"
+    )
+}
+
+plot_apply_all_scales_old <- function(
     p,
     style,
     palette,
@@ -331,39 +412,39 @@ plot_normalize_formula_data <- function(formula, data, median_threshold = 9L) {
   list(data = out_data, info = info)
 }
 
-plot_style_classic <- function(font.family = "sans", font.size = 14, legend.position = "top") {
+plot_style_classic <- function(font.family = "sans", font.size = 12, legend.position = "top") {
   ggplot2::theme_classic(base_size = font.size, base_family = font.family) +
     ggplot2::theme(
       legend.position   = legend.position,
-      axis.title        = ggplot2::element_text(size = font.size + 4, family = font.family),
-      axis.text         = ggplot2::element_text(size = font.size,     family = font.family),
-      legend.text       = ggplot2::element_text(size = font.size + 4, family = font.family),
+      axis.title        = ggplot2::element_text(size = font.size + 3, family = font.family),
+      axis.text         = ggplot2::element_text(size = font.size + 1, family = font.family),
+      legend.text       = ggplot2::element_text(size = font.size + 3, family = font.family),
       legend.background = ggplot2::element_rect(fill = "transparent", color = NA),
       panel.background  = element_rect(fill = "transparent", color = NA),
       panel.border      = ggplot2::element_blank()
     )
 }
 
-plot_style_bold <- function(font.family = "sans", font.size = 14, legend.position = "top") {
+plot_style_bold <- function(font.family = "sans", font.size = 12, legend.position = "top") {
   ggplot2::theme_classic(base_size = font.size, base_family = font.family) +
     ggplot2::theme(
       legend.position   = legend.position,
-      axis.title        = ggplot2::element_text(size = font.size + 3, face = "bold", family = font.family),
+      axis.title        = ggplot2::element_text(size = font.size + 2, face = "bold", family = font.family),
       axis.text         = ggplot2::element_text(size = font.size,     family = font.family),
-      legend.text       = ggplot2::element_text(size = font.size,     family = font.family),
+      legend.text       = ggplot2::element_text(size = font.size + 2, family = font.family),
       legend.background = ggplot2::element_rect(fill = "transparent", color = NA),
       panel.background  = element_rect(fill = "transparent", color = NA),
       panel.border      = ggplot2::element_blank()
     )
 }
 
-plot_style_framed <- function(font.family = "sans", font.size = 14, legend.position = "top") {
+plot_style_framed <- function(font.family = "sans", font.size = 12, legend.position = "top") {
   ggplot2::theme_bw(base_size = font.size, base_family = font.family) +
     ggplot2::theme(
       legend.position   = legend.position,
-      axis.title        = ggplot2::element_text(size = font.size + 3, face = "bold", family = font.family),
+      axis.title        = ggplot2::element_text(size = font.size + 2, face = "bold", family = font.family),
       axis.text         = ggplot2::element_text(size = font.size,     family = font.family),
-      legend.text       = ggplot2::element_text(size = font.size,     family = font.family),
+      legend.text       = ggplot2::element_text(size = font.size + 2, family = font.family),
       legend.background = ggplot2::element_rect(fill = "transparent", color = NA),
       panel.background  = element_rect(fill = "transparent", color = NA),
       panel.grid        = ggplot2::element_blank(),
@@ -371,26 +452,26 @@ plot_style_framed <- function(font.family = "sans", font.size = 14, legend.posit
     )
 }
 
-plot_style_grid <- function(font.family = "sans", font.size = 14, legend.position = "top") {
+plot_style_grid <- function(font.family = "sans", font.size = 12, legend.position = "top") {
   ggplot2::theme_bw(base_size = font.size, base_family = font.family) +
     ggplot2::theme(
       legend.position   = legend.position,
-      axis.title        = ggplot2::element_text(size = font.size + 3, face = "bold", family = font.family),
+      axis.title        = ggplot2::element_text(size = font.size + 2, face = "bold", family = font.family),
       axis.text         = ggplot2::element_text(size = font.size,     family = font.family),
-      legend.text       = ggplot2::element_text(size = font.size,     family = font.family),
+      legend.text       = ggplot2::element_text(size = font.size + 2, family = font.family),
       legend.background = ggplot2::element_rect(fill = "transparent", color = NA),
       panel.background  = element_rect(fill = "transparent", color = NA),
       panel.border      = ggplot2::element_rect(color = "black", linewidth = 2)
     )
 }
 
-plot_style_gray <- function(font.family = "sans", font.size = 14, legend.position = "top") {
+plot_style_gray <- function(font.family = "sans", font.size = 12, legend.position = "top") {
   ggplot2::theme_bw(base_size = font.size, base_family = font.family) +
     ggplot2::theme(
       legend.position   = legend.position,
-      axis.title        = ggplot2::element_text(size = font.size + 3, face = "bold", family = font.family),
+      axis.title        = ggplot2::element_text(size = font.size + 2, face = "bold", family = font.family),
       axis.text         = ggplot2::element_text(size = font.size,     family = font.family),
-      legend.text       = ggplot2::element_text(size = font.size,     family = font.family),
+      legend.text       = ggplot2::element_text(size = font.size + 2, family = font.family),
       legend.background = ggplot2::element_rect(fill = "transparent", color = NA),
       panel.background  = element_rect(fill = 'gray97'),
       panel.grid        = ggplot2::element_blank(),
@@ -505,48 +586,658 @@ plot_make_x_max <- function(sf) {
   return(1)
 }
 
-plot_make_label.strata.map <- function(fit, label.strata) {
-  .sf_strata_names <- function(fit) {
-    if (is.null(fit$strata)) return(NULL)
-    nm <- names(fit$strata)
-    if (is.null(nm)) return(NULL)
-    nm
-  }
-  .canon_str <- function(x) sub("^.*?=", "", as.character(x))  # "strata=level" > "level"
-
+plot_make_label.strata.map <- function(survfit_object,
+                                       label.strata,
+                                       level.strata = NULL) {
   if (is.null(label.strata)) return(NULL)
 
-  fit_names <- .sf_strata_names(fit)
-  if (is.null(fit_names)) return(NULL)
-  if (!is.null(names(label.strata)) && any(nzchar(names(label.strata)))) {
-    key_in  <- .canon_str(names(label.strata))
-    key_fit <- .canon_str(fit_names)
-    idx <- match(key_fit, key_in)
-    if (all(!is.na(idx))) {
-      out <- unname(label.strata[idx])
-      names(out) <- fit_names
-      return(out)
-    } else {
-      ok <- which(!is.na(idx))
-      if (length(ok) > 0L) {
-        out <- unname(label.strata[idx[ok]])
-        names(out) <- fit_names[ok]
-        warning("Some label.strata names did not match strata and were ignored: ",
-                paste(setdiff(key_in, key_fit), collapse = ", "), call. = FALSE)
-        return(out)
+  cur_lvls_full  <- if (!is.null(survfit_object$strata)) unique(names(survfit_object$strata)) else NULL
+  cur_lvls_short <- if (!is.null(cur_lvls_full)) sub(".*?=", "", cur_lvls_full) else NULL
+
+  if ((is.null(names(label.strata)) || !any(nzchar(names(label.strata))))) {
+    if (!is.null(level.strata)) {
+      if (!is.null(cur_lvls_full) && length(label.strata) != length(cur_lvls_full)) {
+        stop("`label.strata` length must match the number of strata.")
+      }
+
+      lbl_map <- stats::setNames(as.character(label.strata),
+                                 as.character(level.strata))
+
+      if (!is.null(cur_lvls_short) &&
+          setequal(as.character(level.strata), cur_lvls_short)) {
+        idx <- match(as.character(level.strata), cur_lvls_short)
+        names(lbl_map) <- cur_lvls_full[idx]
+      }
+
+      return(lbl_map)
+    }
+    if (length(label.strata) != length(cur_lvls_full)) {
+      stop("`label.strata` length must match the number of strata.")
+    }
+    lbl_map <- stats::setNames(label.strata, cur_lvls_full)
+    return(lbl_map)
+  }
+
+  nm <- names(label.strata)
+
+  if (!is.null(cur_lvls_full) && all(nm %in% cur_lvls_full)) {
+    return(label.strata)
+  }
+
+  if (!is.null(cur_lvls_short) && all(nm %in% cur_lvls_short)) {
+    idx <- match(nm, cur_lvls_short)
+    names(label.strata) <- cur_lvls_full[idx]
+    return(label.strata)
+  }
+
+  if (length(label.strata) == length(cur_lvls_full)) {
+    lbl_map <- stats::setNames(unname(label.strata), cur_lvls_full)
+    return(lbl_map)
+  }
+
+  stop("`label.strata` names must be strata levels (full or short).")
+}
+
+plot_survfit_strata_labels <- function(survfit_object,
+                                       strata.label,
+                                       recycle_ok = FALSE) {
+  if (is.null(survfit_object)) return(survfit_object)
+
+  nms <- names(survfit_object$strata)
+
+  # strata に名前がないときは「文字列そのものを名前にする」しかできない
+  if (is.null(nms) || !length(nms)) {
+    new_nms <- as.character(strata.label)
+    if (length(new_nms) != length(survfit_object$strata)) {
+      if (recycle_ok) {
+        new_nms <- rep_len(new_nms, length(survfit_object$strata))
       } else {
-        warning("No names in label.strata matched strata; falling back to order.", call. = FALSE)
+        stop("Length of `strata.label` does not match number of strata.", call. = FALSE)
+      }
+    }
+    names(survfit_object$strata) <- new_nms
+    return(survfit_object)
+  }
+
+  # ここからは「もともと名前がある」ケース
+  # nms が "var=level" 形式かもしれないので左右に割る
+  has_eq <- grepl("=", nms, fixed = TRUE)
+  lhs    <- ifelse(has_eq, sub("^\\s*([^=]+)\\s*=.*$", "\\1", nms, perl = TRUE), NA_character_)
+  rhs    <- ifelse(has_eq, sub("^.*?=\\s*", "", nms, perl = TRUE), nms)
+
+  lab <- strata.label
+
+  # 1) label が full 名できている（"fruitq1=0" など）→ そのまま採用
+  if (!is.null(names(lab)) && length(intersect(names(lab), nms)) == length(nms)) {
+    new_rhs <- unname(lab[nms])
+
+    # 2) label が short 名できている（"0","1" など）→ 右側にマッチさせる
+  } else if (!is.null(names(lab)) && length(intersect(names(lab), rhs)) == length(nms)) {
+    new_rhs <- unname(lab[rhs])
+
+    # 3) 名前なしベクトルなら長さで対応
+  } else {
+    lab <- as.character(lab)
+    if (length(lab) != length(nms)) {
+      if (recycle_ok) lab <- rep_len(lab, length(nms))
+      else stop("Length of `strata.label` does not match number of strata.", call. = FALSE)
+    }
+    new_rhs <- lab
+  }
+
+  # ★★ ここが重要 ★★
+  # "=" が元からあったものは、左側（変数名）を残して右側だけ差し替える
+  new_nms <- character(length(nms))
+  for (i in seq_along(nms)) {
+    if (isTRUE(has_eq[i]) && !is.na(lhs[i])) {
+      new_nms[i] <- paste0(lhs[i], "=", new_rhs[i])
+    } else {
+      # "=" がなかったやつは右側をそのまま名前にする
+      new_nms[i] <- new_rhs[i]
+    }
+  }
+
+  names(survfit_object$strata) <- new_nms
+  return(survfit_object)
+}
+
+plot_reconcile_order_and_labels <- function(
+    survfit_object,
+    level.strata    = NULL,   # ユーザーが「元の層は0/1だよ」と言いたいとき
+    order.strata    = NULL,   # 並べ順の指定（"0","1" でも "x=0","x=1" でもOK）
+    label.strata.map = NULL   # 表示名の指定（名前あり/なしどっちでもOK）
+) {
+  # ------------------------------------------------------------
+  # 0. survfit からいま使ってる層名をとる
+  # ------------------------------------------------------------
+  cur_lvls_full <- NULL
+  if (!is.null(survfit_object$strata)) {
+    cur_lvls_full <- unique(names(survfit_object$strata))
+  }
+
+  # "x=0" みたいな形なら右側を short にする
+  cur_lvls_short <- NULL
+  if (!is.null(cur_lvls_full)) {
+    if (any(grepl("=", cur_lvls_full, fixed = TRUE))) {
+      cur_lvls_short <- sub(".*?=", "", cur_lvls_full)
+    } else {
+      # すでに short になってるパターン
+      cur_lvls_short <- cur_lvls_full
+    }
+  }
+
+  # 実データが持ってる順をベースにする
+  base_levels <- cur_lvls_full
+
+  # ------------------------------------------------------------
+  # 1. label.strata.map が「名前なし」で来たら名前をつける
+  # ------------------------------------------------------------
+  if (!is.null(label.strata.map)) {
+    nm <- names(label.strata.map)
+    if (is.null(nm) || !any(nzchar(nm))) {
+      # 名前が無いなら、まず level.strata を優先
+      if (!is.null(level.strata)) {
+        label.strata.map <- stats::setNames(as.character(label.strata.map),
+                                            as.character(level.strata))
+      } else if (!is.null(cur_lvls_full)) {
+        # それもなければ、実データのキーにつける
+        label.strata.map <- stats::setNames(as.character(label.strata.map),
+                                            cur_lvls_full)
       }
     }
   }
-  if (length(label.strata) == length(fit_names)) {
-    out <- label.strata
-    names(out) <- fit_names
-    return(out)
+
+  # ------------------------------------------------------------
+  # 2. ラベル指定がまったく無いときのデフォルト
+  #    → 実データが "x=0","x=1" で short が "0","1" なら short を表示にする
+  # ------------------------------------------------------------
+  if (is.null(label.strata.map)) {
+    if (!is.null(cur_lvls_full) &&
+        !is.null(cur_lvls_short) &&
+        length(cur_lvls_full) == length(cur_lvls_short) &&
+        !identical(cur_lvls_full, cur_lvls_short)) {
+      # 表示は short, key は full
+      label.strata.map <- stats::setNames(cur_lvls_short, cur_lvls_full)
+    } else if (!is.null(cur_lvls_full)) {
+      # そのまま表示
+      label.strata.map <- stats::setNames(cur_lvls_full, cur_lvls_full)
+    } else {
+      # strata 自体が無いケース（単一カーブ）
+      label.strata.map <- NULL
+    }
   }
-  warning(sprintf(
-    "Length of label.strata (%d) does not match number of strata (%d); labels ignored.",
-    length(label.strata), length(fit_names)
-  ), call. = FALSE)
-  return(NULL)
+
+  # ------------------------------------------------------------
+  # 3. order.strata を “実データのキー” に寄せる
+  #    ユーザーが "0","1" で渡しても "x=0","x=1" にくっつける
+  # ------------------------------------------------------------
+  map_to_full <- function(x) {
+    if (is.null(x)) return(NULL)
+    x <- as.character(x)
+    out <- rep(NA_character_, length(x))
+
+    # そのまま full に当ててみる
+    if (!is.null(cur_lvls_full)) {
+      hit_full <- x %in% cur_lvls_full
+      out[hit_full] <- x[hit_full]
+    }
+
+    # full に無かったやつは short → full で当てる
+    if (!is.null(cur_lvls_full) && !is.null(cur_lvls_short)) {
+      hit_short <- x %in% cur_lvls_short
+      out[hit_short] <- cur_lvls_full[match(x[hit_short], cur_lvls_short)]
+    }
+
+    out
+  }
+  order_full <- map_to_full(order.strata)
+
+  # ------------------------------------------------------------
+  # 4. ラベルを base_levels の順にそろえる（足りなければ埋める）
+  # ------------------------------------------------------------
+  if (!is.null(label.strata.map) && !is.null(base_levels)) {
+    missing <- setdiff(base_levels, names(label.strata.map))
+    if (length(missing)) {
+      # 足りないところはキーそのまま
+      label.strata.map <- c(label.strata.map,
+                            stats::setNames(missing, missing))
+    }
+    # 実データの並びに並べ替える
+    label.strata.map <- label.strata.map[base_levels]
+  }
+
+  # ------------------------------------------------------------
+  # 5. limits を決める（これは ggplot の scale_* にそのまま渡すやつ）
+  # ------------------------------------------------------------
+  limits_arg <- base_levels
+  used_order <- FALSE
+  forbid_limits_due_to_order <- FALSE
+
+  if (!is.null(order_full) && !all(is.na(order_full))) {
+    ord_clean <- unique(order_full[!is.na(order_full)])
+    known <- ord_clean[ord_clean %in% base_levels]
+    rest  <- setdiff(base_levels, known)
+    limits_arg <- c(known, rest)
+    used_order <- TRUE
+  }
+
+  strata_levels_final <- if (length(limits_arg)) limits_arg else NULL
+  strata_labels_final <- if (!is.null(label.strata.map)) unname(label.strata.map) else NULL
+
+  list(
+    limits_arg             = limits_arg,
+    label.strata.map       = label.strata.map,
+    strata_levels_final    = strata_levels_final,
+    strata_labels_final    = strata_labels_final,
+    forbid_limits_due_to_order = forbid_limits_due_to_order,
+    used_order             = used_order
+  )
 }
+
+plot_reconcile_order_and_labels_old <- function(
+    cur_lvls_full,
+    cur_lvls_short,
+    level.strata = NULL,
+    order.strata = NULL,
+    label.strata.map = NULL
+) {
+
+  # 1) label.strata.map が「名前なしベクトル」で来たら level.strata で名前を付ける
+  if (!is.null(label.strata.map)) {
+    nm <- names(label.strata.map)
+    if (is.null(nm) || !any(nzchar(nm))) {
+      label.strata.map <- stats::setNames(as.character(label.strata.map),
+                                          as.character(level.strata))
+    }
+  }
+
+  # 1.5) ★ ラベル指定がまったく無いときのデフォルトを作る
+  if (is.null(label.strata.map)) {
+    if (!is.null(cur_lvls_short)) {
+      # 例: c("A","B")
+      label.strata.map <- stats::setNames(cur_lvls_short, cur_lvls_full)
+    } else {
+      # short がないなら full をそのまま表示
+      label.strata.map <- stats::setNames(cur_lvls_full, cur_lvls_full)
+    }
+  }
+
+  # 2) ラベルが short 名で来てたら full に直す
+  .remap_to_full_if_needed <- function(lbl_map, full, short) {
+    if (is.null(lbl_map) || is.null(full) || is.null(short)) return(lbl_map)
+    nm <- names(lbl_map); if (!length(nm)) return(lbl_map)
+    if (!all(nm %in% full) && all(nm %in% short)) {
+      idx <- match(nm, short)
+      names(lbl_map) <- full[idx]
+    }
+    lbl_map
+  }
+  label.strata.map <- .remap_to_full_if_needed(label.strata.map, cur_lvls_full, cur_lvls_short)
+
+  # 3) order.strata も short → full に寄せる
+  map_to_full <- function(x) {
+    if (is.null(x)) return(NULL)
+    out <- rep(NA_character_, length(x))
+    if (!is.null(cur_lvls_full)) {
+      hit_f <- x %in% cur_lvls_full
+      out[hit_f] <- x[hit_f]
+    }
+    if (!is.null(cur_lvls_short)) {
+      hit_s <- x %in% cur_lvls_short
+      out[hit_s] <- cur_lvls_full[match(x[hit_s], cur_lvls_short)]
+    }
+    out
+  }
+  order_full_raw <- map_to_full(order.strata)
+
+  # 4) 実データにある順をベースに
+  base_levels <- cur_lvls_full %||% as.character(level.strata)
+
+  # 5) ラベルを base_levels の順にそろえる（足りなければ追加）
+  if (!is.null(label.strata.map)) {
+    missing <- setdiff(base_levels, names(label.strata.map))
+    if (length(missing)) {
+      label.strata.map <- c(label.strata.map,
+                            stats::setNames(missing, missing))
+    }
+    label.strata.map <- label.strata.map[base_levels]
+  }
+
+  limits_arg <- NULL
+  used_order <- FALSE
+  forbid_limits_due_to_order <- FALSE
+
+  # 6) order.strata があればそれを最優先
+  if (!is.null(order_full_raw) && !all(is.na(order_full_raw))) {
+    ord_clean <- unique(order_full_raw[!is.na(order_full_raw)])
+    known <- ord_clean[ord_clean %in% base_levels]
+    rest  <- setdiff(base_levels, known)
+    limits_arg <- c(known, rest)
+    used_order <- TRUE
+
+    if (!is.null(label.strata.map)) {
+      label.strata.map <- label.strata.map[limits_arg]
+    }
+  } else {
+    limits_arg <- base_levels
+  }
+
+  strata_levels_final <- if (length(limits_arg)) limits_arg else NULL
+  strata_labels_final <- if (!is.null(label.strata.map)) unname(label.strata.map) else NULL
+
+  list(
+    limits_arg = limits_arg,
+    label.strata.map = label.strata.map,
+    strata_levels_final = strata_levels_final,
+    strata_labels_final = strata_labels_final,
+    forbid_limits_due_to_order = forbid_limits_due_to_order,
+    used_order = used_order
+  )
+}
+
+plot_ensure_factor_strata <- function(formula, data) {
+  rhs <- all.vars(update(formula, . ~ .))
+  rhs <- setdiff(rhs, all.vars(update(formula, . ~ 0)))
+  for (v in rhs) {
+    if (v %in% names(data)) {
+      x <- data[[v]]
+      if (is.numeric(x) || is.integer(x) || is.logical(x)) {
+        data[[v]] <- factor(x)
+      }
+    }
+  }
+  list(formula = formula, data = data)
+}
+
+plot_needs_survfit_label_update <- function(
+    survfit_object,
+    label.strata = NULL,
+    order.strata = NULL,
+    level.strata = NULL
+) {
+  if (!inherits(survfit_object, "survfit")) {
+    return(FALSE)
+  }
+
+  cur_lvls_full <- if (!is.null(survfit_object$strata)) unique(names(survfit_object$strata)) else NULL
+  if (is.null(cur_lvls_full)) {
+    return(FALSE)
+  }
+
+  cur_lvls_short <- sub(".*?=", "", cur_lvls_full)
+
+  if (is.null(label.strata) && is.null(order.strata) && is.null(level.strata)) {
+    return(FALSE)
+  }
+
+  cand <- character()
+
+  if (!is.null(label.strata)) {
+#    if (!is.null(names(label.strata)) && any(nzchar(names(label.strata)))) {
+#      cand <- c(cand, names(label.strata))
+#    } else {
+      cand <- c(cand, as.character(label.strata))
+#    }
+  }
+
+#  if (!is.null(order.strata)) {
+#    cand <- c(cand, as.character(order.strata))
+#  }
+
+#  if (!is.null(level.strata)) {
+#    cand <- c(cand, as.character(level.strata))
+#  }
+
+  cand <- cand[!is.na(cand) & nzchar(cand)]
+
+  if (!length(cand)) {
+    return(FALSE)
+  }
+
+  same_short <- setequal(cur_lvls_short, cand)
+
+  if (same_short) {
+    return(FALSE)
+  }
+
+  same_full <- setequal(cur_lvls_full, cand)
+  if (same_full) {
+    return(FALSE)
+  }
+
+  TRUE
+}
+
+
+plot_decide_panel_mode <- function(
+    formula_or_fit,
+    data,
+    outcome.type,
+    panel.info,
+    printPanel
+) {
+  if (isTRUE(panel.info$printEachVar))   return("each_var")
+  if (isTRUE(panel.info$printEachEvent)) return("each_event")
+  if (isTRUE(panel.info$printCensoring)) return("censoring")
+
+  if (!isTRUE(printPanel)) {
+    return("none")
+  }
+
+  if (inherits(formula_or_fit, "survfit")) {
+    return("none")
+  }
+
+  if (!inherits(formula_or_fit, "formula")) {
+    return("none")
+  }
+
+  tt   <- terms(formula_or_fit)
+  vars <- attr(tt, "term.labels")
+  n_rhs <- length(vars)
+
+  if (n_rhs >= 2L) {
+    return("each_var")
+  }
+
+  if (identical(outcome.type, "COMPETING-RISK")) {
+    return("each_event")
+  } else if (identical(outcome.type, "SURVIVAL")) {
+    return("censoring")
+  }
+
+  return("none")
+}
+
+plot_force_strata_legend <- function(p,
+                                     strata_levels = NULL,
+                                     strata_labels = NULL) {
+
+  scs <- p$scales$scales
+  has_colour <- FALSE
+  if (length(scs)) {
+    for (i in seq_along(scs)) {
+      sc <- scs[[i]]
+      aes <- tryCatch(sc$aesthetics, error = function(e) NULL)
+      if (!is.null(aes) && any(aes %in% c("colour", "color"))) {
+        sc$guide <- "legend"
+
+        if (!is.null(strata_levels)) sc$limits <- strata_levels
+        if (!is.null(strata_labels)) sc$labels <- strata_labels
+
+        p$scales$scales[[i]] <- sc
+        has_colour <- TRUE
+      }
+    }
+  }
+
+  if (!has_colour) {
+    p <- p + ggplot2::scale_color_discrete(
+      limits = strata_levels,
+      labels = strata_labels,
+      drop   = FALSE,
+      guide  = "legend"
+    )
+  }
+
+  p <- p + ggplot2::guides(
+    colour  = ggplot2::guide_legend(override.aes = list(fill = NA)),
+    linetype = ggplot2::guide_legend()
+  )
+
+  return(p)
+}
+
+plot_survfit_short_strata_names <- function(survfit_object) {
+  if (is.null(survfit_object) || is.null(survfit_object$strata)) return(survfit_object)
+
+  nm <- names(survfit_object$strata)
+  if (is.null(nm) || !length(nm)) return(survfit_object)
+
+  idx <- grepl("=", nm, fixed = TRUE)
+  if (!any(idx)) return(survfit_object)
+
+  short <- sub(".*?=", "", nm[idx])
+  short <- trimws(short)
+
+  nn <- nm
+  nn[idx] <- short
+  names(survfit_object$strata) <- nn
+  survfit_object
+}
+
+cifplot_build_info <- function(
+  error,
+  conf.type,
+  conf.int,
+
+  type.y,
+  label.x,
+  label.y,
+  level.strata,
+  label.strata,
+  order.strata,
+  limits.x,
+  limits.y,
+  breaks.x,
+  breaks.y,
+  use_coord_cartesian,
+
+  addConfidenceInterval,
+  addRiskTable,
+  addEstimateTable,
+  symbol.risktable,
+  font.size.risktable,
+  addCensorMark,
+  shape.censor.mark,
+  size.censor.mark,
+  addCompetingRiskMark,
+  competing.risk.time,
+  shape.competing.risk.mark,
+  size.competing.risk.mark,
+  addIntercurrentEventMark,
+  intercurrent.event.time,
+  shape.intercurrent.event.mark,
+  size.intercurrent.event.mark,
+  addQuantileLine,
+  quantile,
+
+  printEachEvent,
+  printCensoring,
+  printEachVar,
+  rows.columns.panel,
+
+  style,
+  palette,
+  font.family,
+  font.size,
+  legend.position,
+
+  filename.ggsave,
+  width.ggsave,
+  height.ggsave,
+  dpi.ggsave,
+
+  survfit.info = NULL,
+  axis.info    = NULL,
+  visual.info  = NULL,
+  panel.info   = NULL,
+  style.info   = NULL,
+  ggsave.info  = NULL
+) {
+
+  survfit.info <- modifyList(list(
+    error     = error,
+    conf.type = conf.type,
+    conf.int  = conf.int
+  ), survfit.info %||% list())
+
+  axis.info <- modifyList(list(
+    type.y              = type.y,
+    label.x             = label.x,
+    label.y             = label.y,
+    level.strata        = level.strata,
+    label.strata        = label.strata,
+    order.strata        = order.strata,
+    limits.x            = limits.x,
+    limits.y            = limits.y,
+    breaks.x            = breaks.x,
+    breaks.y            = breaks.y,
+    use_coord_cartesian = use_coord_cartesian
+  ), axis.info %||% list())
+
+  visual.info <- modifyList(list(
+    addConfidenceInterval        = addConfidenceInterval,
+    addRiskTable                 = addRiskTable,
+    addEstimateTable             = addEstimateTable,
+    symbol.risktable             = symbol.risktable,
+    font.size.risktable          = font.size.risktable,
+    addCensorMark                = addCensorMark,
+    shape.censor.mark            = shape.censor.mark,
+    size.censor.mark             = size.censor.mark,
+    addCompetingRiskMark         = addCompetingRiskMark,
+    competing.risk.time          = competing.risk.time,
+    shape.competing.risk.mark    = shape.competing.risk.mark,
+    size.competing.risk.mark     = size.competing.risk.mark,
+    addIntercurrentEventMark     = addIntercurrentEventMark,
+    intercurrent.event.time      = intercurrent.event.time,
+    shape.intercurrent.event.mark= shape.intercurrent.event.mark,
+    size.intercurrent.event.mark = size.intercurrent.event.mark,
+    addQuantileLine              = addQuantileLine,
+    quantile                     = quantile
+  ), visual.info %||% list())
+
+  panel.info <- modifyList(list(
+    printEachEvent     = printEachEvent,
+    printCensoring     = printCensoring,
+    printEachVar       = printEachVar,
+    rows.columns.panel = rows.columns.panel
+  ), panel.info %||% list())
+
+  style.info <- modifyList(list(
+    style           = style,
+    palette         = palette,
+    font.family     = font.family %||% "sans",
+    font.size       = font.size   %||% 12,
+    legend.position = legend.position
+  ), style.info %||% list())
+
+  ggsave.info <- modifyList(list(
+    filename.ggsave = filename.ggsave,
+    width.ggsave    = width.ggsave,
+    height.ggsave   = height.ggsave,
+    dpi.ggsave      = dpi.ggsave,
+    units           = "in"
+  ), ggsave.info %||% list())
+
+  list(
+    survfit.info = survfit.info,
+    axis.info    = axis.info,
+    visual.info  = visual.info,
+    panel.info   = panel.info,
+    style.info   = style.info,
+    ggsave.info  = ggsave.info
+  )
+}
+
+

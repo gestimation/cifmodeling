@@ -131,7 +131,7 @@
 #' `"BINOMIAL"`, `"PROPORTIONAL-SURVIVAL"` or `"PROPORTIONAL-COMPETING-RISK"`).
 #' -   `time.point` — specifies time point at which the exposure effect is evaluated.
 #' Required for `"COMPETING-RISK"` and `"SURVIVAL"` outcomes.
-#' -   `strata` — specifies a stratification variable used to adjust for dependent censoring.
+#' -   `strata` — specifies a stratification variable used for IPCW adjustment for dependent censoring.
 #'
 #' ### Outcome type and event status coding
 #'
@@ -153,7 +153,7 @@
 #' | PROPORTIONAL-SURVIVAL  (default)| `code.event1=1`, `code.censoring=0`     | event / censoring |
 #' | PROPORTIONAL-SURVIVAL (ADaM-ADTTE) | `code.event1=0`, `code.censoring=1` | set to match ADaM convention |
 #' | PROPORTIONAL-COMPETING-RISK | `code.event1`, `code.event2`, `code.censoring` | event of interest / competing event / censoring |
-#' | PROPORTIONAL-COMPETING-RISK (default)| `code.event1=1`, `code.event2=2`, `code.censoring1` | event of interest / competing event / censoring |
+#' | PROPORTIONAL-COMPETING-RISK (default)| `code.event1=1`, `code.event2=2`, `code.censoring=0` | event of interest / competing event / censoring |
 #'
 #' ### Effect measures for categorical exposure
 #'
@@ -176,6 +176,7 @@
 #' | `report.sandwich.conf` | Sandwich variance CIs | `TRUE` |
 #' | `report.boot.conf` | Bootstrap CIs (use if `"PROPORTIONAL-SURVIVAL"` or `"PROPORTIONAL-COMPETING-RISK"`) | `NULL` |
 #' | `boot.bca` | Use BCa intervals (else normal approximation) | `FALSE` |
+#' | `boot.multiplier` | Method for wild bootstrap (`"rademacher"`, `"mammen"`, or `"gaussian"`) | `rademacher` |
 #' | `boot.replications` | Bootstrap reps | `200` |
 #' | `boot.seed` | Seed for resampling | `46` |
 #'
@@ -191,10 +192,6 @@
 #' | `optim.parameter4` | Max outer iterations | `50` |
 #' | `optim.parameter5` | Max `nleqslv` iters per outer | `50` |
 #' | `optim.parameter6:13` | Levenberg–Marquardt controls (iters/tolerances/lambda) | see defaults |
-#'
-#' Tips:
-#' - If convergence warnings appear, relax/tighten tolerances or cap the parameter
-#'   bound (`optim.parameter3`). Inspect `report.optim.convergence = TRUE`.
 #'
 #' ### Data handling and stability
 #'
@@ -226,10 +223,15 @@
 #'
 #' ### Reproducibility and conventions
 #'
+#' - If convergence warnings appear, relax/tighten tolerances or cap the parameter
+#'   bound (`optim.parameter1` to `3`) and inspect `report.optim.convergence = TRUE`.
+#' - If necessary, try modifying other `optim.parameter`, providing
+#'   use-specified initial values, or reducing the number of nuisance parameters
+#'   (e.g. provide `time.point` contributing to estimation when using
+#'   `“PROPORTIONAL-SURVIVAL”` and `“PROPORTIONAL-COMPETING-RISK”`).
 #' - Set `boot.seed` for reproducible bootstrap results.
 #' - Match CDISC ADaM conventions via `code.event1 = 0`, `code.censoring = 1`
 #'   (and, if applicable, `code.event2` for competing events).
-#' - Use `strata` when censoring may depend on baseline covariates (IPCW stratification).
 #'
 #' @importFrom nleqslv nleqslv
 #' @importFrom boot boot boot.ci

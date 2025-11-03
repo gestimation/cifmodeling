@@ -173,3 +173,107 @@ test_that("panel_prepare() returns per-panel objects with expected structure", {
   expect_true(identical(prep$plot_args[[2]]$label.y, inputs$labely.list[[2]]))
 })
 
+test_that("cifpanel() with two formulas shows per-plot titles", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("patchwork")
+
+  df <- data.frame(
+    t       = c(5, 7, 9, 10, 3, 4, 6, 8),
+    epsilon = c(1, 0, 2, 0, 1, 2, 0, 1),
+    x1      = factor(c("A","B","A","B","A","B","A","B")),
+    x2      = c(0,1,0,1,1,0,1,0)
+  )
+
+  res <- cifpanel(
+    formulas     = list(Event(t, epsilon) ~ x1,
+                        Event(t, epsilon) ~ x2),
+    data         = df,
+    outcome.type = "COMPETING-RISK",
+    code.events  = list(c(1, 2, 0), c(1, 2, 0)),
+    title.plot   = c("Plot-x1", "Plot-x2"),
+    print.panel  = FALSE
+  )
+
+  expect_type(res, "list")
+  expect_length(res$plots, 2)
+  expect_equal(res$plots[[1]]$labels$title, "Plot-x1")
+  expect_equal(res$plots[[2]]$labels$title, "Plot-x2")
+})
+
+test_that("cifpanel() applies panel-level tag_levels", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("patchwork")
+
+  df <- data.frame(
+    t       = c(5, 7, 9, 10),
+    epsilon = c(1, 0, 2, 0),
+    x       = c(0, 1, 0, 1)
+  )
+
+  res <- cifpanel(
+    formulas     = list(Event(t, epsilon) ~ x,
+                        Event(t, epsilon) ~ 1),
+    data         = df,
+    outcome.type = "COMPETING-RISK",
+    code.events  = list(c(1, 2, 0), c(1, 2, 0)),
+    tag_levels.panel = "A",
+    print.panel  = FALSE
+  )
+
+  ann <- res$out_patchwork$patches$annotation
+  expect_false(is.null(ann))
+  expect_equal(ann$tag_levels, "A")
+})
+
+test_that("cifplot(printEachEvent=TRUE) creates 2-event panel", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("patchwork")
+
+  df <- data.frame(
+    t       = c(2, 4, 6, 8, 10, 12),
+    epsilon = c(1, 0, 2, 0, 1, 2),
+    trt     = c(0, 1, 0, 1, 0, 1)
+  )
+
+  p <- cifplot(
+    Event(t, epsilon) ~ trt,
+    data             = df,
+    outcome.type     = "COMPETING-RISK",
+    code.events      = c(1, 2, 0),
+    printEachEvent   = TRUE,
+    label.y          = c("Cumulative incidence of interest", "Cumulative incidence of competing risk"),
+    print.panel      = FALSE
+  )
+
+  expect_s3_class(p, "patchwork")
+  plots <- attr(p, "plots")
+  expect_equal(length(plots), 2)
+
+  expect_equal(plots[[1]]$labels$y, "Cumulative incidence of interest")
+  expect_equal(plots[[2]]$labels$y, "Cumulative incidence of competing risk")
+})
+
+test_that("cifpanel() can take per-panel label.x/label.y", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("patchwork")
+
+  df <- data.frame(
+    t       = c(1, 2, 3, 4, 5, 6),
+    epsilon = c(1, 0, 2, 0, 1, 2),
+    g       = c(0, 0, 1, 1, 0, 1)
+  )
+
+  res <- cifpanel(
+    formulas     = list(Event(t, epsilon) ~ g,
+                        Event(t, epsilon) ~ 1),
+    data         = df,
+    outcome.type = "COMPETING-RISK",
+    code.events  = list(c(1, 2, 0), c(1, 2, 0)),
+    label.y      = list("CIF by group", "Overall CIF"),
+    label.x      = list("Time (days)", "Time (days)"),
+    print.panel  = FALSE
+  )
+
+  expect_equal(res$plots[[1]]$labels$y, "CIF by group")
+  expect_equal(res$plots[[2]]$labels$y, "Overall CIF")
+})

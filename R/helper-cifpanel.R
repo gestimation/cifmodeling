@@ -49,19 +49,23 @@ panel_prepare <- function(
     addIC.list = NULL,
     addQ.list = NULL,
     strata.list = NULL,
-    legend.position = "top",
+    legend.position = NULL,
+    survfit.info = list(),
+    style.info = list(),
     dots = list(),
     fonts = NULL
 ) {
+  # フォントはcifpanelで決められたものを使う。なければここでデフォルト
   if (is.null(fonts)) {
     fonts <- panel_extract_fonts(dots)
   }
 
-  curves <- vector("list", length = K)
+  curves    <- vector("list", length = K)
   plot_args <- vector("list", length = K)
 
   for (i in seq_len(K)) {
     pair <- code.events[[i]]
+
     if (outcome.flags[i] == "S") {
       ce1 <- pair[1]
       ce2 <- NULL
@@ -72,45 +76,74 @@ panel_prepare <- function(
       cc  <- pair[3]
     }
 
+    # フォーミュラとデータを正規化
     norm_inputs <- plot_normalize_formula_data(formulas[[i]], data)
     data_i <- norm_inputs$data
 
-    args_est <- panel_drop_nulls(list(
-      formula        = formulas[[i]],
-      data           = data_i,
-      outcome.type   = if (!is.null(outcome.list)) outcome.list[[i]] else NULL,
-      code.event1    = ce1,
-      code.event2    = ce2,
-      code.censoring = cc
+    ## --- 1) 推定パート: cifcurve() を呼ぶ引数を作る ---
+    args_est <- panel_drop_nulls(c(
+      list(
+        formula        = formulas[[i]],
+        data           = data_i,
+        outcome.type   = if (!is.null(outcome.list)) outcome.list[[i]] else NULL,
+        code.event1    = ce1,
+        code.event2    = ce2,
+        code.censoring = cc
+      ),
+      # survfit.info に error / conf.* が入ってたらここでマージする
+      survfit.info
     ))
     fit_i <- do.call(cifcurve, args_est)
     curves[[i]] <- fit_i
 
-    args_plot <- panel_drop_nulls(list(
-      x                       = fit_i,
-      type.y                  = if (!is.null(typey.list))   typey.list[[i]]   else NULL,
-      label.y                 = if (!is.null(labely.list))  labely.list[[i]]  else NULL,
-      label.x                 = if (!is.null(labelx.list))  labelx.list[[i]]  else NULL,
-      limits.y                = if (!is.null(limsy.list))   limsy.list[[i]]   else NULL,
-      limits.x                = if (!is.null(limsx.list))   limsx.list[[i]]   else NULL,
-      breaks.x                = if (!is.null(breakx.list))  breakx.list[[i]]  else NULL,
-      breaks.y                = if (!is.null(breaky.list))  breaky.list[[i]]  else NULL,
-      addConfidenceInterval    = if (!is.null(addCI.list))  addCI.list[[i]]   else TRUE,
-      addCensorMark            = if (!is.null(addCen.list)) addCen.list[[i]]  else TRUE,
-      addCompetingRiskMark     = if (!is.null(addCR.list))  addCR.list[[i]]   else FALSE,
-      addIntercurrentEventMark = if (!is.null(addIC.list))  addIC.list[[i]]   else FALSE,
-      addQuantileLine          = if (!is.null(addQ.list))   addQ.list[[i]]    else FALSE,
-      label.strata             = if (!is.null(strata.list)) strata.list[[i]]  else NULL,
-      style                    = dots$style %||% "CLASSIC",
+    ## --- 2) 描画パート: cifplot_single() に渡す引数を作る ---
+    # ここが今回の肝。style/palette/legend.positionを
+    # 「無条件に」書かないようにする
+    args_plot <- list(
+      # ★ ここで formula_or_fit を先に入れておく
+      formula_or_fit           = fit_i,
+      type.y                   = if (!is.null(typey.list))   typey.list[[i]]   else NULL,
+      label.y                  = if (!is.null(labely.list))  labely.list[[i]]  else NULL,
+      label.x                  = if (!is.null(labelx.list))  labelx.list[[i]]  else NULL,
+      limits.y                 = if (!is.null(limsy.list))   limsy.list[[i]]   else NULL,
+      limits.x                 = if (!is.null(limsx.list))   limsx.list[[i]]   else NULL,
+      breaks.x                 = if (!is.null(breakx.list))  breakx.list[[i]]  else NULL,
+      breaks.y                 = if (!is.null(breaky.list))  breaky.list[[i]]  else NULL,
+      addConfidenceInterval    = if (!is.null(addCI.list))   addCI.list[[i]]   else TRUE,
+      addCensorMark            = if (!is.null(addCen.list))  addCen.list[[i]]  else TRUE,
+      addCompetingRiskMark     = if (!is.null(addCR.list))   addCR.list[[i]]   else FALSE,
+      addIntercurrentEventMark = if (!is.null(addIC.list))   addIC.list[[i]]   else FALSE,
+      addQuantileLine          = if (!is.null(addQ.list))    addQ.list[[i]]    else FALSE,
+      label.strata             = if (!is.null(strata.list))  strata.list[[i]]  else NULL,
+      # フォントは渡してよい（だいたい統一したいので）
       font.family              = fonts$family,
-      font.size                = fonts$size,
-      legend.position          = legend.position
-    ))
-    plot_args[[i]] <- args_plot
+      font.size                = fonts$size
+    )
+
+    # --- ここが今回の変更ポイント ---
+    # 1) cifpanel(..., style = "BOLD") のように dots に style があれば書く
+    # 2) なければ何も書かない（= cifplot_single の style.info を壊さない）
+    if (!is.null(dots$style)) {
+      args_plot$style <- dots$style
+    }
+    if (!is.null(dots$palette)) {
+      args_plot$palette <- dots$palette
+    }
+    # legend.position も「NULLじゃなければ書く」
+    if (!is.null(legend.position)) {
+      args_plot$legend.position <- legend.position
+    }
+
+    plot_args[[i]] <- panel_drop_nulls(args_plot)
   }
 
-  list(curves = curves, plot_args = plot_args, K = K)
+  list(
+    curves    = curves,
+    plot_args = plot_args,
+    K         = K
+  )
 }
+
 
 panel_as_formula_global <- function(f) {
   if (is.character(f))   return(stats::as.formula(f, env = .GlobalEnv))
@@ -163,6 +196,48 @@ panel_extract_fonts <- function(dots) {
     size   = dots$font.size   %||% 12
   )
 }
+
+#------------------------------------------------------------
+# パネル数 K と rows.columns.panel を自動決定する関数
+#------------------------------------------------------------
+panel_update_rows.columns.panel <- function(
+    formulas = NULL,
+    code.events = NULL,
+    panel.info = list(rows.columns.panel = c(1, 1)),
+    n_slots = 1
+) {
+  # formulas の長さ
+  len_formulas <- if (!is.null(formulas)) length(formulas) else 0L
+
+  # K を決定
+  K <- max(n_slots, length(code.events), len_formulas)
+
+  # rows.columns.panel がデフォルト (1,1) で K>1 のとき自動レイアウト
+  rc <- panel.info$rows.columns.panel
+  if (length(rc) == 2L && all(is.finite(rc)) && all(rc == 1) && K > 1L) {
+    if (K %% 2L == 0L) {
+      rc <- c(K %/% 2L, 2L)
+    } else {
+      rc <- c((K + 1L) %/% 2L, 2L)
+    }
+  }
+
+  # nrow, ncol, n_slots を再計算
+  nrow <- as.integer(rc[1])
+  ncol <- as.integer(rc[2])
+  n_slots <- nrow * ncol
+
+  # 更新したものを返す
+  list(
+    K = K,
+    code.events = panel_recycle_to(code.events, K),
+    rows.columns.panel = rc,
+    nrow = nrow,
+    ncol = ncol,
+    n_slots = n_slots
+  )
+}
+
 panel_build_theme <- function(font.family = "sans", font.size = 12) {
   base  <- font.size
   big   <- base * 1.20

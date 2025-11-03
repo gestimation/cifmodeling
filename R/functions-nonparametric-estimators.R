@@ -30,7 +30,6 @@ calculateRMST <-function(out_survfit, tau, alpha = 0.05)
   return(Z)
 }
 
-
 createAtRiskMatrix <- function(t) {
   atrisk <- outer(t, t, "<=")
   return(atrisk)
