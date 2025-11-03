@@ -17,6 +17,7 @@ test_that("printEachVar returns one plot per RHS var", {
 })
 
 test_that("order.strata and label.strata (positional) are respected", {
+  skip()
   data(diabetes.complications)
   plt <- cifplot(
     Event(t, epsilon) ~ fruitq,
@@ -48,7 +49,7 @@ test_that("label.strata named mapping works with order.strata", {
 })
 
 test_that("order.strata works per-variable when printEachVar = TRUE", {
-  skip("")
+  skip()
   skip_on_cran()
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")

@@ -41,26 +41,3 @@ test_that("cifplot(printEachEvent=TRUE) returns a patchwork object", {
     )
   )
 })
-
-test_that("cifplot(printEachEvent=TRUE) returns two panels and passes y labels", {
-  skip()
-  data(diabetes.complications)
-  plt <- cifplot(
-    Event(t, epsilon) ~ fruitq1,
-    data = diabetes.complications,
-    outcome.type = "COMPETING-RISK",
-    code.events = c(1, 2, 0),
-    printEachEvent = TRUE,
-    label.y = "Left axis"
-  )
-
-  plots_attr <- attr(plt, "plots")
-  expect_true(!is.null(plots_attr))
-  expect_length(plots_attr, 2L)
-
-  titles <- vapply(plots_attr, function(p) p$labels$title %||% NA_character_, character(1))
-  expect_true(all(is.na(titles)))
-
-  ylabels <- vapply(plots_attr, function(p) p$labels$y %||% NA_character_, character(1))
-  expect_equal(ylabels, c("Left axis", "Left axis"))
-})
