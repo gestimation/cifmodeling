@@ -659,18 +659,18 @@ output4 <- polyreg(nuisance.model=Event(t,d) ~ +1,
 msummary(output4$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
 ```
 
-|                        | event 1 (no competing risk)     |
-|------------------------|---------------------------------|
-| fruitq1, Q2 to Q4 vs 0 | 0.777                           |
-|                        | \[0.654, 0.922\]                |
-|                        | (0.004)                         |
-| effect.measure         | RR at 8                         |
-| n.events               | 358 in N = 978                  |
-| median.follow.up       | 8                               |
-| range.follow.up        | \[ 0.05 , 11 \]                 |
-| n.parameters           | 2                               |
-| converged.by           | Converged in objective function |
-| nleqslv.message        | Function criterion near zero    |
+|                  | event 1 (no competing risk)     |
+|------------------|---------------------------------|
+| fruitq1, 1 vs 0  | 1.288                           |
+|                  | \[0.001, 1136.895\]             |
+|                  | (0.942)                         |
+| effect.measure   | RR at 8                         |
+| n.events         | 358 in N = 978                  |
+| median.follow.up | 8                               |
+| range.follow.up  | \[ 0.05 , 11 \]                 |
+| n.parameters     | 2                               |
+| converged.by     | Converged in objective function |
+| nleqslv.message  | Function criterion near zero    |
 
 ## Example 3. Adjusted competing risks analysis
 
@@ -695,11 +695,11 @@ than exposure.
 msummary(output5$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
 ```
 
-<table style="width:99%;">
+<table style="width:97%;">
 <colgroup>
-<col style="width: 21%" />
-<col style="width: 62%" />
-<col style="width: 14%" />
+<col style="width: 26%" />
+<col style="width: 47%" />
+<col style="width: 23%" />
 </colgroup>
 <thead>
 <tr>
@@ -710,19 +710,19 @@ msummary(output5$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
 </thead>
 <tbody>
 <tr>
-<td>fruitq1, Q2 to Q4 vs 0</td>
-<td>0.645</td>
-<td>1.107</td>
+<td>fruitq1, 1 vs 0</td>
+<td>1.552</td>
+<td>0.909</td>
 </tr>
 <tr>
 <td></td>
-<td>[0.490, 0.848]</td>
-<td>[0.600, 2.042]</td>
+<td>[1.331, 1.810]</td>
+<td>[0.493, 1.676]</td>
 </tr>
 <tr>
 <td></td>
-<td>(0.002)</td>
-<td>(0.745)</td>
+<td>(&lt;0.001)</td>
+<td>(0.761)</td>
 </tr>
 <tr>
 <td>effect.measure</td>
@@ -757,15 +757,14 @@ msummary(output5$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
 </tr>
 <tr>
 <td>converged.by</td>
-<td>Converged in relative difference</td>
+<td>Converged in objective function</td>
 <td><ul>
 <li></li>
 </ul></td>
 </tr>
 <tr>
 <td>nleqslv.message</td>
-<td>Jacobian is singular (1/condition=0.0e+00) (see allowSingular
-option)</td>
+<td>Function criterion near zero</td>
 <td><ul>
 <li></li>
 </ul></td>
