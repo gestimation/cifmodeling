@@ -830,11 +830,24 @@ struct RecW {
 
        // carry to ALL grid
        std::vector<int> all2c1(Uall, 0);
-       { int c_c1 = 0; for (int j=0; j<Uall; ++j){ if (w_event1_all[j] > 0.0) ++c_c1; all2c1[j] = c_c1; } }
-       for (int j=0;j<Uall;++j){
-         int c = all2c1[j];
-         if (need_cif_aalen) se_cif_aalen[j] = (c>0 ? std::sqrt(std::max(0.0, var_aalen[c-1])) : 0.0);
-         if (need_cif_delta) se_cif_delta[j] = (c>0 ? std::sqrt(std::max(0.0, var_delta[c-1])) : 0.0);
+       {
+         int c_c1 = 0;
+         for (int j = 0; j < Uall; ++j) {
+           if (w_event1_all[j] > 0.0) ++c_c1;
+           all2c1[j] = c_c1;
+         }
+       }
+
+       for (int j = 0; j < Uall; ++j) {
+         int c = all2c1[j];          // 0..M_c1
+         if (c == 0) {
+           if (need_cif_aalen && M_c1 > 0) se_cif_aalen[j] = std::sqrt(std::max(0.0, var_aalen[0]));
+           if (need_cif_delta && M_c1 > 0) se_cif_delta[j] = std::sqrt(std::max(0.0, var_delta[0]));
+         } else {
+           int use = std::min(c, M_c1);  // 末尾越え防止
+           if (need_cif_aalen) se_cif_aalen[j] = std::sqrt(std::max(0.0, var_aalen[use - 1]));
+           if (need_cif_delta) se_cif_delta[j] = std::sqrt(std::max(0.0, var_delta[use - 1]));
+         }
        }
      }
 
