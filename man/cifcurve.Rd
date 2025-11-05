@@ -17,7 +17,9 @@ cifcurve(
   error = NULL,
   conf.type = "arcsine-square root",
   conf.int = 0.95,
-  report.survfit.std.err = FALSE
+  report.survfit.std.err = FALSE,
+  engine = c("auto", "calculateKM", "calculateAJ", "calculateAJ_Rcpp"),
+  return_if = FALSE
 )
 }
 \arguments{
@@ -58,6 +60,12 @@ Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detectio
 reported on the \emph{log-survival} scale, matching \code{survfit()}'s
 default behaviour. If \code{FALSE} (default), SEs are on the probability
 scale, which is often more convenient when displaying CIFs.}
+
+\item{engine}{Character. One of \code{"auto"}, \code{"calculateKM"}, \code{"calculateAJ"}, or \code{"calculateAJ_Rcpp"}. Default \code{"auto"}
+selects \code{"calculateKM"} for survival curves and \code{"calculateAJ_Rcpp"} for competing risks. \code{"calculateKM"} does not support CIF estimation.}
+
+\item{return_if}{Logical. When \code{TRUE} and \code{engine = "calculateAJ_Rcpp"}, the influence function is also computed and returned.
+Default \code{FALSE}.}
 }
 \value{
 A \code{survfit} object. For \code{outcome.type="SURVIVAL"}, \code{$surv} is the survival function.

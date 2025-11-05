@@ -26,6 +26,12 @@
 #'   reported on the \emph{log-survival} scale, matching \code{survfit()}'s
 #'   default behaviour. If \code{FALSE} (default), SEs are on the probability
 #'   scale, which is often more convenient when displaying CIFs.
+#' @param engine Character. One of \code{"auto"}, \code{"calculateKM"},
+#'   \code{"calculateAJ"}, or \code{"calculateAJ_Rcpp"}. Default \code{"auto"}
+#'   selects \code{"calculateKM"} for survival curves and \code{"calculateAJ_Rcpp"}
+#'   for competing risks. \code{"calculateKM"} does not support CIF estimation.
+#' @param return_if Logical. When \code{TRUE} and \code{engine = "calculateAJ_Rcpp"},
+#'   the influence function is also computed and returned. Default \code{FALSE}.
 #'
 #' @details
 #' - When \code{outcome.type = "SURVIVAL"}, this is a thin wrapper around KM with the
@@ -61,6 +67,7 @@
 #'         label.x = "Years from registration")
 #'
 #' @importFrom Rcpp sourceCpp
+#' @importFrom Rcpp evalCpp
 #' @importFrom stats formula
 #'
 #' @name cifcurve
@@ -79,13 +86,18 @@ cifcurve <- function(
     error = NULL,
     conf.type = "arcsine-square root",
     conf.int = 0.95,
-    report.survfit.std.err = FALSE
+    report.survfit.std.err = FALSE,
+    engine = c("auto","calculateKM","calculateAJ","calculateAJ_Rcpp"),
+    return_if = FALSE
 ) {
-  outcome.type  <- util_check_outcome_type(outcome.type, formula=formula, data=data)
+  outcome.type  <- util_check_outcome_type(outcome.type, formula = formula, data = data)
+  engine        <- match.arg(engine)
   out_readSurv  <- util_read_surv(formula, data, weights,
                                   code.event1, code.event2, code.censoring,
                                   subset.condition, na.action)
   error <- curve_check_error(error, outcome.type)
+
+  call <- match.call()
 
   strata_fac   <- as.factor(out_readSurv$strata)
   strata_lvls  <- levels(strata_fac)
@@ -96,7 +108,23 @@ cifcurve <- function(
     strata_fullnames <- strata_lvls
   }
 
-  if (identical(outcome.type, "SURVIVAL")) {
+  epsilon_norm <- rep.int(0L, length(out_readSurv$epsilon))
+  epsilon_norm[out_readSurv$epsilon == code.event1]    <- 1L
+  epsilon_norm[out_readSurv$epsilon == code.event2]    <- 2L
+  epsilon_norm[out_readSurv$epsilon == code.censoring] <- 0L
+
+  if (engine == "auto") {
+    engine <- if (identical(outcome.type, "COMPETING-RISK")) "calculateAJ_Rcpp" else "calculateKM"
+  }
+
+  if (identical(outcome.type, "COMPETING-RISK") && identical(engine, "calculateKM")) {
+    stop("engine='calculateKM' does not support COMPETING-RISK (CIF). Use engine='calculateAJ_Rcpp' or 'calculateAJ'.", call. = FALSE)
+  }
+  if (identical(outcome.type, "SURVIVAL") && identical(engine, "calculateAJ")) {
+    stop("engine='calculateAJ' requires outcome.type='COMPETING-RISK'.", call. = FALSE)
+  }
+
+  if (identical(engine, "calculateKM")) {
     out_km <- calculateKM(out_readSurv$t, out_readSurv$d,
                           out_readSurv$w, as.integer(out_readSurv$strata), error)
     out_km$std.err <- out_km$surv * out_km$std.err
@@ -112,10 +140,11 @@ cifcurve <- function(
       n.event   = out_km$n.event,
       n.censor  = out_km$n.censor,
       std.err   = out_km$std.err,
+      std.err.cif = out_km$`std.err.cif`,
       upper     = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$upper,
       lower     = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$lower,
       conf.type = conf.type,
-      call      = match.call(),
+      call      = call,
       type      = "kaplan-meier",
       method    = "Kaplan-Meier"
     )
@@ -123,9 +152,11 @@ cifcurve <- function(
       names(out_km$strata) <- strata_fullnames
       survfit_object$strata <- out_km$strata
     }
+    survfit_object <- harmonize_engine_output(survfit_object)
     class(survfit_object) <- "survfit"
+    return(survfit_object)
 
-  } else {
+  } else if (identical(engine, "calculateAJ")) {
     out_aj <- calculateAJ(out_readSurv)
     names(out_aj$strata1) <- strata_fullnames
 
@@ -139,12 +170,13 @@ cifcurve <- function(
       n.risk <- n - out_aj$n.cum.censor - out_aj$n.cum.event1 - out_aj$n.cum.event2
     }
 
-    out_aj$std.err <- calculateAalenDeltaSE(
+    std_err_cif <- calculateAalenDeltaSE(
       out_aj$time1, out_aj$aj1,
       out_aj$n.event1, out_aj$n.event2,
       n.risk,
       out_aj$time0, out_aj$km0, out_aj$strata1, error
     )
+    out_aj$std.err <- std_err_cif
     out_aj$surv <- 1 - out_aj$aj1
     out_ci <- calculateCI(out_aj, conf.int, conf.type, conf.lower = NULL)
     if (isTRUE(report.survfit.std.err))
@@ -158,21 +190,43 @@ cifcurve <- function(
       n.event     = out_aj$n.event1,
       n.censor    = out_aj$n.censor,
       std.err     = out_aj$std.err,
+      std.err.cif = std_err_cif,
       upper       = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$upper,
       lower       = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$lower,
       conf.type   = conf.type,
-      call        = match.call(),
+      call        = call,
       type        = "aalen-johansen",
       method      = "aalen-johansen"
     )
     if (any(as.integer(out_readSurv$strata) != 1))
       survfit_object$strata <- out_aj$strata1
 
+    survfit_object <- harmonize_engine_output(survfit_object)
     class(survfit_object) <- "survfit"
+    return(survfit_object)
   }
-  return(survfit_object)
-}
 
+  out_cpp <- calculateAJ_Rcpp_route(
+    t = out_readSurv$t,
+    epsilon = as.integer(epsilon_norm),
+    w = out_readSurv$w,
+    strata = as.integer(out_readSurv$strata),
+    error = error,
+    conf.type = conf.type,
+    return_if = return_if,
+    conf.int = conf.int
+  )
+  if (length(strata_fullnames) && length(out_cpp$strata)) {
+    names(out_cpp$strata) <- strata_fullnames
+  }
+  if (length(strata_lvls)) {
+    out_cpp$`strata.levels` <- strata_lvls
+  }
+  out_cpp$call <- call
+  out_cpp <- harmonize_engine_output(out_cpp)
+  class(out_cpp) <- "survfit"
+  out_cpp
+}
 calculateAJ <- function(data) {
   out_km0 <- calculateKM(data$t, data$d0, data$w, as.integer(data$strata), "none")
   km0 <- util_get_surv(data$t, out_km0$surv, out_km0$time, as.integer(data$strata), out_km0$strata, out_km0$strata.levels)
