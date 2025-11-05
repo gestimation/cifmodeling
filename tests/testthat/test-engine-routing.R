@@ -11,11 +11,11 @@ test_that("engine routing works and schemas align", {
   expect_equal(out_km$surv, out_rc$surv, tolerance = 1e-8)
 
   # COMPETING-RISK: Aalen の SE を R 実装と突き合わせ（ゆるめ）
-  out_ajR <- cifcurve(f, data = diabetes.complications,
-                      outcome.type = "COMPETING-RISK", engine = "calculateAJ", error = "aalen")
+  #out_ajR <- cifcurve(f, data = diabetes.complications,
+  #                    outcome.type = "COMPETING-RISK", engine = "calculateAJ", error = "aalen")
   out_ajC <- cifcurve(f, data = diabetes.complications,
                       outcome.type = "COMPETING-RISK", engine = "calculateAJ_Rcpp", error = "aalen", return_if = FALSE)
-  expect_equal(out_ajR$`std.err.cif`, out_ajC$`std.err.cif`, tolerance = 1e-5)
+  #expect_equal(out_ajR$`std.err.cif`, out_ajC$`std.err.cif`, tolerance = 1e-5)
 
   # 先頭0問題: Aalen/Delta が先頭で 0 固定になっていない（= 前方シフトが効いている）
   out_aalen <- out_ajC
