@@ -226,6 +226,10 @@ Rcpp::List calculateAJ_Rcpp(
       double suf = 0.0;
       for (int j = Uall - 1; j >= 0; --j) { suf += w_total_all[j]; Y_all[j] = suf; }
     }
+    std::vector<double> invY_all(Uall, 0.0);
+    for (int j = 0; j < Uall; ++j) {
+      if (Y_all[j] > 0.0) invY_all[j] = 1.0 / Y_all[j];
+    }
 
     std::vector<int> ev_any_idx, ev_c1_idx;
     ev_any_idx.reserve(Uall); ev_c1_idx.reserve(Uall);
@@ -240,18 +244,17 @@ Rcpp::List calculateAJ_Rcpp(
     if (need_any_cif){
       dl_c1.resize(M_any, 0.0);
       aj1_any.resize(M_any, 0.0);
-
-      for (int m=0;m<M_any;++m){
+      for (int m=0; m<M_any; ++m){
         int j = ev_any_idx[m];
-        double Yj = Y_all[j], dj = w_event_all[j];
-        dl_any[m] = (Yj>0.0) ? (dj/Yj) : 0.0;
+        double dj = w_event_all[j];
+        dl_any[m] = dj * invY_all[j];
       }
+
       std::vector<char> is_c1_at_all(Uall, 0);
       for (int u=0; u<M_c1; ++u) is_c1_at_all[ ev_c1_idx[u] ] = 1;
-      for (int m=0;m<M_any;++m){
+      for (int m=0; m<M_any; ++m){
         int j = ev_any_idx[m];
-        double Yj = Y_all[j];
-        dl_c1[m] = (is_c1_at_all[j] && Yj>0.0) ? (w_event1_all[j] / Yj) : 0.0;
+        dl_c1[m] = is_c1_at_all[j] ? (w_event1_all[j] * invY_all[j]) : 0.0;
       }
       double Sprev = 1.0, Fprev = 0.0;
       for (int m=0;m<M_any;++m){
@@ -263,8 +266,7 @@ Rcpp::List calculateAJ_Rcpp(
     } else {
       for (int m=0;m<M_any;++m){
         int j = ev_any_idx[m];
-        double Yj = Y_all[j], dj = w_event_all[j];
-        dl_any[m] = (Yj>0.0) ? (dj/Yj) : 0.0;
+        dl_any[m] = w_event_all[j] * invY_all[j];
       }
     }
 
@@ -274,14 +276,20 @@ Rcpp::List calculateAJ_Rcpp(
       int j = ev_any_idx[m];
       double Yj = Y_all[j], dj = w_event_all[j];
       double Sprev = (m==0? 1.0 : S_any[m-1]);
-      double fac   = (Yj>0.0) ? (1.0 - dj/Yj) : 1.0;
+      double invY = invY_all[j];
+      double fac  = (invY > 0.0) ? (1.0 - dj * invY) : 1.0;
       S_any[m]     = Sprev * fac;
 
       if (dj>0.0 && Yj>0.0){
-        if (error_tsiatis) accKM += dj / (Yj*Yj);
-        else {
-          if (Yj > dj) accKM += dj / (Yj*(Yj-dj));
-          else         accKM  = std::numeric_limits<double>::infinity();
+        if (error_tsiatis) {
+          accKM += dj * invY * invY;
+        } else {
+          if (Yj > dj) {
+            double invYm = 1.0 / (Yj - dj);
+            accKM += dj * invY * invYm;
+          } else {
+            accKM = std::numeric_limits<double>::infinity();
+          }
         }
       }
       double S2 = S_any[m] * S_any[m];
@@ -324,7 +332,6 @@ Rcpp::List calculateAJ_Rcpp(
     NumericMatrix IF_AJ_all;
     if (error_if) {
       NumericMatrix IF_AJ_any(n_g, M_any);
-      NumericMatrix IF_AJ_all;
       if (return_if) IF_AJ_all = NumericMatrix(n_g, Uall);
       for (int r=0; r<n_g; ++r){
         int i = ids[r];
@@ -343,9 +350,10 @@ Rcpp::List calculateAJ_Rcpp(
             dm_any = wi * ((feq(Ti,tj) && (Ei >= 1)) ? (1.0 - dlam_any) : (0.0 - dlam_any));
             dm_c1  = wi * ((feq(Ti,tj) && (Ei == 1)) ? (1.0 - dlam_c1 ) : (0.0 - dlam_c1 ));
           }
-          double xs_now = xs_prev + sdiv(dm_any, Yj);
+          double invY = invY_all[j_all];
+          double xs_now = xs_prev + dm_any * invY;
+          double term   = dm_c1  * invY - xs_prev * dlam_c1;
           double Sprev  = (m==0? 1.0 : S_any[m-1]);
-          double term   = sdiv(dm_c1, Yj) - xs_prev * dlam_c1;
           double xf_now = xf_prev + Sprev * term;
 
           xs_prev = xs_now; xf_prev = xf_now;
@@ -404,9 +412,14 @@ Rcpp::List calculateAJ_Rcpp(
           const double Ymn12 = std::max(Y - n1 - n2, 1e-12);
           const double Y2    = std::max(Y * Y, 1e-12);
 
-          first_cum  += sdiv( (F_idx-Fi)*(F_idx-Fi) * (n1+n2),  Ym1*Ymn12 );
-          second_cum += sdiv( (Spre*Spre) * n1 * (Y-n1),        (Y2*Ym1)   );
-          third_cum  += sdiv( (F_idx-Fi)*Spre * n1*(Y-n1),      (Y*(Ymn12)*Ym1) );
+          const double inv_Ym1     = 1.0 / Ym1;
+          const double inv_Ymn12   = 1.0 / Ymn12;
+          const double inv_Y2      = 1.0 / Y2;
+          const double inv_Y       = 1.0 / std::max(Y, 1e-12);
+
+          first_cum  += ((F_idx-Fi)*(F_idx-Fi) * (n1+n2)) * (inv_Ym1 * inv_Ymn12);
+          second_cum += ((Spre*Spre) * n1 * (Y-n1))       * (inv_Y2  * inv_Ym1   );
+          third_cum  += ((F_idx-Fi)*Spre * n1*(Y-n1))     * (inv_Y   * inv_Ymn12 * inv_Ym1);
           var_aalen[i] = first_cum + second_cum - 2.0*third_cum;
           }
       }
@@ -423,14 +436,18 @@ Rcpp::List calculateAJ_Rcpp(
           const double Fi    = c1_F[i];
 
           const double n1 = c1_n1[i], n2 = c1_n2[i], Y = c1_Y[i];
-          const double Ym1   = std::max(Y - 1.0, 1e-12);
           const double Ymn12 = std::max(Y - n1 - n2, 1e-12);
           const double Y2    = std::max(Y * Y, 1e-12);
-          double Y3    = std::max(Y*Y*Y, 1e-12);
+          const double Y3    = std::max(Y * Y * Y, 1e-12);
 
-          first_cum  += sdiv( (F_idx-Fi)*(F_idx-Fi) * (n1+n2),  (Y*Ymn12) );
-          second_cum += sdiv( (Spre*Spre) * n1 * (Y-n1),        Y3        );
-          third_cum  += sdiv( (F_idx-Fi)*Spre * n1,             Y2        );
+          const double inv_Y     = 1.0 / std::max(Y, 1e-12);
+          const double inv_Ymn12 = 1.0 / Ymn12;
+          const double inv_Y2    = 1.0 / Y2;
+          const double inv_Y3    = 1.0 / Y3;
+
+          first_cum  += ((F_idx-Fi)*(F_idx-Fi) * (n1+n2)) * (inv_Y * inv_Ymn12);
+          second_cum += ((Spre*Spre) * n1 * (Y-n1))       * (inv_Y3);
+          third_cum  += ((F_idx-Fi)*Spre * n1)            * (inv_Y2);
           var_delta[i] = first_cum + second_cum - 2.0*third_cum;
         }
       }
