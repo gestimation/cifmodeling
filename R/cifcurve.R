@@ -87,16 +87,14 @@ cifcurve <- function(
     conf.type = "arcsine-square root",
     conf.int = 0.95,
     report.survfit.std.err = FALSE,
-    engine = c("auto","calculateKM","calculateAJ_Rcpp"),
+    engine = "calculateAJ_Rcpp",
     return_if = FALSE
 ) {
   outcome.type  <- util_check_outcome_type(outcome.type, formula = formula, data = data)
-  engine        <- match.arg(engine)
   out_readSurv  <- util_read_surv(formula, data, weights,
                                   code.event1, code.event2, code.censoring,
                                   subset.condition, na.action)
   error <- curve_check_error(error, outcome.type)
-
   call <- match.call()
 
   strata_fac   <- as.factor(out_readSurv$strata)
