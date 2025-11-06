@@ -317,3 +317,39 @@ curve_check_error <- function(x, outcome.type) {
   }
   out
 }
+
+#' Route to Rcpp AJ engine with normalized vectors
+#' Internal helper: expects normalized vectors already prepared upstream.
+#' @keywords internal
+calculateAJ_Rcpp_route <- function(t, epsilon, w = NULL, strata = NULL,
+                                   error = "greenwood",
+                                   conf.type = "arcsin",
+                                   return_if = FALSE,
+                                   conf.int = 0.95) {
+  calculateAJ_Rcpp(
+    t = t,
+    epsilon = epsilon,
+    w = w %||% numeric(),
+    strata = strata %||% integer(),
+    error = error,
+    conf_type = conf.type,
+    return_if = isTRUE(return_if),
+    conf_int = conf.int
+  )
+}
+
+#' @keywords internal
+harmonize_engine_output <- function(out) {
+  n <- length(out$time %||% numeric())
+  out$lower               <- out$lower               %||% out$low
+  out$upper               <- out$upper               %||% out$high
+  out$`std.err.cif`        <- out$`std.err.cif`        %||% rep(NA_real_, n)
+  out$`influence.function` <- out$`influence.function` %||% list()
+  out$strata               <- out$strata               %||% integer()
+  out$`strata.levels`      <- out$`strata.levels`      %||% integer()
+  out$type                 <- out$type                 %||% "kaplan-meier"
+  out$method               <- out$method               %||% "Kaplan-Meier"
+  out$`conf.type`          <- out$`conf.type`          %||% "arcsine-square root"
+  out
+}
+

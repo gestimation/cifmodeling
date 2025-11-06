@@ -18,7 +18,7 @@ cifcurve(
   conf.type = "arcsine-square root",
   conf.int = 0.95,
   report.survfit.std.err = FALSE,
-  engine = c("auto", "calculateKM", "calculateAJ_Rcpp"),
+  engine = "calculateAJ_Rcpp",
   return_if = FALSE
 )
 }
