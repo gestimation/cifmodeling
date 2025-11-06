@@ -26,6 +26,11 @@ inline double sdiv(double num, double den){
   if (!R_finite(num) || !R_finite(den) || std::fabs(den) < 1e-12) return 0.0;
   return num/den;
 }
+inline std::string to_lower(std::string s){
+  std::transform(s.begin(), s.end(), s.begin(),
+                 [](unsigned char c){ return std::tolower(c); });
+  return s;
+}
 
 struct RecW {
   double t;
@@ -60,12 +65,6 @@ Rcpp::List calculateAJ_Rcpp(
     else if (wv.size() != 0) stop("w must have length 0 or N.");
   }
 
-  // helpers (local)
-  auto to_lower = [](std::string s){
-    std::transform(s.begin(), s.end(), s.begin(),
-                   [](unsigned char c){ return std::tolower(c); });
-    return s;
-  };
   auto canon_conf = [&](std::string s){
     s = to_lower(s);
     if (s=="n" || s=="none") return std::string("none");
@@ -79,12 +78,7 @@ Rcpp::List calculateAJ_Rcpp(
   const std::string CONF = canon_conf(conf_type);
 
   // --- NEW: normalize error & flags ---
-  auto to_lower2 = [](std::string s){
-    std::transform(s.begin(), s.end(), s.begin(),
-                   [](unsigned char c){ return std::tolower(c); });
-    return s;
-  };
-  const std::string ERROR = to_lower2(error);
+  const std::string ERROR = to_lower(error);
 
   bool error_tsiatis = (ERROR == "tsiatis");
   bool error_aalen   = (ERROR == "aalen");
@@ -200,8 +194,11 @@ Rcpp::List calculateAJ_Rcpp(
       v.push_back({ (double)t[i], (int)epsilon[i], (int)G[i], i, (double)W[i] });
     }
     std::sort(v.begin(), v.end(), [](const RecW& a, const RecW& b){
-      if (!feq(a.t, b.t)) return a.t < b.t;
-      return (a.eps >= 1) > (b.eps >= 1);
+      if (a.t != b.t) return a.t < b.t;
+      // event(>=1) を先に、censor(=0) を後に
+      const int ka = (a.eps >= 1) ? 0 : 1;
+      const int kb = (b.eps >= 1) ? 0 : 1;
+      return ka < kb;
     });
 
     // unique time grid and weighted counts
@@ -655,9 +652,7 @@ Rcpp::List calculateAJ_Rcpp(
   }
 
   if (has_competing) {
-    std_err_aj_out = wrap(
-      [&](){
-        return Rcpp::wrap(combined_std_err_aj); }() );
+    std_err_aj_out = Rcpp::wrap(combined_std_err_aj);
   }
 
   Rcpp::List out = Rcpp::List::create(

@@ -170,3 +170,52 @@ test_that("engine routing works and schemas align", {
   #  expect_true(all(c("time", "surv", "std.err", "std.err.aj", "type", "method", "conf.type") %in% names(x)))
   #}
 })
+
+test_that("weighted n.event / n.censor match manual tallies", {
+  set.seed(1)
+  n  <- 50
+  t  <- sample(1:5, n, TRUE)
+  ep <- sample(c(0,1,2), n, TRUE, prob=c(0.3,0.5,0.2))
+  w  <- runif(n, 0.5, 2)
+  out <- calculateAJ_Rcpp(t, ep, w=w, error="if", return_if=FALSE)
+
+  tt <- sort(unique(t))
+  tally <- function(code) sapply(tt, function(x) sum(w[t==x & code]))
+  w_event_any  <- sapply(tt, function(x) sum(w[t==x & ep>=1]))
+  w_censor     <- sapply(tt, function(x) sum(w[t==x & ep==0]))
+
+  expect_equal(as.numeric(out$time),   tt)
+  expect_equal(as.numeric(out$`n.event`),  w_event_any,  tolerance=1e-12)
+  expect_equal(as.numeric(out$`n.censor`), w_censor,     tolerance=1e-12)
+})
+
+test_that("CI clamps to [0,0] / [1,1] at boundaries", {
+  t  <- c(1,2,3,4)
+  ep <- c(0,0,0,1)
+  a <- calculateAJ_Rcpp(t, (ep==1L), error="greenwood", return_if=FALSE)
+  wh1 <- which(a$surv >= 1 - 1e-15)
+  expect_true(all(a$low [wh1] == 1))
+  expect_true(all(a$high[wh1] == 1))
+  wh0 <- which(a$surv <= 1e-15)
+  expect_true(all(a$low [wh0] == 0))
+  expect_true(all(a$high[wh0] == 0))
+
+  ep2 <- c(2,0,0,1)
+  b <- calculateAJ_Rcpp(t, ep2, error="aalen", return_if=FALSE)
+  S <- b$surv
+  wh1 <- which(S >= 1 - 1e-15)
+  expect_true(all(b$low [wh1] == 1))
+  expect_true(all(b$high[wh1] == 1))
+})
+
+
+test_that("influence.function has expected dims per stratum/time", {
+  set.seed(3)
+  n<-40; t<-sample(1:6,n,TRUE); ep<-sample(c(0,1,2),n,TRUE); g<-sample(1:2,n,TRUE)
+  out <- calculateAJ_Rcpp(t, ep, strata=g, error="if", return_if=TRUE)
+  IF  <- out$`influence.function`
+  expect_true(is.list(IF))
+  for (k in seq_along(IF)) {
+    if (nrow(IF[[k]])>0) expect_true(ncol(IF[[k]]) > 0)
+  }
+})
