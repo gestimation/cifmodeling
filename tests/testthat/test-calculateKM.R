@@ -87,17 +87,17 @@ test_that("drop-in replacement: no strata, no weights (greenwood / tsiatis)", {
   for (err in c("greenwood", "tsiatis")) {
     old <- call_calculateKM(t, ep, error = err)
     new <- calculateAJ_Rcpp(t, ep, error = err, return_if = FALSE)
+    old$std.err <- old$surv*old$std.err
 
     # Same time grid
     expect_equal(unname(old$time),   unname(new$time),   tolerance = 1e-12)
 
     # Core KM outputs (numeric)
-    old$std.err <- old$surv*old$std.err
     expect_equal(unname(old$surv),    unname(new$surv),    tolerance = 1e-10)
     expect_equal(unname(old$`n.risk`),unname(new$`n.risk`),tolerance = 1e-10)
     expect_equal(unname(old$`n.event`),unname(new$`n.event`),tolerance = 1e-10)
     expect_equal(unname(old$`n.censor`),unname(new$`n.censor`),tolerance = 1e-10)
-    expect_equal(unname(old$std.err),unname(new$`std.err`),tolerance = 1e-8)
+    expect_equal(unname(old$`std.err`),unname(new$`std.err`),tolerance = 1e-8)
 
     # Meta fields (character / integers)
 #   expect_identical(old$conf.type, new$conf.type)
@@ -124,14 +124,14 @@ test_that("drop-in replacement: with strata - weights", {
   for (err in c("greenwood", "tsiatis")) {
     old <- calculateKM(t, ep, strata = g, error = err)
     new <- calculateAJ_Rcpp(t, ep, strata = g, error = err, return_if = FALSE)
-
     old$std.err <- old$surv*old$std.err
+
     expect_equal(unname(old$time),    unname(new$time),    tolerance = 1e-12)
     expect_equal(unname(old$surv),    unname(new$surv),    tolerance = 1e-8)
     expect_equal(unname(old$`n.risk`),unname(new$`n.risk`),tolerance = 1e-8)
     expect_equal(unname(old$`n.event`),unname(new$`n.event`),tolerance = 1e-8)
     expect_equal(unname(old$`n.censor`),unname(new$`n.censor`),tolerance = 1e-8)
-    expect_equal(unname(old$std.err),unname(new$`std.err`),tolerance = 1e-6)
+    expect_equal(unname(old$`std.err`),unname(new$`std.err`),tolerance = 1e-6)
 
 #    expect_identical(old$conf.type, new$conf.type)
     expect_identical(old$type,      new$type)
