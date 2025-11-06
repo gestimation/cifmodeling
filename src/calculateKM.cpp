@@ -91,7 +91,11 @@ Rcpp::List calculateKM(Rcpp::NumericVector t, Rcpp::IntegerVector d,
           sum_se = std::numeric_limits<double>::infinity();
         }
       }
-      std_err[i] = sqrt(sum_se);
+      if (!R_finite(std::sqrt(sum_se))) {
+        std_err[i] = (km[i] == 0.0 ? 0.0 : R_PosInf);
+      } else {
+        std_err[i] = std::sqrt(sum_se);
+      }
     }
 
     combined_times.insert(combined_times.end(), unique_times.begin(), unique_times.end());
@@ -173,7 +177,11 @@ Rcpp::List calculateKM(Rcpp::NumericVector t, Rcpp::IntegerVector d,
           sum_se = std::numeric_limits<double>::infinity();
         }
       }
-      std_err[i] = sqrt(sum_se);
+      if (!R_finite(std::sqrt(sum_se))) {
+        std_err[i] = (km[i] == 0.0 ? 0.0 : R_PosInf);
+      } else {
+        std_err[i] = std::sqrt(sum_se);
+      }
     }
 
     combined_times.insert(combined_times.end(), unique_times.begin(), unique_times.end());
@@ -235,7 +243,11 @@ Rcpp::List calculateKM(Rcpp::NumericVector t, Rcpp::IntegerVector d,
             sum_se = std::numeric_limits<double>::infinity();
           }
         }
-        std_err[j] = std::sqrt(sum_se);
+        if (!R_finite(std::sqrt(sum_se))) {
+          std_err[j] = (km[j] == 0.0 ? 0.0 : R_PosInf);
+        } else {
+          std_err[j] = std::sqrt(sum_se);
+        }
       }
 
       combined_times.insert(combined_times.end(), unique_times.begin(), unique_times.end());
@@ -301,7 +313,11 @@ Rcpp::List calculateKM(Rcpp::NumericVector t, Rcpp::IntegerVector d,
             sum_se = std::numeric_limits<double>::infinity();
           }
         }
-        std_err[j] = std::sqrt(sum_se);
+        if (!R_finite(std::sqrt(sum_se))) {
+          std_err[j] = (km[j] == 0.0 ? 0.0 : R_PosInf);
+        } else {
+          std_err[j] = std::sqrt(sum_se);
+        }
       }
 
       combined_times.insert(combined_times.end(), unique_times.begin(), unique_times.end());

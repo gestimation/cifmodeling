@@ -87,7 +87,7 @@ cifcurve <- function(
     conf.type = "arcsine-square root",
     conf.int = 0.95,
     report.survfit.std.err = FALSE,
-    engine = c("auto","calculateKM","calculateAJ","calculateAJ_Rcpp"),
+    engine = c("auto","calculateKM","calculateAJ_Rcpp"),
     return_if = FALSE
 ) {
   outcome.type  <- util_check_outcome_type(outcome.type, formula = formula, data = data)
@@ -113,18 +113,8 @@ cifcurve <- function(
   epsilon_norm[out_readSurv$epsilon == code.event2]    <- 2L
   epsilon_norm[out_readSurv$epsilon == code.censoring] <- 0L
 
-  if (engine == "auto") {
-    engine <- if (identical(outcome.type, "COMPETING-RISK")) "calculateAJ_Rcpp" else "calculateKM"
-  }
 
-  if (identical(outcome.type, "COMPETING-RISK") && identical(engine, "calculateKM")) {
-    stop("engine='calculateKM' does not support COMPETING-RISK (CIF). Use engine='calculateAJ_Rcpp' or 'calculateAJ'.", call. = FALSE)
-  }
-  if (identical(outcome.type, "SURVIVAL") && identical(engine, "calculateAJ")) {
-    stop("engine='calculateAJ' requires outcome.type='COMPETING-RISK'.", call. = FALSE)
-  }
-
-  if (identical(engine, "calculateKM")) {
+  if (identical(outcome.type, "SURVIVAL") && identical(engine, "calculateKM")) {
     out_km <- calculateKM(out_readSurv$t, out_readSurv$d,
                           out_readSurv$w, as.integer(out_readSurv$strata), error)
     out_km$std.err <- out_km$surv * out_km$std.err
@@ -156,7 +146,7 @@ cifcurve <- function(
     class(survfit_object) <- "survfit"
     return(survfit_object)
 
-  } else if (identical(engine, "calculateAJ")) {
+  } else if (identical(outcome.type, "COMPETING-RISK") && identical(engine, "calculateKM")) {
     out_aj <- calculateAJ(out_readSurv)
     names(out_aj$strata1) <- strata_fullnames
 
@@ -224,9 +214,11 @@ cifcurve <- function(
   }
   out_cpp$call <- call
   out_cpp <- harmonize_engine_output(out_cpp)
+  if (isTRUE(report.survfit.std.err)) out_cpp$std.err <- out_cpp$std.err / out_cpp$surv
   class(out_cpp) <- "survfit"
   out_cpp
 }
+
 calculateAJ <- function(data) {
   out_km0 <- calculateKM(data$t, data$d0, data$w, as.integer(data$strata), "none")
   km0 <- util_get_surv(data$t, out_km0$surv, out_km0$time, as.integer(data$strata), out_km0$strata, out_km0$strata.levels)

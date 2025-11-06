@@ -14,7 +14,7 @@ test_that("cifcurve() produced the same outputs as survfit() in survival in surv
   testthat::skip_if_not_installed("survival")
   testdata <- createTestData1(20, 1, first_zero=FALSE, last_zero=TRUE, subset_present=FALSE, logical_strata=TRUE, na_strata=FALSE)
   e <- survival::survfit(survival::Surv(t, d)~strata, testdata, weight=w, conf.type = "none")
-  t <- cifcurve(Event(t, d) ~ strata, data = testdata, weight="w", conf.type = "none", outcome.type = "SURVIVAL")
+  t <- cifcurve(Event(t, d) ~ strata, data = testdata, weight="w", conf.type = "none", outcome.type = "SURVIVAL", engine="calculateKM")
   #  expected <- as.numeric(c(e$time, round(e$surv,digit=5), e$n, e$n.risk, e$n.event, e$n.censor, round(e$std.err,digit=5), e$strata))
   #  tested <- as.numeric(c(t$time, round(t$surv,digit=5), t$n, t$n.risk, t$n.event, t$n.censor, round(t$std.err,digit=5), t$strata))
   expected <- as.numeric(c(e$time, round(e$surv,digit=5), e$n, e$n.risk, e$n.event, e$n.censor, e$lower, e$strata))
@@ -71,7 +71,8 @@ test_that("cifcurve() yields the same outputs as survfit() with log-log transfor
 
   df_test <- createTestData1(200, 2, first_zero=TRUE, last_zero=TRUE, subset_present=FALSE, logical_strata=FALSE, na_strata=FALSE)
   e <- survival::survfit(Surv(t, d)~strata, df_test, weight=w, conf.type = "log-log")
-  t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "log-log", report.survfit.std.err = TRUE, outcome.type = "SURVIVAL")
+  t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "log-log", report.survfit.std.err = TRUE, outcome.type = "SURVIVAL", engine="calculateKM")
+  #t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "log-log", report.survfit.std.err = TRUE, outcome.type = "SURVIVAL")
   e$std.err <- sapply(e$std.err, function(x) ifelse(is.nan(x), NA, x))
   e$lower <- sapply(e$lower, function(x) ifelse(is.nan(x), NA, x))
   e$upper <- sapply(e$upper, function(x) ifelse(is.nan(x), NA, x))
@@ -107,7 +108,8 @@ test_that("cifcurve() yields the same outputs as survfit() with log transformati
 
   df_test <- createTestData1(200, 2, first_zero=TRUE, last_zero=TRUE, subset_present=FALSE, logical_strata=FALSE, na_strata=FALSE)
   e <- survival::survfit(Surv(t, d)~strata, df_test, weight=w, conf.type = "log")
-  t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "log", report.survfit.std.err = TRUE, outcome.type = "SURVIVAL")
+  #t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "log", report.survfit.std.err = TRUE, outcome.type = "SURVIVAL")
+  t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "log", report.survfit.std.err = TRUE, outcome.type = "SURVIVAL", engine="calculateKM")
   e$std.err <- sapply(e$std.err, function(x) ifelse(is.nan(x), NA, x))
   e$lower <- sapply(e$lower, function(x) ifelse(is.nan(x), NA, x))
   e$upper <- sapply(e$upper, function(x) ifelse(is.nan(x), NA, x))
@@ -143,7 +145,8 @@ test_that("cifcurve() yields the same outputs as survfit() with arcsine transfor
 
   df_test <- createTestData1(200, 2, first_zero=TRUE, last_zero=TRUE, subset_present=FALSE, logical_strata=FALSE, na_strata=FALSE)
   e <- survival::survfit(Surv(t, d)~strata, df_test, weight=w, conf.type = "a")
-  t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "a", report.survfit.std.err = TRUE, outcome.type = "SURVIVAL")
+  #t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "a", report.survfit.std.err = TRUE, outcome.type = "SURVIVAL")
+  t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "a", report.survfit.std.err = TRUE, outcome.type = "SURVIVAL", engine="calculateKM")
   e$std.err <- sapply(e$std.err, function(x) ifelse(is.nan(x), NA, x))
   e$lower <- sapply(e$lower, function(x) ifelse(is.nan(x), NA, x))
   e$upper <- sapply(e$upper, function(x) ifelse(is.nan(x), NA, x))
@@ -179,7 +182,8 @@ test_that("cifcurve() yields the same outputs as survfit()", {
 
   df_test <- createTestData1(200, 2, first_zero=TRUE, last_zero=TRUE, subset_present=FALSE, logical_strata=FALSE, na_strata=FALSE)
   e <- survival::survfit(Surv(t, d)~strata, df_test, weight=w, conf.type = "plain")
-  t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "plain", report.survfit.std.err = TRUE, outcome.type = "SURVIVAL")
+  t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "plain", report.survfit.std.err = TRUE, outcome.type = "SURVIVAL", engine="calculateAJ_Rcpp")
+  #t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "plain", report.survfit.std.err = TRUE, outcome.type = "SURVIVAL", engine="calculateKM")
   e$std.err <- sapply(e$std.err, function(x) ifelse(is.nan(x), NA, x))
   e$lower <- sapply(e$lower, function(x) ifelse(is.nan(x), NA, x))
   e$upper <- sapply(e$upper, function(x) ifelse(is.nan(x), NA, x))

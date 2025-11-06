@@ -225,23 +225,6 @@ Rcpp::List calculateAJ_Rcpp(
     }
     const int Uall = (int)t_all.size();
 
-    // unweighted counts by unique time
-    std::vector<double> cnt_event_all(Uall, 0.0),
-                        cnt_censor_all(Uall, 0.0);
-    {
-      size_t p2 = 0;
-      for (int j = 0; j < Uall; ++j) {
-        double curT = t_all[j];
-        double e = 0.0, c = 0.0, tot = 0.0;
-        while (p2 < v.size() && feq(v[p2].t, curT)) {
-          if (v[p2].eps >= 1) e += 1.0; else c += 1.0;
-          ++p2;
-        }
-        cnt_event_all[j]  = e;
-        cnt_censor_all[j] = c;
-      }
-    }
-
     std::vector<double> Y_all(Uall, 0.0);
     {
       double suf = 0.0;
@@ -326,7 +309,13 @@ Rcpp::List calculateAJ_Rcpp(
         }
       }
       double S2 = S_any[m] * S_any[m];
-      varKM_any[m] = S2 * accKM;
+      if (S2 == 0.0) {
+        varKM_any[m] = 0.0;
+      } else if (!R_finite(accKM)) {
+        varKM_any[m] = R_PosInf;
+      } else {
+        varKM_any[m] = S2 * accKM;
+      }
     }
 
     std::vector<int> all2any(Uall, 0);
@@ -493,7 +482,7 @@ Rcpp::List calculateAJ_Rcpp(
           if (error_aalen && M_c1 > 0) se_cif_aalen[j] = std::sqrt(std::max(0.0, var_aalen[0]));
           if (error_delta && M_c1 > 0) se_cif_delta[j] = std::sqrt(std::max(0.0, var_delta[0]));
         } else {
-          int use = std::min(c, M_c1);  // 末尾越え防止
+          int use = std::min(c, M_c1);
           if (error_aalen) se_cif_aalen[j] = std::sqrt(std::max(0.0, var_aalen[use - 1]));
           if (error_delta) se_cif_delta[j] = std::sqrt(std::max(0.0, var_delta[use - 1]));
         }
@@ -525,34 +514,47 @@ Rcpp::List calculateAJ_Rcpp(
         if (return_aj){
           double Fj  = clamp01(F1_all[j], 1e-15);
           double SEj = SE_aj[j];
-          if (!R_finite(SEj)){ high_all[j]=low_all[j]=NA_REAL; continue; }
+
+          if (!R_finite(SEj)) {
+            if (Fj <= EPS) { low_all[j] = 1.0; high_all[j] = 1.0; continue; }
+            if (Fj >= 1.0 - EPS) { low_all[j] = 0.0; high_all[j] = 0.0; continue; }
+            low_all[j] = NA_REAL; high_all[j] = NA_REAL; continue;
+          }
+          if (Fj <= EPS) { low_all[j] = 1.0; high_all[j] = 1.0; continue; }
+          if (Fj >= 1.0 - EPS) { low_all[j] = 0.0; high_all[j] = 0.0; continue; }
+
+          double loF = NA_REAL, hiF = NA_REAL;
           if (CONF_CIF=="plain"){
-            double lo = std::max(0.0, Fj - z*SEj);
-            double hi = std::min(1.0, Fj + z*SEj);
-            low_all[j]  = 1.0 - hi;
-            high_all[j] = 1.0 - lo;
+            loF = std::max(0.0, Fj - z*SEj);
+            hiF = std::min(1.0, Fj + z*SEj);
           } else if (CONF_CIF=="logit"){
             double se = SEj / std::max(1e-15, Fj*(1.0 - Fj));
-            double lo = Fj / ( Fj + (1.0 - Fj)*std::exp( z*se) );
-            double hi = Fj / ( Fj + (1.0 - Fj)*std::exp(-z*se) );
-            lo = std::max(0.0, std::min(1.0, lo));
-            hi = std::max(0.0, std::min(1.0, hi));
-            low_all[j]  = 1.0 - hi;
-            high_all[j] = 1.0 - lo;
-          } else { // if (CONF=="arcsine-square root" || CONF=="a" || CONF=="arcsin"){
+            loF = Fj / ( Fj + (1.0 - Fj)*std::exp( z*se) );
+            hiF = Fj / ( Fj + (1.0 - Fj)*std::exp(-z*se) );
+            loF = std::max(0.0, std::min(1.0, loF));
+            hiF = std::max(0.0, std::min(1.0, hiF));
+          } else { // arcsine-square root
             double denom = 2.0 * std::sqrt( std::max(1e-15, Fj*(1.0-Fj)) );
             double se    = (denom>0.0 ? SEj/denom : R_PosInf);
             double ang   = std::asin( std::sqrt(Fj) );
             double lo    = std::sin( std::max(0.0, ang - z*se) );
             double hi    = std::sin( std::min(PI/2, ang + z*se) );
-            lo = lo*lo; hi = hi*hi;
-            low_all[j]  = 1.0 - hi;
-            high_all[j] = 1.0 - lo;
+            loF = lo*lo; hiF = hi*hi;
           }
+          low_all[j]  = std::max(0.0, std::min(1.0, 1.0 - hiF));
+          high_all[j] = std::max(0.0, std::min(1.0, 1.0 - loF));
         } else {
           double Sj  = clamp01(S_all[j], 1e-15);
           double SEj = SE_all[j];
-          if (!R_finite(SEj) || Sj<=0.0 || Sj>=1.0){ high_all[j]=low_all[j]=NA_REAL; continue; }
+
+          if (!R_finite(SEj)) {
+            if (Sj >= 1.0 - EPS) { low_all[j] = 1.0; high_all[j] = 1.0; continue; }
+            if (Sj <= EPS)       { low_all[j] = 0.0; high_all[j] = 0.0; continue; }
+            low_all[j] = NA_REAL; high_all[j] = NA_REAL; continue;
+          }
+          if (Sj >= 1.0 - EPS) { low_all[j] = 1.0; high_all[j] = 1.0; continue; }
+          if (Sj <= EPS)       { low_all[j] = 0.0; high_all[j] = 0.0; continue; }
+
           if (CONF=="plain"){
             double lo = std::max(0.0, Sj - z*SEj);
             double hi = std::min(1.0, Sj + z*SEj);
@@ -602,8 +604,8 @@ Rcpp::List calculateAJ_Rcpp(
     for (int j=0;j<Uall;++j){
       combined_times.push_back(t_all[j]);
       combined_n_risk.push_back(Y_all[j]);
-      combined_n_event.push_back( cnt_event_all[j] );
-      combined_n_censor.push_back(cnt_censor_all[j]);
+      combined_n_event.push_back(  w_event_all[j] );
+      combined_n_censor.push_back( w_censor_all[j] );
       if (return_aj) combined_surv.push_back(1.0 - F1_all[j]);
       else           combined_surv.push_back(S_all[j]);
       if (return_aj) combined_std_err.push_back(SE_aj[j]);
