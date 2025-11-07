@@ -17,8 +17,8 @@
   formula_must_be = "Each formula must be a character string or a formula object.",
   finite = "{arg} must be finite.",
   incompatible_flags = "{which} cannot be used together.",
-  inset_need_two = "use_inset_element=TRUE requires at least two plots.",
-  inset_extra_drop = "use_inset_element=TRUE: only the first two plots will be used.",
+  inset_need_two = "inset.panel=TRUE requires at least two plots.",
+  inset_extra_drop = "inset.panel=TRUE: only the first two plots will be used.",
   infer_outcome_fail = "Failed to infer outcome.type from code.events; each must be length 2 (S) or 3 (C).",
   na            = "{arg} contains NA.",
   nonneg        = "{arg} must be non-negative.",
@@ -59,8 +59,11 @@
   weights_pos   = "weights must be non-negative."
 )
 
-.warn <- function(key, ..., .messages = .msg) {
-  tmpl <- .messages[[key]]
+.warn <- function(key, ..., .messages = NULL) {
+  if (is.null(.messages)) {
+    .messages <- tryCatch(get(".msg", inherits = TRUE), error = function(e) NULL)
+  }
+  tmpl <- if (!is.null(.messages)) .messages[[key]] else NULL
   if (is.null(tmpl)) {
     warning(sprintf("Unknown warning key: %s", key), call. = FALSE)
     return(invisible(FALSE))
@@ -76,6 +79,7 @@
   warning(msg, call. = FALSE)
   invisible(TRUE)
 }
+
 
 .err <- function(key, ..., .class = NULL, .messages = .msg) {
   args <- list(...)

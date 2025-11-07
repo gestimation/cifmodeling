@@ -198,10 +198,10 @@ layout.
 - `data`, `outcome.type`, `code.events`, `type.y` — recycled across
   panels unless a list is supplied for per-panel control.
 - `rows.columns.panel` — selects grid layout by c(rows, cols).
-- `use_inset_element` — selects inset layout.
+- `inset.panel` — selects inset layout.
 - `title.panel`, `subtitle.panel`, `caption.panel`, `title.plot` —
   overall titles and captions.
-- `tag_levels.panel` — panel tag style (e.g., “A”, “a”, “1”).
+- `tag.panel` — panel tag style (e.g., “A”, “a”, “1”).
 - `label.x`, `label.y`, `limits.x`, `limits.y`, `breaks.x`, `breaks.y` —
   shared axis control unless a list is supplied for per-panel control.
 
@@ -216,7 +216,7 @@ multiple plots. `cifpanel()` is a function for creating a panel with
 multiple plots like this. `cifpanel()` can also display one plot inside
 another. The cumulative incidence probability for macrovascular
 complications is low, making it difficult to discern differences between
-groups. The following code uses `use_inset_element=` to display plot
+groups. The following code uses `inset.panel=` to display plot
 `output2`, with an enlarged vertical axis, inside plot `output1`.
 
 ``` r
@@ -242,10 +242,10 @@ output2 <- cifplot(Event(t,epsilon) ~ fruitq,
 output3 <- list(a=output1, b=output2)
 cifpanel(plots = output3,
          title.plot = c("Associations between fruit intake and macrovascular complications", "Zoomed-in view"),
-         use_inset_element = TRUE,
-         inset.left   = 0.40, inset.bottom = 0.45,
-         inset.right  = 1.00, inset.top    = 0.95,
-         inset.align_to = "plot",
+         inset.panel = TRUE,
+         inset.left = 0.40, inset.bottom = 0.45,
+         inset.right = 1.00, inset.top = 0.95,
+         inset.align.to = "plot",
          inset.legend.position = "none",
          legend.position = "bottom")
 ```
@@ -259,17 +259,17 @@ the same output as above.
 data(diabetes.complications)
 cifpanel(
  title.plot = c("Associations between fruit intake and macrovascular complications", "Zoomed-in view"),
- use_inset_element = TRUE,
+ inset.panel = TRUE,
  formula = Event(t, epsilon) ~ fruitq,
  data = diabetes.complications,
  outcome.type = "COMPETING-RISK",
  code.events = list(c(2,1,0), c(2,1,0)),
  label.y = c("CIF of macrovascular complications", ""),
  label.x = c("Years from registration", ""),
- limits.y     = list(c(0,1), c(0,0.15)),
- inset.left   = 0.40, inset.bottom = 0.45,
- inset.right  = 1.00, inset.top    = 0.95,
- inset.align_to = "plot",
+ limits.y = list(c(0,1), c(0,0.15)),
+ inset.left = 0.40, inset.bottom = 0.45,
+ inset.right = 1.00, inset.top = 0.95,
+ inset.align.to = "plot",
  inset.legend.position = "none",
  legend.position = "bottom", 
  addConfidenceInterval = FALSE
@@ -660,18 +660,18 @@ output4 <- polyreg(nuisance.model=Event(t,d) ~ +1,
 msummary(output4$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
 ```
 
-|                  | event 1 (no competing risk)     |
-|------------------|---------------------------------|
-| fruitq1, 1 vs 0  | 1.288                           |
-|                  | \[0.001, 1136.895\]             |
-|                  | (0.942)                         |
-| effect.measure   | RR at 8                         |
-| n.events         | 358 in N = 978                  |
-| median.follow.up | 8                               |
-| range.follow.up  | \[ 0.05 , 11 \]                 |
-| n.parameters     | 2                               |
-| converged.by     | Converged in objective function |
-| nleqslv.message  | Function criterion near zero    |
+|                        | event 1 (no competing risk)     |
+|------------------------|---------------------------------|
+| fruitq1, Q2 to Q4 vs 0 | 0.777                           |
+|                        | \[0.001, 685.697\]              |
+|                        | (0.942)                         |
+| effect.measure         | RR at 8                         |
+| n.events               | 358 in N = 978                  |
+| median.follow.up       | 8                               |
+| range.follow.up        | \[ 0.05 , 11 \]                 |
+| n.parameters           | 2                               |
+| converged.by           | Converged in objective function |
+| nleqslv.message        | Function criterion near zero    |
 
 ## Example 3. Adjusted competing risks analysis
 
@@ -696,11 +696,11 @@ than exposure.
 msummary(output5$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
 ```
 
-<table style="width:97%;">
+<table style="width:99%;">
 <colgroup>
-<col style="width: 26%" />
-<col style="width: 47%" />
-<col style="width: 23%" />
+<col style="width: 21%" />
+<col style="width: 62%" />
+<col style="width: 14%" />
 </colgroup>
 <thead>
 <tr>
@@ -711,19 +711,19 @@ msummary(output5$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
 </thead>
 <tbody>
 <tr>
-<td>fruitq1, 1 vs 0</td>
-<td>1.552</td>
-<td>0.909</td>
+<td>fruitq1, Q2 to Q4 vs 0</td>
+<td>0.645</td>
+<td>1.107</td>
 </tr>
 <tr>
 <td></td>
-<td>[1.331, 1.810]</td>
-<td>[0.493, 1.676]</td>
+<td>[0.490, 0.848]</td>
+<td>[0.600, 2.042]</td>
 </tr>
 <tr>
 <td></td>
-<td>(&lt;0.001)</td>
-<td>(0.761)</td>
+<td>(0.002)</td>
+<td>(0.745)</td>
 </tr>
 <tr>
 <td>effect.measure</td>
@@ -758,14 +758,15 @@ msummary(output5$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
 </tr>
 <tr>
 <td>converged.by</td>
-<td>Converged in objective function</td>
+<td>Converged in relative difference</td>
 <td><ul>
 <li></li>
 </ul></td>
 </tr>
 <tr>
 <td>nleqslv.message</td>
-<td>Function criterion near zero</td>
+<td>Jacobian is singular (1/condition=0.0e+00) (see allowSingular
+option)</td>
 <td><ul>
 <li></li>
 </ul></td>
@@ -1228,19 +1229,18 @@ layout and styling options.
   grid size.
 - `title.panel`, `subtitle.panel`, `caption.panel` Optional strings for
   panel annotation.
-- `tag_levels.panel` Passed to
-  `patchwork::plot_annotation(tag_levels = ...)`.
+- `tag.panel` Passed to `patchwork::plot_annotation(tag_levels = ...)`.
 - `title.plot` Optional length-2 character vector, titles for base/inset
-  plots when `use_inset_element = TRUE`.
+  plots when `inset.panel = TRUE`.
 - `legend.position` Position of legends: `"top"`, `"right"`, `"bottom"`,
   `"left"`, or `"none"`.
 - `legend.collect` If `TRUE` (grid mode), collect legends across
   subplots.
-- `use_inset_element` If `TRUE`, place the second plot as an inset over
-  the first.
+- `inset.panel` If `TRUE`, place the second plot as an inset over the
+  first.
 - `inset.left`, `inset.bottom`, `inset.right`, `inset.top` Numeric
   positions (0–1) of the inset box.
-- `inset.align_to` One of `"panel"`, `"plot"`, or `"full"`.
+- `inset.align.to` One of `"panel"`, `"plot"`, or `"full"`.
 - `inset.legend.position` Legend position for the inset plot (e.g.,
   `"none"`).
 - `filename.ggsave` Character save the composed panel with the path and

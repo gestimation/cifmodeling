@@ -134,7 +134,7 @@ test_that("reg_check_input() handles NA as expected", {
     conf.level = 0.95,
     report.sandwich.conf = TRUE,
     report.boot.conf = NULL,
-    nleqslv.method = "nleqslv",
+    nleqslv.method = "Broyden",
     should.normalize.covariate = TRUE,
     strata = "strata",
     subset.condition = NULL,

@@ -18,9 +18,9 @@
 #' -   `formula` or `formulas` — one formula or a list of formulas; each entry creates a panel.
 #' -   `data`, `outcome.type`, `code.events`, `type.y` — recycled across panels unless a list is supplied for per-panel control.
 #' -   `rows.columns.panel` — selects grid layout by c(rows, cols).
-#' -   `use_inset_element` — selects inset layout.
+#' -   `inset.panel` — selects inset layout.
 #' -   `title.panel`, `subtitle.panel`, `caption.panel`, `title.plot` — overall titles and captions.
-#' -   `tag_levels.panel` — panel tag style (e.g., "A", "a", "1").
+#' -   `tag.panel` — panel tag style (e.g., "A", "a", "1").
 #' -   `label.x`, `label.y`, `limits.x`, `limits.y`, `breaks.x`, `breaks.y` — shared axis control unless a list is supplied for per-panel control.
 #'
 #' @inheritParams cif-stat-arguments
@@ -29,7 +29,7 @@
 #' @param plots Optional list of already-built \code{ggplot} objects to be arranged.
 #'   If supplied, these are used as-is (no fitting is done).
 #' @param formula A model formula specifying the time-to-event outcome on the
-#'   left-hand side (typically \code{Event(time, status)} or \code{survfit::Surv(time, status)})
+#'   left-hand side (typically \code{Event(time, status)} or \code{Surv(time, status)})
 #'   and, optionally, a stratification variable on the right-hand side.
 #'   Unlike \code{\link{cifplot}}, this function does not accept a fitted
 #'   \code{survfit} object.
@@ -42,12 +42,12 @@
 #' @param legend.collect Logical; if \code{TRUE}, try to collect a single legend
 #'   for all panels (passed to \pkg{patchwork}). Default \code{TRUE}.
 #'
-#' @param use_inset_element Logical. If \code{FALSE} (default), all panels are arranged
+#' @param inset.panel Logical. If \code{FALSE} (default), all panels are arranged
 #'   in a regular grid using \code{patchwork::wrap_plots()} and \code{plot_layout()}.
 #'   If \code{TRUE}, the function switches to “inset mode”: the **first** plot becomes
 #'   the main plot and the **second** plot (only the second) is drawn on top of it
 #'   as an inset. Additional plots beyond the second are ignored in inset mode.
-#'   Use grid mode to display more than two panels (use_inset_element = FALSE).
+#'   Use grid mode to display more than two panels (inset.panel = FALSE).
 #'
 #' @param inset.left,inset.bottom,inset.right,inset.top Numeric values in the range
 #'   \code{[0, 1]} that define the inset box as fractions of the reference area.
@@ -57,7 +57,7 @@
 #'   For example, \code{inset.left = 0.4}, \code{inset.right = 1.0} draws the inset
 #'   over the right 60% of the reference area.
 #'
-#' @param inset.align_to Character string specifying the coordinate system for the
+#' @param inset.align.to Character string specifying the coordinate system for the
 #'   inset box. One of:
 #'   \itemize{
 #'     \item \code{"panel"} (default): the box is placed relative to the **panel area**
@@ -79,7 +79,7 @@
 #'   \code{patchwork::plot_annotation()} and are useful for creating figure-like
 #'   outputs (title + subfigures + caption).
 #'
-#' @param tag_levels.panel Passed to \code{patchwork::plot_annotation()} to auto-label
+#' @param tag.panel Passed to \code{patchwork::plot_annotation()} to auto-label
 #'   individual panels (e.g. \code{"A"}, \code{"B"}, \code{"C"}). Typical values are
 #'   \code{"A"}, \code{"1"}, or \code{"a"}. See \code{?patchwork::plot_annotation}.
 #'
@@ -125,14 +125,14 @@
 #'
 #' ### Grid vs inset composition
 #'
-#' - **Grid mode** (`use_inset_element = FALSE`, default): plots are arranged with
+#' - **Grid mode** (`inset.panel = FALSE`, default): plots are arranged with
 #'   `patchwork::wrap_plots()` and `plot_layout()`. If `legend.collect = TRUE`,
 #'   legends are collected across panels where possible.
-#' - **Inset mode** (`use_inset_element = TRUE`): the **second** plot is overlaid
+#' - **Inset mode** (`inset.panel = TRUE`): the **second** plot is overlaid
 #'   into the **first** using `patchwork::inset_element()`. Only the first two
 #'   plots are used; extra plots are ignored. Control the inset box with
 #'   `inset.left`, `inset.bottom`, `inset.right`, `inset.top`, and its
-#'   reference frame via `inset.align_to` (`"panel"`, `"plot"`, or `"full"`).
+#'   reference frame via `inset.align.to` (`"panel"`, `"plot"`, or `"full"`).
 #'
 #' ### Advanced panel controls (forwarded to `cifplot()`)
 #'
@@ -167,7 +167,7 @@
 #' - `legend.position`: `"top"`, `"right"`, `"bottom"`, `"left"`, or `"none"` (applies to all panels).
 #' - Grid mode: `legend.collect = TRUE` attempts a shared legend.
 #' - Panel annotations: `title.panel`, `subtitle.panel`, `caption.panel`.
-#' - Tagging: `tag_levels.panel` is passed to `patchwork::plot_annotation()`.
+#' - Tagging: `tag.panel` is passed to `patchwork::plot_annotation()`.
 #' - In inset mode, `title.plot = c(title_base, title_inset)` labels the two plots.
 #'
 #' ### Export (optional)
@@ -224,7 +224,7 @@
 #'
 #' cifpanel(
 #'   title.plot = c("Associations between fruit intake and macrovascular complications", "Details"),
-#'   use_inset_element = TRUE,
+#'   inset.panel = TRUE,
 #'   formula = Event(t, epsilon) ~ fruitq,
 #'   data = diabetes.complications,
 #'   outcome.type = "COMPETING-RISK",
@@ -234,7 +234,7 @@
 #'   limits.y     = list(c(0,1), c(0,0.15)),
 #'   inset.left   = 0.40, inset.bottom = 0.45,
 #'   inset.right  = 1.00, inset.top    = 0.95,
-#'   inset.align_to = "plot",
+#'   inset.align.to = "plot",
 #'   inset.legend.position = "none",
 #'   legend.position = "bottom",
 #'   addConfidenceInterval = FALSE
@@ -261,10 +261,10 @@
 #'                    limits.y=c(0,0.15))
 #' output3 <- list(a=output1, b=output2)
 #' cifpanel(plots = output3,
-#'          use_inset_element = TRUE,
-#'          inset.left   = 0.40, inset.bottom = 0.45,
-#'          inset.right  = 1.00, inset.top    = 0.95,
-#'          inset.align_to = "plot",
+#'          inset.panel = TRUE,
+#'          inset.left = 0.40, inset.bottom = 0.45,
+#'          inset.right = 1.00, inset.top = 0.95,
+#'          inset.align.to = "plot",
 #'          inset.legend.position = "none",
 #'          legend.position = "bottom")
 #'
@@ -316,10 +316,11 @@ cifpanel <- function(
     addQuantileLine               = NULL,
     quantile                      = NULL,
     rows.columns.panel            = c(1, 1),
+    inset.panel                   = FALSE,
     title.panel                   = NULL,
     subtitle.panel                = NULL,
     caption.panel                 = NULL,
-    tag_levels.panel              = NULL,
+    tag.panel                     = NULL,
     title.plot                    = NULL,
     style                         = "CLASSIC",
     palette                       = NULL,
@@ -327,12 +328,11 @@ cifpanel <- function(
     font.size                     = 8,
     legend.position               = "top",
     legend.collect                = TRUE,
-    use_inset_element             = FALSE,
     inset.left                    = 0.60,
     inset.bottom                  = 0.05,
     inset.right                   = 0.98,
     inset.top                     = 0.45,
-    inset.align_to                = c("panel","plot","full"),
+    inset.align.to                = c("panel","plot","full"),
     inset.legend.position         = NULL,
     print.panel                   = TRUE,
     filename.ggsave               = NULL,
@@ -350,16 +350,16 @@ cifpanel <- function(
     engine                        = "cifplot",
     ...
 ){
-  if (!is.null(label.strata)) {
-    .warn("panel_disables_labelstrata")
-  }
-  if (isTRUE(addRiskTable) || isTRUE(addEstimateTable)) {
-    .warn("panel_disables_tables")
-  }
+#  if (!is.null(label.strata)) {
+#    .warn("panel_disables_labelstrata")
+#  }
+#  if (isTRUE(addRiskTable) || isTRUE(addEstimateTable)) {
+#    .warn("panel_disables_tables")
+#  }
   legend.position  <- "none"
   addRiskTable     <- FALSE
   addEstimateTable <- FALSE
-  inset.align_to <- match.arg(inset.align_to)
+  inset.align.to <- match.arg(inset.align.to)
 
   dots <- list(...)
 
@@ -422,7 +422,7 @@ cifpanel <- function(
     title.panel        = title.panel,
     subtitle.panel     = subtitle.panel,
     caption.panel      = caption.panel,
-    tag_levels.panel   = tag_levels.panel,
+    tag.panel          = tag.panel,
     title.plot         = title.plot
   ), panel.info %||% list())
 
@@ -444,8 +444,8 @@ cifpanel <- function(
   ), style.info)
 
   inset.info <- modifyList(list(
-    use_inset_element     = use_inset_element,
-    inset.align_to        = inset.align_to,
+    inset.panel           = inset.panel,
+    inset.align.to        = inset.align.to,
     inset.left            = inset.left,
     inset.bottom          = inset.bottom,
     inset.right           = inset.right,
@@ -465,20 +465,20 @@ cifpanel <- function(
     units           = "in"
   ), ggsave.info %||% list())
 
-  inset.info$inset.align_to <- match.arg(inset.info$inset.align_to, c("panel","plot","full"))
+  inset.info$inset.align.to <- match.arg(inset.info$inset.align.to, c("panel","plot","full"))
 
   rows.columns.panel <- panel.info$rows.columns.panel
   title.panel        <- panel.info$title.panel
   subtitle.panel     <- panel.info$subtitle.panel
   caption.panel      <- panel.info$caption.panel
-  tag_levels.panel   <- panel.info$tag_levels.panel
+  tag.panel          <- panel.info$tag.panel
   title.plot         <- panel.info$title.plot
 
   legend.position    <- style.info$legend.position
   legend.collect     <- isTRUE(style.info$legend.collect)
 
-  use_inset_element  <- isTRUE(inset.info$use_inset_element)
-  inset.align_to     <- inset.info$inset.align_to
+  inset.panel        <- isTRUE(inset.info$inset.panel)
+  inset.align.to     <- inset.info$inset.align.to
   inset.left         <- inset.info$inset.left
   inset.bottom       <- inset.info$inset.bottom
   inset.right        <- inset.info$inset.right
@@ -562,7 +562,7 @@ cifpanel <- function(
     )
 
     plots_out <- plots
-    if (isTRUE(use_inset_element)) {
+    if (isTRUE(inset.panel)) {
       if (length(plots) < 2L) .err("inset_need_two")
       if (length(plots) > 2L) .warn("inset_extra_drop")
       p_base  <- plots[[1]] + ggplot2::theme(legend.position = legend.position)
@@ -580,7 +580,7 @@ cifpanel <- function(
           bottom = inset.bottom,
           right = inset.right,
           top = inset.top,
-          align_to = inset.align_to
+          align_to = inset.align.to
         )
     } else {
       plots2 <- plots
@@ -609,14 +609,14 @@ cifpanel <- function(
       title      = title.panel,
       subtitle   = subtitle.panel,
       caption    = caption.panel,
-      tag_levels = tag_levels.panel,
+      tag_levels = tag.panel,
       theme      = theme.panel.unified
     )
 
     if (isTRUE(print.panel)) print(out_patchwork)
     if (!is.null(filename.ggsave)) {
-      if (is.null(width.ggsave))  width.ggsave  <- if (isTRUE(use_inset_element)) 6 else max(6, 5 * rows.columns.panel[2])
-      if (is.null(height.ggsave)) height.ggsave <- if (isTRUE(use_inset_element)) 6 else max(6, 5 * rows.columns.panel[1])
+      if (is.null(width.ggsave))  width.ggsave  <- if (isTRUE(inset.panel)) 6 else max(6, 5 * rows.columns.panel[2])
+      if (is.null(height.ggsave)) height.ggsave <- if (isTRUE(inset.panel)) 6 else max(6, 5 * rows.columns.panel[1])
       ggplot2::ggsave(filename.ggsave, plot = out_patchwork,
                       width = width.ggsave, height = height.ggsave,
                       dpi = dpi.ggsave, units = ggsave.units)
@@ -921,7 +921,7 @@ cifpanel <- function(
     }
   }
 
-  if (isTRUE(use_inset_element)) {
+  if (isTRUE(inset.panel)) {
     if (length(plots) < 2L) .err("inset_need_two")
     if (length(plots) > 2L) .warn("inset_extra_drop")
     p_base  <- plots[[1]] + ggplot2::theme(legend.position = legend.position)
@@ -933,7 +933,7 @@ cifpanel <- function(
     out_patchwork <- p_base +
       patchwork::inset_element(
         p_inset, left = inset.left, bottom = inset.bottom,
-        right = inset.right, top = inset.top, align_to = inset.align_to
+        right = inset.right, top = inset.top, align_to = inset.align.to
       )
   } else {
     if (length(plots) < n_slots) {
@@ -957,14 +957,14 @@ cifpanel <- function(
     title      = title.panel,
     subtitle   = subtitle.panel,
     caption    = caption.panel,
-    tag_levels = tag_levels.panel,
+    tag_levels = tag.panel,
     theme      = theme.panel.unified
   )
 
   if (isTRUE(print.panel)) print(out_patchwork)
   if (!is.null(filename.ggsave)) {
-    if (is.null(width.ggsave))  width.ggsave  <- if (isTRUE(use_inset_element)) 6 else max(6, 5 * rows.columns.panel[2])
-    if (is.null(height.ggsave)) height.ggsave <- if (isTRUE(use_inset_element)) 6 else max(6, 5 * rows.columns.panel[1])
+    if (is.null(width.ggsave))  width.ggsave  <- if (isTRUE(inset.panel)) 6 else max(6, 5 * rows.columns.panel[2])
+    if (is.null(height.ggsave)) height.ggsave <- if (isTRUE(inset.panel)) 6 else max(6, 5 * rows.columns.panel[1])
     ggplot2::ggsave(filename.ggsave, plot = out_patchwork,
                     width = width.ggsave, height = height.ggsave,
                     dpi = dpi.ggsave, units = ggsave.units)

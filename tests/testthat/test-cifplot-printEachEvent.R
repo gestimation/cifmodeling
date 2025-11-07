@@ -5,8 +5,9 @@ test_that("printEachEvent ignored for non-CR outcomes with warning", {
     {
       plt <- cifplot(
         survival::Surv(t, status) ~ fruitq1,
-        data = diabetes.complications,
-        outcome.type = "SURVIVAL",
+        data           = diabetes.complications,
+        outcome.type   = "SURVIVAL",
+        addRiskTable   = FALSE,
         printEachEvent = TRUE
       )
       expect_s3_class(plt, "ggplot")
@@ -19,9 +20,10 @@ test_that("cifplot(printEachEvent=TRUE) returns a patchwork object", {
   data(diabetes.complications)
   plt <- cifplot(
     Event(t, epsilon) ~ fruitq1,
-    data = diabetes.complications,
-    outcome.type = "COMPETING-RISK",
-    code.events = c(1, 2, 0),
+    data           = diabetes.complications,
+    outcome.type   = "COMPETING-RISK",
+    code.events    = c(1, 2, 0),
+    addRiskTable   = FALSE,
     printEachEvent = TRUE
   )
   expect_true(

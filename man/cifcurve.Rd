@@ -24,7 +24,7 @@ cifcurve(
 }
 \arguments{
 \item{formula}{A model formula specifying the time-to-event outcome on the
-left-hand side (typically \code{Event(time, status)} or \code{Surv(time, status)})
+left-hand side (typically \code{Event(time, status)} or \code{survfit::Surv(time, status)})
 and, optionally, a stratification variable on the right-hand side.
 Unlike \code{\link{cifplot}}, this function does not accept a fitted
 \code{survfit} object.}
@@ -33,9 +33,10 @@ Unlike \code{\link{cifplot}}, this function does not accept a fitted
 
 \item{weights}{Optional name of the weight variable in \code{data}. Weights must be nonnegative.}
 
-\item{subset.condition}{Optional character expression to subset \code{data} before analysis.}
+\item{subset.condition}{Optional expression (as a character string) defining a
+subset of \code{data} to analyze (default \code{NULL}).}
 
-\item{na.action}{A function specifying the action to take on missing values. (default: \code{na.omit}).}
+\item{na.action}{A function specifying the action to take on missing values (default \code{na.omit}).}
 
 \item{outcome.type}{Character string specifying the type of time-to-event outcome.
 One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
@@ -44,15 +45,15 @@ if the event variable has more than two unique levels, \code{"COMPETING-RISK"} i
 otherwise, \code{"SURVIVAL"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
 Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detection based on the event coding.}
 
-\item{code.event1}{Integer code of the event of interest.}
+\item{code.event1}{Integer code of the event of interest (default \code{1}).}
 
-\item{code.event2}{Integer code of the competing event.}
+\item{code.event2}{Integer code of the competing event (default \code{2}).}
 
-\item{code.censoring}{Integer code of censoring.}
+\item{code.censoring}{Integer code of censoring (default \code{0}).}
 
-\item{error}{Character specifying the method for variance and standard error  used internally.}
+\item{error}{Character specifying the method for variance and standard error used internally.}
 
-\item{conf.type}{Character specifying the method of transformation for confidence intervals  used internally.}
+\item{conf.type}{Character specifying the method of transformation for confidence intervals used internally.}
 
 \item{conf.int}{Numeric two-sided confidence level (default \code{0.95}).}
 
@@ -91,7 +92,8 @@ you will plot it yourself (for example with \code{ggsurvfit} or \code{\link{cifp
 \itemize{
 \item \code{conf.int} sets the two-sided level (default 0.95)
 \item \code{conf.type} chooses the transformation (\code{"arcsin"}, \code{"plain"}, \code{"log"}, \code{"log-log"}, \code{"logit"}, or \code{"none"})
-\item \code{error} chooses the estimator for standard error (\code{"greenwood"} or \code{"tsiatis"} for survival curves and \code{"delta"} or \code{"aalen"} for CIFs)
+\item \code{error} chooses the estimator for standard error (\code{"greenwood"} or \code{"tsiatis"}
+for survival curves and \code{"delta"} or \code{"aalen"} for CIFs)
 }
 }
 \details{

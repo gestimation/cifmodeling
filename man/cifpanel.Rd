@@ -46,10 +46,11 @@ cifpanel(
   addQuantileLine = NULL,
   quantile = NULL,
   rows.columns.panel = c(1, 1),
+  inset.panel = FALSE,
   title.panel = NULL,
   subtitle.panel = NULL,
   caption.panel = NULL,
-  tag_levels.panel = NULL,
+  tag.panel = NULL,
   title.plot = NULL,
   style = "CLASSIC",
   palette = NULL,
@@ -57,12 +58,11 @@ cifpanel(
   font.size = 8,
   legend.position = "top",
   legend.collect = TRUE,
-  use_inset_element = FALSE,
   inset.left = 0.6,
   inset.bottom = 0.05,
   inset.right = 0.98,
   inset.top = 0.45,
-  inset.align_to = c("panel", "plot", "full"),
+  inset.align.to = c("panel", "plot", "full"),
   inset.legend.position = NULL,
   print.panel = TRUE,
   filename.ggsave = NULL,
@@ -85,10 +85,11 @@ cifpanel(
 \item{plots}{Optional list of already-built \code{ggplot} objects to be arranged.
 If supplied, these are used as-is (no fitting is done).}
 
-\item{formula}{A single formula of the form \code{Event(t, status) ~ x} or
-\code{Surv(t, status) ~ x}. This is typically used together with
-\code{code.events = list(...)} to produce multiple event-specific panels from the
-same data and outcome.}
+\item{formula}{A model formula specifying the time-to-event outcome on the
+left-hand side (typically \code{Event(time, status)} or \code{Surv(time, status)})
+and, optionally, a stratification variable on the right-hand side.
+Unlike \code{\link{cifplot}}, this function does not accept a fitted
+\code{survfit} object.}
 
 \item{formulas}{Optional list of formulas. When given, each formula defines
 \strong{one panel}. This is the most common way to create “one variable per plot”
@@ -98,9 +99,10 @@ panels.}
 
 \item{weights}{Optional name of the weight variable in \code{data}. Weights must be nonnegative.}
 
-\item{subset.condition}{Optional character expression to subset \code{data} before analysis.}
+\item{subset.condition}{Optional expression (as a character string) defining a
+subset of \code{data} to analyze (default \code{NULL}).}
 
-\item{na.action}{A function specifying the action to take on missing values. (default: \code{na.omit}).}
+\item{na.action}{A function specifying the action to take on missing values (default \code{na.omit}).}
 
 \item{outcome.type}{Character string specifying the type of time-to-event outcome.
 One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
@@ -113,9 +115,9 @@ Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detectio
 When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
 (primarily used when \code{cifpanel()} is called or when \code{printEachEvent = TRUE}).}
 
-\item{error}{Character specifying the method for variance and standard error  used internally.}
+\item{error}{Character specifying the method for variance and standard error used internally.}
 
-\item{conf.type}{Character specifying the method of transformation for confidence intervals  used internally.}
+\item{conf.type}{Character specifying the method of transformation for confidence intervals used internally.}
 
 \item{conf.int}{Numeric two-sided confidence level (default \code{0.95}).}
 
@@ -180,12 +182,19 @@ times per stratum. Default \code{FALSE}.}
 the layout of the panel returned by the panel modes. If \code{NULL}, an automatic
 layout is determined from the number of subplots.}
 
+\item{inset.panel}{Logical. If \code{FALSE} (default), all panels are arranged
+in a regular grid using \code{patchwork::wrap_plots()} and \code{plot_layout()}.
+If \code{TRUE}, the function switches to “inset mode”: the \strong{first} plot becomes
+the main plot and the \strong{second} plot (only the second) is drawn on top of it
+as an inset. Additional plots beyond the second are ignored in inset mode.
+Use grid mode to display more than two panels (inset.panel = FALSE).}
+
 \item{title.panel, subtitle.panel, caption.panel}{Character annotations applied to the
 \strong{whole} panel layout (not to individual plots). These are passed to
 \code{patchwork::plot_annotation()} and are useful for creating figure-like
 outputs (title + subfigures + caption).}
 
-\item{tag_levels.panel}{Passed to \code{patchwork::plot_annotation()} to auto-label
+\item{tag.panel}{Passed to \code{patchwork::plot_annotation()} to auto-label
 individual panels (e.g. \code{"A"}, \code{"B"}, \code{"C"}). Typical values are
 \code{"A"}, \code{"1"}, or \code{"a"}. See \code{?patchwork::plot_annotation}.}
 
@@ -207,13 +216,6 @@ Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also
 \item{legend.collect}{Logical; if \code{TRUE}, try to collect a single legend
 for all panels (passed to \pkg{patchwork}). Default \code{TRUE}.}
 
-\item{use_inset_element}{Logical. If \code{FALSE} (default), all panels are arranged
-in a regular grid using \code{patchwork::wrap_plots()} and \code{plot_layout()}.
-If \code{TRUE}, the function switches to “inset mode”: the \strong{first} plot becomes
-the main plot and the \strong{second} plot (only the second) is drawn on top of it
-as an inset. Additional plots beyond the second are ignored in inset mode.
-Use grid mode to display more than two panels (use_inset_element = FALSE).}
-
 \item{inset.left, inset.bottom, inset.right, inset.top}{Numeric values in the range
 \code{[0, 1]} that define the inset box as fractions of the reference area.
 \code{inset.left} / \code{inset.right} control the horizontal position,
@@ -222,7 +224,7 @@ Values are interpreted as “from the left/bottom” of the reference.
 For example, \code{inset.left = 0.4}, \code{inset.right = 1.0} draws the inset
 over the right 60\% of the reference area.}
 
-\item{inset.align_to}{Character string specifying the coordinate system for the
+\item{inset.align.to}{Character string specifying the coordinate system for the
 inset box. One of:
 \itemize{
 \item \code{"panel"} (default): the box is placed relative to the \strong{panel area}
@@ -285,9 +287,9 @@ together with formula, and (4) otherwise \code{rows.columns.panel=c(1,1)}.
 \item \code{formula} or \code{formulas} — one formula or a list of formulas; each entry creates a panel.
 \item \code{data}, \code{outcome.type}, \code{code.events}, \code{type.y} — recycled across panels unless a list is supplied for per-panel control.
 \item \code{rows.columns.panel} — selects grid layout by c(rows, cols).
-\item \code{use_inset_element} — selects inset layout.
+\item \code{inset.panel} — selects inset layout.
 \item \code{title.panel}, \code{subtitle.panel}, \code{caption.panel}, \code{title.plot} — overall titles and captions.
-\item \code{tag_levels.panel} — panel tag style (e.g., "A", "a", "1").
+\item \code{tag.panel} — panel tag style (e.g., "A", "a", "1").
 \item \code{label.x}, \code{label.y}, \code{limits.x}, \code{limits.y}, \code{breaks.x}, \code{breaks.y} — shared axis control unless a list is supplied for per-panel control.
 }
 }
@@ -322,14 +324,14 @@ Many arguments accept a \strong{scalar} (recycled to all panels) or a \strong{li
 
 \subsection{Grid vs inset composition}{
 \itemize{
-\item \strong{Grid mode} (\code{use_inset_element = FALSE}, default): plots are arranged with
+\item \strong{Grid mode} (\code{inset.panel = FALSE}, default): plots are arranged with
 \code{patchwork::wrap_plots()} and \code{plot_layout()}. If \code{legend.collect = TRUE},
 legends are collected across panels where possible.
-\item \strong{Inset mode} (\code{use_inset_element = TRUE}): the \strong{second} plot is overlaid
+\item \strong{Inset mode} (\code{inset.panel = TRUE}): the \strong{second} plot is overlaid
 into the \strong{first} using \code{patchwork::inset_element()}. Only the first two
 plots are used; extra plots are ignored. Control the inset box with
 \code{inset.left}, \code{inset.bottom}, \code{inset.right}, \code{inset.top}, and its
-reference frame via \code{inset.align_to} (\code{"panel"}, \code{"plot"}, or \code{"full"}).
+reference frame via \code{inset.align.to} (\code{"panel"}, \code{"plot"}, or \code{"full"}).
 }
 }
 
@@ -369,7 +371,7 @@ can be given via \code{...} if needed; names must match strata labels.)}
 \item \code{legend.position}: \code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, or \code{"none"} (applies to all panels).
 \item Grid mode: \code{legend.collect = TRUE} attempts a shared legend.
 \item Panel annotations: \code{title.panel}, \code{subtitle.panel}, \code{caption.panel}.
-\item Tagging: \code{tag_levels.panel} is passed to \code{patchwork::plot_annotation()}.
+\item Tagging: \code{tag.panel} is passed to \code{patchwork::plot_annotation()}.
 \item In inset mode, \code{title.plot = c(title_base, title_inset)} labels the two plots.
 }
 }
@@ -423,7 +425,7 @@ cifpanel(
 
 cifpanel(
   title.plot = c("Associations between fruit intake and macrovascular complications", "Details"),
-  use_inset_element = TRUE,
+  inset.panel = TRUE,
   formula = Event(t, epsilon) ~ fruitq,
   data = diabetes.complications,
   outcome.type = "COMPETING-RISK",
@@ -433,7 +435,7 @@ cifpanel(
   limits.y     = list(c(0,1), c(0,0.15)),
   inset.left   = 0.40, inset.bottom = 0.45,
   inset.right  = 1.00, inset.top    = 0.95,
-  inset.align_to = "plot",
+  inset.align.to = "plot",
   inset.legend.position = "none",
   legend.position = "bottom",
   addConfidenceInterval = FALSE
@@ -460,10 +462,10 @@ output2 <- cifplot(Event(t,epsilon) ~ fruitq,
                    limits.y=c(0,0.15))
 output3 <- list(a=output1, b=output2)
 cifpanel(plots = output3,
-         use_inset_element = TRUE,
-         inset.left   = 0.40, inset.bottom = 0.45,
-         inset.right  = 1.00, inset.top    = 0.95,
-         inset.align_to = "plot",
+         inset.panel = TRUE,
+         inset.left = 0.40, inset.bottom = 0.45,
+         inset.right = 1.00, inset.top = 0.95,
+         inset.align.to = "plot",
          inset.legend.position = "none",
          legend.position = "bottom")
 

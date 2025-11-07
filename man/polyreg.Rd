@@ -29,7 +29,7 @@ polyreg(
   boot.multiplier = "rademacher",
   boot.replications = 200,
   boot.seed = 46,
-  nleqslv.method = "nleqslv",
+  nleqslv.method = "Newton",
   optim.parameter1 = 1e-06,
   optim.parameter2 = 1e-06,
   optim.parameter3 = 100,
@@ -51,7 +51,8 @@ polyreg(
 }
 \arguments{
 \item{nuisance.model}{A \code{formula} describing the outcome and
-nuisance covariates, excluding the exposure of interest.}
+nuisance covariates, excluding the exposure of interest.
+The left-hand side must be \code{Event(time, status)} or \code{survfit::Surv(time, status)}.}
 
 \item{exposure}{A character string giving the name of the categorical exposure
 variable in \code{data}.}
@@ -63,15 +64,15 @@ variable used to adjust for dependent censoring (default \code{NULL}).}
 covariates referenced by \code{nuisance.model}.}
 
 \item{subset.condition}{Optional expression (as a character string) defining a
-subset of \code{data} to analyse (default \code{NULL}).}
+subset of \code{data} to analyze (default \code{NULL}).}
 
-\item{na.action}{Function to handle missing values (default: \code{na.omit} in \pkg{stats}).}
+\item{na.action}{A function specifying the action to take on missing values (default \code{na.omit}).}
 
-\item{code.event1}{Integer code corresponding to the first event of interest (default \code{1}).}
+\item{code.event1}{Integer code of the event of interest (default \code{1}).}
 
-\item{code.event2}{Integer code corresponding to the competing event (default \code{2}).}
+\item{code.event2}{Integer code of the competing event (default \code{2}).}
 
-\item{code.censoring}{Integer code representing censoring (default \code{0}).}
+\item{code.censoring}{Integer code of censoring (default \code{0}).}
 
 \item{code.exposure.ref}{Integer code identifying the reference exposure
 category (default \code{0}).}
@@ -126,10 +127,8 @@ or \code{"gaussian"}. Defaults to \code{"rademacher"}.}
 
 \item{boot.seed}{Numeric seed used for resampling of bootstrap.}
 
-\item{nleqslv.method}{Character string defining the solver used by
-\pkg{nleqslv}. Available choices include \code{"nleqslv"},
-\code{"Broyden"}, \code{"Newton"}, \code{"optim"}, \code{"BFGS"} and
-\code{"SANN"}.}
+\item{nleqslv.method}{Character string specifying the solver used in
+\pkg{nleqslv()}. Available choices are \code{"Broyden"} and \code{"Newton"}.}
 
 \item{optim.parameter1}{Numeric tolerance for convergence of the outer loop
 (default \code{1e-6}).}
@@ -174,13 +173,13 @@ when the Levenberg-Marquardt step is unsuccessful (default \code{0.5}).}
 the optimization (default \code{NULL}).}
 
 \item{should.normalize.covariate}{Logical indicating whether covariates should
-be centerd and scaled prior to optimization (default \code{TRUE}).}
+be centered and scaled prior to optimization (default \code{TRUE}).}
 
 \item{should.terminate.time.point}{Logical indicating whether time points
 that contribute estimation are terminated by min of max follow-up times
 of each exposure level (default \code{TRUE}).}
 
-\item{prob.bound}{Numeric lower bound used to truncate probabilities away
+\item{prob.bound}{Numeric lower bound used to internally truncate probabilities away
 from 0 and 1 (default \code{1e-5}).}
 }
 \value{

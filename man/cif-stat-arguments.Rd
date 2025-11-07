@@ -8,9 +8,10 @@
 
 \item{weights}{Optional name of the weight variable in \code{data}. Weights must be nonnegative.}
 
-\item{subset.condition}{Optional character expression to subset \code{data} before analysis.}
+\item{subset.condition}{Optional expression (as a character string) defining a
+subset of \code{data} to analyze (default \code{NULL}).}
 
-\item{na.action}{A function specifying the action to take on missing values. (default: \code{na.omit}).}
+\item{na.action}{A function specifying the action to take on missing values (default \code{na.omit}).}
 
 \item{outcome.type}{Character string specifying the type of time-to-event outcome.
 One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
@@ -19,15 +20,15 @@ if the event variable has more than two unique levels, \code{"COMPETING-RISK"} i
 otherwise, \code{"SURVIVAL"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
 Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detection based on the event coding.}
 
-\item{code.event1}{Integer code of the event of interest.}
+\item{code.event1}{Integer code of the event of interest (default \code{1}).}
 
-\item{code.event2}{Integer code of the competing event.}
+\item{code.event2}{Integer code of the competing event (default \code{2}).}
 
-\item{code.censoring}{Integer code of censoring.}
+\item{code.censoring}{Integer code of censoring (default \code{0}).}
 
-\item{error}{Character specifying the method for variance and standard error  used internally.}
+\item{error}{Character specifying the method for variance and standard error used internally.}
 
-\item{conf.type}{Character specifying the method of transformation for confidence intervals  used internally.}
+\item{conf.type}{Character specifying the method of transformation for confidence intervals used internally.}
 
 \item{conf.int}{Numeric two-sided confidence level (default \code{0.95}).}
 }

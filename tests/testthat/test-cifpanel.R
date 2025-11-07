@@ -27,7 +27,7 @@ test_that("cifpanel() accepts pre-built plots (inset mode)", {
 
   out <- cifpanel(
     plots = list(p1, p2),
-    use_inset_element = TRUE,
+    inset.panel = TRUE,
     title.plot = c("Base", "Inset"),
     print.panel = FALSE
   )
@@ -216,7 +216,7 @@ test_that("cifpanel() applies panel-level tag_levels", {
     data         = df,
     outcome.type = "COMPETING-RISK",
     code.events  = list(c(1, 2, 0), c(1, 2, 0)),
-    tag_levels.panel = "A",
+    tag.panel = "A",
     print.panel  = FALSE
   )
 
@@ -241,6 +241,7 @@ test_that("cifplot(printEachEvent=TRUE) creates 2-event panel", {
     outcome.type     = "COMPETING-RISK",
     code.events      = c(1, 2, 0),
     printEachEvent   = TRUE,
+    addRiskTable     = FALSE,
     label.y          = c("Cumulative incidence of interest", "Cumulative incidence of competing risk"),
     print.panel      = FALSE
   )
