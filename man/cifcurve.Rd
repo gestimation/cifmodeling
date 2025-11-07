@@ -35,7 +35,7 @@ Unlike \code{\link{cifplot}}, this function does not accept a fitted
 
 \item{subset.condition}{Optional character expression to subset \code{data} before analysis.}
 
-\item{na.action}{Function to handle missing values (default: \code{na.omit}).}
+\item{na.action}{A function specifying the action to take on missing values. (default: \code{na.omit}).}
 
 \item{outcome.type}{Character string specifying the type of time-to-event outcome.
 One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
@@ -54,7 +54,7 @@ Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detectio
 
 \item{conf.type}{Character specifying the method of transformation for confidence intervals  used internally.}
 
-\item{conf.int}{Numeric two-sided confidence level  (default \code{0.95}).}
+\item{conf.int}{Numeric two-sided confidence level (default \code{0.95}).}
 
 \item{report.survfit.std.err}{Logical. If \code{TRUE}, standard errors are
 reported on the \emph{log-survival} scale, matching \code{survfit()}'s

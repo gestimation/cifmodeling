@@ -142,7 +142,6 @@ util_get_surv <- function(
   predicted.surv
 }
 
-
 util_read_surv <- function(formula, data, weights = NULL,
                      code.event1 = 1, code.event2 = 2, code.censoring = 0,
                      subset.condition = NULL, na.action = stats::na.omit) {

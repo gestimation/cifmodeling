@@ -83,7 +83,7 @@ the left-hand side must be \code{Event(time, status)} or \code{Surv(time, status
 
 \item{subset.condition}{Optional character expression to subset \code{data} before analysis.}
 
-\item{na.action}{Function to handle missing values (default: \code{na.omit}).}
+\item{na.action}{A function specifying the action to take on missing values. (default: \code{na.omit}).}
 
 \item{outcome.type}{Character string specifying the type of time-to-event outcome.
 One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
@@ -106,7 +106,7 @@ When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{co
 
 \item{conf.type}{Character specifying the method of transformation for confidence intervals  used internally.}
 
-\item{conf.int}{Numeric two-sided confidence level  (default \code{0.95}).}
+\item{conf.int}{Numeric two-sided confidence level (default \code{0.95}).}
 
 \item{type.y}{Either \code{NULL} (plot on the survival scale) or \code{"risk"} (plot on the
 cumulative-incidence / failure scale, i.e. \code{1 - survival}).}

@@ -57,27 +57,24 @@ nuisance covariates, excluding the exposure of interest.}
 variable in \code{data}.}
 
 \item{strata}{Optional character string with the name of the stratification
-variable used to adjust for dependent censoring. Defaults to \code{NULL}.}
+variable used to adjust for dependent censoring (default \code{NULL}).}
 
 \item{data}{A data frame containing the outcome, exposure and nuisance
 covariates referenced by \code{nuisance.model}.}
 
 \item{subset.condition}{Optional expression (as a character string) defining a
-subset of \code{data} to analyse. Defaults to \code{NULL}.}
+subset of \code{data} to analyse (default \code{NULL}).}
 
 \item{na.action}{Function to handle missing values (default: \code{na.omit} in \pkg{stats}).}
 
-\item{code.event1}{Integer code corresponding to the first event of interest.
-Defaults to \code{1}.}
+\item{code.event1}{Integer code corresponding to the first event of interest (default \code{1}).}
 
-\item{code.event2}{Integer code corresponding to the competing event. Defaults
-to \code{2}.}
+\item{code.event2}{Integer code corresponding to the competing event (default \code{2}).}
 
-\item{code.censoring}{Integer code representing censoring. Defaults to
-\code{0}.}
+\item{code.censoring}{Integer code representing censoring (default \code{0}).}
 
 \item{code.exposure.ref}{Integer code identifying the reference exposure
-category. Defaults to \code{0}.}
+category (default \code{0}).}
 
 \item{effect.measure1}{Character string specifying the effect measure for the
 primary event. Supported values are \code{"RR"}, \code{"OR"} and
@@ -101,19 +98,17 @@ You can also use abbreviations such as \code{"S"} or \code{"C"}.
 Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic
 detection based on the event coding in \code{data}.}
 
-\item{conf.level}{Confidence level for Wald-type intervals. Defaults to
-\code{0.95}.}
+\item{conf.level}{Confidence level for Wald-type intervals (default \code{0.95}).}
 
 \item{report.nuisance.parameter}{Logical; if \code{TRUE}, the returned object
-includes estimates of the nuisance model parameters. Defaults to
-\code{FALSE}.}
+includes estimates of the nuisance model parameters (default \code{FALSE}).}
 
-\item{report.optim.convergence}{Logical; if \code{TRUE}, optimisation
-convergence summaries are returned. Defaults to \code{FALSE}.}
+\item{report.optim.convergence}{Logical; if \code{TRUE}, optimization
+convergence summaries are returned (default \code{FALSE}).}
 
 \item{report.sandwich.conf}{Logical or \code{NULL}. When \code{TRUE}, confidence
 intervals based on sandwich variance are computed. When \code{FALSE}, they are
-omitted. Defaults to \code{TRUE}.}
+omitted (default \code{TRUE}).}
 
 \item{report.boot.conf}{Logical or \code{NULL}. When \code{TRUE}, bootstrap
 confidence intervals are computed. When \code{FALSE}, they are omitted. If
@@ -121,13 +116,13 @@ confidence intervals are computed. When \code{FALSE}, they are omitted. If
 
 \item{boot.bca}{Logical indicating the bootstrap confidence interval method.
 Use \code{TRUE} for bias-corrected and accelerated intervals or \code{FALSE}
-for the normal approximation. Defaults to \code{FALSE}.}
+for the normal approximation (default \code{FALSE}).}
 
 \item{boot.multiplier}{Character \code{"rademacher"}, \code{"mammen"},
 or \code{"gaussian"}. Defaults to \code{"rademacher"}.}
 
-\item{boot.replications}{Integer giving the number of bootstrap replications.
-Defaults to \code{200}.}
+\item{boot.replications}{Integer giving the number of bootstrap replications
+(default \code{200}).}
 
 \item{boot.seed}{Numeric seed used for resampling of bootstrap.}
 
@@ -136,57 +131,57 @@ Defaults to \code{200}.}
 \code{"Broyden"}, \code{"Newton"}, \code{"optim"}, \code{"BFGS"} and
 \code{"SANN"}.}
 
-\item{optim.parameter1}{Numeric tolerance for convergence of the outer loop.
-Defaults to \code{1e-6}.}
+\item{optim.parameter1}{Numeric tolerance for convergence of the outer loop
+(default \code{1e-6}).}
 
-\item{optim.parameter2}{Numeric tolerance for convergence of the inner loop.
-Defaults to \code{1e-6}.}
+\item{optim.parameter2}{Numeric tolerance for convergence of the inner loop
+(default \code{1e-6}).}
 
 \item{optim.parameter3}{Numeric constraint on the absolute value of
-parameters. Defaults to \code{100}.}
+parameters (default \code{100}).}
 
-\item{optim.parameter4}{Integer maximum number of outer loop iterations.
-Defaults to \code{50}.}
+\item{optim.parameter4}{Integer maximum number of outer loop iterations
+(default \code{50}).}
 
 \item{optim.parameter5}{Integer maximum number of \code{nleqslv}
-iterations per outer iteration. Defaults to \code{50}.}
+iterations per outer iteration (default \code{50}).}
 
 \item{optim.parameter6}{Integer maximum number of iterations for the
-Levenberg-Marquardt routine. Defaults to \code{50}.}
+Levenberg-Marquardt routine (default \code{50}).}
 
 \item{optim.parameter7}{Numeric convergence tolerance for the
-Levenberg-Marquardt routine. Defaults to \code{1e-10}.}
+Levenberg-Marquardt routine (default \code{1e-10}).}
 
 \item{optim.parameter8}{Numeric tolerance for updating the Hessian in the
-Levenberg-Marquardt routine. Defaults to \code{1e-6}.}
+Levenberg-Marquardt routine (default \code{1e-6}).}
 
 \item{optim.parameter9}{Numeric starting value for the Levenberg-Marquardt
-damping parameter lambda. Defaults to \code{1e-6}.}
+damping parameter lambda (default \code{1e-6}).}
 
 \item{optim.parameter10}{Numeric upper bound for lambda in the
-Levenberg-Marquardt routine. Defaults to \code{40}.}
+Levenberg-Marquardt routine (default \code{40}).}
 
 \item{optim.parameter11}{Numeric lower bound for lambda in the
-Levenberg-Marquardt routine. Defaults to \code{0.025}.}
+Levenberg-Marquardt routine (default \code{0.025}).}
 
 \item{optim.parameter12}{Numeric multiplicative increment applied to lambda
-when the Levenberg-Marquardt step is successful. Defaults to \code{2}.}
+when the Levenberg-Marquardt step is successful (default \code{2}).}
 
 \item{optim.parameter13}{Numeric multiplicative decrement applied to lambda
-when the Levenberg-Marquardt step is unsuccessful. Defaults to \code{0.5}.}
+when the Levenberg-Marquardt step is unsuccessful (default \code{0.5}).}
 
 \item{data.initial.values}{Optional data frame providing starting values for
-the optimisation. Defaults to \code{NULL}.}
+the optimization (default \code{NULL}).}
 
 \item{should.normalize.covariate}{Logical indicating whether covariates should
-be centred and scaled prior to optimization. Defaults to \code{TRUE}.}
+be centerd and scaled prior to optimization (default \code{TRUE}).}
 
 \item{should.terminate.time.point}{Logical indicating whether time points
 that contribute estimation are terminated by min of max follow-up times
-of each exposure level. Defaults to \code{TRUE}.}
+of each exposure level (default \code{TRUE}).}
 
 \item{prob.bound}{Numeric lower bound used to truncate probabilities away
-from 0 and 1. Defaults to \code{1e-5}.}
+from 0 and 1 (default \code{1e-5}).}
 }
 \value{
 A list containing fitted exposure effects and supporting results. The

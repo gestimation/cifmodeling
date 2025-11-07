@@ -10,7 +10,7 @@
 
 \item{subset.condition}{Optional character expression to subset \code{data} before analysis.}
 
-\item{na.action}{Function to handle missing values (default: \code{na.omit}).}
+\item{na.action}{A function specifying the action to take on missing values. (default: \code{na.omit}).}
 
 \item{outcome.type}{Character string specifying the type of time-to-event outcome.
 One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
@@ -29,7 +29,7 @@ Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detectio
 
 \item{conf.type}{Character specifying the method of transformation for confidence intervals  used internally.}
 
-\item{conf.int}{Numeric two-sided confidence level  (default \code{0.95}).}
+\item{conf.int}{Numeric two-sided confidence level (default \code{0.95}).}
 }
 \description{
 These arguments are shared by \code{cifplot()}, \code{cifpanel()}, and

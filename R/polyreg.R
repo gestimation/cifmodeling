@@ -5,23 +5,21 @@
 #' several outcome types, including competing risks, survival and binomial outcomes.
 #' @param nuisance.model A \code{formula} describing the outcome and
 #'   nuisance covariates, excluding the exposure of interest.
+#'   The left-hand side must be \code{Event(time, status)} or \code{survfit::Surv(time, status)}.
 #' @param exposure A character string giving the name of the categorical exposure
 #'   variable in \code{data}.
 #' @param strata Optional character string with the name of the stratification
-#'   variable used to adjust for dependent censoring. Defaults to \code{NULL}.
+#'   variable used to adjust for dependent censoring (default \code{NULL}).
 #' @param data A data frame containing the outcome, exposure and nuisance
 #'   covariates referenced by \code{nuisance.model}.
 #' @param subset.condition Optional expression (as a character string) defining a
-#'   subset of \code{data} to analyse. Defaults to \code{NULL}.
-#' @param na.action Function to handle missing values (default: \code{na.omit} in \pkg{stats}).
-#' @param code.event1 Integer code corresponding to the first event of interest.
-#'   Defaults to \code{1}.
-#' @param code.event2 Integer code corresponding to the competing event. Defaults
-#'   to \code{2}.
-#' @param code.censoring Integer code representing censoring. Defaults to
-#'   \code{0}.
+#'   subset of \code{data} to analyze (default \code{NULL}).
+#' @param na.action A function specifying the action to take on missing values (default \code{na.omit}).
+#' @param code.event1 Integer code of the event of interest (default \code{1}).
+#' @param code.event2 Integer code of the competing event (default \code{2}).
+#' @param code.censoring  Integer code of censoring (default \code{0}).
 #' @param code.exposure.ref Integer code identifying the reference exposure
-#'   category. Defaults to \code{0}.
+#'   category (default \code{0}).
 #' @param effect.measure1 Character string specifying the effect measure for the
 #'   primary event. Supported values are \code{"RR"}, \code{"OR"} and
 #'   \code{"SHR"}.
@@ -40,66 +38,62 @@
 #' You can also use abbreviations such as \code{"S"} or \code{"C"}.
 #' Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic
 #' detection based on the event coding in \code{data}.
-#' @param conf.level Confidence level for Wald-type intervals. Defaults to
-#'   \code{0.95}.
+#' @param conf.level Confidence level for Wald-type intervals (default \code{0.95}).
 #' @param report.nuisance.parameter Logical; if \code{TRUE}, the returned object
-#'   includes estimates of the nuisance model parameters. Defaults to
-#'   \code{FALSE}.
-#' @param report.optim.convergence Logical; if \code{TRUE}, optimisation
-#'   convergence summaries are returned. Defaults to \code{FALSE}.
+#'   includes estimates of the nuisance model parameters (default \code{FALSE}).
+#' @param report.optim.convergence Logical; if \code{TRUE}, optimization
+#'   convergence summaries are returned (default \code{FALSE}).
 #' @param report.sandwich.conf Logical or \code{NULL}. When \code{TRUE}, confidence
 #'   intervals based on sandwich variance are computed. When \code{FALSE}, they are
-#'   omitted. Defaults to \code{TRUE}.
+#'   omitted (default \code{TRUE}).
 #' @param report.boot.conf Logical or \code{NULL}. When \code{TRUE}, bootstrap
 #'   confidence intervals are computed. When \code{FALSE}, they are omitted. If
 #'   \code{NULL}, the function chooses based on \code{outcome.type}.
 #' @param boot.bca Logical indicating the bootstrap confidence interval method.
 #'   Use \code{TRUE} for bias-corrected and accelerated intervals or \code{FALSE}
-#'   for the normal approximation. Defaults to \code{FALSE}.
+#'   for the normal approximation (default \code{FALSE}).
 #' @param boot.multiplier Character \code{"rademacher"}, \code{"mammen"},
 #'   or \code{"gaussian"}. Defaults to \code{"rademacher"}.
-#' @param boot.replications Integer giving the number of bootstrap replications.
-#'   Defaults to \code{200}.
+#' @param boot.replications Integer giving the number of bootstrap replications
+#'   (default \code{200}).
 #' @param boot.seed Numeric seed used for resampling of bootstrap.
-#' @param nleqslv.method Character string defining the solver used by
-#'   \pkg{nleqslv}. Available choices include \code{"nleqslv"},
-#'   \code{"Broyden"}, \code{"Newton"}, \code{"optim"}, \code{"BFGS"} and
-#'   \code{"SANN"}.
-#' @param optim.parameter1 Numeric tolerance for convergence of the outer loop.
-#'   Defaults to \code{1e-6}.
-#' @param optim.parameter2 Numeric tolerance for convergence of the inner loop.
-#'   Defaults to \code{1e-6}.
+#' @param nleqslv.method Character string specifying the solver used in
+#'   \pkg{nleqslv()}. Available choices are \code{"Broyden"} and \code{"Newton"}.
+#' @param optim.parameter1 Numeric tolerance for convergence of the outer loop
+#'    (default \code{1e-6}).
+#' @param optim.parameter2 Numeric tolerance for convergence of the inner loop
+#'    (default \code{1e-6}).
 #' @param optim.parameter3 Numeric constraint on the absolute value of
-#'   parameters. Defaults to \code{100}.
-#' @param optim.parameter4 Integer maximum number of outer loop iterations.
-#'   Defaults to \code{50}.
+#'   parameters (default \code{100}).
+#' @param optim.parameter4 Integer maximum number of outer loop iterations
+#'   (default \code{50}).
 #' @param optim.parameter5 Integer maximum number of \code{nleqslv}
-#'   iterations per outer iteration. Defaults to \code{50}.
+#'   iterations per outer iteration (default \code{50}).
 #' @param optim.parameter6 Integer maximum number of iterations for the
-#'   Levenberg-Marquardt routine. Defaults to \code{50}.
+#'   Levenberg-Marquardt routine (default \code{50}).
 #' @param optim.parameter7 Numeric convergence tolerance for the
-#'   Levenberg-Marquardt routine. Defaults to \code{1e-10}.
+#'   Levenberg-Marquardt routine (default \code{1e-10}).
 #' @param optim.parameter8 Numeric tolerance for updating the Hessian in the
-#'   Levenberg-Marquardt routine. Defaults to \code{1e-6}.
+#'   Levenberg-Marquardt routine (default \code{1e-6}).
 #' @param optim.parameter9 Numeric starting value for the Levenberg-Marquardt
-#'   damping parameter lambda. Defaults to \code{1e-6}.
+#'   damping parameter lambda (default \code{1e-6}).
 #' @param optim.parameter10 Numeric upper bound for lambda in the
-#'   Levenberg-Marquardt routine. Defaults to \code{40}.
+#'   Levenberg-Marquardt routine (default \code{40}).
 #' @param optim.parameter11 Numeric lower bound for lambda in the
-#'   Levenberg-Marquardt routine. Defaults to \code{0.025}.
+#'   Levenberg-Marquardt routine (default \code{0.025}).
 #' @param optim.parameter12 Numeric multiplicative increment applied to lambda
-#'   when the Levenberg-Marquardt step is successful. Defaults to \code{2}.
+#'   when the Levenberg-Marquardt step is successful (default \code{2}).
 #' @param optim.parameter13 Numeric multiplicative decrement applied to lambda
-#'   when the Levenberg-Marquardt step is unsuccessful. Defaults to \code{0.5}.
+#'   when the Levenberg-Marquardt step is unsuccessful (default \code{0.5}).
 #' @param data.initial.values Optional data frame providing starting values for
-#'   the optimisation. Defaults to \code{NULL}.
+#'   the optimization (default \code{NULL}).
 #' @param should.normalize.covariate Logical indicating whether covariates should
-#'   be centred and scaled prior to optimization. Defaults to \code{TRUE}.
+#'   be centered and scaled prior to optimization (default \code{TRUE}).
 #' @param should.terminate.time.point Logical indicating whether time points
 #'   that contribute estimation are terminated by min of max follow-up times
-#'   of each exposure level. Defaults to \code{TRUE}.
-#' @param prob.bound Numeric lower bound used to truncate probabilities away
-#'   from 0 and 1. Defaults to \code{1e-5}.
+#'   of each exposure level (default \code{TRUE}).
+#' @param prob.bound Numeric lower bound used to internally truncate probabilities away
+#'   from 0 and 1 (default \code{1e-5}).
 #'
 #' @details
 #'
@@ -291,7 +285,7 @@ polyreg <- function(
     boot.multiplier = "rademacher",
     boot.replications = 200,
     boot.seed = 46,
-    nleqslv.method = "nleqslv",
+    nleqslv.method = "Newton",
     optim.parameter1 = 1e-6,
     optim.parameter2 = 1e-6,
     optim.parameter3 = 100,

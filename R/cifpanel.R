@@ -28,10 +28,11 @@
 #'
 #' @param plots Optional list of already-built \code{ggplot} objects to be arranged.
 #'   If supplied, these are used as-is (no fitting is done).
-#' @param formula A single formula of the form \code{Event(t, status) ~ x} or
-#'   \code{Surv(t, status) ~ x}. This is typically used together with
-#'   \code{code.events = list(...)} to produce multiple event-specific panels from the
-#'   same data and outcome.
+#' @param formula A model formula specifying the time-to-event outcome on the
+#'   left-hand side (typically \code{Event(time, status)} or \code{survfit::Surv(time, status)})
+#'   and, optionally, a stratification variable on the right-hand side.
+#'   Unlike \code{\link{cifplot}}, this function does not accept a fitted
+#'   \code{survfit} object.
 #' @param formulas Optional list of formulas. When given, each formula defines
 #'   **one panel**. This is the most common way to create “one variable per plot”
 #'   panels.

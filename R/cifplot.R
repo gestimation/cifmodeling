@@ -37,6 +37,7 @@
 #'
 #' @param formula_or_fit A model formula or a \code{survfit} object. **Note:** When a formula is supplied,
 #'   the left-hand side must be \code{Event(time, status)} or \code{Surv(time, status)}.
+#'   The right-hand side specifies the stratification variable.
 #' @param code.events Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
 #'   When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
 #'   (primarily used when \code{cifpanel()} is called or when \code{printEachEvent = TRUE}).

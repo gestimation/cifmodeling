@@ -13,12 +13,13 @@
 #' **Confidence intervals**
 #' -   `conf.int` sets the two-sided level (default 0.95)
 #' -   `conf.type` chooses the transformation (`"arcsin"`, `"plain"`, `"log"`, `"log-log"`, `"logit"`, or `"none"`)
-#' -   `error` chooses the estimator for standard error (`"greenwood"` or `"tsiatis"` for survival curves and `"delta"` or `"aalen"` for CIFs)
+#' -   `error` chooses the estimator for standard error (`"greenwood"` or `"tsiatis"`
+#' for survival curves and `"delta"` or `"aalen"` for CIFs)
 #'
 #' @inheritParams cif-stat-arguments
 #'
 #' @param formula A model formula specifying the time-to-event outcome on the
-#'   left-hand side (typically \code{Event(time, status)} or \code{Surv(time, status)})
+#'   left-hand side (typically \code{Event(time, status)} or \code{survfit::Surv(time, status)})
 #'   and, optionally, a stratification variable on the right-hand side.
 #'   Unlike \code{\link{cifplot}}, this function does not accept a fitted
 #'   \code{survfit} object.

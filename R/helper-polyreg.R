@@ -218,7 +218,7 @@ reg_check_input <- function(data, formula, exposure, code.event1, code.event2, c
     report.sandwich.conf.corrected <- report.sandwich.conf
   }
 
-  outer_choices <- c("nleqslv","Newton","Broyden")
+  outer_choices <- c("Newton","Broyden")
   nleqslv.method <- match.arg(nleqslv.method, choices = outer_choices)
   return(list(should.normalize.covariate = should.normalize.covariate.corrected, report.sandwich.conf = report.sandwich.conf.corrected, report.boot.conf = report.boot.conf.corrected, out_readExposureDesign=out_readExposureDesign, x_a=x_a, x_l=x_l))
 }
