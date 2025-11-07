@@ -9,7 +9,12 @@
 
 ## Quick start
 
+This package is a compact and unified toolkit for Kaplan–Meier /
+Aalen–Johansen curves, visualization, and direct polytomous regression
+based on polytomous log odds products in R.
+
 ``` r
+library(cifmodeling)
 data(diabetes.complications)
 cifplot(Event(t,epsilon) ~ fruitq, data=diabetes.complications, 
         outcome.type="COMPETING-RISK", printEachEvent=TRUE)
@@ -22,7 +27,7 @@ cumulative incidence function (CIF) curves. In competing risks data,
 censoring is often coded as 0, events of interest as 1, and competing
 risks as 2. The variable `epsilon` in `diabetes.complications` data
 frame represents the occurrence of competing risks according to this
-coding scheme. By specifying `printEachEvent=`, the CIF curve for
+coding scheme. By specifying `printEachEvent=TRUE`, the CIF curve for
 diabetic retinopathy (`epsilon=1`) is output on the left, and the CIF
 curve for macrovascular complications (`epsilon=2`) is output on the
 right.
@@ -245,7 +250,7 @@ output2 <- cifplot(Event(t,epsilon) ~ fruitq,
 #> NULL
 output3 <- list(a=output1, b=output2)
 cifpanel(plots = output3,
-         title.plot = c("Associations between fruit intake and macrovascular complications", "Zoomed-in view"),
+         title.plot = c("Fruit intake and macrovascular complications", "Zoomed-in view"),
          inset.panel = TRUE,
          inset.left = 0.40, inset.bottom = 0.45,
          inset.right = 1.00, inset.top = 0.95,
@@ -260,7 +265,7 @@ the same output as above.
 
 ``` r
 cifpanel(
- title.plot = c("Associations between fruit intake and macrovascular complications", "Zoomed-in view"),
+ title.plot = c("Fruit intake and macrovascular complications", "Zoomed-in view"),
  inset.panel = TRUE,
  formula = Event(t, epsilon) ~ fruitq,
  data = diabetes.complications,
@@ -451,8 +456,10 @@ data(diabetes.complications)
 diabetes.complications$fruitq1 <- ifelse(
   diabetes.complications$fruitq == "Q1","Q1","Q2 to Q4"
 )
-cifplot(Event(t,epsilon)~fruitq+fruitq1, data=diabetes.complications, outcome.type="COMPETING-RISK",
-        addConfidenceInterval=TRUE, addCensorMark=FALSE, addCompetingRiskMark=FALSE, printEachVar=TRUE)
+cifplot(Event(t,epsilon)~fruitq+fruitq1, data=diabetes.complications, 
+        outcome.type="COMPETING-RISK",
+        addConfidenceInterval=TRUE, addCensorMark=FALSE, 
+        addCompetingRiskMark=FALSE, printEachVar = TRUE)
 ```
 
 <img src="man/figures/README-example1-1-1.png" width="100%" />
@@ -469,9 +476,11 @@ by calculating Aalen–Johansen estimator stratified by fruitq1. Then,
 arguments are also used to customize the axis labels.
 
 ``` r
-output1 <- cifcurve(Event(t,epsilon)~fruitq1, data=diabetes.complications, outcome.type="COMPETING-RISK")
-cifplot(output1, addConfidenceInterval=FALSE, addEstimateTable=TRUE, addCensorMark=TRUE, 
-        addCompetingRiskMark=FALSE, label.y="CIF of diabetic retinopathy", label.x="Years from registration")
+output1 <- cifcurve(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
+                    outcome.type="COMPETING-RISK")
+cifplot(output1, addConfidenceInterval=FALSE, addEstimateTable=TRUE, 
+        addCensorMark=TRUE, addCompetingRiskMark=FALSE, 
+        label.y="CIF of diabetic retinopathy", label.x="Years from registration")
 ```
 
 <img src="man/figures/README-example1-2-1.png" width="100%" />
@@ -507,9 +516,9 @@ corresponding to each label in `label.strata`. The levels specified in
 to `style="FRAMED"` specification.
 
 ``` r
-cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications, outcome.type="COMPETING-RISK", 
-        addConfidenceInterval=FALSE, addEstimateTable=TRUE, addCensorMark=FALSE, 
-        addCompetingRiskMark=TRUE, competing.risk.time=output2, 
+cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
+        outcome.type="COMPETING-RISK", addConfidenceInterval=FALSE, addEstimateTable=TRUE, 
+        addCensorMark=FALSE, addCompetingRiskMark=TRUE, competing.risk.time=output2, 
         label.y="CIF of diabetic retinopathy", label.x="Years from registration", 
         label.strata=c("High intake","Low intake"), level.strata=c("Q2 to Q4","Q1"), 
         order.strata=c("Q1", "Q2 to Q4"), style="FRAMED")
