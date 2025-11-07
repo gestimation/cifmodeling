@@ -359,6 +359,7 @@ cifplot <- function(
   axis.info$order.strata <- norm$order_data
   axis.info$label.strata <- norm$label_map
 
+  type.y <- util_check_type_y(type.y)
   if (!is.null(axis.info$label.strata)) {
     stopifnot(!is.null(names(axis.info$label.strata)))
   }
@@ -374,10 +375,9 @@ cifplot <- function(
           "incompatible_flags",
           which = "printEachVar, printEachEvent and printCensoring")
 
-  outcome.type <- util_check_outcome_type(
-    outcome.type, formula = if (inherits(formula_or_fit, "survfit")) NULL else formula_or_fit,
-    data = data
-  )
+  if (!inherits(formula_or_fit, "survfit")) {
+    outcome.type <- util_check_outcome_type(outcome.type, formula=formula_or_fit, data = data)
+  }
 
   if (!is.null(code.events)) {
     ce <- plot_check_code_events(code.events)
@@ -556,9 +556,9 @@ plot_printEachVar <- function(
 
   if (is.null(outcome.type)) {
     outcome.type <- util_check_outcome_type(
-      formula = formula,
-      data    = data,
-      na.action = na.action,
+      formula      = formula,
+      data         = data,
+      na.action    = na.action,
       auto_message = FALSE
     )
   }

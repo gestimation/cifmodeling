@@ -7,9 +7,7 @@
 using namespace Rcpp;
 
 namespace {
-const double EPS = 1e-9;
-
-inline bool feq(double a, double b, double eps=EPS){
+inline bool feq(double a, double b, double eps=1e-12){
   double s = std::max({1.0, std::fabs(a), std::fabs(b)});
   return std::fabs(a-b) <= eps * s;
 }
@@ -49,8 +47,10 @@ Rcpp::List calculateAJ_Rcpp(
     Rcpp::Nullable<Rcpp::IntegerVector> strata  = R_NilValue,
     std::string error = "greenwood",
     std::string conf_type = "arcsin",
+    double conf_int = 0.95,
     bool return_if = true,
-    double conf_int = 0.95
+    double prob_bound = 0.00001
+
 ){
   const int N = t.size();
 
@@ -346,7 +346,7 @@ Rcpp::List calculateAJ_Rcpp(
           double dlam_c1  = (need_any_cif ? dl_c1[m] : 0.0);
 
           double dm_any = 0.0, dm_c1 = 0.0;
-          if (Ti + EPS >= tj){
+          if (Ti + prob_bound >= tj){
             dm_any = wi * ((feq(Ti,tj) && (Ei >= 1)) ? (1.0 - dlam_any) : (0.0 - dlam_any));
             dm_c1  = wi * ((feq(Ti,tj) && (Ei == 1)) ? (1.0 - dlam_c1 ) : (0.0 - dlam_c1 ));
           }
@@ -497,16 +497,16 @@ Rcpp::List calculateAJ_Rcpp(
     if (CONF_CIF != "none" || CONF != "none"){
       for (int j=0;j<Uall;++j){
         if (return_aj){
-          double Fj  = clamp01(F1_all[j], 1e-15);
+          double Fj  = clamp01(F1_all[j], prob_bound);
           double SEj = SE_aj[j];
 
           if (!R_finite(SEj)) {
-            if (Fj <= EPS) { low_all[j] = 1.0; high_all[j] = 1.0; continue; }
-            if (Fj >= 1.0 - EPS) { low_all[j] = 0.0; high_all[j] = 0.0; continue; }
+            if (Fj <= prob_bound) { low_all[j] = 1.0; high_all[j] = 1.0; continue; }
+            if (Fj >= 1.0 - prob_bound) { low_all[j] = 0.0; high_all[j] = 0.0; continue; }
             low_all[j] = NA_REAL; high_all[j] = NA_REAL; continue;
           }
-          if (Fj <= EPS) { low_all[j] = 1.0; high_all[j] = 1.0; continue; }
-          if (Fj >= 1.0 - EPS) { low_all[j] = 0.0; high_all[j] = 0.0; continue; }
+          if (Fj <= prob_bound) { low_all[j] = 1.0; high_all[j] = 1.0; continue; }
+          if (Fj >= 1.0 - prob_bound) { low_all[j] = 0.0; high_all[j] = 0.0; continue; }
 
           double loF = NA_REAL, hiF = NA_REAL;
           if (CONF_CIF=="plain"){
@@ -529,16 +529,16 @@ Rcpp::List calculateAJ_Rcpp(
           low_all[j]  = std::max(0.0, std::min(1.0, 1.0 - hiF));
           high_all[j] = std::max(0.0, std::min(1.0, 1.0 - loF));
         } else {
-          double Sj  = clamp01(S_all[j], 1e-15);
+          double Sj  = clamp01(S_all[j], prob_bound);
           double SEj = SE_all[j];
 
           if (!R_finite(SEj)) {
-            if (Sj >= 1.0 - EPS) { low_all[j] = 1.0; high_all[j] = 1.0; continue; }
-            if (Sj <= EPS)       { low_all[j] = 0.0; high_all[j] = 0.0; continue; }
+            if (Sj >= 1.0 - prob_bound) { low_all[j] = 1.0; high_all[j] = 1.0; continue; }
+            if (Sj <= prob_bound)       { low_all[j] = 0.0; high_all[j] = 0.0; continue; }
             low_all[j] = NA_REAL; high_all[j] = NA_REAL; continue;
           }
-          if (Sj >= 1.0 - EPS) { low_all[j] = 1.0; high_all[j] = 1.0; continue; }
-          if (Sj <= EPS)       { low_all[j] = 0.0; high_all[j] = 0.0; continue; }
+          if (Sj >= 1.0 - prob_bound) { low_all[j] = 1.0; high_all[j] = 1.0; continue; }
+          if (Sj <= prob_bound)       { low_all[j] = 0.0; high_all[j] = 0.0; continue; }
 
           if (CONF=="plain"){
             double lo = std::max(0.0, Sj - z*SEj);

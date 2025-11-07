@@ -92,20 +92,20 @@ test_that("reg_read_time.point() yields expected outputs according to outcome.ty
   )
   expect_error(reg_read_time.point(Event(t,d)~1, df, matrix(1, nrow(df), 1),
                                    "SURVIVAL", code.censoring = 0,
-                                   should.terminate.time.point = TRUE,
+                                   terminate.time.point = TRUE,
                                    time.point = NULL),
                "`?time\\.point`?\\s+is\\s+required"
   )
   tp <- reg_read_time.point(Event(t,d)~1, df, matrix(1, nrow(df), 1),
                             "BINOMIAL", code.censoring = 0,
-                            should.terminate.time.point = TRUE,
+                            terminate.time.point = TRUE,
                             time.point = NULL)
   expect_true(is.infinite(tp))
 
   x_a <- model.matrix(~ fruitq1, data = df)[, -1, drop = FALSE]
   tp2 <- reg_read_time.point(Event(t,d)~sex, df, x_a,
                              "PROPORTIONAL-SURVIVAL", code.censoring = 0,
-                             should.terminate.time.point = TRUE,
+                             terminate.time.point = TRUE,
                              time.point = NULL)
   expect_true(all(tp2 >= 0))
   expect_true(is.unsorted(tp2, strictly = FALSE) == FALSE)
@@ -135,7 +135,7 @@ test_that("reg_check_input() handles NA as expected", {
     report.sandwich.conf = TRUE,
     report.boot.conf = NULL,
     nleqslv.method = "Broyden",
-    should.normalize.covariate = TRUE,
+    normalize.covariate = TRUE,
     strata = "strata",
     subset.condition = NULL,
     na.action = na.omit

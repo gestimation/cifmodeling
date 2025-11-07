@@ -2,9 +2,7 @@
 #'
 #' These arguments are shared by \code{cifplot()}, \code{cifpanel()}, and
 #' \code{cifcurve()}.
-#'
-#' @param type.y Either \code{NULL} (plot on the survival scale) or \code{"risk"} (plot on the
-#'   cumulative-incidence / failure scale, i.e. \code{1 - survival}).
+#' @param type.y Optional vector/list per panel: \code{"surv"} or \code{"risk"} (display 1 - survival i.e. CIF).
 #' @param label.x Character x-axis label (default \code{"Time"}).
 #' @param label.y Character y-axis label (default is chosen automatically from \code{outcome.type}
 #'   and \code{type.y}, e.g. \dQuote{Survival} or \dQuote{Cumulative incidence}).

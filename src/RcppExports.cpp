@@ -11,8 +11,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // calculateAJ_Rcpp
-Rcpp::List calculateAJ_Rcpp(Rcpp::NumericVector t, Rcpp::IntegerVector epsilon, Rcpp::Nullable<Rcpp::NumericVector> w, Rcpp::Nullable<Rcpp::IntegerVector> strata, std::string error, std::string conf_type, bool return_if, double conf_int);
-RcppExport SEXP _cifmodeling_calculateAJ_Rcpp(SEXP tSEXP, SEXP epsilonSEXP, SEXP wSEXP, SEXP strataSEXP, SEXP errorSEXP, SEXP conf_typeSEXP, SEXP return_ifSEXP, SEXP conf_intSEXP) {
+Rcpp::List calculateAJ_Rcpp(Rcpp::NumericVector t, Rcpp::IntegerVector epsilon, Rcpp::Nullable<Rcpp::NumericVector> w, Rcpp::Nullable<Rcpp::IntegerVector> strata, std::string error, std::string conf_type, double conf_int, bool return_if, double prob_bound);
+RcppExport SEXP _cifmodeling_calculateAJ_Rcpp(SEXP tSEXP, SEXP epsilonSEXP, SEXP wSEXP, SEXP strataSEXP, SEXP errorSEXP, SEXP conf_typeSEXP, SEXP conf_intSEXP, SEXP return_ifSEXP, SEXP prob_boundSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -22,9 +22,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type strata(strataSEXP);
     Rcpp::traits::input_parameter< std::string >::type error(errorSEXP);
     Rcpp::traits::input_parameter< std::string >::type conf_type(conf_typeSEXP);
-    Rcpp::traits::input_parameter< bool >::type return_if(return_ifSEXP);
     Rcpp::traits::input_parameter< double >::type conf_int(conf_intSEXP);
-    rcpp_result_gen = Rcpp::wrap(calculateAJ_Rcpp(t, epsilon, w, strata, error, conf_type, return_if, conf_int));
+    Rcpp::traits::input_parameter< bool >::type return_if(return_ifSEXP);
+    Rcpp::traits::input_parameter< double >::type prob_bound(prob_boundSEXP);
+    rcpp_result_gen = Rcpp::wrap(calculateAJ_Rcpp(t, epsilon, w, strata, error, conf_type, conf_int, return_if, prob_bound));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -45,7 +46,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_cifmodeling_calculateAJ_Rcpp", (DL_FUNC) &_cifmodeling_calculateAJ_Rcpp, 8},
+    {"_cifmodeling_calculateAJ_Rcpp", (DL_FUNC) &_cifmodeling_calculateAJ_Rcpp, 9},
     {"_cifmodeling_calculateKM", (DL_FUNC) &_cifmodeling_calculateKM, 5},
     {NULL, NULL, 0}
 };

@@ -17,9 +17,10 @@ cifcurve(
   error = NULL,
   conf.type = "arcsine-square root",
   conf.int = 0.95,
+  return_if = FALSE,
   report.survfit.std.err = FALSE,
   engine = "calculateAJ_Rcpp",
-  return_if = FALSE
+  prob.bound = 1e-07
 )
 }
 \arguments{
@@ -57,18 +58,19 @@ Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detectio
 
 \item{conf.int}{Numeric two-sided confidence level (default \code{0.95}).}
 
-\item{report.survfit.std.err}{Logical. If \code{TRUE}, standard errors are
-reported on the \emph{log-survival} scale, matching \code{survfit()}'s
-default behaviour. If \code{FALSE} (default), SEs are on the probability
-scale, which is often more convenient when displaying CIFs.}
+\item{return_if}{Logical. When \code{TRUE} and \code{engine = "calculateAJ_Rcpp"},
+the influence function is also computed and returned (default \code{FALSE}).}
+
+\item{report.survfit.std.err}{Logical. If \code{TRUE}, report SE on the log-survival scale
+(survfit's convention). Otherwise SE is on the probability scale.}
 
 \item{engine}{Character. One of \code{"auto"}, \code{"calculateKM"},
 \code{"calculateAJ"}, or \code{"calculateAJ_Rcpp"}. Default \code{"auto"}
 selects \code{"calculateKM"} for survival curves and \code{"calculateAJ_Rcpp"}
 for competing risks. \code{"calculateKM"} does not support CIF estimation.}
 
-\item{return_if}{Logical. When \code{TRUE} and \code{engine = "calculateAJ_Rcpp"},
-the influence function is also computed and returned. Default \code{FALSE}.}
+\item{prob.bound}{Numeric lower bound used to internally truncate probabilities away
+from 0 and 1 (default \code{1e-7}).}
 }
 \value{
 A \code{survfit} object. For \code{outcome.type="SURVIVAL"}, \code{$surv} is the survival function.

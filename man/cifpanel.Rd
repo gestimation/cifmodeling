@@ -121,8 +121,7 @@ When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{co
 
 \item{conf.int}{Numeric two-sided confidence level (default \code{0.95}).}
 
-\item{type.y}{Either \code{NULL} (plot on the survival scale) or \code{"risk"} (plot on the
-cumulative-incidence / failure scale, i.e. \code{1 - survival}).}
+\item{type.y}{Optional vector/list per panel: \code{"surv"} or \code{"risk"} (display 1 - survival i.e. CIF).}
 
 \item{label.x}{Character x-axis label (default \code{"Time"}).}
 

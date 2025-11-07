@@ -4,8 +4,7 @@
 \alias{cif-visual-arguments}
 \title{Common visual arguments for CIF functions}
 \arguments{
-\item{type.y}{Either \code{NULL} (plot on the survival scale) or \code{"risk"} (plot on the
-cumulative-incidence / failure scale, i.e. \code{1 - survival}).}
+\item{type.y}{Optional vector/list per panel: \code{"surv"} or \code{"risk"} (display 1 - survival i.e. CIF).}
 
 \item{label.x}{Character x-axis label (default \code{"Time"}).}
 

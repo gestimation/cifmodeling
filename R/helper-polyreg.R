@@ -19,7 +19,7 @@ reg_index_for_parameter <- function(i_parameter,x_l,x_a,length.time.point) {
   return(i_parameter)
 }
 
-reg_normalize_covariate <- function(formula, data, should.normalize.covariate,
+reg_normalize_covariate <- function(formula, data, normalize.covariate,
                                outcome.type, exposure.levels) {
   mf <- model.frame(formula, data)
   Y  <- model.extract(mf, "response")
@@ -57,7 +57,7 @@ reg_normalize_covariate <- function(formula, data, should.normalize.covariate,
   num_covars <- covariate_cols[is_num]
 
   scales_num <- numeric(0)
-  if (isTRUE(should.normalize.covariate) && length(num_covars) > 0) {
+  if (isTRUE(normalize.covariate) && length(num_covars) > 0) {
     for (col in num_covars) {
       s <- robust_scale(normalized_data[[col]])
       normalized_data[[col]] <- normalized_data[[col]] / s
@@ -101,7 +101,7 @@ reg_normalize_covariate <- function(formula, data, should.normalize.covariate,
 
 reg_normalize_estimate <- function(
     outcome.type,
-    should.normalize.covariate,
+    normalize.covariate,
     current_params,
     out_getResults,
     estimand,
@@ -109,7 +109,7 @@ reg_normalize_estimate <- function(
     out_normalizeCovariate,
     out_calculateCov = NULL
 ) {
-  if (isTRUE(should.normalize.covariate) && !is.null(out_normalizeCovariate$range)) {
+  if (isTRUE(normalize.covariate) && !is.null(out_normalizeCovariate$range)) {
     adj <- 1 / as.vector(out_normalizeCovariate$range)
     if (length(adj) != length(current_params)) {
       stop(sprintf(
@@ -154,7 +154,7 @@ reg_normalize_estimate <- function(
 
 reg_check_input <- function(data, formula, exposure, code.event1, code.event2, code.censoring,
                        code.exposure.ref, outcome.type, conf.level, report.sandwich.conf,
-                       report.boot.conf, nleqslv.method, should.normalize.covariate,
+                       report.boot.conf, nleqslv.method, normalize.covariate,
                        strata = NULL, subset.condition = NULL, na.action = na.omit) {
 
   other_vars <- c(exposure, strata)
@@ -201,7 +201,7 @@ reg_check_input <- function(data, formula, exposure, code.event1, code.event2, c
   if (!is.numeric(conf.level) || length(conf.level) != 1 || conf.level <= 0 || conf.level >= 1) .err("conf_level")
 
   if (outcome.type == "PROPORTIONAL-SURVIVAL" | outcome.type == "PROPORTIONAL-COMPETING-RISK") {
-    should.normalize.covariate.corrected <- FALSE
+    normalize.covariate.corrected <- FALSE
     report.sandwich.conf.corrected <- FALSE
     if (is.null(report.boot.conf)) {
       report.boot.conf.corrected <- TRUE
@@ -209,7 +209,7 @@ reg_check_input <- function(data, formula, exposure, code.event1, code.event2, c
       report.boot.conf.corrected <- report.boot.conf
     }
   } else {
-    should.normalize.covariate.corrected <- should.normalize.covariate
+    normalize.covariate.corrected <- normalize.covariate
     if (is.null(report.boot.conf)) {
       report.boot.conf.corrected <- FALSE
     } else {
@@ -220,7 +220,7 @@ reg_check_input <- function(data, formula, exposure, code.event1, code.event2, c
 
   outer_choices <- c("Newton","Broyden")
   nleqslv.method <- match.arg(nleqslv.method, choices = outer_choices)
-  return(list(should.normalize.covariate = should.normalize.covariate.corrected, report.sandwich.conf = report.sandwich.conf.corrected, report.boot.conf = report.boot.conf.corrected, out_readExposureDesign=out_readExposureDesign, x_a=x_a, x_l=x_l))
+  return(list(normalize.covariate = normalize.covariate.corrected, report.sandwich.conf = report.sandwich.conf.corrected, report.boot.conf = report.boot.conf.corrected, out_readExposureDesign=out_readExposureDesign, x_a=x_a, x_l=x_l))
 }
 
 reg_read_exposure_design <- function(data, exposure, code.exposure.ref = NULL, prefix = "a") {
@@ -259,7 +259,7 @@ reg_read_exposure_design <- function(data, exposure, code.exposure.ref = NULL, p
   ))
 }
 
-reg_read_time.point <- function(formula, data, x_a, outcome.type, code.censoring, should.terminate.time.point, time.point) {
+reg_read_time.point <- function(formula, data, x_a, outcome.type, code.censoring, terminate.time.point, time.point) {
   if (outcome.type %in% c("COMPETING-RISK","SURVIVAL")) {
     if (is.null(time.point) || !length(time.point)) .err("timepoint_required")
     tp <- suppressWarnings(max(time.point, na.rm = TRUE))
@@ -281,7 +281,7 @@ reg_read_time.point <- function(formula, data, x_a, outcome.type, code.censoring
     epsilon <- Y[, 2]
     tp <- t[epsilon != code.censoring]
     tp <- sort(unique(tp[is.finite(tp)]))
-    if (should.terminate.time.point) {
+    if (terminate.time.point) {
       valid <- is.finite(t) & !is.na(epsilon) & (epsilon != code.censoring)
       if (ncol(x_a) <= 1L) {
         idx0 <- valid & (x_a[, 1L] == 0)

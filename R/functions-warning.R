@@ -118,6 +118,7 @@
   .assert(x[1L] < x[2L], "limits_increasing", arg = arg)
   invisible(TRUE)
 }
+
 util_check_outcome_type <- function(
     x = NULL,
     formula = NULL,
@@ -125,11 +126,9 @@ util_check_outcome_type <- function(
     na.action = stats::na.omit,
     auto_message = TRUE
 ) {
-  # 0) 文字列の正規化: 大文字化 + 記号/空白を除去
   .norm <- function(s) gsub("[^A-Z0-9]+", "", toupper(trimws(as.character(s))))
 
   if (!is.null(x)) {
-    # 1) 正式名 → エイリアスの対応（大文字・記号無視でマッチ）
     map <- list(
       "COMPETING-RISK"              = c(
         "competing-risk","competing risk","competingrisks","competing-risks",
@@ -141,7 +140,6 @@ util_check_outcome_type <- function(
       "BINOMIAL"                    = c("binomial","b")
     )
 
-    # 正規化テーブルを作成
     ali_norm <- lapply(map, .norm)
     names(ali_norm) <- names(map)
     alias_rev <- stats::setNames(
@@ -149,21 +147,17 @@ util_check_outcome_type <- function(
       unlist(ali_norm, use.names = FALSE)
     )
 
-    # 入力を正規化
     ux <- .norm(x)
     ux <- ux[!is.na(ux) & nzchar(ux)]
 
-    # 正式名/エイリアスを正式名に解決（'[' で安全アクセス）
     canon <- unique(stats::na.omit(vapply(
       ux,
       function(u) {
         if (u %in% .norm(names(map))) {
-          # すでに正式名に一致（正規化後）
-          # 正規化前の正式名を取り直す
           idx <- match(u, .norm(names(map)))
           names(map)[idx]
         } else {
-          cn <- unname(alias_rev[u])  # ← [[ ではなく [ を使う
+          cn <- unname(alias_rev[u])
           if (length(cn) == 0L || is.na(cn)) NA_character_ else cn
         }
       },
@@ -173,10 +167,9 @@ util_check_outcome_type <- function(
     if (length(canon) == 1L) {
       return(canon)
     } else if (length(canon) > 1L) {
-      stop("`outcome.type` is ambiguous: matched multiple types: ",
+      stop("`outcome.type` is ambiguous and matched multiple types: ",
            paste(canon, collapse = ", "), call. = FALSE)
     } else {
-      # 許可される入力一覧（正式名 + エイリアス）
       allowed <- sort(unique(c(
         names(map),
         unlist(map, use.names = FALSE)
@@ -186,7 +179,6 @@ util_check_outcome_type <- function(
     }
   }
 
-  # ここから自動判定
   if (is.null(formula) || is.null(data))
     .err("req", arg = "formula and data (for automatic detection)")
 
@@ -206,6 +198,107 @@ util_check_outcome_type <- function(
     if (isTRUE(auto_message)) message("Detected <= 2 status levels; outcome.type set to 'SURVIVAL'.")
     return("SURVIVAL")
   }
+}
+
+#' @keywords internal
+util_check_type_y <- function(
+    x = NULL,
+    outcome.type = NULL,
+    formula = NULL,
+    data = NULL,
+    na.action = stats::na.omit,
+    auto_message = TRUE
+) {
+  .norm <- function(s) gsub("[^A-Z0-9]+", "", toupper(trimws(as.character(s))))
+
+  # 1) If x is supplied, normalize and resolve to "risk" or "surv"
+  if (!is.null(x)) {
+    # Canonical buckets (return values are lower-case)
+    buckets <- list(
+      surv = c("surv", "s", "survival", "km", "kaplan-meier", "kaplanmeier",
+               "survival-probability", "survivalprobability", "1-risk", "one-minus-risk"),
+      risk = c("risk", "r", "cif", "ci", "cumulative-incidence", "cumulativeincidence",
+               "cuminc", "failure", "incidence")
+    )
+
+    # Build alias map (normalized)
+    ali_norm <- lapply(buckets, .norm)
+    names(ali_norm) <- names(buckets)
+    alias_rev <- stats::setNames(
+      rep(names(ali_norm), lengths(ali_norm)),
+      unlist(ali_norm, use.names = FALSE)
+    )
+
+    ux <- .norm(x)
+    ux <- ux[!is.na(ux) & nzchar(ux)]
+
+    canon <- unique(stats::na.omit(vapply(
+      ux,
+      function(u) {
+        # allow exact canonical names too (e.g., "SURV", "RISK")
+        if (u %in% .norm(names(buckets))) {
+          idx <- match(u, .norm(names(buckets)))
+          names(buckets)[idx]
+        } else {
+          cn <- unname(alias_rev[u])
+          if (length(cn) == 0L || is.na(cn)) NA_character_ else cn
+        }
+      },
+      FUN.VALUE = character(1)
+    )))
+
+    if (length(canon) == 1L) {
+      return(canon) # "risk" or "surv"
+    } else if (length(canon) > 1L) {
+      stop("`type.y` is ambiguous and matched multiple types: ",
+           paste(canon, collapse = ", "), call. = FALSE)
+    } else {
+      allowed <- sort(unique(c(
+        names(buckets),
+        unlist(buckets, use.names = FALSE)
+      )))
+      stop("Invalid `type.y`. Allowed values are: ",
+           paste(allowed, collapse = ", "), call. = FALSE)
+    }
+  }
+
+  # 2) Automatic detection route
+  # 2a) If outcome.type is supplied, use it to infer type.y
+  if (!is.null(outcome.type)) {
+    ot_norm <- gsub("[^A-Z0-9]+", "", toupper(trimws(as.character(outcome.type))))
+    if (ot_norm %in% c("COMPETINGRISK", "PROPORTIONALCOMPETINGRISK")) {
+      if (isTRUE(auto_message)) message("Detected outcome.type=COMPETING-RISK; type.y set to 'risk'.")
+      return("risk")
+    }
+    if (ot_norm %in% c("SURVIVAL", "PROPORTIONALSURVIVAL")) {
+      if (isTRUE(auto_message)) message("Detected outcome.type=SURVIVAL; type.y set to 'surv'.")
+      return("surv")
+    }
+    # fall through if unknown; try formula/data next
+  }
+
+  # 2b) If formula+data are available, infer from number of status levels
+  if (!is.null(formula) && !is.null(data)) {
+    Terms <- stats::terms(formula, specials = c("strata","offset","cluster"), data = data)
+    mf    <- stats::model.frame(Terms, data = data, na.action = na.action)
+    Y     <- stats::model.extract(mf, "response")
+    if (!inherits(Y, c("Event","Surv"))) {
+      stop("A 'Surv' or 'Event' response is required for automatic detection.", call. = FALSE)
+    }
+    status    <- suppressWarnings(as.numeric(Y[, 2]))
+    n_levels  <- length(unique(stats::na.omit(status)))
+    if (n_levels > 2L) {
+      if (isTRUE(auto_message)) message("Detected >2 status levels; type.y set to 'risk'.")
+      return("risk")
+    } else {
+      if (isTRUE(auto_message)) message("Detected <=2 status levels; type.y set to 'surv'.")
+      return("surv")
+    }
+  }
+
+  # 2c) If nothing to go on
+  stop("Cannot determine `type.y`. Supply `x`, or `outcome.type`, or (`formula` and `data`).",
+       call. = FALSE)
 }
 
 check_weights <- function(w) {
