@@ -255,10 +255,6 @@ backward compatibility.}
 
 \item{survfit.info, axis.info, visual.info, panel.info, style.info, print.info, ggsave.info, inset.info}{Internal lists used for programmatic control. Not intended for direct user input.}
 
-\item{engine}{Character scalar selecting the internal plotting engine.
-Currently only \code{"cifplot"} is supported and used to construct each panel
-via \code{cifplot_single()}. This argument is reserved for future extensions.}
-
 \item{...}{Additional arguments forwarded to the internal \code{cifplot_single()}
 calls that build each panel. Use this to pass low-level options such as
 \code{competing.risk.time}, \code{intercurrent.event.time}, or styling overrides.}

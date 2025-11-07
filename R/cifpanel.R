@@ -41,14 +41,12 @@
 #'   (primarily used when \code{cifpanel()} is called or when \code{printEachEvent = TRUE}).
 #' @param legend.collect Logical; if \code{TRUE}, try to collect a single legend
 #'   for all panels (passed to \pkg{patchwork}). Default \code{TRUE}.
-#'
 #' @param inset.panel Logical. If \code{FALSE} (default), all panels are arranged
 #'   in a regular grid using \code{patchwork::wrap_plots()} and \code{plot_layout()}.
 #'   If \code{TRUE}, the function switches to “inset mode”: the **first** plot becomes
 #'   the main plot and the **second** plot (only the second) is drawn on top of it
 #'   as an inset. Additional plots beyond the second are ignored in inset mode.
 #'   Use grid mode to display more than two panels (inset.panel = FALSE).
-#'
 #' @param inset.left,inset.bottom,inset.right,inset.top Numeric values in the range
 #'   \code{[0, 1]} that define the inset box as fractions of the reference area.
 #'   \code{inset.left} / \code{inset.right} control the horizontal position,
@@ -56,7 +54,6 @@
 #'   Values are interpreted as “from the left/bottom” of the reference.
 #'   For example, \code{inset.left = 0.4}, \code{inset.right = 1.0} draws the inset
 #'   over the right 60% of the reference area.
-#'
 #' @param inset.align.to Character string specifying the coordinate system for the
 #'   inset box. One of:
 #'   \itemize{
@@ -67,30 +64,21 @@
 #'     \item \code{"full"}: the box is placed relative to the **full patchwork canvas**.
 #'   }
 #'   This argument is passed to \code{patchwork::inset_element()}.
-#'
 #' @param inset.legend.position Optional legend position **for the inset plot only**.
 #'   If \code{NULL} (default), the inset plot keeps whatever legend position was
 #'   defined for it (often this means a legend will also be inset).
 #'   Set, for example, \code{"none"} to hide the legend inside the inset,
 #'   while still showing the main plot's legend.
-#'
 #' @param title.panel,subtitle.panel,caption.panel Character annotations applied to the
 #'   **whole** panel layout (not to individual plots). These are passed to
 #'   \code{patchwork::plot_annotation()} and are useful for creating figure-like
 #'   outputs (title + subfigures + caption).
-#'
 #' @param tag.panel Passed to \code{patchwork::plot_annotation()} to auto-label
 #'   individual panels (e.g. \code{"A"}, \code{"B"}, \code{"C"}). Typical values are
 #'   \code{"A"}, \code{"1"}, or \code{"a"}. See \code{?patchwork::plot_annotation}.
-#'
 #' @param title.plot Character vector of titles for **each panel** in the order they
 #'   are drawn. Length-1 values are recycled to all panels. In inset mode, the first
 #'   element refers to the main plot and the second (if present) to the inset.
-#'
-#' @param engine Character scalar selecting the internal plotting engine.
-#'   Currently only \code{"cifplot"} is supported and used to construct each panel
-#'   via \code{cifplot_single()}. This argument is reserved for future extensions.
-#'
 #' @param print.panel Logical. If \code{TRUE}, the composed patchwork object is
 #'   printed immediately (for interactive use). If \code{FALSE}, the object is
 #'   returned invisibly so that it can be assigned, modified, or saved. Kept for

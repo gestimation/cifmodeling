@@ -23,16 +23,6 @@
 #'   and, optionally, a stratification variable on the right-hand side.
 #'   Unlike \code{\link{cifplot}}, this function does not accept a fitted
 #'   \code{survfit} object.
-#' @param return_if Logical. When \code{TRUE} and \code{engine = "calculateAJ_Rcpp"},
-#'   the influence function is also computed and returned (default \code{FALSE}).
-#' @param report.survfit.std.err Logical. If \code{TRUE}, report SE on the log-survival scale
-#'   (survfit's convention). Otherwise SE is on the probability scale.
-#' @param engine Character. One of \code{"auto"}, \code{"calculateKM"},
-#'   \code{"calculateAJ"}, or \code{"calculateAJ_Rcpp"}. Default \code{"auto"}
-#'   selects \code{"calculateKM"} for survival curves and \code{"calculateAJ_Rcpp"}
-#'   for competing risks. \code{"calculateKM"} does not support CIF estimation.
-#' @param prob.bound Numeric lower bound used to internally truncate probabilities away
-#'   from 0 and 1 (default \code{1e-7}).
 #'
 #' @details
 #' - When \code{outcome.type = "SURVIVAL"}, this is a thin wrapper around KM with the
