@@ -9,9 +9,9 @@
 
 ## Quick start
 
-This package is a compact and unified toolkit for Kaplan–Meier /
-Aalen–Johansen curves, visualization, and direct polytomous regression
-based on polytomous log odds products in R.
+This package is a compact and unified toolkit for
+Kaplan–Meier/Aalen–Johansen curves, visualization, and direct polytomous
+regression of cumulative incidence functions in R.
 
 ``` r
 library(cifmodeling)
@@ -22,14 +22,14 @@ cifplot(Event(t,epsilon) ~ fruitq, data=diabetes.complications,
 
 <img src="man/figures/README-example0-1-1.png" width="100%" />
 
-This is an example code snippet applying `cifplot()` to create
-cumulative incidence function (CIF) curves. In competing risks data,
-censoring is often coded as 0, events of interest as 1, and competing
-risks as 2. The variable `epsilon` in `diabetes.complications` data
-frame represents the occurrence of competing risks according to this
-coding scheme. By specifying `printEachEvent=TRUE`, the CIF curve for
-diabetic retinopathy (`epsilon=1`) is output on the left, and the CIF
-curve for macrovascular complications (`epsilon=2`) is output on the
+This is an example code snippet applying `cifplot()` to visualize
+Aalen–Johansen cumulative incidence functions (CIF). In competing risks
+data, censoring is often coded as 0, events of interest as 1, and
+competing risks as 2. The variable `epsilon` in `diabetes.complications`
+data frame represents the occurrence of competing risks according to
+this coding scheme. By specifying `printEachEvent=TRUE`, the CIF curve
+for diabetic retinopathy (`epsilon=1`) is output on the left, and the
+CIF curve for macrovascular complications (`epsilon=2`) is output on the
 right.
 
 ## Overview
@@ -478,7 +478,7 @@ arguments are also used to customize the axis labels.
 ``` r
 output1 <- cifcurve(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
                     outcome.type="COMPETING-RISK")
-cifplot(output1, addConfidenceInterval=FALSE, addEstimateTable=TRUE, 
+cifplot(output1, addConfidenceInterval=FALSE, addRiskTable=FALSE, 
         addCensorMark=TRUE, addCompetingRiskMark=FALSE, 
         label.y="CIF of diabetic retinopathy", label.x="Years from registration")
 ```
@@ -498,7 +498,7 @@ strata labels used in the plot if supplied by the user.
 ``` r
 output2 <- extract_time_to_event(Event(t,epsilon)~fruitq1, 
                                  data=diabetes.complications, which_event="event2")
-cifplot(output1, addConfidenceInterval=FALSE, addEstimateTable=TRUE, 
+cifplot(output1, addConfidenceInterval=FALSE, addRiskTable=FALSE, 
         addCensorMark=FALSE, addCompetingRiskMark=TRUE, competing.risk.time=output2, 
         label.y="CIF of diabetic retinopathy", label.x="Years from registration")
 ```
@@ -517,11 +517,11 @@ to `style="FRAMED"` specification.
 
 ``` r
 cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
-        outcome.type="COMPETING-RISK", addConfidenceInterval=FALSE, addEstimateTable=TRUE, 
-        addCensorMark=FALSE, addCompetingRiskMark=TRUE, competing.risk.time=output2, 
-        label.y="CIF of diabetic retinopathy", label.x="Years from registration", 
-        label.strata=c("High intake","Low intake"), level.strata=c("Q2 to Q4","Q1"), 
-        order.strata=c("Q1", "Q2 to Q4"), style="FRAMED")
+        outcome.type="COMPETING-RISK", addConfidenceInterval=FALSE, addRiskTable=FALSE, 
+        addEstimateTable=TRUE, addCensorMark=FALSE, addCompetingRiskMark=TRUE, 
+        competing.risk.time=output2, label.y="CIF of diabetic retinopathy", 
+        label.x="Years from registration", label.strata=c("High intake","Low intake"), 
+        level.strata=c("Q2 to Q4","Q1"), order.strata=c("Q1", "Q2 to Q4"), style="FRAMED")
 ```
 
 <img src="man/figures/README-example1-4-1.png" width="100%" />

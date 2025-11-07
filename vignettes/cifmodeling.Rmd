@@ -47,15 +47,16 @@ library(patchwork)
 
 ## Quick start
 
-This package is a compact and unified toolkit for Kaplan–Meier / Aalen–Johansen curves, visualization, and direct polytomous regression based on polytomous log odds products in R. 
+This package is a compact and unified toolkit for Kaplan–Meier/Aalen–Johansen curves, visualization, and direct polytomous regression of cumulative incidence functions in R. 
 
 ```{r example0-1, warning=FALSE, message=FALSE}
+library(cifmodeling)
 data(diabetes.complications)
 cifplot(Event(t,epsilon) ~ fruitq, data=diabetes.complications, 
         outcome.type="COMPETING-RISK", printEachEvent=TRUE)
 ```
 
-This is an example code snippet applying `cifplot()` to create cumulative incidence function (CIF) curves. In competing risks data, censoring is often coded as 0, events of interest as 1, and competing risks as 2. The variable `epsilon` in `diabetes.complications` data frame represents the occurrence of competing risks according to this coding scheme. By specifying `printEachEvent=`, the CIF curve for diabetic retinopathy (`epsilon=1`) is output on the left, and the CIF curve for macrovascular complications (`epsilon=2`) is output on the right. 
+This is an example code snippet applying `cifplot()` to visualize Aalen–Johansen cumulative incidence functions (CIF). In competing risks data, censoring is often coded as 0, events of interest as 1, and competing risks as 2. The variable `epsilon` in `diabetes.complications` data frame represents the occurrence of competing risks according to this coding scheme. By specifying `printEachEvent=TRUE`, the CIF curve for diabetic retinopathy (`epsilon=1`) is output on the left, and the CIF curve for macrovascular complications (`epsilon=2`) is output on the right. 
 
 ## Overview
 
@@ -353,7 +354,7 @@ In the second graph, censoring marks are added along each curve (`addCensorMark 
 ```{r example1-2, warning=FALSE, message=FALSE}
 output1 <- cifcurve(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
                     outcome.type="COMPETING-RISK")
-cifplot(output1, addConfidenceInterval=FALSE, addEstimateTable=TRUE, 
+cifplot(output1, addConfidenceInterval=FALSE, addRiskTable=FALSE, 
         addCensorMark=TRUE, addCompetingRiskMark=FALSE, 
         label.y="CIF of diabetic retinopathy", label.x="Years from registration")
 ```
@@ -363,7 +364,7 @@ Next, competing risk marks are added (`addCompetingRiskMark = TRUE`) to indicate
 ```{r example1-3, warning=FALSE, message=FALSE}
 output2 <- extract_time_to_event(Event(t,epsilon)~fruitq1, 
                                  data=diabetes.complications, which_event="event2")
-cifplot(output1, addConfidenceInterval=FALSE, addEstimateTable=TRUE, 
+cifplot(output1, addConfidenceInterval=FALSE, addRiskTable=FALSE, 
         addCensorMark=FALSE, addCompetingRiskMark=TRUE, competing.risk.time=output2, 
         label.y="CIF of diabetic retinopathy", label.x="Years from registration")
 ```
@@ -373,11 +374,11 @@ Therefore, the following code inputs the formula and data. `label.strata` is use
 
 ```{r example1-4, warning=FALSE, message=FALSE}
 cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
-        outcome.type="COMPETING-RISK", addConfidenceInterval=FALSE, addEstimateTable=TRUE, 
-        addCensorMark=FALSE, addCompetingRiskMark=TRUE, competing.risk.time=output2, 
-        label.y="CIF of diabetic retinopathy", label.x="Years from registration", 
-        label.strata=c("High intake","Low intake"), level.strata=c("Q2 to Q4","Q1"), 
-        order.strata=c("Q1", "Q2 to Q4"), style="FRAMED")
+        outcome.type="COMPETING-RISK", addConfidenceInterval=FALSE, addRiskTable=FALSE, 
+        addEstimateTable=TRUE, addCensorMark=FALSE, addCompetingRiskMark=TRUE, 
+        competing.risk.time=output2, label.y="CIF of diabetic retinopathy", 
+        label.x="Years from registration", label.strata=c("High intake","Low intake"), 
+        level.strata=c("Q2 to Q4","Q1"), order.strata=c("Q1", "Q2 to Q4"), style="FRAMED")
 ```
 
 By specifying `addEstimateTable=TRUE`, the risks of diabetic retinopathy (estimates for CIFs) along with their confidence interval are shown in the table at the bottom of each graph. The risk ratios at each time point may be estimated using `polyreg()` with `outcome.type="COMPETING-RISK"`. Here, no covariates are included in the nuisance model (`~1` specifies intercept only). The effect of low fruit intake `fruitq1` is estimated as an unadjusted risk ratio (`effect.measure1="RR"`) for diabetic retinopathy (event 1) and macrovascular complications (event 2) at 8 years (`time.point=8`).
