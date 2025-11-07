@@ -200,18 +200,9 @@ util_check_outcome_type <- function(
   }
 }
 
-#' @keywords internal
-util_check_type_y <- function(
-    x = NULL,
-    outcome.type = NULL,
-    formula = NULL,
-    data = NULL,
-    na.action = stats::na.omit,
-    auto_message = TRUE
-) {
+util_check_type_y <- function(x = NULL) {
   .norm <- function(s) gsub("[^A-Z0-9]+", "", toupper(trimws(as.character(s))))
 
-  # 1) If x is supplied, normalize and resolve to "risk" or "surv"
   if (!is.null(x)) {
     # Canonical buckets (return values are lower-case)
     buckets <- list(
@@ -235,7 +226,6 @@ util_check_type_y <- function(
     canon <- unique(stats::na.omit(vapply(
       ux,
       function(u) {
-        # allow exact canonical names too (e.g., "SURV", "RISK")
         if (u %in% .norm(names(buckets))) {
           idx <- match(u, .norm(names(buckets)))
           names(buckets)[idx]
@@ -248,7 +238,7 @@ util_check_type_y <- function(
     )))
 
     if (length(canon) == 1L) {
-      return(canon) # "risk" or "surv"
+      return(canon)
     } else if (length(canon) > 1L) {
       stop("`type.y` is ambiguous and matched multiple types: ",
            paste(canon, collapse = ", "), call. = FALSE)
@@ -261,44 +251,7 @@ util_check_type_y <- function(
            paste(allowed, collapse = ", "), call. = FALSE)
     }
   }
-
-  # 2) Automatic detection route
-  # 2a) If outcome.type is supplied, use it to infer type.y
-  if (!is.null(outcome.type)) {
-    ot_norm <- gsub("[^A-Z0-9]+", "", toupper(trimws(as.character(outcome.type))))
-    if (ot_norm %in% c("COMPETINGRISK", "PROPORTIONALCOMPETINGRISK")) {
-      if (isTRUE(auto_message)) message("Detected outcome.type=COMPETING-RISK; type.y set to 'risk'.")
-      return("risk")
-    }
-    if (ot_norm %in% c("SURVIVAL", "PROPORTIONALSURVIVAL")) {
-      if (isTRUE(auto_message)) message("Detected outcome.type=SURVIVAL; type.y set to 'surv'.")
-      return("surv")
-    }
-    # fall through if unknown; try formula/data next
-  }
-
-  # 2b) If formula+data are available, infer from number of status levels
-  if (!is.null(formula) && !is.null(data)) {
-    Terms <- stats::terms(formula, specials = c("strata","offset","cluster"), data = data)
-    mf    <- stats::model.frame(Terms, data = data, na.action = na.action)
-    Y     <- stats::model.extract(mf, "response")
-    if (!inherits(Y, c("Event","Surv"))) {
-      stop("A 'Surv' or 'Event' response is required for automatic detection.", call. = FALSE)
-    }
-    status    <- suppressWarnings(as.numeric(Y[, 2]))
-    n_levels  <- length(unique(stats::na.omit(status)))
-    if (n_levels > 2L) {
-      if (isTRUE(auto_message)) message("Detected >2 status levels; type.y set to 'risk'.")
-      return("risk")
-    } else {
-      if (isTRUE(auto_message)) message("Detected <=2 status levels; type.y set to 'surv'.")
-      return("surv")
-    }
-  }
-
-  # 2c) If nothing to go on
-  stop("Cannot determine `type.y`. Supply `x`, or `outcome.type`, or (`formula` and `data`).",
-       call. = FALSE)
+  return(canon)
 }
 
 check_weights <- function(w) {
