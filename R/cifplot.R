@@ -359,7 +359,6 @@ cifplot <- function(
   axis.info$order.strata <- norm$order_data
   axis.info$label.strata <- norm$label_map
 
-  type.y <- util_check_type_y(type.y)
   if (!is.null(axis.info$label.strata)) {
     stopifnot(!is.null(names(axis.info$label.strata)))
   }
@@ -1392,6 +1391,8 @@ check_ggsurvfit <- function(
     upper <- survfit_object$upper
     lower <- survfit_object$lower
 
+    print("type.y in c")
+    print(type.y)
     if (identical(type.y, "risk")) {
       surv  <- 1 - surv
       if (!is.null(upper)) upper <- 1 - upper
@@ -1444,14 +1445,16 @@ check_ggsurvfit <- function(
   }
   survfit_object <- coerce_conf(survfit_object, conf.type)
 
-  type.y <- plot_normalize_type_y(type.y)
+
+  type.y <- util_check_type_y(type.y)
+#  type.y <- plot_normalize_type_y(type.y)
   target_type <- switch(
     survfit_object$type,
-    "kaplan-meier"   = if (identical(type.y, "risk")) "risk" else "survival",
-    "aalen-johansen" = if (identical(type.y, "survival")) "survival" else "risk",
-    if (identical(type.y, "risk")) "risk" else "survival"
+    "kaplan-meier"   = if (identical(type.y, "risk")) "risk" else "surv",
+    "aalen-johansen" = if (identical(type.y, "surv")) "surv" else "risk",
+    if (identical(type.y, "risk")) "risk" else "surv"
   )
-  type.y <- if (identical(target_type, "risk")) "risk" else "survival"
+  type.y <- if (identical(target_type, "risk")) "risk" else "surv"
 
   decide_linetype_flag <- function(style, palette) {
     if (identical(style, "MONOCHROME")) return(TRUE)

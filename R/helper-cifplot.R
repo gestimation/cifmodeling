@@ -332,7 +332,7 @@ plot_normalize_type_y <- function(type.y) {
   ty <- tolower(as.character(type.y[1L]))
   if (is.na(ty) || !nzchar(ty)) return(NULL)
   if (ty %in% c("risk", "r")) return("risk")
-  if (ty %in% c("survival", "s")) return("survival")
+  if (ty %in% c("surv", "s")) return("surv")
   type.y
 }
 

@@ -204,15 +204,13 @@ util_check_type_y <- function(x = NULL) {
   .norm <- function(s) gsub("[^A-Z0-9]+", "", toupper(trimws(as.character(s))))
 
   if (!is.null(x)) {
-    # Canonical buckets (return values are lower-case)
     buckets <- list(
       surv = c("surv", "s", "survival", "km", "kaplan-meier", "kaplanmeier",
-               "survival-probability", "survivalprobability", "1-risk", "one-minus-risk"),
+               "survival-probability", "survivalprobability"),
       risk = c("risk", "r", "cif", "ci", "cumulative-incidence", "cumulativeincidence",
                "cuminc", "failure", "incidence")
     )
 
-    # Build alias map (normalized)
     ali_norm <- lapply(buckets, .norm)
     names(ali_norm) <- names(buckets)
     alias_rev <- stats::setNames(
@@ -250,8 +248,9 @@ util_check_type_y <- function(x = NULL) {
       stop("Invalid `type.y`. Allowed values are: ",
            paste(allowed, collapse = ", "), call. = FALSE)
     }
+    return(canon)
   }
-  return(canon)
+  return(NULL)
 }
 
 check_weights <- function(w) {
