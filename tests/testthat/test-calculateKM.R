@@ -172,6 +172,7 @@ test_that("engine routing works and schemas align", {
 })
 
 test_that("weighted n.event / n.censor match manual tallies", {
+  skip_on_cran()
   set.seed(1)
   n  <- 50
   t  <- sample(1:5, n, TRUE)
@@ -190,6 +191,7 @@ test_that("weighted n.event / n.censor match manual tallies", {
 })
 
 test_that("CI clamps to [0,0] / [1,1] at boundaries", {
+  skip_on_cran()
   t  <- c(1,2,3,4)
   ep <- c(0,0,0,1)
   a <- calculateAJ_Rcpp(t, (ep==1L), error="greenwood", return_if=FALSE)
@@ -210,6 +212,7 @@ test_that("CI clamps to [0,0] / [1,1] at boundaries", {
 
 
 test_that("influence.function has expected dims per stratum/time", {
+  skip_on_cran()
   set.seed(3)
   n<-40; t<-sample(1:6,n,TRUE); ep<-sample(c(0,1,2),n,TRUE); g<-sample(1:2,n,TRUE)
   out <- calculateAJ_Rcpp(t, ep, strata=g, error="if", return_if=TRUE)
