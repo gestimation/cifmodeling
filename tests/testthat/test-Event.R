@@ -1,4 +1,3 @@
-
 test_that("Event() allowed NA and retained length; use na.omit as necessary", {
   df <- createTestData2()
   df$t[1]      <- NA

@@ -384,6 +384,11 @@ For ADaM-style data, use \code{code.event1 = 0}, \code{code.censoring = 1}.
 
 }
 }
+\section{Lifecycle}{
+
+\lifecycle{stable}
+}
+
 \examples{
 data(diabetes.complications)
 cifplot(Event(t,epsilon) ~ fruitq,

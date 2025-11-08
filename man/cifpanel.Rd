@@ -400,6 +400,11 @@ element of \code{plots} or to the composed \code{out_patchwork}.
 }
 }
 }
+\section{Lifecycle}{
+
+\lifecycle{experimental}
+}
+
 \examples{
 data(diabetes.complications)
 cifpanel(

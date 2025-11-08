@@ -191,6 +191,9 @@
 #' @importFrom patchwork wrap_plots
 #'
 #' @name cifplot
+#' @section Lifecycle:
+#' \lifecycle{stable}
+#'
 #' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 cifplot <- function(

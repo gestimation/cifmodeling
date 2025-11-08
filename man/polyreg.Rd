@@ -52,7 +52,7 @@ polyreg(
 \arguments{
 \item{nuisance.model}{A \code{formula} describing the outcome and
 nuisance covariates, excluding the exposure of interest.
-The left-hand side must be \code{Event(time, status)} or \code{survfit::Surv(time, status)}.}
+The left-hand side must be \code{Event(time, status)} or \code{survival::Surv(time, status)}.}
 
 \item{exposure}{A character string giving the name of the categorical exposure
 variable in \code{data}.}
@@ -345,6 +345,11 @@ use-specified initial values, or reducing the number of nuisance parameters
 }
 }
 }
+\section{Lifecycle}{
+
+\lifecycle{experimental}
+}
+
 \examples{
 data(diabetes.complications)
 output <- polyreg(
@@ -359,6 +364,7 @@ output <- polyreg(
 if (requireNamespace("modelsummary", quietly = TRUE)) {
 modelsummary::msummary(output$summary, statistic = c("conf.int", "p.value"), exponentiate = TRUE)
 }
+
 }
 \seealso{
 \code{\link[=cifcurve]{cifcurve()}} for KM/AJ estimators; \code{\link[=cifplot]{cifplot()}} for display of a CIF; \code{\link[=cifpanel]{cifpanel()}} for display of multiple CIFs; \link[ggsurvfit:ggsurvfit]{ggsurvfit::ggsurvfit}, \link[patchwork:patchwork-package]{patchwork::patchwork} and \link[modelsummary:modelsummary]{modelsummary::modelsummary} for display helpers.

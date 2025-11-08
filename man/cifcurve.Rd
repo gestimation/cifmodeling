@@ -25,7 +25,7 @@ cifcurve(
 }
 \arguments{
 \item{formula}{A model formula specifying the time-to-event outcome on the
-left-hand side (typically \code{Event(time, status)} or \code{survfit::Surv(time, status)})
+left-hand side (typically \code{Event(time, status)} or \code{survival::Surv(time, status)})
 and, optionally, a stratification variable on the right-hand side.
 Unlike \code{\link{cifplot}}, this function does not accept a fitted
 \code{survfit} object.}
@@ -65,7 +65,7 @@ Standard error and CIs are provided per \code{conf.type}. Note that some methods
 }
 \description{
 Core estimation routine that computes a \code{survfit}-compatible object
-from a formula + data interface (\code{Event()} or \code{Surv()} on
+from a formula + data interface (\code{Event()} or \code{survival::Surv()} on
 the left-hand side, and a stratification variable on the right-hand side if necessary).
 Use this when you want \strong{numbers only} (KM / CIF + SE + CI) and
 you will plot it yourself (for example with \code{ggsurvfit} or \code{\link{cifplot}}).
@@ -103,6 +103,11 @@ cumulative incidence for \code{code.event1}. The returned \code{$surv} is
 
 }
 }
+\section{Lifecycle}{
+
+\lifecycle{stable}
+}
+
 \examples{
 data(diabetes.complications)
 out_cifcurve <- cifcurve(Event(t,epsilon) ~ fruitq,

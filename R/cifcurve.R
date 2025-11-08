@@ -1,7 +1,7 @@
 #' @title Calculate the Kaplan–Meier estimator and the Aalen–Johansen estimator
 #' @description
 #' Core estimation routine that computes a \code{survfit}-compatible object
-#' from a formula + data interface (\code{Event()} or \code{Surv()} on
+#' from a formula + data interface (\code{Event()} or \code{survival::Surv()} on
 #' the left-hand side, and a stratification variable on the right-hand side if necessary).
 #' Use this when you want **numbers only** (KM / CIF + SE + CI) and
 #' you will plot it yourself (for example with \code{ggsurvfit} or \code{\link{cifplot}}).
@@ -19,7 +19,7 @@
 #' @inheritParams cif-stat-arguments
 #'
 #' @param formula A model formula specifying the time-to-event outcome on the
-#'   left-hand side (typically \code{Event(time, status)} or \code{survfit::Surv(time, status)})
+#'   left-hand side (typically \code{Event(time, status)} or \code{survival::Surv(time, status)})
 #'   and, optionally, a stratification variable on the right-hand side.
 #'   Unlike \code{\link{cifplot}}, this function does not accept a fitted
 #'   \code{survfit} object.
@@ -62,6 +62,9 @@
 #' @importFrom stats formula
 #'
 #' @name cifcurve
+#' @section Lifecycle:
+#' \lifecycle{stable}
+#'
 #' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifplot()] for display of a CIF; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 cifcurve <- function(

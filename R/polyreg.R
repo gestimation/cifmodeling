@@ -5,7 +5,7 @@
 #' several outcome types, including competing risks, survival and binomial outcomes.
 #' @param nuisance.model A \code{formula} describing the outcome and
 #'   nuisance covariates, excluding the exposure of interest.
-#'   The left-hand side must be \code{Event(time, status)} or \code{survfit::Surv(time, status)}.
+#'   The left-hand side must be \code{Event(time, status)} or \code{survival::Surv(time, status)}.
 #' @param exposure A character string giving the name of the categorical exposure
 #'   variable in \code{data}.
 #' @param strata Optional character string with the name of the stratification
@@ -257,8 +257,11 @@
 #' if (requireNamespace("modelsummary", quietly = TRUE)) {
 #' modelsummary::msummary(output$summary, statistic = c("conf.int", "p.value"), exponentiate = TRUE)
 #' }
-
+#'
 #' @name polyreg
+#' @section Lifecycle:
+#' \lifecycle{experimental}
+#'
 #' @seealso [cifcurve()] for KM/AJ estimators; [cifplot()] for display of a CIF; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 polyreg <- function(
