@@ -143,15 +143,12 @@ plot_apply_style <- function(
     GRAY       = plot_style_gray(font.family, font.size, legend.position)
   )
 
-  # ★ここで「レジェンドを絶対に出す」方向に倒す
   p <- p + style_theme
 
-  # strata が分かれてるなら、ここで上書き
   if (!is.null(strata_levels_final) && length(strata_levels_final) > 1L) {
     p <- p + ggplot2::theme(legend.position = legend.position %||% "top")
   }
-
-  p
+  return(p)
 }
 
 plot_apply_all_scales <- function(
@@ -210,74 +207,6 @@ plot_apply_all_scales <- function(
     )
   }
 
-  p +
-    color_scale +
-    fill_scale +
-    ggplot2::scale_linetype_discrete(
-      limits = lvls,
-      labels = labs,
-      drop = FALSE
-    ) +
-    ggplot2::scale_shape_discrete(
-      limits = lvls,
-      labels = labs,
-      drop = FALSE,
-      guide = "none"
-    )
-}
-
-plot_apply_all_scales_old <- function(
-    p,
-    style,
-    palette,
-    n_strata,
-    strata_levels_final,
-    strata_labels_final
-) {
-  p <- plot_strip_mapped_scales(p)
-  lvls <- strata_levels_final
-  labs <- strata_labels_final
-  n_effective <- if (!is.null(lvls) && length(lvls)) length(lvls) else n_strata %||% 1L
-  n_effective <- max(1L, n_effective)
-
-  use_manual <- !is.null(palette)
-  palette_info <- plot_resolve_palette_color(lvls, palette, n_effective)
-  col_values   <- unname(rep_len(palette_info$values, n_effective))
-  if (!is.null(lvls) && length(lvls)) {
-    names(col_values) <- NULL
-  }
-
-  if (use_manual) {
-    color_scale <- ggplot2::scale_color_manual(
-      values = col_values,
-      limits = lvls,
-      labels = labs,
-      drop   = FALSE
-    )
-    fill_scale <- ggplot2::scale_fill_manual(
-      values = col_values,
-      limits = lvls,
-      labels = labs,
-      drop   = FALSE,
-      guide  = "none"
-    )
-
-    color_scale$scale_name <- "manual"
-    fill_scale$scale_name  <- "manual"
-    if (!inherits(color_scale, "ScaleDiscreteManual")) {
-      class(color_scale) <- c("ScaleDiscreteManual", class(color_scale))
-    }
-    if (!inherits(fill_scale, "ScaleDiscreteManual")) {
-      class(fill_scale) <- c("ScaleDiscreteManual", class(fill_scale))
-    }
-  } else {
-    color_scale <- ggplot2::scale_color_discrete(
-      limits = lvls, labels = labs, drop = FALSE
-    )
-    fill_scale <- ggplot2::scale_fill_discrete(
-      limits = lvls, labels = labs, drop = FALSE, guide = "none"
-    )
-  }
   p +
     color_scale +
     fill_scale +
@@ -645,7 +574,6 @@ plot_survfit_strata_labels <- function(survfit_object,
 
   nms <- names(survfit_object$strata)
 
-  # strata に名前がないときは「文字列そのものを名前にする」しかできない
   if (is.null(nms) || !length(nms)) {
     new_nms <- as.character(strata.label)
     if (length(new_nms) != length(survfit_object$strata)) {
@@ -659,23 +587,18 @@ plot_survfit_strata_labels <- function(survfit_object,
     return(survfit_object)
   }
 
-  # ここからは「もともと名前がある」ケース
-  # nms が "var=level" 形式かもしれないので左右に割る
   has_eq <- grepl("=", nms, fixed = TRUE)
   lhs    <- ifelse(has_eq, sub("^\\s*([^=]+)\\s*=.*$", "\\1", nms, perl = TRUE), NA_character_)
   rhs    <- ifelse(has_eq, sub("^.*?=\\s*", "", nms, perl = TRUE), nms)
 
   lab <- strata.label
 
-  # 1) label が full 名できている（"fruitq1=0" など）→ そのまま採用
   if (!is.null(names(lab)) && length(intersect(names(lab), nms)) == length(nms)) {
     new_rhs <- unname(lab[nms])
 
-    # 2) label が short 名できている（"0","1" など）→ 右側にマッチさせる
   } else if (!is.null(names(lab)) && length(intersect(names(lab), rhs)) == length(nms)) {
     new_rhs <- unname(lab[rhs])
 
-    # 3) 名前なしベクトルなら長さで対応
   } else {
     lab <- as.character(lab)
     if (length(lab) != length(nms)) {
@@ -685,104 +608,76 @@ plot_survfit_strata_labels <- function(survfit_object,
     new_rhs <- lab
   }
 
-  # ★★ ここが重要 ★★
-  # "=" が元からあったものは、左側（変数名）を残して右側だけ差し替える
   new_nms <- character(length(nms))
   for (i in seq_along(nms)) {
     if (isTRUE(has_eq[i]) && !is.na(lhs[i])) {
       new_nms[i] <- paste0(lhs[i], "=", new_rhs[i])
     } else {
-      # "=" がなかったやつは右側をそのまま名前にする
       new_nms[i] <- new_rhs[i]
     }
   }
-
   names(survfit_object$strata) <- new_nms
   return(survfit_object)
 }
 
 plot_reconcile_order_and_labels <- function(
     survfit_object,
-    level.strata    = NULL,   # ユーザーが「元の層は0/1だよ」と言いたいとき
-    order.strata    = NULL,   # 並べ順の指定（"0","1" でも "x=0","x=1" でもOK）
-    label.strata.map = NULL   # 表示名の指定（名前あり/なしどっちでもOK）
+    level.strata     = NULL,
+    order.strata     = NULL,
+    label.strata.map = NULL
 ) {
-  # ------------------------------------------------------------
-  # 0. survfit からいま使ってる層名をとる
-  # ------------------------------------------------------------
   cur_lvls_full <- NULL
   if (!is.null(survfit_object$strata)) {
     cur_lvls_full <- unique(names(survfit_object$strata))
   }
 
-  # "x=0" みたいな形なら右側を short にする
   cur_lvls_short <- NULL
   if (!is.null(cur_lvls_full)) {
     if (any(grepl("=", cur_lvls_full, fixed = TRUE))) {
       cur_lvls_short <- sub(".*?=", "", cur_lvls_full)
     } else {
-      # すでに short になってるパターン
       cur_lvls_short <- cur_lvls_full
     }
   }
 
-  # 実データが持ってる順をベースにする
   base_levels <- cur_lvls_full
 
-  # ------------------------------------------------------------
-  # 1. label.strata.map が「名前なし」で来たら名前をつける
-  # ------------------------------------------------------------
   if (!is.null(label.strata.map)) {
     nm <- names(label.strata.map)
     if (is.null(nm) || !any(nzchar(nm))) {
-      # 名前が無いなら、まず level.strata を優先
       if (!is.null(level.strata)) {
         label.strata.map <- stats::setNames(as.character(label.strata.map),
                                             as.character(level.strata))
       } else if (!is.null(cur_lvls_full)) {
-        # それもなければ、実データのキーにつける
         label.strata.map <- stats::setNames(as.character(label.strata.map),
                                             cur_lvls_full)
       }
     }
   }
 
-  # ------------------------------------------------------------
-  # 2. ラベル指定がまったく無いときのデフォルト
-  #    → 実データが "x=0","x=1" で short が "0","1" なら short を表示にする
-  # ------------------------------------------------------------
   if (is.null(label.strata.map)) {
     if (!is.null(cur_lvls_full) &&
         !is.null(cur_lvls_short) &&
         length(cur_lvls_full) == length(cur_lvls_short) &&
         !identical(cur_lvls_full, cur_lvls_short)) {
-      # 表示は short, key は full
       label.strata.map <- stats::setNames(cur_lvls_short, cur_lvls_full)
     } else if (!is.null(cur_lvls_full)) {
-      # そのまま表示
       label.strata.map <- stats::setNames(cur_lvls_full, cur_lvls_full)
     } else {
-      # strata 自体が無いケース（単一カーブ）
       label.strata.map <- NULL
     }
   }
 
-  # ------------------------------------------------------------
-  # 3. order.strata を “実データのキー” に寄せる
-  #    ユーザーが "0","1" で渡しても "x=0","x=1" にくっつける
-  # ------------------------------------------------------------
   map_to_full <- function(x) {
     if (is.null(x)) return(NULL)
     x <- as.character(x)
     out <- rep(NA_character_, length(x))
 
-    # そのまま full に当ててみる
     if (!is.null(cur_lvls_full)) {
       hit_full <- x %in% cur_lvls_full
       out[hit_full] <- x[hit_full]
     }
 
-    # full に無かったやつは short → full で当てる
     if (!is.null(cur_lvls_full) && !is.null(cur_lvls_short)) {
       hit_short <- x %in% cur_lvls_short
       out[hit_short] <- cur_lvls_full[match(x[hit_short], cur_lvls_short)]
@@ -792,23 +687,15 @@ plot_reconcile_order_and_labels <- function(
   }
   order_full <- map_to_full(order.strata)
 
-  # ------------------------------------------------------------
-  # 4. ラベルを base_levels の順にそろえる（足りなければ埋める）
-  # ------------------------------------------------------------
   if (!is.null(label.strata.map) && !is.null(base_levels)) {
     missing <- setdiff(base_levels, names(label.strata.map))
     if (length(missing)) {
-      # 足りないところはキーそのまま
       label.strata.map <- c(label.strata.map,
                             stats::setNames(missing, missing))
     }
-    # 実データの並びに並べ替える
     label.strata.map <- label.strata.map[base_levels]
   }
 
-  # ------------------------------------------------------------
-  # 5. limits を決める（これは ggplot の scale_* にそのまま渡すやつ）
-  # ------------------------------------------------------------
   limits_arg <- base_levels
   used_order <- FALSE
   forbid_limits_due_to_order <- FALSE
@@ -842,7 +729,6 @@ plot_reconcile_order_and_labels_old <- function(
     label.strata.map = NULL
 ) {
 
-  # 1) label.strata.map が「名前なしベクトル」で来たら level.strata で名前を付ける
   if (!is.null(label.strata.map)) {
     nm <- names(label.strata.map)
     if (is.null(nm) || !any(nzchar(nm))) {
@@ -851,18 +737,14 @@ plot_reconcile_order_and_labels_old <- function(
     }
   }
 
-  # 1.5) ★ ラベル指定がまったく無いときのデフォルトを作る
   if (is.null(label.strata.map)) {
     if (!is.null(cur_lvls_short)) {
-      # 例: c("A","B")
       label.strata.map <- stats::setNames(cur_lvls_short, cur_lvls_full)
     } else {
-      # short がないなら full をそのまま表示
       label.strata.map <- stats::setNames(cur_lvls_full, cur_lvls_full)
     }
   }
 
-  # 2) ラベルが short 名で来てたら full に直す
   .remap_to_full_if_needed <- function(lbl_map, full, short) {
     if (is.null(lbl_map) || is.null(full) || is.null(short)) return(lbl_map)
     nm <- names(lbl_map); if (!length(nm)) return(lbl_map)
@@ -874,7 +756,6 @@ plot_reconcile_order_and_labels_old <- function(
   }
   label.strata.map <- .remap_to_full_if_needed(label.strata.map, cur_lvls_full, cur_lvls_short)
 
-  # 3) order.strata も short → full に寄せる
   map_to_full <- function(x) {
     if (is.null(x)) return(NULL)
     out <- rep(NA_character_, length(x))
@@ -890,10 +771,8 @@ plot_reconcile_order_and_labels_old <- function(
   }
   order_full_raw <- map_to_full(order.strata)
 
-  # 4) 実データにある順をベースに
   base_levels <- cur_lvls_full %||% as.character(level.strata)
 
-  # 5) ラベルを base_levels の順にそろえる（足りなければ追加）
   if (!is.null(label.strata.map)) {
     missing <- setdiff(base_levels, names(label.strata.map))
     if (length(missing)) {
@@ -907,7 +786,6 @@ plot_reconcile_order_and_labels_old <- function(
   used_order <- FALSE
   forbid_limits_due_to_order <- FALSE
 
-  # 6) order.strata があればそれを最優先
   if (!is.null(order_full_raw) && !all(is.na(order_full_raw))) {
     ord_clean <- unique(order_full_raw[!is.na(order_full_raw)])
     known <- ord_clean[ord_clean %in% base_levels]

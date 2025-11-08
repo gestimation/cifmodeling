@@ -1309,7 +1309,7 @@ call_ggsurvfit <- function(
     ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(fill = NA)))
 
   p <- plot_fix_palette_vector_arg(p)
-  p
+  return(p)
 }
 
 
@@ -1394,8 +1394,6 @@ check_ggsurvfit <- function(
     upper <- survfit_object$upper
     lower <- survfit_object$lower
 
-    print("type.y in c")
-    print(type.y)
     if (identical(type.y, "risk")) {
       surv  <- 1 - surv
       if (!is.null(upper)) upper <- 1 - upper

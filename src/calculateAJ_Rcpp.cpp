@@ -133,13 +133,12 @@ Rcpp::List calculateAJ_Rcpp(
   const int K = guniq.size();
 
   if (has_competing) {
-    if (error_tsiatis || (!error_delta && !error_if && !error_aalen)) {
+      if (error_tsiatis || (!error_delta && !error_if && !error_aalen)) {
       error_tsiatis = false;
-      error_aalen   = false;
-      error_delta   = true;
-      error_if      = error_if;
-      error_cif     = true;
-    }
+        error_aalen   = false;
+        error_delta   = true;
+      }
+      error_cif = (error_aalen || error_delta || error_if);
   }
 
   int gmax2 = 0; for (int i=0;i<N;++i) if (G[i] > gmax2) gmax2 = G[i];
