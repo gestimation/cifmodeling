@@ -57,6 +57,14 @@ Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detectio
 \item{conf.type}{Character specifying the method of transformation for confidence intervals used internally.}
 
 \item{conf.int}{Numeric two-sided confidence level (default \code{0.95}).}
+
+\item{return_if}{Logical. When \code{TRUE} and \code{engine = "calculateAJ_Rcpp"}, the influence function is also computed and returned (default \code{FALSE}).}
+
+\item{report.survfit.std.err}{Logical. If \code{TRUE}, report SE on the log-survival scale (survfit's convention). Otherwise SE is on the probability scale.}
+
+\item{engine}{Character. One of \code{"auto"}, \code{"calculateKM"}, or \code{"calculateAJ_Rcpp"} (default \code{"calculateAJ_Rcpp"}).}
+
+\item{prob.bound}{Numeric lower bound used to internally truncate probabilities away from 0 and 1 (default \code{1e-7}).}
 }
 \value{
 A \code{survfit} object. For \code{outcome.type="SURVIVAL"}, \code{$surv} is the survival function.

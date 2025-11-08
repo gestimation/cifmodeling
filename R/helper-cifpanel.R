@@ -13,7 +13,7 @@
 #'   (`"S"` or `"C"`).
 #' @param outcome.list Optional list of outcome types (passed through to
 #'   [cifcurve()]).
-#' @param typey.list,labely.list,typex.list,labelx.list Panel-wise plot
+#' @param typey.list,labely.list,labelx.list Panel-wise plot
 #'   controls forwarded to [cifplot()].
 #' @param limsx.list,limsy.list Panel-wise axis limits for [cifplot()].
 #' @param breakx.list,breaky.list Panel-wise axis breaks for [cifplot()].
@@ -37,7 +37,6 @@ panel_prepare <- function(
     outcome.list = NULL,
     typey.list = NULL,
     labely.list = NULL,
-    typex.list = NULL,
     labelx.list = NULL,
     limsx.list = NULL,
     limsy.list = NULL,
@@ -55,7 +54,6 @@ panel_prepare <- function(
     dots = list(),
     fonts = NULL
 ) {
-  # フォントはcifpanelで決められたものを使う。なければここでデフォルト
   if (is.null(fonts)) {
     fonts <- panel_extract_fonts(dots)
   }
@@ -257,3 +255,13 @@ panel_build_theme <- function(font.family = "sans", font.size = 12) {
     strip.text    = ggplot2::element_text(family = font.family, size = mid)
   )
 }
+
+panel_modify_list <- function(x, y, keep.null = FALSE) {
+  if (is.null(y) || !length(y)) return(x)
+  for (nm in names(y)) {
+    val <- y[[nm]]
+    if (is.null(val) && !keep.null) x[[nm]] <- NULL else x[[nm]] <- val
+  }
+  x
+}
+

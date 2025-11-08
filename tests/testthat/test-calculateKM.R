@@ -176,7 +176,7 @@ test_that("weighted n.event / n.censor match manual tallies", {
   n  <- 50
   t  <- sample(1:5, n, TRUE)
   ep <- sample(c(0,1,2), n, TRUE, prob=c(0.3,0.5,0.2))
-  w  <- runif(n, 0.5, 2)
+  w  <- stats::runif(n, 0.5, 2)
   out <- calculateAJ_Rcpp(t, ep, w=w, error="if", return_if=FALSE)
 
   tt <- sort(unique(t))

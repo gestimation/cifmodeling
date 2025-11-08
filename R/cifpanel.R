@@ -258,7 +258,7 @@
 #'
 #' @importFrom ggplot2 ggplot theme_void ggsave theme element_text labs
 #' @importFrom patchwork wrap_plots plot_layout inset_element plot_annotation
-
+#'
 #' @name cifpanel
 #' @section Lifecycle:
 #' \lifecycle{experimental}
@@ -363,13 +363,13 @@ cifpanel <- function(
   print.info.user   <- print.info
   ggsave.info.user  <- ggsave.info
 
-  survfit.info <- modifyList(list(
+  survfit.info <- panel_modify_list(list(
     error     = error,
     conf.type = conf.type,
     conf.int  = conf.int
   ), survfit.info %||% list())
 
-  axis.info <- modifyList(list(
+  axis.info <- panel_modify_list(list(
     type.y            = type.y,
     label.x           = label.x,
     label.y           = label.y,
@@ -383,7 +383,7 @@ cifpanel <- function(
     use_coord_cartesian = get0("use_coord_cartesian", ifnotfound = NULL)
   ), axis.info %||% list())
 
-  visual.info <- modifyList(list(
+  visual.info <- panel_modify_list(list(
     addConfidenceInterval    = addConfidenceInterval,
     ci.alpha                 = 0.25,
     addRiskTable             = FALSE,
@@ -406,7 +406,7 @@ cifpanel <- function(
     font.size.risktable      = NULL
   ), visual.info %||% list())
 
-  panel.info <- modifyList(list(
+  panel.info <- panel_modify_list(list(
     printEachEvent     = FALSE,
     printEachVar       = FALSE,
     rows.columns.panel = rows.columns.panel,
@@ -425,7 +425,7 @@ cifpanel <- function(
   style.info$legend.position <- style.info$legend.position %||% legend.position
   style.info$legend.collect  <- style.info$legend.collect  %||% legend.collect
 
-  style.info <- modifyList(list(
+  style.info <- panel_modify_list(list(
     style           = "CLASSIC",
     palette         = NULL,
     font.family     = "sans",
@@ -434,7 +434,7 @@ cifpanel <- function(
     legend.collect  = FALSE
   ), style.info)
 
-  inset.info <- modifyList(list(
+  inset.info <- panel_modify_list(list(
     inset.panel           = inset.panel,
     inset.align.to        = inset.align.to,
     inset.left            = inset.left,
@@ -444,11 +444,11 @@ cifpanel <- function(
     inset.legend.position = inset.legend.position
   ), inset.info %||% list())
 
-  print.info <- modifyList(list(
+  print.info <- panel_modify_list(list(
     print.panel = print.panel
   ), print.info %||% list())
 
-  ggsave.info <- modifyList(list(
+  ggsave.info <- panel_modify_list(list(
     filename.ggsave = filename.ggsave,
     width.ggsave    = width.ggsave,
     height.ggsave   = height.ggsave,
@@ -751,7 +751,6 @@ cifpanel <- function(
     outcome.list    = outcome.list,
     typey.list      = typey.list,
     labely.list     = labely.list,
-    typex.list      = typex.list,
     labelx.list     = labelx.list,
     limsx.list      = limsx.list,
     limsy.list      = limsy.list,
@@ -773,13 +772,11 @@ cifpanel <- function(
   plots <- lapply(seq_len(prep$K), function(i) {
     pa <- prep$plot_args[[i]]
 
-    # ① 親を入れる（順番は親→子）
-    pa$axis.info    <- modifyList(axis.info,    pa$axis.info %||% list())
-    pa$visual.info  <- modifyList(visual.info,  pa$visual.info %||% list())
-    pa$style.info   <- modifyList(style.info,   pa$style.info %||% list())
-    pa$survfit.info <- modifyList(survfit.info, pa$survfit.info %||% list())
+    pa$axis.info    <- panel_modify_list(axis.info,    pa$axis.info %||% list())
+    pa$visual.info  <- panel_modify_list(visual.info,  pa$visual.info %||% list())
+    pa$style.info   <- panel_modify_list(style.info,   pa$style.info %||% list())
+    pa$survfit.info <- panel_modify_list(survfit.info, pa$survfit.info %||% list())
 
-    # ② ★ここでパネルのものを全部たたき込む（これが最優先）
     pa <- panel_force_apply(
       pa,
       i,
@@ -796,7 +793,6 @@ cifpanel <- function(
       addQ.list   = addQ.list
     )
 
-    # --- ここで competing.risk.time を自動生成 ---
     if (isTRUE(pa$addCompetingRiskMark)) {
       ce <- code.events[[i]]
       has_event2 <- !is.null(ce) && length(ce) >= 3L && !is.na(ce[2])
@@ -833,7 +829,7 @@ cifpanel <- function(
         use_coord_cartesian = pa$use_coord_cartesian
       )
 
-      visual_i <- modifyList(visual.info, list(
+      visual_i <- panel_modify_list(visual.info, list(
         addConfidenceInterval    = pa$addConfidenceInterval,
         addRiskTable             = pa$addRiskTable,
         addEstimateTable         = pa$addEstimateTable,

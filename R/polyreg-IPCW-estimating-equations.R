@@ -716,10 +716,10 @@ cov_wild_bootstrap <- function(
       a <- (1 - sq5) / 2
       b <- (1 + sq5) / 2
       pa <- (sq5 + 1) / (2 * sq5)
-      u <- runif(n)
+      u <- stats::runif(n)
       ifelse(u < pa, a, b)
     } else if (kind == "gaussian") {
-      rnorm(n)
+      stats::rnorm(n)
     } else {
       stop("Unknown `multiplier`.")
     }

@@ -937,7 +937,7 @@ plot_reconcile_order_and_labels_old <- function(
 
 plot_ensure_factor_strata <- function(formula, data) {
   rhs <- all.vars(update(formula, . ~ .))
-  rhs <- setdiff(rhs, all.vars(update(formula, . ~ 0)))
+  rhs <- setdiff(rhs, all.vars(stats::update(formula, . ~ 0)))
   for (v in rhs) {
     if (v %in% names(data)) {
       x <- data[[v]]
@@ -1166,13 +1166,13 @@ cifplot_build_info <- function(
   ggsave.info  = NULL
 ) {
 
-  survfit.info <- modifyList(list(
+  survfit.info <- panel_modify_list(list(
     error     = error,
     conf.type = conf.type,
     conf.int  = conf.int
   ), survfit.info %||% list())
 
-  axis.info <- modifyList(list(
+  axis.info <- panel_modify_list(list(
     type.y              = type.y,
     label.x             = label.x,
     label.y             = label.y,
@@ -1186,7 +1186,7 @@ cifplot_build_info <- function(
     use_coord_cartesian = use_coord_cartesian
   ), axis.info %||% list())
 
-  visual.info <- modifyList(list(
+  visual.info <- panel_modify_list(list(
     addConfidenceInterval        = addConfidenceInterval,
     addRiskTable                 = addRiskTable,
     addEstimateTable             = addEstimateTable,
@@ -1207,14 +1207,14 @@ cifplot_build_info <- function(
     quantile                     = quantile
   ), visual.info %||% list())
 
-  panel.info <- modifyList(list(
+  panel.info <- panel_modify_list(list(
     printEachEvent     = printEachEvent,
     printCensoring     = printCensoring,
     printEachVar       = printEachVar,
     rows.columns.panel = rows.columns.panel
   ), panel.info %||% list())
 
-  style.info <- modifyList(list(
+  style.info <- panel_modify_list(list(
     style           = style,
     palette         = palette,
     font.family     = font.family %||% "sans",
@@ -1222,7 +1222,7 @@ cifplot_build_info <- function(
     legend.position = legend.position
   ), style.info %||% list())
 
-  ggsave.info <- modifyList(list(
+  ggsave.info <- panel_modify_list(list(
     filename.ggsave = filename.ggsave,
     width.ggsave    = width.ggsave,
     height.ggsave   = height.ggsave,

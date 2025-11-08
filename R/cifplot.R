@@ -655,17 +655,17 @@ plot_printEachEvent <- function(
   if (!is.null(dots$label.y)) dots$label.y <- NULL
   ylabs_vec <- c("Cumulative incidence of interest", "Cumulative incidence of competing risk")
 
-  axis.info.panel <- modifyList(axis.info, list(
+  axis.info.panel <- panel_modify_list(axis.info, list(
     label.y      = ylabs_vec,
     label.strata = axis.info$label.strata,
     order.strata = axis.info$order.strata,
     level.strata = axis.info$level.strata
   ))
 
-  visual.info.panel <- modifyList(visual.info, list(
+  visual.info.panel <- panel_modify_list(visual.info, list(
   ))
 
-  panel.info.panel <- modifyList(panel.info, list(
+  panel.info.panel <- panel_modify_list(panel.info, list(
     rows.columns.panel = if (is.null(rows.columns.panel)) c(1L, 2L) else rows.columns.panel
   ))
 
@@ -675,7 +675,7 @@ plot_printEachEvent <- function(
   fs_cur      <- style.info$font.size
   lg_cur      <- style.info$legend.position
 
-  ggsave.info.panel <- modifyList(ggsave.info, list(
+  ggsave.info.panel <- panel_modify_list(ggsave.info, list(
   ))
 
   panel_args  <- list(
@@ -740,14 +740,14 @@ plot_printCensoring <- function(
 
   ylabs_vec <- c("Survival for event of interest", "Survival with censoring as event")
 
-  axis.info.panel <- modifyList(axis.info, list(
+  axis.info.panel <- panel_modify_list(axis.info, list(
     label.y      = ylabs_vec,
     label.strata = axis.info$label.strata,
     order.strata = axis.info$order.strata,
     level.strata = axis.info$level.strata
   ))
 
-  panel.info.panel <- modifyList(panel.info, list(
+  panel.info.panel <- panel_modify_list(panel.info, list(
     rows.columns.panel = if (is.null(rows.columns.panel)) c(1L, 2L) else rows.columns.panel
   ))
 
@@ -845,13 +845,13 @@ cifplot_single <- function(
     dots$legend.position <- NULL
   }
 
-  survfit.info <- modifyList(list(
+  survfit.info <- panel_modify_list(list(
     error     = NULL,
     conf.type = "arcsine-square root",
     conf.int  = 0.95
   ), survfit.info)
 
-  axis.info <- modifyList(list(
+  axis.info <- panel_modify_list(list(
     type.y            = NULL,
     label.x           = "Time",
     label.y           = NULL,
@@ -865,7 +865,7 @@ cifplot_single <- function(
     use_coord_cartesian = FALSE
   ), axis.info)
 
-  visual.info <- modifyList(list(
+  visual.info <- panel_modify_list(list(
     addConfidenceInterval         = TRUE,
     addRiskTable                  = FALSE,
     addEstimateTable              = FALSE,
@@ -886,14 +886,14 @@ cifplot_single <- function(
     quantile                      = 0.5
   ), visual.info)
 
-  panel.info <- modifyList(list(
+  panel.info <- panel_modify_list(list(
     printEachEvent     = FALSE,
     printCensoring     = FALSE,
     printEachVar       = FALSE,
     rows.columns.panel = NULL
   ), panel.info)
 
-  style.info <- modifyList(list(
+  style.info <- panel_modify_list(list(
     style           = "CLASSIC",
     palette         = NULL,
     font.family     = "sans",
@@ -901,7 +901,7 @@ cifplot_single <- function(
     legend.position = "top"
   ), style.info)
 
-  ggsave.info <- modifyList(list(
+  ggsave.info <- panel_modify_list(list(
     filename.ggsave = NULL,
     width.ggsave    = 6,
     height.ggsave   = 6,

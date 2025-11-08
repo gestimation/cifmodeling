@@ -231,8 +231,10 @@
 #' @importFrom boot boot boot.ci
 #' @importFrom Rcpp sourceCpp
 #' @importFrom stats IQR as.formula binomial coef glm mad median
-#' @importFrom stats model.extract model.frame model.matrix na.omit na.pass
+#' @importFrom stats model.extract model.frame model.matrix update na.omit na.pass
 #' @importFrom stats pnorm qnorm rbinom reformulate rexp sd setNames terms time var
+#' @importFrom stats runif rnorm
+#'
 #' @useDynLib cifmodeling, .registration = TRUE
 #'
 #' @return A list containing fitted exposure effects and supporting results. The
@@ -616,7 +618,7 @@ polyreg <- function(
   #######################################################################################################
   out_summary <- reportEffects(
     outcome.type, report.nuisance.parameter, report.optim.convergence, report.sandwich.conf, report.boot.conf,
-    nuisance.model, exposure, estimand, alpha_beta_estimated, cov_estimated,
+    nuisance.model, exposure, estimand, alpha_beta_estimated, cov_estimated, cov_bootstrap,
     out_bootstrap, out_getResults, iteration, converged.by, objective.function, max.absolute.difference, relative.difference,
     out_nleqslv, conf.level, optim.method$nleqslv.method
   )
