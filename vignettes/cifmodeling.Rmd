@@ -13,14 +13,6 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.path = "man/figures/vignette-",
-  out.width = "100%"
-)
-
-if (!requireNamespace("cifmodeling", quietly = TRUE)) {
-  stop("The 'cifmodeling' package must be installed to run this vignette.")
-}
-
-knitr::opts_chunk$set(
   fig.width  = 6,   
   fig.height = 4,   
   dpi        = 300,     
@@ -29,6 +21,12 @@ knitr::opts_chunk$set(
 #  dev = "ragg_png",     
   comment = "#>"
 )
+
+.has_cifmodeling <- requireNamespace("cifmodeling", quietly = TRUE)
+if (.has_cifmodeling) {
+library(cifmodeling)
+}
+set.seed(1)
 ```
 
 <!-- badges: start --> <!-- badges: end -->
@@ -36,7 +34,7 @@ knitr::opts_chunk$set(
 ```{r setup, include=FALSE, warning=FALSE}
 #pak::pak("gestimation/cifmodeling")
 #devtools::install_github("gestimation/cifmodeling") 
-library(cifmodeling)
+#library(cifmodeling)
 library(nleqslv)
 library(boot)
 library(ggplot2)
@@ -47,7 +45,7 @@ library(patchwork)
 
 ## Quick start
 
-This package is a compact and unified toolkit for Kaplan–Meier/Aalen–Johansen curves, visualization, and direct polytomous regression of cumulative incidence functions in R. 
+This package is a compact and unified toolkit for Kaplan–Meier/Aalen–Johansen curves, visualization, and direct polytomous regression for survival and competing risks data. 
 
 ```{r example0-1, warning=FALSE, message=FALSE}
 library(cifmodeling)

@@ -1,0 +1,207 @@
+---
+title: "Full lists of arguments"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Full lists of arguments}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+# Load required packages for the vignette
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/vignette-",
+  fig.width  = 6,   
+  fig.height = 4,   
+  dpi        = 300,     
+  fig.retina = 2,       
+  out.width  = "70%",   
+#  dev = "ragg_png",     
+  comment = "#>"
+)
+
+.has_cifmodeling <- requireNamespace("cifmodeling", quietly = TRUE)
+if (.has_cifmodeling) {
+library(cifmodeling)
+}
+set.seed(1)
+```
+
+<!-- badges: start --> <!-- badges: end -->
+
+```{r setup, include=FALSE, warning=FALSE}
+#pak::pak("gestimation/cifmodeling")
+#devtools::install_github("gestimation/cifmodeling") 
+#library(cifmodeling)
+library(nleqslv)
+library(boot)
+library(ggplot2)
+library(ggsurvfit)
+library(patchwork)
+```
+
+## Full lists of arguments
+
+### cifcurve()
+
+-   `formula` A model formula specifying the time-to-event outcome on the left-hand side (typically `Event(time, status)` or `survival::Surv(time, status)`) and, optionally, a stratification variable on the right-hand side. Unlike `cifplot()`, this function does not accept a fitted `survfit` object. 
+-   `data` A data frame containing variables in `formula`.
+-   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative.
+-   `subset.condition` Optional character expression to subset `data` before analysis.
+-   `na.action` A function specifying the action to take on missing values. The default is `na.omit`.
+-   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"SURVIVAL"` (Kaplan–Meier type) or `"COMPETING-RISK"` (Aalen–Johansen type). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"COMPETING-RISK"` is assumed; otherwise, `"SURVIVAL"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
+-   `code.event1` Integer code of the event of interest (default `1`).
+-   `code.event2` Integer code of the competing event (default `2`).
+-   `code.censoring` Integer code of censoring (default `0`).
+-   `error` Character specifying the method for variance and standard error used internally. For `"SURVIVAL"` typically `"greenwood"`. For `"COMPETING-RISK"` pass options supported by `calculateAalenDeltaSE()` (`"aalen"`, `"delta"`, `"none"`).
+-   `conf.type` Character transformation for CI on the probability scale (default `"arcsine-square root"`).
+-   `conf.int` numeric two-sided confidence level (default `0.95`).
+-   `return_if` Logical. When `TRUE` and `engine = "calculateAJ_Rcpp"`, the influence function is also computed and returned (default `FALSE`).
+-   `report.survfit.std.err` Logical. If `TRUE`, report SE on the log-survival scale (survfit's convention). Otherwise SE is on the probability scale.
+-   `engine` Character. One of `"auto"`, `"calculateKM"`, or `"calculateAJ_Rcpp"` (default `"calculateAJ_Rcpp"`). 
+-   `prob.bound` Numeric lower bound used to internally truncate probabilities away from 0 and 1 (default `1e-7`).
+
+### cifplot()
+
+-   `formula_or_fit` A model formula or a survfit object. Note: When a formula is supplied, the left-hand side must be `Event(time, status)` or `survival::Surv(time, status)`.
+-   `data` A data frame containing variables in `formula`.
+-   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative.
+-   `subset.condition` Optional character expression to subset `data` before analysis.
+-   `na.action` A function specifying the action to take on missing values. The default is `na.omit`.
+-   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"SURVIVAL"` (Kaplan–Meier type) or `"COMPETING-RISK"` (Aalen–Johansen type). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"COMPETING-RISK"` is assumed; otherwise, `"SURVIVAL"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
+-   `code.event1` Integer code of the event of interest (default `1`).
+-   `code.event2` Integer code of the competing event (default `2`).
+-   `code.censoring` Integer code of censoring (default `0`).
+-   `error` Character specifying the method for variance and standard error used internally. For `"SURVIVAL"` typically `"greenwood"`. For `"COMPETING-RISK"` pass options supported by `calculateAalenDeltaSE()` (`"aalen"`, `"delta"`, `"none"`).
+-   `conf.type` Character transformation for CI on the probability scale (default `"arcsine-square root"`).
+-   `conf.int` numeric two-sided confidence level (default `0.95`).
+-   `type.y` Optional vector/list per panel: `"surv"` or `"risk"` (display `1 - survival` i.e. CIF).
+-   `label.x` Character x-axis labels (default `"Time"`).
+-   `label.y` Character y-axis labels (default internally set to `"Survival"` or `"Cumulative incidence"`).
+-   `label.strata` Character vector of labels for strata.
+-   `order.strata` Optional ordering of strata levels. When `printEachVar = TRUE`, supply a named list `list(var = c("L1","L2",...))` for each RHS variable; unmatched levels are dropped. When `printEachVar = FALSE`, supply a character vector `c("L1","L2",...)` that specifies the display order (legend/risktable) of the single stratification factor. Levels not listed are dropped. If `label.strata` is a named vector, its names must match the (re-ordered) levels.
+-   `limits.x` Numeric length-2 vectors for axis limits. If `NULL` it is internally set to `c(0,max(out_readSurv$t))`.
+-   `limits.y` Numeric length-2 vectors for axis limits. If `NULL` it is internally set to `c(0,1)`.
+-   `breaks.x` Numeric vectors for axis breaks (default `NULL`).
+-   `breaks.y` Numeric vectors for axis breaks (default `NULL`).
+-   `use_coord_cartesian` Logical specify use of `coord_cartesian()` (default `FALSE`).
+-   `addConfidenceInterval` Logical add `add_confidence_interval()` to plot. It calls `geom_ribbon()` (default `TRUE`).
+-   `addRiskTable` Logical add `add_risktable(risktable_stats="n.risk")` to plot (default `TRUE`).
+-   `addEstimateTable` Logical add `add_risktable(risktable_stats="estimate (conf.low, conf.high)")` to plot (default `FALSE`).
+-   `symbol.risktable` Character specifying the symbol used in the risk table to denote strata: `"square"`, `"circle"`, or `"triangle"` (default `"square"`).
+-   `font.size.risktable` Numeric font size for texts in risk / estimate tables (default `3`).
+-   `addCensorMark` Logical add `add_censor_mark()` to plot. It calls `geom_point()` (default `TRUE`).
+-   `shape.censor.mark` Integer point shape for censor marks (default `3`).
+-   `size.censor.mark` Numeric point size for censor marks (default `2`).
+-   `addCompetingRiskMark` Logical add time marks to describe event2 specified by `Event()`, usually the competing events. It calls `geom_point()` (default `TRUE`).
+-   `competing.risk.time` Named list of numeric vectors (names must be mapped to strata labels).
+-   `shape.competing.risk.mark` Integer point shape for competing-risk marks (default `16`).
+-   `size.competing.risk.mark` Numeric point size for competing-risk marks (default `2`).
+-   `addIntercurrentEventMark` Logical overlay user-specified time marks per strata calls `geom_point()` (default `TRUE`).
+-   `intercurrent.event.time` Named list of numeric vectors (names must be mapped to strata labels).
+-   `shape.intercurrent.event.mark` Integer point shape for intercurrent-event marks (default `1`).
+-   `size.intercurrent.event.mark` Numeric point size for intercurrent-event marks (default `2`).
+-   `addQuantileLine` Logical add `add_quantile()` to plot. It calls `geom_segment()` (default `TRUE`).
+-   `quantile` Numeric specify quantile for `add_quantile()` (default `0.5`).
+-   `printEachEvent` Logical. Explicit panel mode. If `TRUE` and `outcome.type == "COMPETING-RISK"`, `cifplot()` internally calls `cifpanel()` to display two event-specific CIFs side-by-side (event 1 and event 2) using reversed `code.events`. Ignored for non-competing-risk outcomes.
+-   `printCensoring` Logical. Explicit panel mode. If `TRUE` and `outcome.type == "SURVIVAL"`, `cifplot()` internally calls `cifpanel()` to display KM-type curves for (event, censor) and (censor, event) so that censoring patterns can be inspected.
+-   `printEachVar` Logical. Explicit panel mode. If `TRUE` and the right-hand side of the formula has multiple covariates (e.g. `~ a + b + c`), the function produces a panel where each variable in RHS is used once as the stratification factor.
+-   `panel.mode` Character specifying Automatic panel mode. If `"auto"` and none of `printEachVar`, `printEachEvent`, `printCensoring` has been set to `TRUE`, the function chooses a suitable panel mode automatically: (i) if the formula RHS has 2+ variables, it behaves like `printEachVar = TRUE`; (ii) otherwise, if `outcome.type == "COMPETING-RISK"`, it behaves like `printEachEvent = TRUE`; (iii) otherwise, if `outcome.type == "SURVIVAL"`, it behaves like `printCensoring = TRUE`. If a panel mode is explicitly specified, `panel.mode` is ignored.
+-   `rows.columns.panel` Optional integer vector `c(nrow, ncol)` controlling the panel layout. If `NULL`, an automatic layout is used.
+-   `style` Character plot theme controls (default `"CLASSIC"`).
+-   `palette` Optional character vector specify color palette, e.g. `palette=c("blue", "cyan", "navy", "green")` (default `NULL`).
+-   `font.family` Character plot theme controls (e.g. `"sans"`, `"serif"`, and `"mono"`. default `"sans"`).
+-   `font.size` Integer plot theme controls (default `12`).
+-   `legend.position` Character specify position of legend: `"top"`, `"right"`, `"bottom"`, `"left"`, or `"none"` (default `"top"`).
+-   `filename.ggsave` Character save the `ggsurvfit` plot with the path and name specified.
+-   `width.ggsave` Numeric specify width of the `ggsurvfit` plot.
+-   `height.ggsave` Numeric specify height of the `ggsurvfit` plot.
+-   `dpi.ggsave` Numeric specify dpi of the `ggsurvfit` plot.
+
+### cifpanel()
+
+-   `formula` A model formula specifying the time-to-event outcome on the left-hand side (typically `Event(time, status)` or `survival::Surv(time, status)`) and, optionally, a stratification variable on the right-hand side. Unlike `cifplot()`, this function does not accept a fitted `survfit` object. 
+-   `formulas` A list of formulas (one per panel). If provided, overrides `formula`.
+-   `data` A data frame containing variables in `formula`.
+-   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative.
+-   `subset.condition` Optional character expression to subset `data` before analysis.
+-   `na.action` A function specifying the action to take on missing values. The default is `na.omit`.
+-   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"SURVIVAL"` (Kaplan–Meier type) or `"COMPETING-RISK"` (Aalen–Johansen type). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"COMPETING-RISK"` is assumed; otherwise, `"SURVIVAL"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
+-   `code.event1` Integer code of the event of interest (default `1`).
+-   `code.event2` Integer code of the competing event (default `2`).
+-   `code.censoring` Integer code of censoring (default `0`).
+-   `code.events` Optional numeric length-3 vector `c(event1, event2, censoring)`. When supplied, it overrides `code.event1`, `code.event2`, and `code.censoring` (primarily used when `cifpanel()` is called or when `printEachEvent = TRUE`).
+-   `error` Character specifying the method for variance and standard error used internally. For `"SURVIVAL"` typically `"greenwood"`. For `"COMPETING-RISK"` pass options supported by `calculateAalenDeltaSE()` (`"aalen"`, `"delta"`, `"none"`).
+-   `conf.type` Character transformation for CI on the probability scale (default `"arcsine-square root"`).
+-   `conf.int` numeric two-sided confidence level (default `0.95`).
+-   `type.y` Optional vector/list per panel: `"surv"` or `"risk"` (display `1 - survival` i.e. CIF).
+-   `label.x`, `label.y` Optional vectors/lists of axis labels per panel.
+-   `label.strata` Optional list of character vectors for legend labels per panel (passed to `cifplot()`).
+-   `order.strata` Optional list of character vectors for ordering labels per panel (passed to `cifplot()`).
+-   `limits.x`, `limits.y` Optional vectors/lists of numeric length-2 axis limits per panel.
+-   `breaks.x`, `breaks.y` Optional vectors/lists of axis breaks per panel (forwarded to `breaks.x` / `breaks.y` in `cifplot()`).
+-   `addConfidenceInterval`, `addCensorMark`, `addCompetingRiskMark`, `addIntercurrentEventMark`, `addQuantileLine` Optional logical vectors/lists per panel to toggle features in `cifplot()`. If `NULL`, sensible defaults are used (CI/Censor on; others off).
+-   `rows.columns.panel` Integer vector `c(nrow, ncol)` specifying the grid size.
+-   `title.panel`, `subtitle.panel`, `caption.panel` Optional strings for panel annotation.
+-   `tag.panel` Passed to `patchwork::plot_annotation(tag_levels = ...)`.
+-   `title.plot` Optional length-2 character vector, titles for base/inset plots when `inset.panel = TRUE`.
+-   `legend.position` Position of legends: `"top"`, `"right"`, `"bottom"`, `"left"`, or `"none"`.
+-   `legend.collect` If `TRUE` (grid mode), collect legends across subplots.
+-   `inset.panel` If `TRUE`, place the second plot as an inset over the first.
+-   `inset.left`, `inset.bottom`, `inset.right`, `inset.top` Numeric positions (0–1) of the inset box.
+-   `inset.align.to` One of `"panel"`, `"plot"`, or `"full"`.
+-   `inset.legend.position` Legend position for the inset plot (e.g., `"none"`).
+-   `filename.ggsave` Character save the composed panel with the path and name specified.
+-   `width.ggsave` Numeric specify width of the composed panel.
+-   `height.ggsave` Numeric specify height of the composed panel.
+-   `dpi.ggsave` Numeric specify dpi of the composed panel.
+-   `print.panel` Logical. If `TRUE`, the composed patchwork object is printed immediately (for interactive use). If `FALSE`, the object is returned invisibly so that it can be assigned, modified, or saved. Kept for backward compatibility.
+-   `engine` Character scalar selecting the internal plotting engine. Currently only `"cifplot"` is supported and used to construct each panel `cifplot_single()`. This argument is reserved for future extensions.
+
+-   `...` Additional arguments forwarded to `cifplot` (e.g., `style`, `font.family`, `font.size`, etc.). Panel-wise overrides provided via explicit arguments take precedence over `...`.
+
+
+### polyreg()
+
+-   `nuisance.model` A `formula` describing the outcome and nuisance covariates, excluding the exposure of interest. The left-hand side must be `Event(time, status)` or `survival::Surv(time, status)`.
+-   `exposure` A character string giving the name of the categorical exposure variable in `data`.
+-   `strata` Optional character string with the name of the stratification variable used to adjust for dependent censoring (default `NULL`).
+-   `data` A data frame containing the outcome, exposure and nuisance covariates referenced by `nuisance.model`.
+-   `subset.condition` Optional expression (as a character string) defining a subset of `data` to analyze (default `NULL`).
+-   `code.event1` Integer code of the event of interest (default `1`).
+-   `code.event2` Integer code of the competing event (default `2`).
+-   `code.censoring` Integer code of censoring (default `0`).
+-   `code.exposure.ref` Integer code identifying the reference exposure category (default `0`).
+-   `effect.measure1` Character string specifying the effect measure for the primary event. Supported values are `"RR"`, `"OR"` and `"SHR"`.
+-   `effect.measure2` Character string specifying the effect measure for the competing event. Supported values are `"RR"`, `"OR"` and `"SHR"`.
+-   `time.point` Numeric time point at which the exposure effect is evaluated. Required for survival and competing risk analyses.
+-   `outcome.type` Character string selecting the outcome type. Valid values are `"COMPETING-RISK"`, `"SURVIVAL"`, `"BINOMIAL"`, `"PROPORTIONAL-SURVIVAL"` and `"PROPORTIONAL-COMPETING-RISK"`. Defaults to `"COMPETING-RISK"`. If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels,
+`"COMPETING-RISK"` is assumed; otherwise, `"SURVIVAL"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
+-   `conf.int` numeric two-sided confidence level (default `0.95`).
+-   `report.nuisance.parameter` Logical if `TRUE`, the returned object includes estimates of the nuisance model parameters (default `FALSE`).
+-   `report.optim.convergence` Logical if `TRUE`, optimization convergence summaries are returned (default `FALSE`).
+-   `report.sandwich.conf` Logical or `NULL`. When `TRUE`, confidence intervals based on sandwich variance are computed. When `FALSE`, they are omitted (default `TRUE`).
+-   `report.boot.conf` Logical or `NULL`. When `TRUE`, bootstrap confidence intervals are computed. When `FALSE`, they are omitted. If `NULL`, the function chooses based on `outcome.type` (default `NULL`).
+-   `boot.bca` Logical indicating the bootstrap confidence interval method. Use `TRUE` for bias-corrected and accelerated intervals or `FALSE` for the normal approximation (default to `FALSE`).
+-   `boot.replications` Integer giving the number of bootstrap replications (default to `200`).
+-   `boot.seed` Numeric seed used for resampling of bootstrap.
+-   `nleqslv.method` Character string specifying the solver used in `nleqslv()`. Available choices are `"Broyden"` and `"Newton"`.
+-   `optim.parameter1` Numeric tolerance for convergence of the outer loop (default `1e-6`).
+-   `optim.parameter2` Numeric tolerance for convergence of the inner loop (default `1e-6`).
+-   `optim.parameter3` Numeric constraint on the absolute value of parameters (default `100`).
+-   `optim.parameter4` Integer maximum number of outer loop iterations (default `50`).
+-   `optim.parameter5` Integer maximum number of `nleqslv()` iterations per outer iteration (default `50`).
+-   `optim.parameter6` Integer maximum number of iterations for the Levenberg-Marquardt routine (default `50`).
+-   `optim.parameter7` Numeric convergence tolerance for the Levenberg-Marquardt routine (default `1e-10`).
+-   `optim.parameter8` Numeric tolerance for updating the Hessian in the Levenberg-Marquardt routine (default `1e-6`).
+-   `optim.parameter9` Numeric starting value for the Levenberg-Marquardt damping parameter lambda (default `1e-6`).
+-   `optim.parameter10` Numeric upper bound for lambda in the Levenberg-Marquardt routine (default `40`).
+-   `optim.parameter11` Numeric lower bound for lambda in the Levenberg-Marquardt routine (default `0.025`).
+-   `optim.parameter12` Numeric multiplicative increment applied to lambda when the Levenberg-Marquardt step is successful (default to `2`).
+-   `optim.parameter13` Numeric multiplicative decrement applied to lambda when the Levenberg-Marquardt step is unsuccessful (default `0.5`).
+-   `data.initial.values` Optional data frame providing starting values for the optimization (default `NULL`).
+-   `normalize.covariate` Logical indicating whether covariates should be centered and scaled prior to optimization (default `TRUE`).
+-   `terminate.time.point` Logical indicating whether time points that contribute estimation are terminated by min of max follow-up times of each exposure level (default `TRUE`).
+-   `prob.bound` Numeric lower bound used to internally truncate probabilities away from 0 and 1 (default `1e-7`).

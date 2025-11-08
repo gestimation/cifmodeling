@@ -1,0 +1,73 @@
+template:
+  bootstrap: 5
+
+# 公開URLが決まっていれば入れる（例は GitHub Pages）
+url: https://gestimation.github.io/cifmodeling/
+
+development:
+  mode: auto
+
+home:
+  title: cifmodeling
+  description: A compact and unified toolkit for Kaplan–Meier/Aalen–Johansen curves, visualization, and direct polytomous regression for survival and competing risks data.
+
+navbar:
+  structure:
+    left:  [reference, articles, news]
+    right: [search, github]
+  components:
+    reference:
+      text: Reference
+      href: reference/index.html
+    articles:
+      text: Articles
+      menu:
+        - text: Overview
+          href: articles/01_overview.html
+        - text: Main functions
+          href: articles/02_functions.html
+        - text: Direct polytomous modeling of CIFs
+          href: articles/03_polyreg.html
+        - text: Examples
+          href: articles/04_examples.html
+        - text: Additional information
+          href: articles/05_information.html
+        - text: Full lists of arguments
+          href: articles/06_arguments.html
+    github:
+      icon: fa-github
+      href: https://github.com/gestimation/cifmodeling
+
+articles:
+  - title: Overview
+    contents:
+      - 01_overview.Rmd
+  - title: Main functions
+    contents:
+      - 02_functions.Rmd
+  - title: Direct polytomous modeling of CIFs
+    contents:
+      - 03_polyreg.Rmd
+  - title: Examples
+    contents:
+      - 04_examples.Rmd
+  - title: Additional information
+    contents:
+      - 05_information.Rmd
+  - title: Full lists of arguments
+    contents:
+      - 06_arguments.Rmd
+
+reference:
+  - title: Estimation & plotting
+    contents:
+      - cifcurve
+      - cifplot
+      - cifpanel
+  - title: Regression
+    contents:
+      - polyreg
+  - title: Helpers
+    contents:
+      - extract_time_to_event
+      - Event

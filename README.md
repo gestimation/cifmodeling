@@ -11,7 +11,7 @@
 
 This package is a compact and unified toolkit for
 Kaplan–Meier/Aalen–Johansen curves, visualization, and direct polytomous
-regression of cumulative incidence functions in R.
+regression for survival and competing risks data.
 
 ``` r
 library(cifmodeling)
