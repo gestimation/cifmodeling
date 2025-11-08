@@ -69,15 +69,16 @@ install.packages("patchwork")
 install.packages("modelsummary")
 devtools::install_github("gestimation/cifmodeling")
 ```
+
 ## Interoperability
 
-There are several excellent R packages for survival and competing-risk analysis. The survival package provides the canonical API for time-to-event data (e.g., `survival` and `mets`). In combination with `ggsurvfit`, you can produce publication-ready survival plots. For cumulative incidence (CIF) plots, integration in the general ecosystem is not as streamlined; `cifmodeling` fills this gap by offering `cifplot()` for survival/CIF plots and multi-panel figures via a single, unified interface.
+There are several excellent R packages for survival and competing-risk analysis. The `survival` package provides the canonical API for time-to-event data. In combination with `ggsurvfit`, `survival::survfit()` can generate publication-ready survival plots. For cumulative incidence (CIF) plots, integration in the general ecosystem is not as streamlined; `cifmodeling` fills this gap by offering `cifplot()` for survival/CIF plots and multi-panel figures via a single, unified interface.
 
 If you need fine-grained plot customization, compute the estimator and keep a survfit-compatible object with `cifcurve()` (or supply your own survfit object) and then style it using `ggsurvfit/ggplot2` layers. In other words, use `cifcurve()` for estimation, `cifplot()/cifpanel()` for quick high-quality figures, and fall back to the `ggplot` ecosystem when you want full artistic control.
 
 For interval estimation, `cifcurve()` mirrors the confidence-interval options of `survival::survfit()` for survival curves and adds `delta` and `aalen` options for CIFs. The defaults in `cifmodeling` are chosen from external and internal simulation evidence; they should be sensible for most applications, while still allowing experts to override them when needed. 
 
-`mets` package is a more specialized toolkit that provides advanced statistical methods for competing risk analysis. `cifmodeling::polyreg()` focuses on coherent modeling of all CIFs simultaneously using polytomous log odds products to estimate RR/OR/SHR at user-specified times; this coherence can come with longer runtimes on large problems. If you prefer fitting separate regression models for each competing event or need Fine–Gray specifically, `mets::cifreg()` (and `mets::binreg()` for RR and OR estimation) are excellent choices. 
+The `mets` package is a more specialized toolkit that provides advanced statistical methods for competing risk analysis. `cifmodeling::polyreg()` focuses on coherent modeling of all CIFs simultaneously to estimate RR/OR/SHR at user-specified times; this coherence can come with longer runtimes on large problems. If you prefer fitting separate regression models for each competing event or need Fine–Gray specifically, `mets::cifreg()` (and `mets::binreg()` for RR and OR estimation) are excellent choices. 
 
 ## Quality control
 
@@ -225,7 +226,7 @@ cifpanel(
 
 ### polyreg()
 
-`polyreg()` implements **log odds product modeling** for CIFs at user-specified time points, focusing on multiplicative effects of a categorical exposure, or constant effects over time like Cox regression and Fine-Gray models. It estimates multiplicative effects such as **risk ratios**, **odds ratios**, or **subdistribution hazard ratios**, while ensuring that the probabilities across competing events sum to one. This is achieved through **reparameterization using polytomous log odds products**, which fits so-called effect-measure models and nuisance models on multiple competing events simultaneously. Additionally, `polyreg()` supports direct binomial regression for survival outcomes and the Richardson model for binomial outcomes, both of which use log odds products.
+`polyreg()` implements **log odds product modeling** of CIFs at user-specified time points, focusing on multiplicative effects of a categorical exposure, or constant effects over time like Cox regression and Fine-Gray models. It estimates multiplicative effects such as **risk ratios**, **odds ratios**, or **subdistribution hazard ratios**, while ensuring that the probabilities across competing events sum to one. This is achieved through **reparameterization using polytomous log odds products**, which fits so-called effect-measure models and nuisance models on multiple competing events simultaneously. Additionally, `polyreg()` supports direct binomial regression for survival outcomes and the Richardson model for binomial outcomes, both of which use log odds products.
 
 The function follows the familiar **formula + data** syntax with `Event()` or `Surv()` and outputs tidy results, including point estimates, standard errors, confidence intervals, and p-values. Its results can be easily summarized with `summary()` or combined with tools such as **modelsummary** or **broom** for reporting.
 

@@ -85,9 +85,9 @@ devtools::install_github("gestimation/cifmodeling")
 ## Interoperability
 
 There are several excellent R packages for survival and competing-risk
-analysis. The survival package provides the canonical API for
-time-to-event data (e.g., `survival` and `mets`). In combination with
-`ggsurvfit`, you can produce publication-ready survival plots. For
+analysis. The `survival` package provides the canonical API for
+time-to-event data. In combination with `ggsurvfit`,
+`survival::survfit()` can generate publication-ready survival plots. For
 cumulative incidence (CIF) plots, integration in the general ecosystem
 is not as streamlined; `cifmodeling` fills this gap by offering
 `cifplot()` for survival/CIF plots and multi-panel figures via a single,
@@ -107,14 +107,14 @@ from external and internal simulation evidence; they should be sensible
 for most applications, while still allowing experts to override them
 when needed.
 
-`mets` package is a more specialized toolkit that provides advanced
+The `mets` package is a more specialized toolkit that provides advanced
 statistical methods for competing risk analysis.
 `cifmodeling::polyreg()` focuses on coherent modeling of all CIFs
-simultaneously using polytomous log odds products to estimate RR/OR/SHR
-at user-specified times; this coherence can come with longer runtimes on
-large problems. If you prefer fitting separate regression models for
-each competing event or need Fine–Gray specifically, `mets::cifreg()`
-(and `mets::binreg()` for RR and OR estimation) are excellent choices.
+simultaneously to estimate RR/OR/SHR at user-specified times; this
+coherence can come with longer runtimes on large problems. If you prefer
+fitting separate regression models for each competing event or need
+Fine–Gray specifically, `mets::cifreg()` (and `mets::binreg()` for RR
+and OR estimation) are excellent choices.
 
 ## Quality control
 
@@ -316,7 +316,7 @@ cifpanel(
 
 ### polyreg()
 
-`polyreg()` implements **log odds product modeling** for CIFs at
+`polyreg()` implements **log odds product modeling** of CIFs at
 user-specified time points, focusing on multiplicative effects of a
 categorical exposure, or constant effects over time like Cox regression
 and Fine-Gray models. It estimates multiplicative effects such as **risk
