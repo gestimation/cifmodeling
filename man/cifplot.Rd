@@ -55,6 +55,7 @@ cifplot(
   rows.columns.panel = NULL,
   style = "CLASSIC",
   palette = NULL,
+  linewidth = 1,
   font.family = "sans",
   font.size = 12,
   legend.position = "top",
@@ -226,6 +227,8 @@ layout is determined from the number of subplots.}
 Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also accepted.}
 
 \item{palette}{Optional character vector specifying the color palette to use across strata.}
+
+\item{linewidth}{Optional numeric specifying the line width of curves.}
 
 \item{font.family}{Character specifying the font family: \code{"sans"},  \code{"serif"}, or
 \code{"mono"} (default \code{"sans"}).}
