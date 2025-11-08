@@ -280,8 +280,6 @@ output2 <- cifplot(Event(t,epsilon) ~ fruitq,
                    label.y="",
                    label.x="",
                    limits.y=c(0,0.15))
-#> [1] "type.y in c"
-#> NULL
 output3 <- list(a=output1, b=output2)
 cifpanel(plots = output3,
          title.plot = c("Fruit intake and macrovascular complications", "Zoomed-in view"),
