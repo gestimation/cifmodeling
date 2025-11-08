@@ -1027,6 +1027,7 @@ cifplot_build_info <- function(
 
   style,
   palette,
+  linewidth,
   font.family,
   font.size,
   legend.position,
@@ -1095,6 +1096,7 @@ cifplot_build_info <- function(
   style.info <- panel_modify_list(list(
     style           = style,
     palette         = palette,
+    linewidth       = linewidth,
     font.family     = font.family %||% "sans",
     font.size       = font.size   %||% 12,
     legend.position = legend.position
@@ -1117,5 +1119,3 @@ cifplot_build_info <- function(
     ggsave.info  = ggsave.info
   )
 }
-
-

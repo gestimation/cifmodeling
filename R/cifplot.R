@@ -246,6 +246,7 @@ cifplot <- function(
     rows.columns.panel            = NULL,
     style                         = "CLASSIC",
     palette                       = NULL,
+    linewidth                     = 1,
     font.family                   = "sans",
     font.size                     = 12,
     legend.position               = "top",
@@ -323,6 +324,7 @@ cifplot <- function(
 
     style           = style,
     palette         = palette,
+    linewidth       = linewidth,
     font.family     = font.family,
     font.size       = font.size,
     legend.position = legend.position,
@@ -669,11 +671,12 @@ plot_printEachEvent <- function(
     rows.columns.panel = if (is.null(rows.columns.panel)) c(1L, 2L) else rows.columns.panel
   ))
 
-  style_cur   <- style.info$style
-  palette_cur <- style.info$palette
-  ff_cur      <- style.info$font.family
-  fs_cur      <- style.info$font.size
-  lg_cur      <- style.info$legend.position
+  style_cur     <- style.info$style
+  palette_cur   <- style.info$palette
+  linewidth_cur <- style.info$linewidth
+  ff_cur        <- style.info$font.family
+  fs_cur        <- style.info$font.size
+  lg_cur        <- style.info$legend.position
 
   ggsave.info.panel <- panel_modify_list(ggsave.info, list(
   ))
@@ -691,6 +694,7 @@ plot_printEachEvent <- function(
     style.info        = list(
       style           = style_cur,
       palette         = palette_cur,
+      linewidth       = linewidth_cur,
       font.family     = ff_cur,
       font.size       = fs_cur,
       legend.position = lg_cur
@@ -832,6 +836,10 @@ cifplot_single <- function(
     style.info$palette <- dots$palette
     dots$palette <- NULL
   }
+  if (!is.null(dots$linewidth)) {
+    style.info$linewidth <- dots$linewidth
+    dots$linewidth <- NULL
+  }
   if (!is.null(dots$font.family)) {
     style.info$font.family <- dots$font.family
     dots$font.family <- NULL
@@ -896,6 +904,7 @@ cifplot_single <- function(
   style.info <- panel_modify_list(list(
     style           = "CLASSIC",
     palette         = NULL,
+    linewidth       = 1,
     font.family     = "sans",
     font.size       = 12,
     legend.position = "top"
@@ -951,6 +960,7 @@ cifplot_single <- function(
 
   style           <- style.info$style
   palette         <- style.info$palette
+  linewidth       <- style.info$linewidth
   font.family     <- style.info$font.family
   font.size       <- style.info$font.size
   legend.position <- style.info$legend.position
@@ -1131,6 +1141,7 @@ call_ggsurvfit <- function(
 
   style              <- style.info$style
   palette            <- style.info$palette
+  linewidth          <- style.info$linewidth
   font.family        <- style.info$font.family
   font.size          <- style.info$font.size
   legend.position    <- style.info$legend.position
@@ -1346,8 +1357,9 @@ check_ggsurvfit <- function(
   shape.competing.risk.mark     <- visual.info$shape.competing.risk.mark
   shape.intercurrent.event.mark <- visual.info$shape.intercurrent.event.mark
 
-  style   <- style.info$style
-  palette <- style.info$palette
+  style     <- style.info$style
+  palette   <- style.info$palette
+  linewidth <- style.info$linewidth
 
   if (isTRUE(addCensorMark) && isTRUE(addIntercurrentEventMark) &&
       identical(shape.censor.mark, shape.intercurrent.event.mark)) {
@@ -1469,7 +1481,8 @@ check_ggsurvfit <- function(
   old_opt <- getOption("ggsurvfit.switch-color-linetype", FALSE)
   out_plot <- ggsurvfit(
     survfit_object,
-    type        = target_type,
+    type         = target_type,
+    linewidth    = linewidth,
     linetype_aes = linetype_aes_flag
   )
 

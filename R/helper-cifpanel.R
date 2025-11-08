@@ -74,11 +74,9 @@ panel_prepare <- function(
       cc  <- pair[3]
     }
 
-    # フォーミュラとデータを正規化
     norm_inputs <- plot_normalize_formula_data(formulas[[i]], data)
     data_i <- norm_inputs$data
 
-    ## --- 1) 推定パート: cifcurve() を呼ぶ引数を作る ---
     args_est <- panel_drop_nulls(c(
       list(
         formula        = formulas[[i]],
@@ -88,17 +86,12 @@ panel_prepare <- function(
         code.event2    = ce2,
         code.censoring = cc
       ),
-      # survfit.info に error / conf.* が入ってたらここでマージする
       survfit.info
     ))
     fit_i <- do.call(cifcurve, args_est)
     curves[[i]] <- fit_i
 
-    ## --- 2) 描画パート: cifplot_single() に渡す引数を作る ---
-    # ここが今回の肝。style/palette/legend.positionを
-    # 「無条件に」書かないようにする
     args_plot <- list(
-      # ★ ここで formula_or_fit を先に入れておく
       formula_or_fit           = fit_i,
       type.y                   = if (!is.null(typey.list))   typey.list[[i]]   else NULL,
       label.y                  = if (!is.null(labely.list))  labely.list[[i]]  else NULL,
@@ -113,21 +106,19 @@ panel_prepare <- function(
       addIntercurrentEventMark = if (!is.null(addIC.list))   addIC.list[[i]]   else FALSE,
       addQuantileLine          = if (!is.null(addQ.list))    addQ.list[[i]]    else FALSE,
       label.strata             = if (!is.null(strata.list))  strata.list[[i]]  else NULL,
-      # フォントは渡してよい（だいたい統一したいので）
       font.family              = fonts$family,
       font.size                = fonts$size
     )
 
-    # --- ここが今回の変更ポイント ---
-    # 1) cifpanel(..., style = "BOLD") のように dots に style があれば書く
-    # 2) なければ何も書かない（= cifplot_single の style.info を壊さない）
     if (!is.null(dots$style)) {
       args_plot$style <- dots$style
     }
     if (!is.null(dots$palette)) {
       args_plot$palette <- dots$palette
     }
-    # legend.position も「NULLじゃなければ書く」
+    if (!is.null(dots$linewidth)) {
+      args_plot$linewidth <- dots$linewidth
+    }
     if (!is.null(legend.position)) {
       args_plot$legend.position <- legend.position
     }

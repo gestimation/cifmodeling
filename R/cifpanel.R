@@ -315,6 +315,7 @@ cifpanel <- function(
     title.plot                    = NULL,
     style                         = "CLASSIC",
     palette                       = NULL,
+    linewidth                     = 1,
     font.family                   = "sans",
     font.size                     = 8,
     legend.position               = "top",
@@ -420,6 +421,7 @@ cifpanel <- function(
   style.info <- style.info %||% list()
   style.info$style           <- style.info$style           %||% style
   style.info$palette         <- style.info$palette         %||% palette
+  style.info$linewidth       <- style.info$linewidth       %||% linewidth
   style.info$font.family     <- style.info$font.family     %||% font.family
   style.info$font.size       <- style.info$font.size       %||% font.size
   style.info$legend.position <- style.info$legend.position %||% legend.position
@@ -428,6 +430,7 @@ cifpanel <- function(
   style.info <- panel_modify_list(list(
     style           = "CLASSIC",
     palette         = NULL,
+    linewidth       = NULL,
     font.family     = "sans",
     font.size       = 12,
     legend.position = "top",

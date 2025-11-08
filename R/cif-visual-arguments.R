@@ -54,6 +54,7 @@
 #' \code{"FRAMED"}, \code{"GRID"}, \code{"GRAY"} or \code{"GGSURVFIT"} (default \code{"CLASSIC"}).
 #'   Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also accepted.
 #' @param palette Optional character vector specifying the color palette to use across strata.
+#' @param linewidth Optional numeric specifying the line width of curves.
 #' @param font.family Character specifying the font family: \code{"sans"},  \code{"serif"}, or
 #' \code{"mono"} (default \code{"sans"}).
 #' @param font.size Integer specifying the base font size (default \code{12}).
