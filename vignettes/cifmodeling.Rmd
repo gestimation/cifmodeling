@@ -321,11 +321,20 @@ Three effect measures available:
 
 -   Subdistribution hazard ratio (SHR)
 
-Set the desired measure using `effect.measure1` and, for competing risks analysis, `effect.measure2`. The `time.point` argument specifies the follow-up time at which effects are estimated.
+Set the desired measure using `effect.measure1` and, for competing risks analysis, `effect.measure2`. The `time.point` argument specifies the follow-up time at which effects are estimated. 
 
 **3. Censoring adjustment**
 
 Inverse probability weights adjust for dependent censoring. Use `strata=` to specify stratification variables. If no strata are specified, Kaplan-Meier weights are used.
+
+**Confidence intervals**
+
+By default, `polyreg()` chooses a single, simple confidence–interval method based on `outcome.type`:
+
+-   `"COMPETING-RISK"`, `"SURVIVAL"`, `"BINOMIAL"` — Wald CIs based on sandwich variance
+-   `"PROPORTIONAL-COMPETING-RISK"`, `"PROPORTIONAL-SURVIVAL"` — Bootstrap CIs (normal approximation)
+
+For time-point (non-proportional) models, the default is Wald confidence intervals using a sandwich variance directly from influence functions. If `report.boot.conf = TRUE`, the variance is instead estimated by a wild (multiplier) bootstrap applied to the influence functions (`boot.multiplier`, boot.replications), and Wald confidence intervals are formed from that bootstrap variance. For common effects (proportional models), `boot()` refits the estimator in each replicate and forms normal-approximate confidence intervals from the bootstrap mean and SD. If desired, BCa confidence intervals can be requested via `boot.bca = TRUE` (only for proportional models). Users normally do not need to set any confidence–interval flags. 
 
 **Return**
 
@@ -830,8 +839,8 @@ You can also supply multiple model summaries as a named list to compare estimate
 -   `conf.int` numeric two-sided confidence level (default `0.95`).
 -   `report.nuisance.parameter` Logical if `TRUE`, the returned object includes estimates of the nuisance model parameters (default `FALSE`).
 -   `report.optim.convergence` Logical if `TRUE`, optimization convergence summaries are returned (default `FALSE`).
--   `report.sandwich.conf` Logical or `NULL`. When `TRUE`, confidence intervals based on sandwich variance are computed. When `FALSE`, they are omitted (default `TRUE`).
--   `report.boot.conf` Logical or `NULL`. When `TRUE`, bootstrap confidence intervals are computed. When `FALSE`, they are omitted. If `NULL`, the function chooses based on `outcome.type` (default `NULL`).
+-   `report.sandwich.conf` Logical or `NULL`. When `TRUE`, confidence intervals based on sandwich variance are computed. When `FALSE`, they are omitted (default TRUE`). This confidence interval is default for time-point models (`"outcome.type=COMPETING-RISK"`, `"SURVIVAL"` or `"BINOMIAL"`) and is not available otherwise.
+-   `report.boot.conf` Logical or `NULL`. When `TRUE`, bootstrap confidence intervals are computed. When `FALSE`, they are omitted. If `NULL`, the function chooses based on `outcome.type` (default `NULL`). This confidence interval is default for proportional models (`outcome.type="PROPORTIONAL-COMPETING-RISK"` or `"PROPORTIONAL-SURVIVAL"`).
 -   `boot.bca` Logical indicating the bootstrap confidence interval method. Use `TRUE` for bias-corrected and accelerated intervals or `FALSE` for the normal approximation (default to `FALSE`).
 -   `boot.replications` Integer giving the number of bootstrap replications (default to `200`).
 -   `boot.seed` Numeric seed used for resampling of bootstrap.
