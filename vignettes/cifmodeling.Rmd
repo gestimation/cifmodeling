@@ -560,6 +560,7 @@ cifplot(Event(t,epsilon) ~ fruitq,
         style                 = "FRAMED", 
         font.family           = "serif", 
         linewidth             = 1.3, 
+        linetype              = TRUE, 
         palette=c("azure4", "gray", "black", "darkgray"))
 cifplot(Event(t,epsilon) ~ fruitq,
         data                  = diabetes.complications,
