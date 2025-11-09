@@ -85,9 +85,9 @@ devtools::install_github("gestimation/cifmodeling")
 ## Interoperability
 
 There are several excellent R packages for survival and competing-risk
-analysis. The survival package provides the canonical API for
-time-to-event data (e.g., `survival` and `mets`). In combination with
-`ggsurvfit`, you can produce publication-ready survival plots. For
+analysis. The `survival` package provides the canonical API for
+time-to-event data. In combination with `ggsurvfit`,
+`survival::survfit()` can generate publication-ready survival plots. For
 cumulative incidence (CIF) plots, integration in the general ecosystem
 is not as streamlined; `cifmodeling` fills this gap by offering
 `cifplot()` for survival/CIF plots and multi-panel figures via a single,
@@ -107,14 +107,14 @@ from external and internal simulation evidence; they should be sensible
 for most applications, while still allowing experts to override them
 when needed.
 
-`mets` package is a more specialized toolkit that provides advanced
+The `mets` package is a more specialized toolkit that provides advanced
 statistical methods for competing risk analysis.
 `cifmodeling::polyreg()` focuses on coherent modeling of all CIFs
-simultaneously using polytomous log odds products to estimate RR/OR/SHR
-at user-specified times; this coherence can come with longer runtimes on
-large problems. If you prefer fitting separate regression models for
-each competing event or need Fine–Gray specifically, `mets::cifreg()`
-(and `mets::binreg()` for RR and OR estimation) are excellent choices.
+simultaneously to estimate RR/OR/SHR at user-specified times; this
+coherence can come with longer runtimes on large problems. If you prefer
+fitting separate regression models for each competing event or need
+Fine–Gray specifically, `mets::cifreg()` (and `mets::binreg()` for RR
+and OR estimation) are excellent choices.
 
 ## Quality control
 
@@ -176,11 +176,13 @@ You may also pass a survfit-compatible object directly.
   - `addQuantileLine` adds a line that represents median or quantile
 - **Plot customization**
   - `type.y` chooses y-axis (`"surv"` for survival and `"risk"` for
-    1-survival or CIF)
+    1-survival/CIF)
   - `limits.x`, `limits.y`, `breaks.x`, `breaks.y` numeric vectors for
     axis control
   - `style` specifies the appearance of plot (`"CLASSIC"`, `"BOLD"`,
     `"FRAMED"`, `"GRID"`, `"GRAY"` or `"GGSURVFIT"`)
+  - `palette` specifies color of each curve
+    (e.g. `palette=c("blue1", "cyan3", "navy", "deepskyblue3"))`)
 - **Panel display**
   - `printEachVar` produces multiple survival/CIF curves per
     stratification variable specified in the formula
@@ -278,8 +280,6 @@ output2 <- cifplot(Event(t,epsilon) ~ fruitq,
                    label.y="",
                    label.x="",
                    limits.y=c(0,0.15))
-#> [1] "type.y in c"
-#> NULL
 output3 <- list(a=output1, b=output2)
 cifpanel(plots = output3,
          title.plot = c("Fruit intake and macrovascular complications", "Zoomed-in view"),
@@ -316,7 +316,7 @@ cifpanel(
 
 ### polyreg()
 
-`polyreg()` implements **log odds product modeling** for CIFs at
+`polyreg()` implements **log odds product modeling** of CIFs at
 user-specified time points, focusing on multiplicative effects of a
 categorical exposure, or constant effects over time like Cox regression
 and Fine-Gray models. It estimates multiplicative effects such as **risk
@@ -401,15 +401,17 @@ loss-to-censoring patterns over follow-up. Here the workflow differs
 slightly from the previous code. First, we compute a survfit-compatible
 object `output1` using `cifcurve()` with `outcome.type="COMPETING-RISK"`
 by calculating Aalen–Johansen estimator stratified by fruitq1. Then,
-`cifplot()` is used to generate the figure. The `label.x` and `label.y`
-arguments are also used to customize the axis labels.
+`cifplot()` is used to generate the figure. The `label.y`, `label.x` and
+`limit.x` arguments are also used to customize the axis labels and
+limits.
 
 ``` r
 output1 <- cifcurve(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
                     outcome.type="COMPETING-RISK")
 cifplot(output1, addConfidenceInterval=FALSE, addRiskTable=FALSE, 
         addCensorMark=TRUE, addCompetingRiskMark=FALSE, 
-        label.y="CIF of diabetic retinopathy", label.x="Years from registration")
+        label.y="CIF of diabetic retinopathy", label.x="Years from registration",
+        limits.x=c(0,8))
 ```
 
 <img src="man/figures/README-example1-2-1.png" width="100%" />
@@ -429,28 +431,30 @@ output2 <- extract_time_to_event(Event(t,epsilon)~fruitq1,
                                  data=diabetes.complications, which_event="event2")
 cifplot(output1, addConfidenceInterval=FALSE, addRiskTable=FALSE, 
         addCensorMark=FALSE, addCompetingRiskMark=TRUE, competing.risk.time=output2, 
-        label.y="CIF of diabetic retinopathy", label.x="Years from registration")
+        label.y="CIF of diabetic retinopathy", label.x="Years from registration",
+        limits.x=c(0,8))
 ```
 
 <img src="man/figures/README-example1-3-1.png" width="100%" />
 
-`label.strata` is an argument for customizing labels, but when inputting
-a survfit object, it becomes invalid because it does not contain stratum
-information. Therefore, the following code inputs the formula and data.
-`label.strata` is used by combining `level.strata` and `order.strata`.
-`level.strata` specifies the levels of the stratification variable
-corresponding to each label in `label.strata`. The levels specified in
-`level.strata` are then displayed in the graph in the order defined by
-`order.strata`. A graph enclosed in a square was generated, which is due
-to `style="FRAMED"` specification.
+`label.strata` is another argument for customizing labels, but when
+inputting a survfit object, it becomes invalid because it does not
+contain stratum information. Therefore, the following code inputs the
+formula and data. `label.strata` is used by combining `level.strata` and
+`order.strata`. `level.strata` specifies the levels of the
+stratification variable corresponding to each label in `label.strata`.
+The levels specified in `level.strata` are then displayed in the graph
+in the order defined by `order.strata`. A graph enclosed in a square was
+generated, which is due to `style="FRAMED"` specification.
 
 ``` r
 cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
         outcome.type="COMPETING-RISK", addConfidenceInterval=FALSE, addRiskTable=FALSE, 
         addEstimateTable=TRUE, addCensorMark=FALSE, addCompetingRiskMark=TRUE, 
         competing.risk.time=output2, label.y="CIF of diabetic retinopathy", 
-        label.x="Years from registration", label.strata=c("High intake","Low intake"), 
-        level.strata=c("Q2 to Q4","Q1"), order.strata=c("Q1", "Q2 to Q4"), style="FRAMED")
+        label.x="Years from registration", limits.x=c(0,8),
+        label.strata=c("High intake","Low intake"), level.strata=c("Q2 to Q4","Q1"), 
+        order.strata=c("Q1", "Q2 to Q4"), style="FRAMED")
 ```
 
 <img src="man/figures/README-example1-4-1.png" width="100%" />
@@ -458,10 +462,10 @@ cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications,
 By specifying `addEstimateTable=TRUE`, the risks of diabetic retinopathy
 (estimates for CIFs) along with their confidence interval are shown in
 the table at the bottom of the graph. The risk ratios at a specific time
-point for competing events can be jointly and coherently estimated using
-`polyreg()` with `outcome.type="COMPETING-RISK"`. In the code of
-`polyreg()` below, no covariates are included in the nuisance model
-(`~1` specifies intercept only). The effect of low fruit intake
+point (e.g. 8 years) for competing events can be jointly and coherently
+estimated using `polyreg()` with `outcome.type="COMPETING-RISK"`. In the
+code of `polyreg()` below, no covariates are included in the nuisance
+model (`~1` specifies intercept only). The effect of low fruit intake
 `fruitq1` is estimated as an unadjusted risk ratio
 (`effect.measure1="RR"`) for diabetic retinopathy (event 1) and
 macrovascular complications (event 2) at 8 years (`time.point=8`).

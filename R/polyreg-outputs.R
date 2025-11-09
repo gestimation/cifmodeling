@@ -8,6 +8,7 @@ reportEffects <- function(outcome.type,
                           estimand,
                           alpha_beta_estimated,
                           cov_estimated,
+                          cov_bootstrap,
                           out_bootstrap,
                           out_getResults,
                           iteration,
@@ -19,7 +20,7 @@ reportEffects <- function(outcome.type,
                           conf.level,
                           nleqslv.method) {
 
-  out_getCoefTerm <- getCoefTerm(report.nuisance.parameter, report.sandwich.conf, report.boot.conf, nuisance.model, outcome.type, exposure, estimand, alpha_beta_estimated, cov_estimated, out_bootstrap, conf.level, out_getResults)
+  out_getCoefTerm <- getCoefTerm(report.nuisance.parameter, report.sandwich.conf, report.boot.conf, nuisance.model, outcome.type, exposure, estimand, alpha_beta_estimated, cov_estimated, cov_bootstrap, out_bootstrap, conf.level, out_getResults)
   coef1 <- out_getCoefTerm$coef1
   coef2 <- out_getCoefTerm$coef2
   terms_text <- out_getCoefTerm$terms_text
@@ -136,7 +137,7 @@ glance_df <- function(
 }
 
 
-getCoefTerm <- function(report.nuisance.parameter, report.sandwich.conf, report.boot.conf, nuisance.model, outcome.type, exposure, estimand, alpha_beta_estimated, cov_estimated, out_bootstrap, conf.level, out_getResults) {
+getCoefTerm <- function(report.nuisance.parameter, report.sandwich.conf, report.boot.conf, nuisance.model, outcome.type, exposure, estimand, alpha_beta_estimated, cov_estimated, cov_bootstrap, out_bootstrap, conf.level, out_getResults) {
   iv <- estimand$index.vector
   code.exposure.ref <- as.character(estimand$code.exposure.ref)
 
@@ -184,8 +185,8 @@ getCoefTerm <- function(report.nuisance.parameter, report.sandwich.conf, report.
       nuisance_terms <- character(0)
     }
   }
-  coef1 <- getCoef(index1, alpha_beta_estimated, cov_estimated, outcome.type, report.sandwich.conf, report.boot.conf, out_bootstrap, conf.level)
-  coef2 <- getCoef(index2, alpha_beta_estimated, cov_estimated, outcome.type, report.sandwich.conf, report.boot.conf, out_bootstrap, conf.level)
+  coef1 <- getCoef(index1, alpha_beta_estimated, cov_estimated, cov_bootstrap, outcome.type, report.sandwich.conf, report.boot.conf, out_bootstrap, conf.level)
+  coef2 <- getCoef(index2, alpha_beta_estimated, cov_estimated, cov_bootstrap, outcome.type, report.sandwich.conf, report.boot.conf, out_bootstrap, conf.level)
   code.exposure.nonref <- colnames(out_getResults$x_a)
   terms_text_exposure <- if (length(code.exposure.nonref)) {
     paste0(exposure, ", ", sub("^.*_", "", code.exposure.nonref), " vs ", code.exposure.ref)
@@ -200,6 +201,7 @@ getCoef <- function(
     index,
     alpha_beta_estimated,
     cov_estimated,
+    cov_bootstrap,
     outcome.type,
     report.sandwich.conf,
     report.boot.conf,

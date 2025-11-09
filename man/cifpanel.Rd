@@ -54,6 +54,7 @@ cifpanel(
   title.plot = NULL,
   style = "CLASSIC",
   palette = NULL,
+  linewidth = 1,
   font.family = "sans",
   font.size = 8,
   legend.position = "top",
@@ -206,6 +207,8 @@ element refers to the main plot and the second (if present) to the inset.}
 Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also accepted.}
 
 \item{palette}{Optional character vector specifying the color palette to use across strata.}
+
+\item{linewidth}{Optional numeric specifying the line width of curves.}
 
 \item{font.family}{Character specifying the font family: \code{"sans"},  \code{"serif"}, or
 \code{"mono"} (default \code{"sans"}).}

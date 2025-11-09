@@ -73,6 +73,8 @@ Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also
 
 \item{palette}{Optional character vector specifying the color palette to use across strata.}
 
+\item{linewidth}{Optional numeric specifying the line width of curves.}
+
 \item{font.family}{Character specifying the font family: \code{"sans"},  \code{"serif"}, or
 \code{"mono"} (default \code{"sans"}).}
 

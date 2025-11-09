@@ -74,7 +74,7 @@ Rcpp::List calculateAJ_Rcpp(
     if (s=="a" || s=="arcsin" || s=="arcsine-square root") return std::string("arcsine-square root");
     return std::string("arcsine-square root");
   };
-  const std::string CONF = canon_conf(conf_type);
+  const std::string canon_conf_type = canon_conf(conf_type);
 
   const std::string ERROR = to_lower(error);
 
@@ -133,20 +133,13 @@ Rcpp::List calculateAJ_Rcpp(
   const int K = guniq.size();
 
   if (has_competing) {
-    if (error_tsiatis || (!error_delta && !error_if && !error_aalen)) {
+      if (error_tsiatis || (!error_delta && !error_if && !error_aalen)) {
       error_tsiatis = false;
-      error_aalen   = false;
-      error_delta   = true;
-      error_if      = error_if;
-      error_cif     = true;
-    }
+        error_aalen   = false;
+        error_delta   = true;
+      }
+      error_cif = (error_aalen || error_delta || error_if);
   }
-
-  const std::string CONF_CIF = (
-    has_competing ?
-  ( (CONF=="plain" || CONF=="logit" || CONF=="arcsine-square root") ?
-  CONF : std::string("arcsine-square root") )
-      : CONF );
 
   int gmax2 = 0; for (int i=0;i<N;++i) if (G[i] > gmax2) gmax2 = G[i];
   std::vector<int> lab2k(gmax2 + 1, -1);
@@ -494,7 +487,7 @@ Rcpp::List calculateAJ_Rcpp(
     else                  SE_aj = SE_all;
 
     std::vector<double> high_all(Uall, NA_REAL), low_all(Uall, NA_REAL);
-    if (CONF_CIF != "none" || CONF != "none"){
+    if (canon_conf_type != "none"){
       for (int j=0;j<Uall;++j){
         if (return_aj){
           double Fj  = clamp01(F1_all[j], prob_bound);
@@ -509,10 +502,24 @@ Rcpp::List calculateAJ_Rcpp(
           if (Fj >= 1.0 - prob_bound) { low_all[j] = 0.0; high_all[j] = 0.0; continue; }
 
           double loF = NA_REAL, hiF = NA_REAL;
-          if (CONF_CIF=="plain"){
+          if (canon_conf_type=="plain"){
             loF = std::max(0.0, Fj - z*SEj);
             hiF = std::min(1.0, Fj + z*SEj);
-          } else if (CONF_CIF=="logit"){
+          } else if (canon_conf_type=="log"){
+            double Sj = 1.0 - Fj;
+            double se = SEj / Sj;
+            double lo = 1.0 - Sj * std::exp( z*se);
+            double hi = 1.0 - Sj * std::exp(-z*se);
+            low_all[j]=std::max(0.0, lo);
+            high_all[j]=std::min(1.0, hi);
+          } else if (canon_conf_type=="log-log"){
+            double Sj = 1.0 - Fj;
+            double se = SEj / ( Sj * std::fabs(std::log(Sj)) );
+            double lo = 1.0 - std::exp( - std::exp( std::log(-std::log(Sj)) - z*se ) );
+            double hi = 1.0 - std::exp( - std::exp( std::log(-std::log(Sj)) + z*se ) );
+            low_all[j]=std::max(0.0, std::min(1.0, lo));
+            high_all[j]=std::max(0.0, std::min(1.0, hi));
+          } else if (canon_conf_type=="logit"){
             double se = SEj / std::max(1e-15, Fj*(1.0 - Fj));
             loF = Fj / ( Fj + (1.0 - Fj)*std::exp( z*se) );
             hiF = Fj / ( Fj + (1.0 - Fj)*std::exp(-z*se) );
@@ -540,23 +547,23 @@ Rcpp::List calculateAJ_Rcpp(
           if (Sj >= 1.0 - prob_bound) { low_all[j] = 1.0; high_all[j] = 1.0; continue; }
           if (Sj <= prob_bound)       { low_all[j] = 0.0; high_all[j] = 0.0; continue; }
 
-          if (CONF=="plain"){
+          if (canon_conf_type=="plain"){
             double lo = std::max(0.0, Sj - z*SEj);
             double hi = std::min(1.0, Sj + z*SEj);
             low_all[j]=lo; high_all[j]=hi;
-          } else if (CONF=="log"){
+          } else if (canon_conf_type=="log"){
             double se = SEj / Sj;
             double lo = Sj * std::exp(-z*se);
             double hi = Sj * std::exp( z*se);
             low_all[j]=std::max(0.0, lo);
             high_all[j]=std::min(1.0, hi);
-          } else if (CONF=="log-log"){
+          } else if (canon_conf_type=="log-log"){
             double se = SEj / ( Sj * std::fabs(std::log(Sj)) );
             double lo = std::exp( - std::exp( std::log(-std::log(Sj)) + z*se ) );
             double hi = std::exp( - std::exp( std::log(-std::log(Sj)) - z*se ) );
             low_all[j]=std::max(0.0, std::min(1.0, lo));
             high_all[j]=std::max(0.0, std::min(1.0, hi));
-          } else if (CONF=="logit"){
+          } else if (canon_conf_type=="logit"){
             double se = SEj / ( Sj * (1.0 - Sj) );
             double lo = Sj / ( Sj + (1.0 - Sj)*std::exp( z*se) );
             double hi = Sj / ( Sj + (1.0 - Sj)*std::exp(-z*se) );
@@ -654,7 +661,7 @@ Rcpp::List calculateAJ_Rcpp(
     _["std.err.km"]         = std_err_km_out,
     _["low"]                = wrap(combined_low),
     _["high"]               = wrap(combined_high),
-    _["conf.type"]          = (return_aj ? CONF_CIF : CONF),
+    _["conf.type"]          = canon_conf_type,
     _["strata"]             = strata_out,
     _["strata.levels"]      = strata_levels_out_sexp,
     _["type"]               = out_type,

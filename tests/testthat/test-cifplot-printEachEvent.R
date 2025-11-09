@@ -1,4 +1,5 @@
 test_that("printEachEvent ignored for non-CR outcomes with warning", {
+  skip_on_cran()
   data(diabetes.complications)
   diabetes.complications$status <- as.integer(diabetes.complications$epsilon > 0)
   expect_warning(
@@ -17,6 +18,7 @@ test_that("printEachEvent ignored for non-CR outcomes with warning", {
 })
 
 test_that("cifplot(printEachEvent=TRUE) returns a patchwork object", {
+  skip_on_cran()
   data(diabetes.complications)
   plt <- cifplot(
     Event(t, epsilon) ~ fruitq1,

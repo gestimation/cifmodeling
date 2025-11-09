@@ -246,6 +246,8 @@ cifplot <- function(
     rows.columns.panel            = NULL,
     style                         = "CLASSIC",
     palette                       = NULL,
+    linewidth                     = 0.8,
+    linetype                      = FALSE,
     font.family                   = "sans",
     font.size                     = 12,
     legend.position               = "top",
@@ -323,6 +325,8 @@ cifplot <- function(
 
     style           = style,
     palette         = palette,
+    linewidth       = linewidth,
+    linetype        = linetype,
     font.family     = font.family,
     font.size       = font.size,
     legend.position = legend.position,
@@ -655,27 +659,29 @@ plot_printEachEvent <- function(
   if (!is.null(dots$label.y)) dots$label.y <- NULL
   ylabs_vec <- c("Cumulative incidence of interest", "Cumulative incidence of competing risk")
 
-  axis.info.panel <- modifyList(axis.info, list(
+  axis.info.panel <- panel_modify_list(axis.info, list(
     label.y      = ylabs_vec,
     label.strata = axis.info$label.strata,
     order.strata = axis.info$order.strata,
     level.strata = axis.info$level.strata
   ))
 
-  visual.info.panel <- modifyList(visual.info, list(
+  visual.info.panel <- panel_modify_list(visual.info, list(
   ))
 
-  panel.info.panel <- modifyList(panel.info, list(
+  panel.info.panel <- panel_modify_list(panel.info, list(
     rows.columns.panel = if (is.null(rows.columns.panel)) c(1L, 2L) else rows.columns.panel
   ))
 
-  style_cur   <- style.info$style
-  palette_cur <- style.info$palette
-  ff_cur      <- style.info$font.family
-  fs_cur      <- style.info$font.size
-  lg_cur      <- style.info$legend.position
+  style_cur     <- style.info$style
+  palette_cur   <- style.info$palette
+  linewidth_cur <- style.info$linewidth
+  linetype_cur  <- style.info$linetype
+  ff_cur        <- style.info$font.family
+  fs_cur        <- style.info$font.size
+  lg_cur        <- style.info$legend.position
 
-  ggsave.info.panel <- modifyList(ggsave.info, list(
+  ggsave.info.panel <- panel_modify_list(ggsave.info, list(
   ))
 
   panel_args  <- list(
@@ -691,6 +697,8 @@ plot_printEachEvent <- function(
     style.info        = list(
       style           = style_cur,
       palette         = palette_cur,
+      linewidth       = linewidth_cur,
+      linetype        = linetype_cur,
       font.family     = ff_cur,
       font.size       = fs_cur,
       legend.position = lg_cur
@@ -740,14 +748,14 @@ plot_printCensoring <- function(
 
   ylabs_vec <- c("Survival for event of interest", "Survival with censoring as event")
 
-  axis.info.panel <- modifyList(axis.info, list(
+  axis.info.panel <- panel_modify_list(axis.info, list(
     label.y      = ylabs_vec,
     label.strata = axis.info$label.strata,
     order.strata = axis.info$order.strata,
     level.strata = axis.info$level.strata
   ))
 
-  panel.info.panel <- modifyList(panel.info, list(
+  panel.info.panel <- panel_modify_list(panel.info, list(
     rows.columns.panel = if (is.null(rows.columns.panel)) c(1L, 2L) else rows.columns.panel
   ))
 
@@ -832,6 +840,14 @@ cifplot_single <- function(
     style.info$palette <- dots$palette
     dots$palette <- NULL
   }
+  if (!is.null(dots$linewidth)) {
+    style.info$linewidth <- dots$linewidth
+    dots$linewidth <- NULL
+  }
+  if (!is.null(dots$linetype)) {
+    style.info$linetype <- dots$linetype
+    dots$linetype <- NULL
+  }
   if (!is.null(dots$font.family)) {
     style.info$font.family <- dots$font.family
     dots$font.family <- NULL
@@ -845,13 +861,13 @@ cifplot_single <- function(
     dots$legend.position <- NULL
   }
 
-  survfit.info <- modifyList(list(
+  survfit.info <- panel_modify_list(list(
     error     = NULL,
     conf.type = "arcsine-square root",
     conf.int  = 0.95
   ), survfit.info)
 
-  axis.info <- modifyList(list(
+  axis.info <- panel_modify_list(list(
     type.y            = NULL,
     label.x           = "Time",
     label.y           = NULL,
@@ -865,7 +881,7 @@ cifplot_single <- function(
     use_coord_cartesian = FALSE
   ), axis.info)
 
-  visual.info <- modifyList(list(
+  visual.info <- panel_modify_list(list(
     addConfidenceInterval         = TRUE,
     addRiskTable                  = FALSE,
     addEstimateTable              = FALSE,
@@ -886,22 +902,24 @@ cifplot_single <- function(
     quantile                      = 0.5
   ), visual.info)
 
-  panel.info <- modifyList(list(
+  panel.info <- panel_modify_list(list(
     printEachEvent     = FALSE,
     printCensoring     = FALSE,
     printEachVar       = FALSE,
     rows.columns.panel = NULL
   ), panel.info)
 
-  style.info <- modifyList(list(
+  style.info <- panel_modify_list(list(
     style           = "CLASSIC",
     palette         = NULL,
+    linewidth       = 0.8,
+    linetype        = FALSE,
     font.family     = "sans",
     font.size       = 12,
     legend.position = "top"
   ), style.info)
 
-  ggsave.info <- modifyList(list(
+  ggsave.info <- panel_modify_list(list(
     filename.ggsave = NULL,
     width.ggsave    = 6,
     height.ggsave   = 6,
@@ -951,6 +969,8 @@ cifplot_single <- function(
 
   style           <- style.info$style
   palette         <- style.info$palette
+  linewidth       <- style.info$linewidth
+  linetype        <- style.info$linetype
   font.family     <- style.info$font.family
   font.size       <- style.info$font.size
   legend.position <- style.info$legend.position
@@ -1131,6 +1151,8 @@ call_ggsurvfit <- function(
 
   style              <- style.info$style
   palette            <- style.info$palette
+  linewidth          <- style.info$linewidth
+  linetype           <- style.info$linetype
   font.family        <- style.info$font.family
   font.size          <- style.info$font.size
   legend.position    <- style.info$legend.position
@@ -1309,7 +1331,7 @@ call_ggsurvfit <- function(
     ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(fill = NA)))
 
   p <- plot_fix_palette_vector_arg(p)
-  p
+  return(p)
 }
 
 
@@ -1346,8 +1368,10 @@ check_ggsurvfit <- function(
   shape.competing.risk.mark     <- visual.info$shape.competing.risk.mark
   shape.intercurrent.event.mark <- visual.info$shape.intercurrent.event.mark
 
-  style   <- style.info$style
-  palette <- style.info$palette
+  style     <- style.info$style
+  palette   <- style.info$palette
+  linewidth <- style.info$linewidth
+  linetype  <- style.info$linetype
 
   if (isTRUE(addCensorMark) && isTRUE(addIntercurrentEventMark) &&
       identical(shape.censor.mark, shape.intercurrent.event.mark)) {
@@ -1394,8 +1418,6 @@ check_ggsurvfit <- function(
     upper <- survfit_object$upper
     lower <- survfit_object$lower
 
-    print("type.y in c")
-    print(type.y)
     if (identical(type.y, "risk")) {
       surv  <- 1 - surv
       if (!is.null(upper)) upper <- 1 - upper
@@ -1459,20 +1481,12 @@ check_ggsurvfit <- function(
   )
   type.y <- if (identical(target_type, "risk")) "risk" else "surv"
 
-  decide_linetype_flag <- function(style, palette) {
-    if (identical(style, "MONOCHROME")) return(TRUE)
-    if (is.null(palette)) return(FALSE)
-    pal <- palette
-    pal <- ifelse(grepl("^#", pal), pal, plot_validate_fix_color(pal))
-    length(unique(tolower(pal))) == 1L
-  }
-  linetype_aes_flag <- decide_linetype_flag(style, palette)
-
   old_opt <- getOption("ggsurvfit.switch-color-linetype", FALSE)
   out_plot <- ggsurvfit(
     survfit_object,
-    type        = target_type,
-    linetype_aes = linetype_aes_flag
+    type         = target_type,
+    linewidth    = linewidth,
+    linetype_aes = linetype
   )
 
   list(

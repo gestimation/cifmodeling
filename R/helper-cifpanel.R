@@ -13,7 +13,7 @@
 #'   (`"S"` or `"C"`).
 #' @param outcome.list Optional list of outcome types (passed through to
 #'   [cifcurve()]).
-#' @param typey.list,labely.list,typex.list,labelx.list Panel-wise plot
+#' @param typey.list,labely.list,labelx.list Panel-wise plot
 #'   controls forwarded to [cifplot()].
 #' @param limsx.list,limsy.list Panel-wise axis limits for [cifplot()].
 #' @param breakx.list,breaky.list Panel-wise axis breaks for [cifplot()].
@@ -37,7 +37,6 @@ panel_prepare <- function(
     outcome.list = NULL,
     typey.list = NULL,
     labely.list = NULL,
-    typex.list = NULL,
     labelx.list = NULL,
     limsx.list = NULL,
     limsy.list = NULL,
@@ -55,7 +54,6 @@ panel_prepare <- function(
     dots = list(),
     fonts = NULL
 ) {
-  # フォントはcifpanelで決められたものを使う。なければここでデフォルト
   if (is.null(fonts)) {
     fonts <- panel_extract_fonts(dots)
   }
@@ -76,11 +74,9 @@ panel_prepare <- function(
       cc  <- pair[3]
     }
 
-    # フォーミュラとデータを正規化
     norm_inputs <- plot_normalize_formula_data(formulas[[i]], data)
     data_i <- norm_inputs$data
 
-    ## --- 1) 推定パート: cifcurve() を呼ぶ引数を作る ---
     args_est <- panel_drop_nulls(c(
       list(
         formula        = formulas[[i]],
@@ -90,17 +86,12 @@ panel_prepare <- function(
         code.event2    = ce2,
         code.censoring = cc
       ),
-      # survfit.info に error / conf.* が入ってたらここでマージする
       survfit.info
     ))
     fit_i <- do.call(cifcurve, args_est)
     curves[[i]] <- fit_i
 
-    ## --- 2) 描画パート: cifplot_single() に渡す引数を作る ---
-    # ここが今回の肝。style/palette/legend.positionを
-    # 「無条件に」書かないようにする
     args_plot <- list(
-      # ★ ここで formula_or_fit を先に入れておく
       formula_or_fit           = fit_i,
       type.y                   = if (!is.null(typey.list))   typey.list[[i]]   else NULL,
       label.y                  = if (!is.null(labely.list))  labely.list[[i]]  else NULL,
@@ -115,21 +106,22 @@ panel_prepare <- function(
       addIntercurrentEventMark = if (!is.null(addIC.list))   addIC.list[[i]]   else FALSE,
       addQuantileLine          = if (!is.null(addQ.list))    addQ.list[[i]]    else FALSE,
       label.strata             = if (!is.null(strata.list))  strata.list[[i]]  else NULL,
-      # フォントは渡してよい（だいたい統一したいので）
       font.family              = fonts$family,
       font.size                = fonts$size
     )
 
-    # --- ここが今回の変更ポイント ---
-    # 1) cifpanel(..., style = "BOLD") のように dots に style があれば書く
-    # 2) なければ何も書かない（= cifplot_single の style.info を壊さない）
     if (!is.null(dots$style)) {
       args_plot$style <- dots$style
     }
     if (!is.null(dots$palette)) {
       args_plot$palette <- dots$palette
     }
-    # legend.position も「NULLじゃなければ書く」
+    if (!is.null(dots$linewidth)) {
+      args_plot$linewidth <- dots$linewidth
+    }
+    if (!is.null(dots$linetype)) {
+      args_plot$linetype <- dots$linetype
+    }
     if (!is.null(legend.position)) {
       args_plot$legend.position <- legend.position
     }
@@ -257,3 +249,13 @@ panel_build_theme <- function(font.family = "sans", font.size = 12) {
     strip.text    = ggplot2::element_text(family = font.family, size = mid)
   )
 }
+
+panel_modify_list <- function(x, y, keep.null = FALSE) {
+  if (is.null(y) || !length(y)) return(x)
+  for (nm in names(y)) {
+    val <- y[[nm]]
+    if (is.null(val) && !keep.null) x[[nm]] <- NULL else x[[nm]] <- val
+  }
+  x
+}
+

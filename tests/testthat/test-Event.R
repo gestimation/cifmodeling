@@ -86,7 +86,7 @@ test_that("reg_read_time.point() yields expected outputs according to outcome.ty
     sex = factor(sample(c("F","M"), n, replace = TRUE)),
     fruitq1 = factor(sample(c(0,1,2), n, replace = TRUE)),
     strata = factor(sample(letters[1:2], n, replace = TRUE)),
-    w = runif(n, 0.5, 1.5),
+    w = stats::runif(n, 0.5, 1.5),
     stringsAsFactors = FALSE
   )
   expect_error(reg_read_time.point(Event(t,d)~1, df, matrix(1, nrow(df), 1),
@@ -119,7 +119,7 @@ test_that("reg_check_input() handles NA as expected", {
     sex = factor(sample(c("F","M"), n, replace = TRUE)),
     fruitq1 = factor(sample(c(0,1,2), n, replace = TRUE)),
     strata = factor(sample(letters[1:2], n, replace = TRUE)),
-    w = runif(n, 0.5, 1.5),
+    w = stats::runif(n, 0.5, 1.5),
     stringsAsFactors = FALSE
   )
   df$t[1] <- NA; df$d[2] <- NA; df$sex[3] <- NA; df$fruitq1[4] <- NA
