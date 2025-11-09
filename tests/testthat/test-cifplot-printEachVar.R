@@ -1,14 +1,14 @@
-test_that("printEachVar returns one plot per RHS var", {
+test_that("panel.per.variable returns one plot per RHS var", {
   skip_on_cran()
   data(diabetes.complications)
   diabetes.complications$sex_ <- as.factor(diabetes.complications$sex)
   plt <- cifplot(
     Event(t, epsilon) ~ sex_ + fruitq,
     data = diabetes.complications,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.event1 = 1, code.event2 = 2, code.censoring = 0,
-    printEachVar = TRUE,
-    addRiskTable = FALSE,
+    panel.per.variable = TRUE,
+    add.risktable = FALSE,
     rows.columns.panel = c(1, 2)
   )
   expect_true(inherits(plt, "patchwork") || inherits(plt, "ggplot"))
@@ -24,9 +24,9 @@ test_that("order.strata and label.strata (positional) are respected", {
   plt <- cifplot(
     Event(t, epsilon) ~ fruitq,
     data = diabetes.complications,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.event1 = 1, code.event2 = 2, code.censoring = 0,
-    printEachVar = TRUE,
+    panel.per.variable = TRUE,
     rows.columns.panel = c(1, 1),
     order.strata = list(fruitq = c("Q1", "Q2", "Q3", "Q4")),
     label.strata = list(fruitq = c("Q1", "Q2", "Q3", "Q4"))
@@ -40,9 +40,9 @@ test_that("label.strata named mapping works with order.strata", {
   plt <- cifplot(
     Event(t, epsilon) ~ fruitq,
     data = diabetes.complications,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.event1 = 1, code.event2 = 2, code.censoring = 0,
-    printEachVar = TRUE,
+    panel.per.variable = TRUE,
     rows.columns.panel = c(1, 1),
     order.strata = list(fruitq1 = c("Q1", "Q2", "Q3", "Q4")),
     label.strata = list(fruitq1 = c(Q1 = "Q1", Q2 = "Q2", Q3 = "Q3", Q4 = "Q4"))
@@ -50,7 +50,7 @@ test_that("label.strata named mapping works with order.strata", {
   expect_true(inherits(plt, "patchwork") || inherits(plt, "ggplot"))
 })
 
-test_that("order.strata works per-variable when printEachVar = TRUE", {
+test_that("order.strata works per-variable when panel.per.variable = TRUE", {
   skip()
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
@@ -69,11 +69,11 @@ test_that("order.strata works per-variable when printEachVar = TRUE", {
   patch <- cifplot(
     Event(t, epsilon) ~ fruitq + z2,
     data = df,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     type.y = "risk",
-    printEachVar = TRUE,
+    panel.per.variable = TRUE,
     order.strata = ord_list,
-    addRiskTable = FALSE
+    add.risktable = FALSE
   )
 
   expect_true(

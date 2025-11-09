@@ -52,7 +52,7 @@ make_min_inputs <- function() {
     data = make_min_data(),
     code.events = list(c(1, 2, 0)),
     outcome.flags = c("C"),
-    outcome.list = list("COMPETING-RISK"),
+    outcome.list = list("competing-risk"),
     typey.list = list("risk"),
     labely.list = list("CIF"),
     labelx.list = list("Time"),
@@ -79,7 +79,7 @@ make_inputs_2panel <- function(df) {
     data = df,
     code.events = list(c(1, 2, 0), c(2, 1, 0)),
     outcome.flags = c("C", "C"),
-    outcome.list = list("COMPETING-RISK", "COMPETING-RISK"),
+    outcome.list = list("competing-risk", "competing-risk"),
     typey.list = list("risk", "risk"),
     labely.list = list("Diabetic retinopathy", "Macrovascular complications"),
     labelx.list = list("Years from registration", "Years from registration"),
@@ -110,7 +110,7 @@ test_that("cifpanel() produces expected outputs with competing risks data (no pl
     rows.columns.panel = c(1, 2),
     formula          = Event(t, epsilon) ~ fruitq,
     data             = diabetes.complications,
-    outcome.type     = "COMPETING-RISK",
+    outcome.type     = "competing-risk",
     code.events      = list(c(1, 2, 0), c(2, 1, 0)),
     label.y          = c("Diabetic retinopathy", "Macrovascular complications"),
     label.x          = "Years from registration",
@@ -186,7 +186,7 @@ test_that("cifpanel() with two formulas shows per-plot titles", {
     formulas     = list(Event(t, epsilon) ~ x1,
                         Event(t, epsilon) ~ x2),
     data         = df,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.events  = list(c(1, 2, 0), c(1, 2, 0)),
     title.plot   = c("Plot-x1", "Plot-x2"),
     print.panel  = FALSE
@@ -212,7 +212,7 @@ test_that("cifpanel() applies panel-level tag_levels", {
     formulas     = list(Event(t, epsilon) ~ x,
                         Event(t, epsilon) ~ 1),
     data         = df,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.events  = list(c(1, 2, 0), c(1, 2, 0)),
     tag.panel = "A",
     print.panel  = FALSE
@@ -223,7 +223,7 @@ test_that("cifpanel() applies panel-level tag_levels", {
   expect_equal(ann$tag_levels, "A")
 })
 
-test_that("cifplot(printEachEvent=TRUE) creates 2-event panel", {
+test_that("cifplot(panel.per.event=TRUE) creates 2-event panel", {
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
 
@@ -236,10 +236,10 @@ test_that("cifplot(printEachEvent=TRUE) creates 2-event panel", {
   p <- cifplot(
     Event(t, epsilon) ~ trt,
     data             = df,
-    outcome.type     = "COMPETING-RISK",
+    outcome.type     = "competing-risk",
     code.events      = c(1, 2, 0),
-    printEachEvent   = TRUE,
-    addRiskTable     = FALSE,
+    panel.per.event   = TRUE,
+    add.risktable     = FALSE,
     label.y          = c("Cumulative incidence of interest", "Cumulative incidence of competing risk"),
     print.panel      = FALSE
   )
@@ -266,7 +266,7 @@ test_that("cifpanel() can take per-panel label.x/label.y", {
     formulas     = list(Event(t, epsilon) ~ g,
                         Event(t, epsilon) ~ 1),
     data         = df,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.events  = list(c(1, 2, 0), c(1, 2, 0)),
     label.y      = list("CIF by group", "Overall CIF"),
     label.x      = list("Time (days)", "Time (days)"),

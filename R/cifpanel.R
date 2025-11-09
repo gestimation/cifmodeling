@@ -38,7 +38,7 @@
 #'   panels.
 #' @param code.events Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
 #'   When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
-#'   (primarily used when \code{cifpanel()} is called or when \code{printEachEvent = TRUE}).
+#'   (primarily used when \code{cifpanel()} is called or when \code{panel.per.event = TRUE}).
 #' @param legend.collect Logical; if \code{TRUE}, try to collect a single legend
 #'   for all panels (passed to \pkg{patchwork}). Default \code{TRUE}.
 #' @param inset.panel Logical. If \code{FALSE} (default), all panels are arranged
@@ -98,7 +98,7 @@
 #'
 #' ### Outcome type & event coding
 #'
-#' - Use `outcome.type` to set per-panel estimator (`"SURVIVAL"`=KM, `"COMPETING-RISK"`=AJ).
+#' - Use `outcome.type` to set per-panel estimator (`"survival"`=KM, `"competing-risk"`=AJ).
 #' - Alternatively, pass `code.events` per panel to infer the type:
 #'   - length 2 = SURVIVAL: `c(event1, censor)`
 #'   - length 3 = COMPETING-RISK: `c(event1, event2, censor)`
@@ -141,11 +141,11 @@
 #'
 #' | Argument | Effect | Default |
 #' |---|---|---|
-#' | `addConfidenceInterval` | CI ribbon. | `TRUE` |
-#' | `addCensorMark` | Censor marks. | `TRUE` |
-#' | `addCompetingRiskMark` | Marks for event2 at supplied times. | `FALSE` |
-#' | `addIntercurrentEventMark` | User-specified intercurrent marks. | `FALSE` |
-#' | `addQuantileLine` | Quantile line(s). | `FALSE` |
+#' | `add.ci` | CI ribbon. | `TRUE` |
+#' | `add.censor.mark` | Censor marks. | `TRUE` |
+#' | `add.competing.risk.mark` | Marks for event2 at supplied times. | `FALSE` |
+#' | `add.intercurrent.event.mark` | User-specified intercurrent marks. | `FALSE` |
+#' | `add.quantile` | Quantile line(s). | `FALSE` |
 #'
 #' *(Time marks inputs such as `competing.risk.time` / `intercurrent.event.time`
 #' can be given via `...` if needed; names must match strata labels.)*
@@ -199,7 +199,7 @@
 #'   rows.columns.panel = c(1,2),
 #'   formula = Event(t, epsilon) ~ fruitq,
 #'   data = diabetes.complications,
-#'   outcome.type = "COMPETING-RISK",
+#'   outcome.type = "competing-risk",
 #'   code.events = list(c(1,2,0), c(2,1,0)),
 #'   label.y = c("Diabetic retinopathy", "Macrovascular complications"),
 #'   label.x = "Years from registration",
@@ -215,7 +215,7 @@
 #'   inset.panel = TRUE,
 #'   formula = Event(t, epsilon) ~ fruitq,
 #'   data = diabetes.complications,
-#'   outcome.type = "COMPETING-RISK",
+#'   outcome.type = "competing-risk",
 #'   code.events = list(c(2,1,0), c(2,1,0)),
 #'   label.y = c("CIF of macrovascular complications", ""),
 #'   label.x = c("Years from registration", ""),
@@ -225,25 +225,25 @@
 #'   inset.align.to = "plot",
 #'   inset.legend.position = "none",
 #'   legend.position = "bottom",
-#'   addConfidenceInterval = FALSE
+#'   add.ci = FALSE
 #' )
 #'
 #' output1 <- cifplot(Event(t,epsilon) ~ fruitq,
 #'                    data = diabetes.complications,
-#'                    outcome.type="COMPETING-RISK",
+#'                    outcome.type="competing-risk",
 #'                    code.event1=2,
 #'                    code.event2=1,
-#'                    addConfidenceInterval = FALSE,
-#'                    addRiskTable = FALSE,
+#'                    add.ci = FALSE,
+#'                    add.risktable = FALSE,
 #'                    label.y='CIF of macrovascular complications',
 #'                    label.x='Years from registration')
 #' output2 <- cifplot(Event(t,epsilon) ~ fruitq,
 #'                    data = diabetes.complications,
-#'                    outcome.type="COMPETING-RISK",
+#'                    outcome.type="competing-risk",
 #'                    code.event1=2,
 #'                    code.event2=1,
-#'                    addConfidenceInterval = FALSE,
-#'                    addRiskTable = FALSE,
+#'                    add.ci = FALSE,
+#'                    add.risktable = FALSE,
 #'                    label.y='CIF of macrovascular complications',
 #'                    label.x='Years from registration',
 #'                    limits.y=c(0,0.15))
@@ -288,24 +288,24 @@ cifpanel <- function(
     limits.y                      = NULL,
     breaks.x                      = NULL,
     breaks.y                      = NULL,
-    addConfidenceInterval         = NULL,
-    addRiskTable                  = NULL,
-    addEstimateTable              = NULL,
-    symbol.risktable              = NULL,
-    font.size.risktable           = NULL,
-    addCensorMark                 = NULL,
+    add.ci         = NULL,
+    add.risktable                  = NULL,
+    add.estimate.table              = NULL,
+    symbol.risk.table              = NULL,
+    font.size.risk.table           = NULL,
+    add.censor.mark                 = NULL,
     shape.censor.mark             = NULL,
     size.censor.mark              = NULL,
-    addCompetingRiskMark          = NULL,
+    add.competing.risk.mark          = NULL,
     competing.risk.time           = NULL,
     shape.competing.risk.mark     = NULL,
     size.competing.risk.mark      = NULL,
-    addIntercurrentEventMark      = NULL,
+    add.intercurrent.event.mark      = NULL,
     intercurrent.event.time       = NULL,
     shape.intercurrent.event.mark = NULL,
     size.intercurrent.event.mark  = NULL,
-    addQuantileLine               = NULL,
-    quantile                      = NULL,
+    add.quantile = NULL,
+    level.quantile = NULL,
     rows.columns.panel            = c(1, 1),
     inset.panel                   = FALSE,
     title.panel                   = NULL,
@@ -346,15 +346,19 @@ cifpanel <- function(
 #  if (!is.null(label.strata)) {
 #    .warn("panel_disables_labelstrata")
 #  }
-#  if (isTRUE(addRiskTable) || isTRUE(addEstimateTable)) {
+#  if (isTRUE(add.risktable) || isTRUE(add.estimate.table)) {
 #    .warn("panel_disables_tables")
 #  }
   legend.position  <- "none"
-  addRiskTable     <- FALSE
-  addEstimateTable <- FALSE
+  add.risktable     <- FALSE
+  add.estimate.table <- FALSE
   inset.align.to <- match.arg(inset.align.to)
 
   dots <- list(...)
+
+  if (!is.null(outcome.type) && !is.list(outcome.type)) {
+    outcome.type <- .validate_outcome_type(outcome.type)
+  }
 
   survfit.info.user <- survfit.info
   axis.info.user    <- axis.info
@@ -382,35 +386,35 @@ cifpanel <- function(
     limits.y          = limits.y,
     breaks.x          = breaks.x,
     breaks.y          = breaks.y,
-    use_coord_cartesian = get0("use_coord_cartesian", ifnotfound = NULL)
+    use.coord.cartesian = get0("use.coord.cartesian", ifnotfound = NULL)
   ), axis.info %||% list())
 
   visual.info <- panel_modify_list(list(
-    addConfidenceInterval    = addConfidenceInterval,
+    add.ci    = add.ci,
     ci.alpha                 = 0.25,
-    addRiskTable             = FALSE,
-    addEstimateTable         = FALSE,
-    addCensorMark            = addCensorMark,
+    add.risktable             = FALSE,
+    add.estimate.table         = FALSE,
+    add.censor.mark            = add.censor.mark,
     shape.censor.mark        = 3,
     size.censor.mark         = 2,
-    addCompetingRiskMark     = addCompetingRiskMark,
+    add.competing.risk.mark     = add.competing.risk.mark,
     competing.risk.time      = list(),
     shape.competing.risk.mark= 16,
     size.competing.risk.mark = 2,
-    addIntercurrentEventMark = addIntercurrentEventMark,
+    add.intercurrent.event.mark = add.intercurrent.event.mark,
     intercurrent.event.time  = list(),
     shape.intercurrent.event.mark = 1,
     size.intercurrent.event.mark  = 2,
-    addQuantileLine          = addQuantileLine,
-    quantile                 = 0.5,
+    add.quantile = add.quantile,
+    level.quantile = 0.5,
     line.size                = 0.9,
-    symbol.risktable         = NULL,
-    font.size.risktable      = NULL
+    symbol.risk.table         = NULL,
+    font.size.risk.table      = NULL
   ), visual.info %||% list())
 
   panel.info <- panel_modify_list(list(
-    printEachEvent     = FALSE,
-    printEachVar       = FALSE,
+    panel.per.event     = FALSE,
+    panel.per.variable       = FALSE,
     rows.columns.panel = rows.columns.panel,
     title.panel        = title.panel,
     subtitle.panel     = subtitle.panel,
@@ -531,13 +535,13 @@ cifpanel <- function(
   limits.y            <- axis.info$limits.y
   breaks.x            <- axis.info$breaks.x
   breaks.y            <- axis.info$breaks.y
-  use_coord_cartesian <- axis.info$use_coord_cartesian
+  use.coord.cartesian <- axis.info$use.coord.cartesian
 
-  addConfidenceInterval    <- visual.info$addConfidenceInterval
-  addCensorMark            <- visual.info$addCensorMark
-  addCompetingRiskMark     <- visual.info$addCompetingRiskMark
-  addIntercurrentEventMark <- visual.info$addIntercurrentEventMark
-  addQuantileLine          <- visual.info$addQuantileLine
+  add.ci    <- visual.info$add.ci
+  add.censor.mark            <- visual.info$add.censor.mark
+  add.competing.risk.mark     <- visual.info$add.competing.risk.mark
+  add.intercurrent.event.mark <- visual.info$add.intercurrent.event.mark
+  add.quantile          <- visual.info$add.quantile
 
   # ------------------------------------------------------------
   # 1) plots が指定されているときは「並べるだけ」モード
@@ -701,17 +705,17 @@ cifpanel <- function(
   breakx.list <- toL(breaks.x); if (!is.null(breakx.list)) breakx.list <- rec(breakx.list, K)
   breaky.list <- toL(breaks.y); if (!is.null(breaky.list)) breaky.list <- rec(breaky.list, K)
 
-  addCI.list   <- toL(addConfidenceInterval);    if (!is.null(addCI.list))   addCI.list   <- rec(addCI.list, K)
-  addCen.list  <- toL(addCensorMark);            if (!is.null(addCen.list))  addCen.list  <- rec(addCen.list, K)
-  addCR.list   <- toL(addCompetingRiskMark);     if (!is.null(addCR.list))   addCR.list   <- rec(addCR.list, K)
-  addIC.list   <- toL(addIntercurrentEventMark); if (!is.null(addIC.list))   addIC.list   <- rec(addIC.list, K)
-  addQ.list    <- toL(addQuantileLine);          if (!is.null(addQ.list))    addQ.list    <- rec(addQ.list, K)
+  addCI.list   <- toL(add.ci);    if (!is.null(addCI.list))   addCI.list   <- rec(addCI.list, K)
+  addCen.list  <- toL(add.censor.mark);            if (!is.null(addCen.list))  addCen.list  <- rec(addCen.list, K)
+  addCR.list   <- toL(add.competing.risk.mark);     if (!is.null(addCR.list))   addCR.list   <- rec(addCR.list, K)
+  addIC.list   <- toL(add.intercurrent.event.mark); if (!is.null(addIC.list))   addIC.list   <- rec(addIC.list, K)
+  addQ.list    <- toL(add.quantile);          if (!is.null(addQ.list))    addQ.list    <- rec(addQ.list, K)
 
-  if (!is.null(addCI.list))   visual.info$addConfidenceInterval    <- NULL
-  if (!is.null(addCen.list))  visual.info$addCensorMark            <- NULL
-  if (!is.null(addCR.list))   visual.info$addCompetingRiskMark     <- NULL
-  if (!is.null(addIC.list))   visual.info$addIntercurrentEventMark <- NULL
-  if (!is.null(addQ.list))    visual.info$addQuantileLine          <- NULL
+  if (!is.null(addCI.list))   visual.info$add.ci    <- NULL
+  if (!is.null(addCen.list))  visual.info$add.censor.mark            <- NULL
+  if (!is.null(addCR.list))   visual.info$add.competing.risk.mark     <- NULL
+  if (!is.null(addIC.list))   visual.info$add.intercurrent.event.mark <- NULL
+  if (!is.null(addQ.list))    visual.info$add.quantile          <- NULL
 
   # outcome.flag 判定
   infer_flag_by_codes <- function(v) if (length(v) == 2L) "S" else if (length(v) == 3L) "C" else NA_character_
@@ -735,11 +739,11 @@ cifpanel <- function(
   if (!is.null(orderstrata.list)) kill_names <- c(kill_names, "order.strata")
   if (!is.null(breakx.list))      kill_names <- c(kill_names, "breaks.x","breaks.x")
   if (!is.null(breaky.list))      kill_names <- c(kill_names, "breaks.y","breaks.y")
-  if (!is.null(addCI.list))       kill_names <- c(kill_names, "addConfidenceInterval")
-  if (!is.null(addCen.list))      kill_names <- c(kill_names, "addCensorMark")
-  if (!is.null(addCR.list))       kill_names <- c(kill_names, "addCompetingRiskMark")
-  if (!is.null(addIC.list))       kill_names <- c(kill_names, "addIntercurrentEventMark")
-  if (!is.null(addQ.list))        kill_names <- c(kill_names, "addQuantileLine")
+  if (!is.null(addCI.list))       kill_names <- c(kill_names, "add.ci")
+  if (!is.null(addCen.list))      kill_names <- c(kill_names, "add.censor.mark")
+  if (!is.null(addCR.list))       kill_names <- c(kill_names, "add.competing.risk.mark")
+  if (!is.null(addIC.list))       kill_names <- c(kill_names, "add.intercurrent.event.mark")
+  if (!is.null(addQ.list))        kill_names <- c(kill_names, "add.quantile")
 
   dots <- panel_strip_overrides_from_dots(dots, unique(kill_names))
 
@@ -799,7 +803,7 @@ cifpanel <- function(
       addQ.list   = addQ.list
     )
 
-    if (isTRUE(pa$addCompetingRiskMark)) {
+    if (isTRUE(pa$add.competing.risk.mark)) {
       ce <- code.events[[i]]
       has_event2 <- !is.null(ce) && length(ce) >= 3L && !is.na(ce[2])
       has_time   <- !is.null(pa$competing.risk.time) && length(pa$competing.risk.time) > 0
@@ -832,31 +836,31 @@ cifpanel <- function(
         limits.y          = pa$limits.y,
         breaks.x          = pa$breaks.x,
         breaks.y          = pa$breaks.y,
-        use_coord_cartesian = pa$use_coord_cartesian
+        use.coord.cartesian = pa$use.coord.cartesian
       )
 
       visual_i <- panel_modify_list(visual.info, list(
-        addConfidenceInterval    = pa$addConfidenceInterval,
-        addRiskTable             = pa$addRiskTable,
-        addEstimateTable         = pa$addEstimateTable,
-        addCensorMark            = pa$addCensorMark,
+        add.ci    = pa$add.ci,
+        add.risktable             = pa$add.risktable,
+        add.estimate.table         = pa$add.estimate.table,
+        add.censor.mark            = pa$add.censor.mark,
         shape.censor.mark        = pa$shape.censor.mark,
         size.censor.mark         = pa$size.censor.mark,
-        addCompetingRiskMark     = pa$addCompetingRiskMark,
+        add.competing.risk.mark     = pa$add.competing.risk.mark,
         competing.risk.time      = pa$competing.risk.time,
         shape.competing.risk.mark= pa$shape.competing.risk.mark,
         size.competing.risk.mark = pa$size.competing.risk.mark,
-        addIntercurrentEventMark = pa$addIntercurrentEventMark,
+        add.intercurrent.event.mark = pa$add.intercurrent.event.mark,
         intercurrent.event.time  = pa$intercurrent.event.time,
         shape.intercurrent.event.mark = pa$shape.intercurrent.event.mark,
         size.intercurrent.event.mark  = pa$size.intercurrent.event.mark,
-        addQuantileLine          = pa$addQuantileLine,
-        quantile                 = pa$quantile
+        add.quantile = pa$add.quantile,
+        level.quantile = pa$level.quantile
       ))
 
       panel_i <- list(
-        printEachEvent     = FALSE,
-        printEachVar       = FALSE,
+        panel.per.event     = FALSE,
+        panel.per.variable       = FALSE,
         rows.columns.panel = NULL
       )
 
@@ -1020,28 +1024,28 @@ panel_force_apply <- function(
 
   if (!is.null(addCI.list)) {
     v <- isTRUE(addCI.list[[i]])
-    pa$addConfidenceInterval <- v
-    pa$visual.info$addConfidenceInterval <- v
+    pa$add.ci <- v
+    pa$visual.info$add.ci <- v
   }
   if (!is.null(addCen.list)) {
     v <- isTRUE(addCen.list[[i]])
-    pa$addCensorMark <- v
-    pa$visual.info$addCensorMark <- v
+    pa$add.censor.mark <- v
+    pa$visual.info$add.censor.mark <- v
   }
   if (!is.null(addCR.list)) {
     v <- isTRUE(addCR.list[[i]])
-    pa$addCompetingRiskMark <- v
-    pa$visual.info$addCompetingRiskMark <- v
+    pa$add.competing.risk.mark <- v
+    pa$visual.info$add.competing.risk.mark <- v
   }
   if (!is.null(addIC.list)) {
     v <- isTRUE(addIC.list[[i]])
-    pa$addIntercurrentEventMark <- v
-    pa$visual.info$addIntercurrentEventMark <- v
+    pa$add.intercurrent.event.mark <- v
+    pa$visual.info$add.intercurrent.event.mark <- v
   }
   if (!is.null(addQ.list)) {
     v <- isTRUE(addQ.list[[i]])
-    pa$addQuantileLine <- v
-    pa$visual.info$addQuantileLine <- v
+    pa$add.quantile <- v
+    pa$visual.info$add.quantile <- v
   }
 
   pa

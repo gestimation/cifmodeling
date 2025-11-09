@@ -29,12 +29,12 @@
 #' @param time.point Numeric time point at which the exposure effect is
 #'   evaluated. Required for survival and competing risk analyses.
 #' @param outcome.type Character string selecting the outcome type. Valid values
-#'   are \code{"COMPETING-RISK"}, \code{"SURVIVAL"}, \code{"BINOMIAL"},
-#'   \code{"PROPORTIONAL-SURVIVAL"} and \code{"PROPORTIONAL-COMPETING-RISK"}.
-#'   Defaults to \code{"COMPETING-RISK"}.
+#'   are \code{"competing-risk"}, \code{"survival"}, \code{"binomial"},
+#'   \code{"proportional-survival"} and \code{"proportional-competing-risk"}.
+#'   Defaults to \code{"competing-risk"}.
 #' If \code{NULL} (default), the function automatically infers the outcome type
 #' from the data: if the event variable has more than two unique levels,
-#' \code{"COMPETING-RISK"} is assumed; otherwise, \code{"SURVIVAL"} is used.
+#' \code{"competing-risk"} is assumed; otherwise, \code{"survival"} is used.
 #' You can also use abbreviations such as \code{"S"} or \code{"C"}.
 #' Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic
 #' detection based on the event coding in \code{data}.
@@ -121,20 +121,20 @@
 #' -   `exposure` — specifies the categorical exposure variable
 #' -   `effect.measure1` and `effect.measure2` — specifies the effect measures
 #' for event1 and event2 (`"RR"`, `"OR"` or `"SHR"`).
-#' -   `outcome.type` selects the outcome type (`"COMPETING-RISK"`, `"SURVIVAL"`,
-#' `"BINOMIAL"`, `"PROPORTIONAL-SURVIVAL"` or `"PROPORTIONAL-COMPETING-RISK"`).
+#' -   `outcome.type` selects the outcome type (`"competing-risk"`, `"survival"`,
+#' `"binomial"`, `"proportional-survival"` or `"proportional-competing-risk"`).
 #' -   `time.point` — specifies time point at which the exposure effect is evaluated.
-#' Required for `"COMPETING-RISK"` and `"SURVIVAL"` outcomes.
+#' Required for `"competing-risk"` and `"survival"` outcomes.
 #' -   `strata` — specifies a stratification variable used for IPCW adjustment for dependent censoring.
 #'
 #' ### Outcome type and event status coding
 #'
 #' The `outcome.type` argument must be set to:
-#' -   Effects on cumulative incidence probabilities at a specific time: `"COMPETING-RISK"`
-#' -   Effects on a risk at a specific time: `"SURVIVAL"`
-#' -   Common effects on cumulative incidence probabilities over time: `"PROPORTIONAL-COMPETING-RISK"`
-#' -   Common effects on a risk over time: `"PROPORTIONAL-SURVIVAL"`
-#' -   Effects on a risk of a binomial outcome: `"BINOMIAL"`
+#' -   Effects on cumulative incidence probabilities at a specific time: `"competing-risk"`
+#' -   Effects on a risk at a specific time: `"survival"`
+#' -   Common effects on cumulative incidence probabilities over time: `"proportional-competing-risk"`
+#' -   Common effects on a risk over time: `"proportional-survival"`
+#' -   Effects on a risk of a binomial outcome: `"binomial"`
 #'
 #' | Setting | Codes | Meaning |
 #' |---|---|---|
@@ -168,7 +168,7 @@
 #' |---|---|---|
 #' | `conf.level` | Wald-type CI level | `0.95` |
 #' | `report.sandwich.conf` | Sandwich variance CIs | `TRUE` |
-#' | `report.boot.conf` | Bootstrap CIs (use if `"PROPORTIONAL-SURVIVAL"` or `"PROPORTIONAL-COMPETING-RISK"`) | `NULL` |
+#' | `report.boot.conf` | Bootstrap CIs (use if `"proportional-survival"` or `"proportional-competing-risk"`) | `NULL` |
 #' | `boot.bca` | Use BCa intervals (else normal approximation) | `FALSE` |
 #' | `boot.multiplier` | Method for wild bootstrap (`"rademacher"`, `"mammen"`, or `"gaussian"`) | `rademacher` |
 #' | `boot.replications` | Bootstrap reps | `200` |
@@ -254,7 +254,7 @@
 #'   effect.measure1 = "RR",
 #'   effect.measure2 = "RR",
 #'   time.point = 8,
-#'   outcome.type = "COMPETING-RISK"
+#'   outcome.type = "competing-risk"
 #' )
 #' if (requireNamespace("modelsummary", quietly = TRUE)) {
 #' modelsummary::msummary(output$summary, statistic = c("conf.int", "p.value"), exponentiate = TRUE)
@@ -280,7 +280,7 @@ polyreg <- function(
     effect.measure1 = "RR",
     effect.measure2 = "RR",
     time.point = NULL,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     conf.level = 0.95,
     report.nuisance.parameter = FALSE,
     report.optim.convergence = FALSE,
@@ -314,6 +314,7 @@ polyreg <- function(
   # 1. Pre-processing (function: checkSpell, checkInput, reg_normalize_covariate, sortByCovariate)
   #######################################################################################################
   computation.time0 <- proc.time()
+  outcome.type <- .validate_outcome_type(outcome.type)
   outcome.type  <- util_check_outcome_type(outcome.type, formula=formula, data=data)
   ce <- reg_check_effect.measure(effect.measure1, effect.measure2)
   ci <- reg_check_input(data, nuisance.model, exposure, code.event1, code.event2, code.censoring, code.exposure.ref, outcome.type, conf.level, report.sandwich.conf, report.boot.conf, nleqslv.method, normalize.covariate)
@@ -368,7 +369,7 @@ polyreg <- function(
   #######################################################################################################
   # 2. Pre-processing and Calculating initial values alpha_beta_0 (function: calculateInitialValues)
   #######################################################################################################
-  if (outcome.type == "COMPETING-RISK" || outcome.type == "SURVIVAL" || outcome.type == "BINOMIAL") {
+  if (outcome.type == "competing-risk" || outcome.type == "survival" || outcome.type == "binomial") {
     alpha_beta_0 <- getInitialValues(
       formula = nuisance.model,
       data = normalized_data,
@@ -379,7 +380,7 @@ polyreg <- function(
       outcome.type = outcome.type,
       prob.bound = prob.bound
     )
-  } else if (outcome.type == "PROPORTIONAL-SURVIVAL" || outcome.type == "PROPORTIONAL-COMPETING-RISK") {
+  } else if (outcome.type == "proportional-survival" || outcome.type == "proportional-competing-risk") {
     alpha_beta_0 <- getInitialValuesProportional(
       formula = nuisance.model,
       data = normalized_data,
@@ -395,11 +396,11 @@ polyreg <- function(
   #######################################################################################################
   # 3. Calculating IPCW (function: calculateIPCW, calculateIPCWMatrix)
   #######################################################################################################
-  if (outcome.type == "COMPETING-RISK" || outcome.type == "SURVIVAL") {
+  if (outcome.type == "competing-risk" || outcome.type == "survival") {
     ip.weight.matrix <- calculateIPCW(nuisance.model, normalized_data, code.censoring, strata, estimand$time.point)
-  } else if (outcome.type == "BINOMIAL") {
+  } else if (outcome.type == "binomial") {
     ip.weight.matrix <- matrix(1,nrow(normalized_data),1)
-  } else if (outcome.type == "PROPORTIONAL-SURVIVAL" || outcome.type == "PROPORTIONAL-COMPETING-RISK") {
+  } else if (outcome.type == "proportional-survival" || outcome.type == "proportional-competing-risk") {
     ip.weight.matrix <- calculateIPCWMatrix(nuisance.model, normalized_data, code.censoring, strata, estimand, out_normalizeCovariate)
   }
 
@@ -522,9 +523,9 @@ polyreg <- function(
   } else if (isTRUE(report.sandwich.conf) && !isTRUE(report.boot.conf)) {
     report_var <- TRUE
   } else if (isTRUE(report.boot.conf)) {
-    if (outcome.type %in% c("PROPORTIONAL-SURVIVAL","PROPORTIONAL-COMPETING-RISK")) {
+    if (outcome.type %in% c("proportional-survival","proportional-competing-risk")) {
       report_var <- FALSE
-    } else if (outcome.type %in% c("SURVIVAL","BINOMIAL","COMPETING-RISK")) {
+    } else if (outcome.type %in% c("survival","binomial","competing-risk")) {
       report_var <- TRUE
     } else {
       stop(sprintf("Unsupported outcome.type for boot rule: %s", outcome.type))
@@ -533,11 +534,11 @@ polyreg <- function(
 
   out_calculateCov <- switch(
     outcome.type,
-    "COMPETING-RISK"   = calculateCov(out_getResults, estimand, boot.method, prob.bound),
-    "SURVIVAL"         = calculateCovSurvival(out_getResults, estimand, boot.method, prob.bound),
-    "BINOMIAL"         = calculateCovSurvival(out_getResults, estimand, boot.method, prob.bound),
-    "PROPORTIONAL-SURVIVAL"     = NULL,
-    "PROPORTIONAL-COMPETING-RISK"= NULL,
+    "competing-risk"   = calculateCov(out_getResults, estimand, boot.method, prob.bound),
+    "survival"         = calculateCovSurvival(out_getResults, estimand, boot.method, prob.bound),
+    "binomial"         = calculateCovSurvival(out_getResults, estimand, boot.method, prob.bound),
+    "proportional-survival"     = NULL,
+    "proportional-competing-risk"= NULL,
     stop(sprintf("Unsupported outcome.type for covariance: %s", outcome.type))
   )
 
@@ -563,7 +564,7 @@ polyreg <- function(
   #######################################################################################################
   # 6. Calculating bootstrap confidence interval (functions: boot, solveEstimatingEquation)
   #######################################################################################################
-  if (isTRUE(report.boot.conf) && (outcome.type=="PROPORTIONAL-SURVIVAL" || outcome.type=="PROPORTIONAL-COMPETING-RISK")) {
+  if (isTRUE(report.boot.conf) && (outcome.type=="proportional-survival" || outcome.type=="proportional-competing-risk")) {
     set.seed(boot.seed)
     boot.coef     <- rep(NA,2)
     boot.coef_se  <- rep(NA,2)
@@ -571,9 +572,9 @@ polyreg <- function(
     boot.conf_low <- rep(NA,2)
     boot.conf_high<- rep(NA,2)
 
-    if (outcome.type=="PROPORTIONAL-COMPETING-RISK") {
+    if (outcome.type=="proportional-competing-risk") {
       index_coef    <- c(length(estimand$time.point) + 1, 2*length(estimand$time.point) + 2)
-    } else if (outcome.type=="PROPORTIONAL-SURVIVAL") {
+    } else if (outcome.type=="proportional-survival") {
       index_coef    <- c(length(estimand$time.point) + 1)
     }
 
@@ -622,7 +623,7 @@ polyreg <- function(
     out_bootstrap, out_getResults, iteration, converged.by, objective.function, max.absolute.difference, relative.difference,
     out_nleqslv, conf.level, optim.method$nleqslv.method
   )
-  if (outcome.type == "COMPETING-RISK" || outcome.type == "SURVIVAL" || outcome.type == "BINOMIAL") {
+  if (outcome.type == "competing-risk" || outcome.type == "survival" || outcome.type == "binomial") {
     data$influence.function <- out_calculateCov$influence.function
     data$ip.weight <- out_getResults$ip.weight
     data$potential.CIFs <- out_getResults$potential.CIFs

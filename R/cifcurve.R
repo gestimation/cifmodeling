@@ -7,8 +7,8 @@
 #' you will plot it yourself (for example with \code{ggsurvfit} or \code{\link{cifplot}}).
 #'
 #' **Outcome type and estimator**
-#' -   `outcome.type = "SURVIVAL"` → Kaplan–Meier estimator
-#' -   `outcome.type = "COMPETING-RISK"` → Aalen–Johansen estimator
+#' -   `outcome.type = "survival"` → Kaplan–Meier estimator
+#' -   `outcome.type = "competing-risk"` → Aalen–Johansen estimator
 #'
 #' **Confidence intervals**
 #' -   `conf.int` sets the two-sided level (default 0.95)
@@ -29,9 +29,9 @@
 #' @param prob.bound Numeric lower bound used to internally truncate probabilities away from 0 and 1 (default \code{1e-7}).
 #'
 #' @details
-#' - When \code{outcome.type = "SURVIVAL"}, this is a thin wrapper around KM with the
+#' - When \code{outcome.type = "survival"}, this is a thin wrapper around KM with the
 #'   chosen variance / CI transformation.
-#' - When \code{outcome.type = "COMPETING-RISK"}, this computes the Aalen–Johansen
+#' - When \code{outcome.type = "competing-risk"}, this computes the Aalen–Johansen
 #'   cumulative incidence for \code{code.event1}. The returned \code{$surv} is
 #'   \code{1 - CIF}, i.e. in the format that \pkg{ggsurvfit} expects.
 #' - Use \code{\link{cifplot}} if you want to go straight to a figure; use
@@ -45,19 +45,19 @@
 #' | `conf.type` | Transformation for confidence intervals: `"plain"`, `"log"`, `"log-log"`, `"arcsin"`, `"logit"`, or `"none"`. | `"arcsin"` |
 #' | `conf.int` | Two-sided confidence interval level. | `0.95` |
 #'
-#' @returns A \code{survfit} object. For \code{outcome.type="SURVIVAL"}, \code{$surv} is the survival function.
-#' For \code{outcome.type="COMPETING-RISK"}, \code{$surv} equals \code{1 - CIF} for \code{code.event1}.
+#' @returns A \code{survfit} object. For \code{outcome.type="survival"}, \code{$surv} is the survival function.
+#' For \code{outcome.type="competing-risk"}, \code{$surv} equals \code{1 - CIF} for \code{code.event1}.
 #' Standard error and CIs are provided per \code{conf.type}. Note that some methods for \code{survfit} (e.g., \code{residuals.survfit}) may not be supported.
 #'
 #' @examples
 #' data(diabetes.complications)
 #' out_cifcurve <- cifcurve(Event(t,epsilon) ~ fruitq,
 #'                          data = diabetes.complications,
-#'                          outcome.type='COMPETING-RISK')
+#'                          outcome.type='competing-risk')
 #' cifplot(out_cifcurve,
-#'         outcome.type = "COMPETING-RISK",
+#'         outcome.type = "competing-risk",
 #'         type.y = "risk",
-#'         addRiskTable = FALSE,
+#'         add.risktable = FALSE,
 #'         label.y = "CIF of diabetic retinopathy",
 #'         label.x = "Years from registration")
 #'
@@ -77,7 +77,7 @@ cifcurve <- function(
     weights = NULL,
     subset.condition = NULL,
     na.action = na.omit,
-    outcome.type = c("SURVIVAL","COMPETING-RISK"),
+    outcome.type = c("survival","competing-risk"),
     code.event1 = 1,
     code.event2 = 2,
     code.censoring = 0,
@@ -89,6 +89,7 @@ cifcurve <- function(
     engine = "calculateAJ_Rcpp",
     prob.bound = 1e-7
 ) {
+  outcome.type <- .validate_outcome_type(outcome.type)
   outcome.type  <- util_check_outcome_type(outcome.type, formula = formula, data = data)
   out_readSurv  <- util_read_surv(formula, data, weights,
                                   code.event1, code.event2, code.censoring,
@@ -110,7 +111,7 @@ cifcurve <- function(
   epsilon_norm[out_readSurv$epsilon == code.event2]    <- 2L
   epsilon_norm[out_readSurv$epsilon == code.censoring] <- 0L
 
-  if (identical(outcome.type, "SURVIVAL") && identical(engine, "calculateKM")) {
+  if (identical(outcome.type, "survival") && identical(engine, "calculateKM")) {
     out_km <- calculateKM(out_readSurv$t, out_readSurv$d,
                           out_readSurv$w, as.integer(out_readSurv$strata), error)
     out_km$std.err <- out_km$surv * out_km$std.err
@@ -142,7 +143,7 @@ cifcurve <- function(
     class(survfit_object) <- "survfit"
     return(survfit_object)
 
-  } else if (identical(outcome.type, "COMPETING-RISK") && identical(engine, "calculateKM")) {
+  } else if (identical(outcome.type, "competing-risk") && identical(engine, "calculateKM")) {
     out_aj <- calculateAJ(out_readSurv)
     names(out_aj$strata1) <- strata_fullnames
 
@@ -300,14 +301,15 @@ calculateAJ <- function(data) {
 }
 
 curve_check_error <- function(x, outcome.type) {
-  ot <- toupper(as.character(outcome.type))
-  out <- if (is.null(x)) if (ot == "SURVIVAL") "greenwood" else "delta" else tolower(x)
+  ot <- .validate_outcome_type(outcome.type)
+  ot <- if (length(ot)) ot[[1L]] else ot
+  out <- if (is.null(x)) if (identical(ot, "survival")) "greenwood" else "delta" else tolower(x)
 
-  if (ot == "SURVIVAL") {
+  if (identical(ot, "survival")) {
     if (!out %in% c("greenwood", "tsiatis", "jackknife")) {
       warning(.msg$error_surv, call. = FALSE); out <- "greenwood"
     }
-  } else if (ot == "COMPETING-RISK") {
+  } else if (identical(ot, "competing-risk")) {
     if (!out %in% c("aalen", "delta", "jackknife")) {
       warning(.msg$error_cr, call. = FALSE); out <- "delta"
     }

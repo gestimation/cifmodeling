@@ -1,16 +1,16 @@
 .msg <- list(
   align_rows_fail = "Failed to align analysis rows to original data (cannot compute numeric index).",
-  codes_required_cr = "COMPETING-RISK requires event codes {censoring,event1,event2} (got: {found}).",
-  codes_required_surv = "SURVIVAL requires event codes {censoring,event1} (got: {found}).",
+  codes_required_cr = "competing-risk requires event codes {censoring,event1,event2} (got: {found}).",
+  codes_required_surv = "survival requires event codes {censoring,event1} (got: {found}).",
   code_events_len_vec = "code.events must be a numeric length-3 vector c(event1, event2, censoring).",
   code_events_integer = "code.events entries must be integer-like (whole numbers).",
   code_events_distinct = "code.events[1]` and `code.events[2]` must be different event codes.",
-  code_events_len_surv = "code.events[[{i}]] must be c(event.code1, censoring) for SURVIVAL.",
-  code_events_len_cr = "code.events[[{i}]] must be c(event.code1, event.code2, censoring) for COMPETING-RISK.",
+  code_events_len_surv = "code.events[[{i}]] must be c(event.code1, censoring) for survival.",
+  code_events_len_cr = "code.events[[{i}]] must be c(event.code1, event.code2, censoring) for competing-risk.",
   conf_level = "conf.level must be a single number in (0, 1).",
   effect_meas   = "Invalid input for {which}. Choose 'RR', 'OR', or 'SHR'.",
-  error_cr      = "Invalid SE method for COMPETING-RISK. Use aalen, delta, jackknife. Defaulting to delta.",
-  error_surv    = "Invalid SE method for SURVIVAL. Use greenwood, tsiatis, jackknife. Defaulting to greenwood.",
+  error_cr      = "Invalid SE method for competing-risk. Use aalen, delta, jackknife. Defaulting to delta.",
+  error_surv    = "Invalid SE method for survival. Use greenwood, tsiatis, jackknife. Defaulting to greenwood.",
   est_outside_limits_y = "Some point estimates fall outside `{arg}` = [{a}, {b}].",
   ev_codes      = "event codes must be non-negative integers: {allowed}. Found: {found}.",
   ev_type       = "event must be numeric, logical, factor, or character.",
@@ -30,13 +30,13 @@
   need_formula_or_formulas = "Provide either formula (single) or formulas (list).",
   numeric       = "`{arg}` must be numeric.",
   outcome_type  = "Invalid input for outcome.type. Choose one of: {choices}.",
-  panel_disables_tables = "addRiskTable/addEstimateTable are ignored in panel mode (printEachVar/printEachEvent/cifpanel); set to FALSE internally.",
-  panel_disables_labelstrata = "label.strata is ignored in panel mode (printEachVar/printEachEvent/cifpanel).",
+  panel_disables_tables = "add.risktable/add.estimate.table are ignored in panel mode (panel.per.variable/panel.per.event/cifpanel); set to FALSE internally.",
+  panel_disables_labelstrata = "label.strata is ignored in panel mode (panel.per.variable/panel.per.event/cifpanel).",
   recycle_empty = "Cannot recycle an empty object to nonzero length.",
   req           = "`{arg}` is required.",
   style         = "Invalid input for style. Choose one of: {choices}.",
   surv_expected = "A 'Surv' or 'Event' object is expected.",
-  timepoint_required = "`time.point` is required when outcome.type is COMPETING-RISK or SURVIVAL.",
+  timepoint_required = "`time.point` is required when outcome.type is competing-risk or survival.",
   timepoint_nonneg_finite = "`time.point` must be a finite non-negative number.",
   time_nonneg = "`{arg}` must be non-negative.",
   limits_len2 = "`{arg}` must be a numeric length-2 vector.",
@@ -50,9 +50,9 @@
   plots_extra_dropped = "There are {n_plots} plots but grid holds {n_slots}. Extra plots are dropped.",
   shape_identical = "{a} and {b} specify an identical type of symbol.",
   order_strata_type = "`order.strata` must be a character vector or a named list.",
-  need_formula_for_printEachVar = "printEachVar=TRUE requires a formula interface (not a survfit object).",
-  need_rhs_vars_for_printEachVar = "printEachVar=TRUE requires one or more variables on the RHS.",
-  no_transform_for_printEachVar = "printEachVar=TRUE does not support transformations/interactions. Remove: {which}.",
+  need_formula_for_panel.per.variable = "panel.per.variable=TRUE requires a formula interface (not a survfit object).",
+  need_rhs_vars_for_panel.per.variable = "panel.per.variable=TRUE requires one or more variables on the RHS.",
+  no_transform_for_panel.per.variable = "panel.per.variable=TRUE does not support transformations/interactions. Remove: {which}.",
   need_formula_or_formulas = "Provide a formula or a fitted survfit-like object.",
   weights_num   = "weights must be numeric.",
   weights_fin   = "weights must be finite.",
@@ -119,6 +119,30 @@
   invisible(TRUE)
 }
 
+.validate_outcome_type <- function(x) {
+  if (is.null(x)) return(NULL)
+  x <- trimws(tolower(as.character(x)))
+  if (!length(x)) return(x)
+  ok <- c(
+    "competing-risk", "survival", "binomial",
+    "proportional-competing-risk", "proportional-survival"
+  )
+  invalid <- is.na(x) | !nzchar(x) | !(x %in% ok)
+  if (any(invalid)) {
+    bad <- unique(x[invalid])
+    bad <- bad[!is.na(bad)]
+    stop(
+      sprintf(
+        "Invalid outcome.type: '%s'. Allowed: %s",
+        paste(bad, collapse = ", "),
+        paste(ok, collapse = ", ")
+      ),
+      call. = FALSE
+    )
+  }
+  x
+}
+
 util_check_outcome_type <- function(
     x = NULL,
     formula = NULL,
@@ -126,56 +150,18 @@ util_check_outcome_type <- function(
     na.action = stats::na.omit,
     auto_message = TRUE
 ) {
-  .norm <- function(s) gsub("[^A-Z0-9]+", "", toupper(trimws(as.character(s))))
-
   if (!is.null(x)) {
-    map <- list(
-      "COMPETING-RISK"              = c(
-        "competing-risk","competing risk","competingrisks","competing-risks",
-        "cr","c","comp","com","competing"
-      ),
-      "SURVIVAL"                    = c("survival","s","surv"),
-      "PROPORTIONAL-COMPETING-RISK" = c("proportional-competing-risk","pc","pcr"),
-      "PROPORTIONAL-SURVIVAL"       = c("proportional-survival","ps"),
-      "BINOMIAL"                    = c("binomial","b")
-    )
-
-    ali_norm <- lapply(map, .norm)
-    names(ali_norm) <- names(map)
-    alias_rev <- stats::setNames(
-      rep(names(ali_norm), lengths(ali_norm)),
-      unlist(ali_norm, use.names = FALSE)
-    )
-
-    ux <- .norm(x)
-    ux <- ux[!is.na(ux) & nzchar(ux)]
-
-    canon <- unique(stats::na.omit(vapply(
-      ux,
-      function(u) {
-        if (u %in% .norm(names(map))) {
-          idx <- match(u, .norm(names(map)))
-          names(map)[idx]
-        } else {
-          cn <- unname(alias_rev[u])
-          if (length(cn) == 0L || is.na(cn)) NA_character_ else cn
-        }
-      },
-      FUN.VALUE = character(1)
-    )))
-
+    canon <- unique(vapply(x, .validate_outcome_type, character(1)))
     if (length(canon) == 1L) {
       return(canon)
     } else if (length(canon) > 1L) {
-      stop("`outcome.type` is ambiguous and matched multiple types: ",
-           paste(canon, collapse = ", "), call. = FALSE)
+      stop(
+        "`outcome.type` is ambiguous and matched multiple types: ",
+        paste(canon, collapse = ", "),
+        call. = FALSE
+      )
     } else {
-      allowed <- sort(unique(c(
-        names(map),
-        unlist(map, use.names = FALSE)
-      )))
-      stop("Invalid `outcome.type`. Allowed values are: ",
-           paste(allowed, collapse = ", "), call. = FALSE)
+      .validate_outcome_type(x)
     }
   }
 
@@ -192,11 +178,11 @@ util_check_outcome_type <- function(
   n_levels  <- length(unique(stats::na.omit(status)))
 
   if (n_levels > 2L) {
-    if (isTRUE(auto_message)) message("Detected >2 status levels; outcome.type set to 'COMPETING-RISK'.")
-    return("COMPETING-RISK")
+    if (isTRUE(auto_message)) message("Detected >2 status levels; outcome.type set to 'competing-risk'.")
+    return("competing-risk")
   } else {
-    if (isTRUE(auto_message)) message("Detected <= 2 status levels; outcome.type set to 'SURVIVAL'.")
-    return("SURVIVAL")
+    if (isTRUE(auto_message)) message("Detected <= 2 status levels; outcome.type set to 'survival'.")
+    return("survival")
   }
 }
 

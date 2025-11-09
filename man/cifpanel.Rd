@@ -27,24 +27,24 @@ cifpanel(
   limits.y = NULL,
   breaks.x = NULL,
   breaks.y = NULL,
-  addConfidenceInterval = NULL,
-  addRiskTable = NULL,
-  addEstimateTable = NULL,
-  symbol.risktable = NULL,
-  font.size.risktable = NULL,
-  addCensorMark = NULL,
+  add.ci = NULL,
+  add.risktable = NULL,
+  add.estimate.table = NULL,
+  symbol.risk.table = NULL,
+  font.size.risk.table = NULL,
+  add.censor.mark = NULL,
   shape.censor.mark = NULL,
   size.censor.mark = NULL,
-  addCompetingRiskMark = NULL,
+  add.competing.risk.mark = NULL,
   competing.risk.time = NULL,
   shape.competing.risk.mark = NULL,
   size.competing.risk.mark = NULL,
-  addIntercurrentEventMark = NULL,
+  add.intercurrent.event.mark = NULL,
   intercurrent.event.time = NULL,
   shape.intercurrent.event.mark = NULL,
   size.intercurrent.event.mark = NULL,
-  addQuantileLine = NULL,
-  quantile = NULL,
+  add.level.quantile = NULL,
+  level.quantile = NULL,
   rows.columns.panel = c(1, 1),
   inset.panel = FALSE,
   title.panel = NULL,
@@ -106,15 +106,15 @@ subset of \code{data} to analyze (default \code{NULL}).}
 \item{na.action}{A function specifying the action to take on missing values (default \code{na.omit}).}
 
 \item{outcome.type}{Character string specifying the type of time-to-event outcome.
-One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
+One of \code{"survival"} (Kaplan–Meier type) or \code{"competing-risk"} (Aalen–Johansen type).
 If \code{NULL} (default), the function automatically infers the outcome type from the data:
-if the event variable has more than two unique levels, \code{"COMPETING-RISK"} is assumed;
-otherwise, \code{"SURVIVAL"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
+if the event variable has more than two unique levels, \code{"competing-risk"} is assumed;
+otherwise, \code{"survival"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
 Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detection based on the event coding.}
 
 \item{code.events}{Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
 When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
-(primarily used when \code{cifpanel()} is called or when \code{printEachEvent = TRUE}).}
+(primarily used when \code{cifpanel()} is called or when \code{panel.per.event = TRUE}).}
 
 \item{error}{Character specifying the method for variance and standard error used internally.}
 
@@ -139,17 +139,17 @@ set to \code{c(0, 1)} for probability-type outcomes.}
 
 \item{breaks.y}{Numeric vector of y-axis breaks (default \code{NULL}).}
 
-\item{addConfidenceInterval}{Logical; if \code{TRUE}, adds a confidence-interval ribbon
+\item{add.ci}{Logical; if \code{TRUE}, adds a confidence-interval ribbon
 (via \code{ggsurvfit::add_confidence_interval()}). Default \code{TRUE}.}
 
-\item{addCensorMark}{Logical; if \code{TRUE}, draws censoring marks on each curve
+\item{add.censor.mark}{Logical; if \code{TRUE}, draws censoring marks on each curve
 (via \code{ggsurvfit::add_censor_mark()}). Default \code{TRUE}.}
 
 \item{shape.censor.mark}{Integer point shape used for censoring marks (default \code{3}).}
 
 \item{size.censor.mark}{Numeric point size used for censoring marks (default \code{2}).}
 
-\item{addCompetingRiskMark}{Logical; if \code{TRUE}, draws time marks for the competing event
+\item{add.competing.risk.mark}{Logical; if \code{TRUE}, draws time marks for the competing event
 (event 2). If no times are supplied via \code{competing.risk.time}, the function tries to
 extract them automatically from the data. Default \code{FALSE}.}
 
@@ -161,7 +161,7 @@ in that stratum. Typically left as \code{list()} and filled internally.}
 
 \item{size.competing.risk.mark}{Numeric point size for competing-risk marks (default \code{2}).}
 
-\item{addIntercurrentEventMark}{Logical; if \code{TRUE}, overlays user-specified intercurrent-event
+\item{add.intercurrent.event.mark}{Logical; if \code{TRUE}, overlays user-specified intercurrent-event
 times per stratum. Default \code{FALSE}.}
 
 \item{intercurrent.event.time}{A \strong{named list} of numeric vectors for intercurrent events
@@ -173,7 +173,7 @@ times per stratum. Default \code{FALSE}.}
 \item{size.intercurrent.event.mark}{Numeric point size for intercurrent-event marks
 (default \code{2}).}
 
-\item{addQuantileLine}{Logical; if \code{TRUE}, adds a quantile line (via
+\item{add.quantile}{Logical; if \code{TRUE}, adds a quantile line (via
 \code{ggsurvfit::add_quantile()}). Default \code{FALSE}.}
 
 \item{quantile}{Numeric quantile to be shown (default \code{0.5} for median).}
@@ -302,11 +302,11 @@ list in \code{formulas} (one per panel). When both are provided, \code{formulas}
 
 \subsection{Outcome type & event coding}{
 \itemize{
-\item Use \code{outcome.type} to set per-panel estimator (\code{"SURVIVAL"}=KM, \code{"COMPETING-RISK"}=AJ).
+\item Use \code{outcome.type} to set per-panel estimator (\code{"survival"}=KM, \code{"competing-risk"}=AJ).
 \item Alternatively, pass \code{code.events} per panel to infer the type:
 \itemize{
-\item length 2 = SURVIVAL: \code{c(event1, censor)}
-\item length 3 = COMPETING-RISK: \code{c(event1, event2, censor)}
+\item length 2 = survival: \code{c(event1, censor)}
+\item length 3 = competing-risk: \code{c(event1, event2, censor)}
 }
 \item If \code{outcome.type} is \code{NULL}, the function infers each panel from its
 \code{code.events[[i]]} length. When both are given, \code{outcome.type} takes precedence.
@@ -350,11 +350,11 @@ or \strong{shared} control by supplying scalars. They are forwarded to \code{cif
 
 \subsection{Plot layers (toggles)}{\tabular{lll}{
    Argument \tab Effect \tab Default \cr
-   \code{addConfidenceInterval} \tab CI ribbon. \tab \code{TRUE} \cr
-   \code{addCensorMark} \tab Censor marks. \tab \code{TRUE} \cr
-   \code{addCompetingRiskMark} \tab Marks for event2 at supplied times. \tab \code{FALSE} \cr
-   \code{addIntercurrentEventMark} \tab User-specified intercurrent marks. \tab \code{FALSE} \cr
-   \code{addQuantileLine} \tab Quantile line(s). \tab \code{FALSE} \cr
+   \code{add.ci} \tab CI ribbon. \tab \code{TRUE} \cr
+   \code{add.censor.mark} \tab Censor marks. \tab \code{TRUE} \cr
+   \code{add.competing.risk.mark} \tab Marks for event2 at supplied times. \tab \code{FALSE} \cr
+   \code{add.intercurrent.event.mark} \tab User-specified intercurrent marks. \tab \code{FALSE} \cr
+   \code{add.quantile} \tab Quantile line(s). \tab \code{FALSE} \cr
 }
 
 
@@ -415,7 +415,7 @@ cifpanel(
   rows.columns.panel = c(1,2),
   formula = Event(t, epsilon) ~ fruitq,
   data = diabetes.complications,
-  outcome.type = "COMPETING-RISK",
+  outcome.type = "competing-risk",
   code.events = list(c(1,2,0), c(2,1,0)),
   label.y = c("Diabetic retinopathy", "Macrovascular complications"),
   label.x = "Years from registration",
@@ -431,7 +431,7 @@ cifpanel(
   inset.panel = TRUE,
   formula = Event(t, epsilon) ~ fruitq,
   data = diabetes.complications,
-  outcome.type = "COMPETING-RISK",
+  outcome.type = "competing-risk",
   code.events = list(c(2,1,0), c(2,1,0)),
   label.y = c("CIF of macrovascular complications", ""),
   label.x = c("Years from registration", ""),
@@ -441,25 +441,25 @@ cifpanel(
   inset.align.to = "plot",
   inset.legend.position = "none",
   legend.position = "bottom",
-  addConfidenceInterval = FALSE
+  add.ci = FALSE
 )
 
 output1 <- cifplot(Event(t,epsilon) ~ fruitq,
                    data = diabetes.complications,
-                   outcome.type="COMPETING-RISK",
+                   outcome.type="competing-risk",
                    code.event1=2,
                    code.event2=1,
-                   addConfidenceInterval = FALSE,
-                   addRiskTable = FALSE,
+                   add.ci = FALSE,
+                   add.risktable = FALSE,
                    label.y='CIF of macrovascular complications',
                    label.x='Years from registration')
 output2 <- cifplot(Event(t,epsilon) ~ fruitq,
                    data = diabetes.complications,
-                   outcome.type="COMPETING-RISK",
+                   outcome.type="competing-risk",
                    code.event1=2,
                    code.event2=1,
-                   addConfidenceInterval = FALSE,
-                   addRiskTable = FALSE,
+                   add.ci = FALSE,
+                   add.risktable = FALSE,
                    label.y='CIF of macrovascular complications',
                    label.x='Years from registration',
                    limits.y=c(0,0.15))

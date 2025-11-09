@@ -70,15 +70,15 @@ Default event codes:
 
 Event codes can be customized using `code.event1`, `code.event2`, and `code.censoring`. The `outcome.type` argument must be set to:
 
--   Effects on cumulative incidence probabilities at a specific time: `"COMPETING-RISK"`
+-   Effects on cumulative incidence probabilities at a specific time: `"competing-risk"`
 
--   Effects on a risk at a specific time: `"SURVIVAL"`
+-   Effects on a risk at a specific time: `"survival"`
 
--   Common effects on cumulative incidence probabilities over time: `"PROPORTIONAL-COMPETING-RISK"`
+-   Common effects on cumulative incidence probabilities over time: `"proportional-competing-risk"`
 
--   Common effects on a risk over time: `"PROPORTIONAL-SURVIVAL"`
+-   Common effects on a risk over time: `"proportional-survival"`
 
--   Effects on a risk of a binomial outcome: `"BINOMIAL"`
+-   Effects on a risk of a binomial outcome: `"binomial"`
 
 Covariates included in `nuisance.model` should adjust for confounding factors to obtain unbiased exposure effect estimates.
 

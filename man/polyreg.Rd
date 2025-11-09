@@ -19,7 +19,7 @@ polyreg(
   effect.measure1 = "RR",
   effect.measure2 = "RR",
   time.point = NULL,
-  outcome.type = "COMPETING-RISK",
+  outcome.type = "competing-risk",
   conf.level = 0.95,
   report.nuisance.parameter = FALSE,
   report.optim.convergence = FALSE,
@@ -89,12 +89,12 @@ competing event. Supported values are \code{"RR"}, \code{"OR"} and
 evaluated. Required for survival and competing risk analyses.}
 
 \item{outcome.type}{Character string selecting the outcome type. Valid values
-are \code{"COMPETING-RISK"}, \code{"SURVIVAL"}, \code{"BINOMIAL"},
-\code{"PROPORTIONAL-SURVIVAL"} and \code{"PROPORTIONAL-COMPETING-RISK"}.
-Defaults to \code{"COMPETING-RISK"}.
+are \code{"competing-risk"}, \code{"survival"}, \code{"binomial"},
+\code{"proportional-survival"} and \code{"proportional-competing-risk"}.
+Defaults to \code{"competing-risk"}.
 If \code{NULL} (default), the function automatically infers the outcome type
 from the data: if the event variable has more than two unique levels,
-\code{"COMPETING-RISK"} is assumed; otherwise, \code{"SURVIVAL"} is used.
+\code{"competing-risk"} is assumed; otherwise, \code{"survival"} is used.
 You can also use abbreviations such as \code{"S"} or \code{"C"}.
 Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic
 detection based on the event coding in \code{data}.}
@@ -224,10 +224,10 @@ excluding the exposure of interest.
 \item \code{exposure} — specifies the categorical exposure variable
 \item \code{effect.measure1} and \code{effect.measure2} — specifies the effect measures
 for event1 and event2 (\code{"RR"}, \code{"OR"} or \code{"SHR"}).
-\item \code{outcome.type} selects the outcome type (\code{"COMPETING-RISK"}, \code{"SURVIVAL"},
-\code{"BINOMIAL"}, \code{"PROPORTIONAL-SURVIVAL"} or \code{"PROPORTIONAL-COMPETING-RISK"}).
+\item \code{outcome.type} selects the outcome type (\code{"competing-risk"}, \code{"survival"},
+\code{"binomial"}, \code{"proportional-survival"} or \code{"proportional-competing-risk"}).
 \item \code{time.point} — specifies time point at which the exposure effect is evaluated.
-Required for \code{"COMPETING-RISK"} and \code{"SURVIVAL"} outcomes.
+Required for \code{"competing-risk"} and \code{"survival"} outcomes.
 \item \code{strata} — specifies a stratification variable used for IPCW adjustment for dependent censoring.
 }
 }
@@ -236,23 +236,23 @@ Required for \code{"COMPETING-RISK"} and \code{"SURVIVAL"} outcomes.
 
 The \code{outcome.type} argument must be set to:
 \itemize{
-\item Effects on cumulative incidence probabilities at a specific time: \code{"COMPETING-RISK"}
-\item Effects on a risk at a specific time: \code{"SURVIVAL"}
-\item Common effects on cumulative incidence probabilities over time: \code{"PROPORTIONAL-COMPETING-RISK"}
-\item Common effects on a risk over time: \code{"PROPORTIONAL-SURVIVAL"}
-\item Effects on a risk of a binomial outcome: \code{"BINOMIAL"}
+\item Effects on cumulative incidence probabilities at a specific time: \code{"competing-risk"}
+\item Effects on a risk at a specific time: \code{"survival"}
+\item Common effects on cumulative incidence probabilities over time: \code{"proportional-competing-risk"}
+\item Common effects on a risk over time: \code{"proportional-survival"}
+\item Effects on a risk of a binomial outcome: \code{"binomial"}
 }\tabular{lll}{
    Setting \tab Codes \tab Meaning \cr
-   COMPETING-RISK \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censoring \cr
-   COMPETING-RISK (default) \tab \code{code.event1=1}, \code{code.event2=2}, \code{code.censoring=0} \tab event of interest / competing event / censoring \cr
-   SURVIVAL \tab \code{code.event1}, \code{code.censoring} \tab event / censoring \cr
-   SURVIVAL  (default) \tab \code{code.event1=1}, \code{code.censoring=0} \tab event / censoring \cr
-   SURVIVAL (ADaM-ADTTE) \tab \code{code.event1=0}, \code{code.censoring=1} \tab set to match ADaM convention \cr
-   PROPORTIONAL-SURVIVAL \tab \code{code.event1}, \code{code.censoring} \tab event / censoring \cr
-   PROPORTIONAL-SURVIVAL  (default) \tab \code{code.event1=1}, \code{code.censoring=0} \tab event / censoring \cr
-   PROPORTIONAL-SURVIVAL (ADaM-ADTTE) \tab \code{code.event1=0}, \code{code.censoring=1} \tab set to match ADaM convention \cr
-   PROPORTIONAL-COMPETING-RISK \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censoring \cr
-   PROPORTIONAL-COMPETING-RISK (default) \tab \code{code.event1=1}, \code{code.event2=2}, \code{code.censoring=0} \tab event of interest / competing event / censoring \cr
+   competing-risk \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censoring \cr
+   competing-risk (default) \tab \code{code.event1=1}, \code{code.event2=2}, \code{code.censoring=0} \tab event of interest / competing event / censoring \cr
+   survival \tab \code{code.event1}, \code{code.censoring} \tab event / censoring \cr
+   survival  (default) \tab \code{code.event1=1}, \code{code.censoring=0} \tab event / censoring \cr
+   survival (ADaM-ADTTE) \tab \code{code.event1=0}, \code{code.censoring=1} \tab set to match ADaM convention \cr
+   proportional-survival \tab \code{code.event1}, \code{code.censoring} \tab event / censoring \cr
+   proportional-survival  (default) \tab \code{code.event1=1}, \code{code.censoring=0} \tab event / censoring \cr
+   proportional-survival (ADaM-ADTTE) \tab \code{code.event1=0}, \code{code.censoring=1} \tab set to match ADaM convention \cr
+   proportional-competing-risk \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censoring \cr
+   proportional-competing-risk (default) \tab \code{code.event1=1}, \code{code.event2=2}, \code{code.censoring=0} \tab event of interest / competing event / censoring \cr
 }
 
 }
@@ -276,7 +276,7 @@ Choose the effect scale for event 1 and (optionally) event 2:\tabular{llll}{
    Argument \tab Meaning \tab Default \cr
    \code{conf.level} \tab Wald-type CI level \tab \code{0.95} \cr
    \code{report.sandwich.conf} \tab Sandwich variance CIs \tab \code{TRUE} \cr
-   \code{report.boot.conf} \tab Bootstrap CIs (use if \code{"PROPORTIONAL-SURVIVAL"} or \code{"PROPORTIONAL-COMPETING-RISK"}) \tab \code{NULL} \cr
+   \code{report.boot.conf} \tab Bootstrap CIs (use if \code{"proportional-survival"} or \code{"proportional-competing-risk"}) \tab \code{NULL} \cr
    \code{boot.bca} \tab Use BCa intervals (else normal approximation) \tab \code{FALSE} \cr
    \code{boot.multiplier} \tab Method for wild bootstrap (\code{"rademacher"}, \code{"mammen"}, or \code{"gaussian"}) \tab \code{rademacher} \cr
    \code{boot.replications} \tab Bootstrap reps \tab \code{200} \cr
@@ -338,7 +338,7 @@ bound (\code{optim.parameter1} to \code{3}) and inspect \code{report.optim.conve
 \item If necessary, try modifying other \code{optim.parameter}, providing
 use-specified initial values, or reducing the number of nuisance parameters
 (e.g. provide \code{time.point} contributing to estimation when using
-\verb{“PROPORTIONAL-SURVIVAL”} and \verb{“PROPORTIONAL-COMPETING-RISK”}).
+\verb{“proportional-survival”} and \verb{“proportional-competing-risk”}).
 \item Set \code{boot.seed} for reproducible bootstrap results.
 \item Match CDISC ADaM conventions via \code{code.event1 = 0}, \code{code.censoring = 1}
 (and, if applicable, \code{code.event2} for competing events).
@@ -359,7 +359,7 @@ output <- polyreg(
   effect.measure1 = "RR",
   effect.measure2 = "RR",
   time.point = 8,
-  outcome.type = "COMPETING-RISK"
+  outcome.type = "competing-risk"
 )
 if (requireNamespace("modelsummary", quietly = TRUE)) {
 modelsummary::msummary(output$summary, statistic = c("conf.int", "p.value"), exponentiate = TRUE)

@@ -51,10 +51,10 @@ This package is a compact and unified toolkit for Kaplan–Meier/Aalen–Johanse
 library(cifmodeling)
 data(diabetes.complications)
 cifplot(Event(t,epsilon) ~ fruitq, data=diabetes.complications, 
-        outcome.type="COMPETING-RISK", printEachEvent=TRUE)
+        outcome.type="competing-risk", panel.per.event=TRUE)
 ```
 
-This is an example code snippet applying `cifplot()` to visualize Aalen–Johansen cumulative incidence functions (CIFs). In competing risks data, censoring is often coded as 0, events of interest as 1, and competing risks as 2. The variable `epsilon` in `diabetes.complications` data frame represents the occurrence of competing risks according to this coding scheme. By setting `printEachEvent=TRUE`, the CIF curve for diabetic retinopathy (`epsilon=1`) is output on the left and macrovascular complications (`epsilon=2`) on the right. 
+This is an example code snippet applying `cifplot()` to visualize Aalen–Johansen cumulative incidence functions (CIFs). In competing risks data, censoring is often coded as 0, events of interest as 1, and competing risks as 2. The variable `epsilon` in `diabetes.complications` data frame represents the occurrence of competing risks according to this coding scheme. By setting `panel.per.event=TRUE`, the CIF curve for diabetic retinopathy (`epsilon=1`) is output on the left and macrovascular complications (`epsilon=2`) on the right. 
 
 ## Overview
 

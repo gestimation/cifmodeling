@@ -50,7 +50,7 @@ test_that("LM path handles multi-level exposure", {
   expect_true(all(ey > 0 & ey < 1))
 })
 
-test_that("PROPORTIONAL-SURVIVAL style loop yields finite EY", {
+test_that("proportional-survival style loop yields finite EY", {
   n <- 5
   exposure <- factor(c(0, 1, 0, 1, 0))
   design <- cifmodeling:::reg_read_exposure_design(
