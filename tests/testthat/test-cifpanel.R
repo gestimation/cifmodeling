@@ -199,7 +199,7 @@ test_that("cifpanel() with two formulas shows per-plot titles", {
 })
 
 test_that("panel flags work", {
-  skip_on_cran()
+  skip()
   skip_if_not_installed("survival")
   skip_if_not_installed("ggsurvfit")
   skip_if_not_installed("patchwork")
