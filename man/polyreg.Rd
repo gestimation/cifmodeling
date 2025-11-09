@@ -107,13 +107,18 @@ includes estimates of the nuisance model parameters (default \code{FALSE}).}
 \item{report.optim.convergence}{Logical; if \code{TRUE}, optimization
 convergence summaries are returned (default \code{FALSE}).}
 
-\item{report.sandwich.conf}{Logical or \code{NULL}. When \code{TRUE}, confidence
-intervals based on sandwich variance are computed. When \code{FALSE}, they are
-omitted (default \code{TRUE}).}
+\item{report.sandwich.conf}{Logical or \code{NULL}. When \code{TRUE},
+confidence intervals based on sandwich variance are computed.
+When \code{FALSE}, they are omitted (default \code{TRUE}).
+This confidence interval is default for time-point models
+(\code{"outcome.type=COMPETING-RISK"}, \code{"SURVIVAL"} or \code{"BINOMIAL"}) and
+is not available otherwise.}
 
 \item{report.boot.conf}{Logical or \code{NULL}. When \code{TRUE}, bootstrap
-confidence intervals are computed. When \code{FALSE}, they are omitted. If
-\code{NULL}, the function chooses based on \code{outcome.type}.}
+confidence intervals are computed. When \code{FALSE}, they are omitted.
+If \code{NULL}, the function chooses based on \code{outcome.type} (default \code{NULL}).
+This confidence interval is default for proportional models
+(\code{outcome.type="PROPORTIONAL-COMPETING-RISK"} or \code{"PROPORTIONAL-SURVIVAL"}).}
 
 \item{boot.bca}{Logical indicating the bootstrap confidence interval method.
 Use \code{TRUE} for bias-corrected and accelerated intervals or \code{FALSE}
@@ -243,16 +248,16 @@ The \code{outcome.type} argument must be set to:
 \item Effects on a risk of a binomial outcome: \code{"binomial"}
 }\tabular{lll}{
    Setting \tab Codes \tab Meaning \cr
-   competing-risk \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censoring \cr
-   competing-risk (default) \tab \code{code.event1=1}, \code{code.event2=2}, \code{code.censoring=0} \tab event of interest / competing event / censoring \cr
-   survival \tab \code{code.event1}, \code{code.censoring} \tab event / censoring \cr
-   survival  (default) \tab \code{code.event1=1}, \code{code.censoring=0} \tab event / censoring \cr
-   survival (ADaM-ADTTE) \tab \code{code.event1=0}, \code{code.censoring=1} \tab set to match ADaM convention \cr
-   proportional-survival \tab \code{code.event1}, \code{code.censoring} \tab event / censoring \cr
-   proportional-survival  (default) \tab \code{code.event1=1}, \code{code.censoring=0} \tab event / censoring \cr
-   proportional-survival (ADaM-ADTTE) \tab \code{code.event1=0}, \code{code.censoring=1} \tab set to match ADaM convention \cr
-   proportional-competing-risk \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censoring \cr
-   proportional-competing-risk (default) \tab \code{code.event1=1}, \code{code.event2=2}, \code{code.censoring=0} \tab event of interest / competing event / censoring \cr
+   COMPETING-RISK \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censoring \cr
+   COMPETING-RISK (default) \tab \code{code.event1=1}, \code{code.event2=2}, \code{code.censoring=0} \tab event of interest / competing event / censoring \cr
+   SURVIVAL \tab \code{code.event1}, \code{code.censoring} \tab event / censoring \cr
+   SURVIVAL  (default) \tab \code{code.event1=1}, \code{code.censoring=0} \tab event / censoring \cr
+   SURVIVAL (ADaM-ADTTE) \tab \code{code.event1=0}, \code{code.censoring=1} \tab set to match ADaM convention \cr
+   PROPORTIONAL-SURVIVAL \tab \code{code.event1}, \code{code.censoring} \tab event / censoring \cr
+   PROPORTIONAL-SURVIVAL  (default) \tab \code{code.event1=1}, \code{code.censoring=0} \tab event / censoring \cr
+   PROPORTIONAL-SURVIVAL (ADaM-ADTTE) \tab \code{code.event1=0}, \code{code.censoring=1} \tab set to match ADaM convention \cr
+   PROPORTIONAL-COMPETING-RISK \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censoring \cr
+   PROPORTIONAL-COMPETING-RISK (default) \tab \code{code.event1=1}, \code{code.event2=2}, \code{code.censoring=0} \tab event of interest / competing event / censoring \cr
 }
 
 }
@@ -338,7 +343,7 @@ bound (\code{optim.parameter1} to \code{3}) and inspect \code{report.optim.conve
 \item If necessary, try modifying other \code{optim.parameter}, providing
 use-specified initial values, or reducing the number of nuisance parameters
 (e.g. provide \code{time.point} contributing to estimation when using
-\verb{“proportional-survival”} and \verb{“proportional-competing-risk”}).
+\verb{“PROPORTIONAL-SURVIVAL”} and \verb{“PROPORTIONAL-COMPETING-RISK”}).
 \item Set \code{boot.seed} for reproducible bootstrap results.
 \item Match CDISC ADaM conventions via \code{code.event1 = 0}, \code{code.censoring = 1}
 (and, if applicable, \code{code.event2} for competing events).

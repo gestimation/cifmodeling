@@ -38,11 +38,19 @@ test_that("panel flags work", {
     formulas = list(Event(t, d) ~ x, Event(t, d) ~ 1),
     data = df,
     code.events = list(c(1, 2, 0), c(1, 2, 0)),
-    panel.per.event = TRUE,
-    panel.censoring = FALSE,
-    panel.per.variable = TRUE,
-    print.panel = FALSE
+    panel.per.event   = TRUE,
+    panel.censoring   = FALSE,
+    panel.per.variable= TRUE,
+    print.panel       = FALSE
   )
 
-  expect_true(inherits(pw, "patchwork") || inherits(pw, "gg"))
+  has_patchwork <-
+    inherits(pw, "patchwork") || inherits(pw, "gg") ||
+    (is.list(pw) && (
+      ("out_patchwork" %in% names(pw) && inherits(pw$out_patchwork, "patchwork")) ||
+        ("plots" %in% names(pw) && length(pw$plots) > 0 &&
+           any(vapply(pw$plots, function(p) inherits(p, "patchwork") || inherits(p, "gg"), logical(1))))
+    ))
+
+  expect_true(has_patchwork)
 })

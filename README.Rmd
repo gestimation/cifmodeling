@@ -316,7 +316,6 @@ The summaries of analysis results in the list of outputs (e.g. `output3$summary`
 msummary(output3$summary, statistic = c("conf.int", "p.value"), exponentiate = TRUE)
 ```
 
-
 ## Example 2. Survival analysis
 
 The second example is time to first event analysis (`outcome.type="survival"`) to estimate the effect on the risk of diabetic retinopathy or macrovascular complications at 8 years. In the code below, `cifplot()` is directly used to generate a survfit-compatible object internally and plot it. 

@@ -46,7 +46,7 @@ cifplot(
   intercurrent.event.time = list(),
   shape.intercurrent.event.mark = 1,
   size.intercurrent.event.mark = 2,
-  add.level.quantile = FALSE,
+  add.quantile = FALSE,
   level.quantile = 0.5,
   panel.per.event = FALSE,
   panel.censoring = FALSE,
@@ -55,7 +55,8 @@ cifplot(
   rows.columns.panel = NULL,
   style = "CLASSIC",
   palette = NULL,
-  linewidth = 1,
+  linewidth = 0.8,
+  linetype = FALSE,
   font.family = "sans",
   font.size = 12,
   legend.position = "top",
@@ -89,10 +90,10 @@ subset of \code{data} to analyze (default \code{NULL}).}
 \item{na.action}{A function specifying the action to take on missing values (default \code{na.omit}).}
 
 \item{outcome.type}{Character string specifying the type of time-to-event outcome.
-One of \code{"survival"} (Kaplan–Meier type) or \code{"competing-risk"} (Aalen–Johansen type).
+One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
 If \code{NULL} (default), the function automatically infers the outcome type from the data:
-if the event variable has more than two unique levels, \code{"competing-risk"} is assumed;
-otherwise, \code{"survival"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
+if the event variable has more than two unique levels, \code{"COMPETING-RISK"} is assumed;
+otherwise, \code{"SURVIVAL"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
 Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detection based on the event coding.}
 
 \item{code.event1}{Integer code of the event of interest (default \code{1}).}
@@ -193,7 +194,7 @@ times per stratum. Default \code{FALSE}.}
 \item{add.quantile}{Logical; if \code{TRUE}, adds a quantile line (via
 \code{ggsurvfit::add_quantile()}). Default \code{FALSE}.}
 
-\item{quantile}{Numeric quantile to be shown (default \code{0.5} for median).}
+\item{level.quantile}{Numeric quantile to be shown (default \code{0.5} for median).}
 
 \item{panel.per.event}{Logical. \strong{Explicit panel mode.} If \code{TRUE} and
 \code{outcome.type == "competing-risk"}, \code{cifplot()} internally calls \code{cifpanel()}
@@ -228,7 +229,9 @@ Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also
 
 \item{palette}{Optional character vector specifying the color palette to use across strata.}
 
-\item{linewidth}{Optional numeric specifying the line width of curves.}
+\item{linewidth}{Optional numeric specifying the line width of curve (default \code{0.8}).}
+
+\item{linetype}{Optional logical using different line types of curve (default \code{FALSE}).}
 
 \item{font.family}{Character specifying the font family: \code{"sans"},  \code{"serif"}, or
 \code{"mono"} (default \code{"sans"}).}
@@ -320,7 +323,7 @@ The arguments below fine-tune internal estimation and figure appearance.
    \code{add.competing.risk.mark} \tab Add marks for event2 of "competing-risk" outcome. \tab \code{FALSE} \cr
    \code{add.intercurrent.event.mark} \tab Add intercurrent event marks at user-specified times. \tab \code{FALSE} \cr
    \code{add.quantile} \tab Add quantile lines. \tab \code{FALSE} \cr
-   \code{quantile} \tab Quantile for \code{add.quantile}. \tab \code{0.5} \cr
+   \code{level.quantile} \tab Quantile for \code{add.quantile}. \tab \code{0.5} \cr
 }
 
 }

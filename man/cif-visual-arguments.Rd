@@ -61,7 +61,7 @@ times per stratum. Default \code{FALSE}.}
 \item{add.quantile}{Logical; if \code{TRUE}, adds a quantile line (via
 \code{ggsurvfit::add_quantile()}). Default \code{FALSE}.}
 
-\item{quantile}{Numeric quantile to be shown (default \code{0.5} for median).}
+\item{level.quantile}{Numeric quantile to be shown (default \code{0.5} for median).}
 
 \item{rows.columns.panel}{Optional integer vector \code{c(nrow, ncol)} controlling
 the layout of the panel returned by the panel modes. If \code{NULL}, an automatic
@@ -73,7 +73,9 @@ Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also
 
 \item{palette}{Optional character vector specifying the color palette to use across strata.}
 
-\item{linewidth}{Optional numeric specifying the line width of curves.}
+\item{linewidth}{Optional numeric specifying the line width of curve (default \code{0.8}).}
+
+\item{linetype}{Optional logical using different line types of curve (default \code{FALSE}).}
 
 \item{font.family}{Character specifying the font family: \code{"sans"},  \code{"serif"}, or
 \code{"mono"} (default \code{"sans"}).}

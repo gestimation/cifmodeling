@@ -1047,11 +1047,8 @@ panel_force_apply <- function(
     pa$add.quantile <- v
     pa$visual.info$add.quantile <- v
   }
-
-  pa
+  return(pa)
 }
-
-
 
 
 normalize_strata_info <- function(level.strata = NULL,

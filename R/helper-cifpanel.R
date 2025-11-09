@@ -88,26 +88,54 @@ panel_prepare <- function(
       ),
       survfit.info
     ))
-    fit_i <- do.call(cifcurve, args_est)
+
+    norm_outcome_str <- function(x) {
+      if (is.null(x) || !length(x)) return(NULL)
+      x <- as.character(x)
+      x <- trimws(tolower(x))
+      x <- sub("^km$", "survival", x)
+      x <- sub("^aj$", "competing-risk", x)
+      x <- sub("^competing[_ -]?risk(s)?$", "competing-risk", x)
+      x <- sub("^survival.*$", "survival", x)
+      if (x %in% c("survival","competing-risk")) x else NULL
+    }
+    ot_i <- NULL
+    if (!is.null(outcome.list) && length(outcome.list) >= i) {
+      ot_i <- norm_outcome_str(outcome.list[[i]])
+    }
+    if (is.null(ot_i) && !is.null(outcome.flags) && length(outcome.flags) >= i) {
+      ot_i <- if (identical(outcome.flags[[i]], "C")) "competing-risk" else "survival"
+    }
+    if (is.null(ot_i)) ot_i <- "survival"
+
+    args_est$outcome.type <- ot_i
+    typey_for_plot <- if (identical(ot_i, "competing-risk")) "risk" else NULL
+
+    allowed_curve <- names(formals(cifcurve))
+    args_curve <- args_est
+    if (!is.null(names(args_curve))) {
+      args_curve <- args_curve[intersect(names(args_curve), allowed_curve)]
+      }
+    fit_i <- do.call(cifcurve, args_curve)
     curves[[i]] <- fit_i
 
     args_plot <- list(
-      formula_or_fit           = fit_i,
-      type.y                   = if (!is.null(typey.list))   typey.list[[i]]   else NULL,
-      label.y                  = if (!is.null(labely.list))  labely.list[[i]]  else NULL,
-      label.x                  = if (!is.null(labelx.list))  labelx.list[[i]]  else NULL,
-      limits.y                 = if (!is.null(limsy.list))   limsy.list[[i]]   else NULL,
-      limits.x                 = if (!is.null(limsx.list))   limsx.list[[i]]   else NULL,
-      breaks.x                 = if (!is.null(breakx.list))  breakx.list[[i]]  else NULL,
-      breaks.y                 = if (!is.null(breaky.list))  breaky.list[[i]]  else NULL,
-      add.ci    = if (!is.null(addCI.list))   addCI.list[[i]]   else TRUE,
-      add.censor.mark            = if (!is.null(addCen.list))  addCen.list[[i]]  else TRUE,
+      formula_or_fit              = fit_i,
+      type.y                      = if (!is.null(typey.list))   typey.list[[i]]   else typey_for_plot,
+      label.y                     = if (!is.null(labely.list))  labely.list[[i]]  else NULL,
+      label.x                     = if (!is.null(labelx.list))  labelx.list[[i]]  else NULL,
+      limits.y                    = if (!is.null(limsy.list))   limsy.list[[i]]   else NULL,
+      limits.x                    = if (!is.null(limsx.list))   limsx.list[[i]]   else NULL,
+      breaks.x                    = if (!is.null(breakx.list))  breakx.list[[i]]  else NULL,
+      breaks.y                    = if (!is.null(breaky.list))  breaky.list[[i]]  else NULL,
+      add.ci                      = if (!is.null(addCI.list))   addCI.list[[i]]   else TRUE,
+      add.censor.mark             = if (!is.null(addCen.list))  addCen.list[[i]]  else TRUE,
       add.competing.risk.mark     = if (!is.null(addCR.list))   addCR.list[[i]]   else FALSE,
       add.intercurrent.event.mark = if (!is.null(addIC.list))   addIC.list[[i]]   else FALSE,
-      add.quantile = if (!is.null(addQ.list))    addQ.list[[i]]    else FALSE,
-      label.strata             = if (!is.null(strata.list))  strata.list[[i]]  else NULL,
-      font.family              = fonts$family,
-      font.size                = fonts$size
+      add.quantile                = if (!is.null(addQ.list))    addQ.list[[i]]    else FALSE,
+      label.strata                = if (!is.null(strata.list))  strata.list[[i]]  else NULL,
+      font.family                 = fonts$family,
+      font.size                   = fonts$size
     )
 
     if (!is.null(dots$style)) {
@@ -125,17 +153,14 @@ panel_prepare <- function(
     if (!is.null(legend.position)) {
       args_plot$legend.position <- legend.position
     }
-
     plot_args[[i]] <- panel_drop_nulls(args_plot)
   }
-
   list(
     curves    = curves,
     plot_args = plot_args,
     K         = K
   )
 }
-
 
 panel_as_formula_global <- function(f) {
   if (is.character(f))   return(stats::as.formula(f, env = .GlobalEnv))

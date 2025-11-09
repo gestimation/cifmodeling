@@ -43,7 +43,7 @@ cifpanel(
   intercurrent.event.time = NULL,
   shape.intercurrent.event.mark = NULL,
   size.intercurrent.event.mark = NULL,
-  add.level.quantile = NULL,
+  add.quantile = NULL,
   level.quantile = NULL,
   rows.columns.panel = c(1, 1),
   inset.panel = FALSE,
@@ -54,7 +54,8 @@ cifpanel(
   title.plot = NULL,
   style = "CLASSIC",
   palette = NULL,
-  linewidth = 1,
+  linewidth = 0.8,
+  linetype = FALSE,
   font.family = "sans",
   font.size = 8,
   legend.position = "top",
@@ -106,10 +107,10 @@ subset of \code{data} to analyze (default \code{NULL}).}
 \item{na.action}{A function specifying the action to take on missing values (default \code{na.omit}).}
 
 \item{outcome.type}{Character string specifying the type of time-to-event outcome.
-One of \code{"survival"} (Kaplan–Meier type) or \code{"competing-risk"} (Aalen–Johansen type).
+One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
 If \code{NULL} (default), the function automatically infers the outcome type from the data:
-if the event variable has more than two unique levels, \code{"competing-risk"} is assumed;
-otherwise, \code{"survival"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
+if the event variable has more than two unique levels, \code{"COMPETING-RISK"} is assumed;
+otherwise, \code{"SURVIVAL"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
 Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detection based on the event coding.}
 
 \item{code.events}{Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
@@ -176,7 +177,7 @@ times per stratum. Default \code{FALSE}.}
 \item{add.quantile}{Logical; if \code{TRUE}, adds a quantile line (via
 \code{ggsurvfit::add_quantile()}). Default \code{FALSE}.}
 
-\item{quantile}{Numeric quantile to be shown (default \code{0.5} for median).}
+\item{level.quantile}{Numeric quantile to be shown (default \code{0.5} for median).}
 
 \item{rows.columns.panel}{Optional integer vector \code{c(nrow, ncol)} controlling
 the layout of the panel returned by the panel modes. If \code{NULL}, an automatic
@@ -208,7 +209,9 @@ Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also
 
 \item{palette}{Optional character vector specifying the color palette to use across strata.}
 
-\item{linewidth}{Optional numeric specifying the line width of curves.}
+\item{linewidth}{Optional numeric specifying the line width of curve (default \code{0.8}).}
+
+\item{linetype}{Optional logical using different line types of curve (default \code{FALSE}).}
 
 \item{font.family}{Character specifying the font family: \code{"sans"},  \code{"serif"}, or
 \code{"mono"} (default \code{"sans"}).}
@@ -305,8 +308,8 @@ list in \code{formulas} (one per panel). When both are provided, \code{formulas}
 \item Use \code{outcome.type} to set per-panel estimator (\code{"survival"}=KM, \code{"competing-risk"}=AJ).
 \item Alternatively, pass \code{code.events} per panel to infer the type:
 \itemize{
-\item length 2 = survival: \code{c(event1, censor)}
-\item length 3 = competing-risk: \code{c(event1, event2, censor)}
+\item length 2 = SURVIVAL: \code{c(event1, censor)}
+\item length 3 = COMPETING-RISK: \code{c(event1, event2, censor)}
 }
 \item If \code{outcome.type} is \code{NULL}, the function infers each panel from its
 \code{code.events[[i]]} length. When both are given, \code{outcome.type} takes precedence.
