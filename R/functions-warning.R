@@ -119,28 +119,47 @@
   invisible(TRUE)
 }
 
-.validate_outcome_type <- function(x) {
+util_validate_outcome_type <- function(x) {
   if (is.null(x)) return(NULL)
   x <- trimws(tolower(as.character(x)))
   if (!length(x)) return(x)
-  ok <- c(
-    "competing-risk", "survival", "binomial",
-    "proportional-competing-risk", "proportional-survival"
+
+  norm_key <- function(s) gsub("[[:space:]_\\-]+", "", s, perl = TRUE)
+  key <- norm_key(x)
+
+  map <- c(
+    "c"                     = "competing-risk",
+    "cr"                    = "competing-risk",
+    "competingrisk"         = "competing-risk",
+    "s"                     = "survival",
+    "surv"                  = "survival",
+    "survival"              = "survival",
+    "b"                     = "binomial",
+    "bin"                   = "binomial",
+    "binom"                 = "binomial",
+    "binomial"              = "binomial",
+    "pc"                    = "proportional-competing-risk",
+    "pcr"                   = "proportional-competing-risk",
+    "proportionalcompetingrisk" = "proportional-competing-risk",
+    "ps"                    = "proportional-survival",
+    "proportionalsurvival"  = "proportional-survival"
   )
-  invalid <- is.na(x) | !nzchar(x) | !(x %in% ok)
+
+  out <- unname(map[key])
+  ok <- c("competing-risk", "survival", "binomial",
+          "proportional-competing-risk", "proportional-survival")
+
+  invalid <- is.na(out) | !nzchar(out)
   if (any(invalid)) {
-    bad <- unique(x[invalid])
-    bad <- bad[!is.na(bad)]
+    bad <- unique(x[invalid]); bad <- bad[!is.na(bad)]
     stop(
-      sprintf(
-        "Invalid outcome.type: '%s'. Allowed: %s",
-        paste(bad, collapse = ", "),
-        paste(ok, collapse = ", ")
-      ),
+      sprintf("Invalid outcome.type: '%s'. Allowed: %s",
+              paste(bad, collapse = ", "),
+              paste(ok,  collapse = ", ")),
       call. = FALSE
     )
   }
-  x
+  out
 }
 
 util_check_outcome_type <- function(
@@ -151,27 +170,22 @@ util_check_outcome_type <- function(
     auto_message = TRUE
 ) {
   if (!is.null(x)) {
-    canon <- unique(vapply(x, .validate_outcome_type, character(1)))
+    canon <- unique(util_validate_outcome_type(x))
     if (length(canon) == 1L) {
       return(canon)
     } else if (length(canon) > 1L) {
       stop(
-        "`outcome.type` is ambiguous and matched multiple types: ",
+        "outcome.type is ambiguous and matched multiple types: ",
         paste(canon, collapse = ", "),
         call. = FALSE
       )
-    } else {
-      .validate_outcome_type(x)
     }
   }
 
-  if (is.null(formula) || is.null(data))
-    .err("req", arg = "formula and data (for automatic detection)")
-
+  if (is.null(formula) || is.null(data)) .err("req", arg = "formula and data (for automatic detection)")
   Terms <- stats::terms(formula, specials = c("strata","offset","cluster"), data = data)
   mf    <- stats::model.frame(Terms, data = data, na.action = na.action)
-
-  Y <- stats::model.extract(mf, "response")
+  Y     <- stats::model.extract(mf, "response")
   if (!inherits(Y, c("Event","Surv"))) .err("surv_expected")
 
   status    <- suppressWarnings(as.numeric(Y[, 2]))

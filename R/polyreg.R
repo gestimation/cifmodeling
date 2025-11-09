@@ -43,12 +43,17 @@
 #'   includes estimates of the nuisance model parameters (default \code{FALSE}).
 #' @param report.optim.convergence Logical; if \code{TRUE}, optimization
 #'   convergence summaries are returned (default \code{FALSE}).
-#' @param report.sandwich.conf Logical or \code{NULL}. When \code{TRUE}, confidence
-#'   intervals based on sandwich variance are computed. When \code{FALSE}, they are
-#'   omitted (default \code{TRUE}).
+#' @param report.sandwich.conf Logical or \code{NULL}. When \code{TRUE},
+#' confidence intervals based on sandwich variance are computed.
+#' When \code{FALSE}, they are omitted (default \code{TRUE}).
+#' This confidence interval is default for time-point models
+#' (\code{"outcome.type=COMPETING-RISK"}, \code{"SURVIVAL"} or \code{"BINOMIAL"}) and
+#' is not available otherwise.
 #' @param report.boot.conf Logical or \code{NULL}. When \code{TRUE}, bootstrap
-#'   confidence intervals are computed. When \code{FALSE}, they are omitted. If
-#'   \code{NULL}, the function chooses based on \code{outcome.type}.
+#' confidence intervals are computed. When \code{FALSE}, they are omitted.
+#' If \code{NULL}, the function chooses based on \code{outcome.type} (default \code{NULL}).
+#' This confidence interval is default for proportional models
+#' (\code{outcome.type="PROPORTIONAL-COMPETING-RISK"} or \code{"PROPORTIONAL-SURVIVAL"}).
 #' @param boot.bca Logical indicating the bootstrap confidence interval method.
 #'   Use \code{TRUE} for bias-corrected and accelerated intervals or \code{FALSE}
 #'   for the normal approximation (default \code{FALSE}).
@@ -314,8 +319,8 @@ polyreg <- function(
   # 1. Pre-processing (function: checkSpell, checkInput, reg_normalize_covariate, sortByCovariate)
   #######################################################################################################
   computation.time0 <- proc.time()
-  outcome.type <- .validate_outcome_type(outcome.type)
-  outcome.type  <- util_check_outcome_type(outcome.type, formula=formula, data=data)
+  outcome.type <- util_validate_outcome_type(outcome.type)
+  outcome.type <- util_check_outcome_type(outcome.type, formula=formula, data=data)
   ce <- reg_check_effect.measure(effect.measure1, effect.measure2)
   ci <- reg_check_input(data, nuisance.model, exposure, code.event1, code.event2, code.censoring, code.exposure.ref, outcome.type, conf.level, report.sandwich.conf, report.boot.conf, nleqslv.method, normalize.covariate)
   normalize.covariate <- ci$normalize.covariate

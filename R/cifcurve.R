@@ -89,7 +89,7 @@ cifcurve <- function(
     engine = "calculateAJ_Rcpp",
     prob.bound = 1e-7
 ) {
-  outcome.type <- .validate_outcome_type(outcome.type)
+  outcome.type <- util_validate_outcome_type(outcome.type)
   outcome.type  <- util_check_outcome_type(outcome.type, formula = formula, data = data)
   out_readSurv  <- util_read_surv(formula, data, weights,
                                   code.event1, code.event2, code.censoring,
@@ -301,7 +301,7 @@ calculateAJ <- function(data) {
 }
 
 curve_check_error <- function(x, outcome.type) {
-  ot <- .validate_outcome_type(outcome.type)
+  ot <- util_validate_outcome_type(outcome.type)
   ot <- if (length(ot)) ot[[1L]] else ot
   out <- if (is.null(x)) if (identical(ot, "survival")) "greenwood" else "delta" else tolower(x)
 

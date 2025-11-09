@@ -37,6 +37,7 @@ test_that("panel flags work", {
   pw <- cifpanel(
     formulas = list(Event(t, d) ~ x, Event(t, d) ~ 1),
     data = df,
+    code.events = list(c(1, 2, 0), c(1, 2, 0)),
     panel.per.event = TRUE,
     panel.censoring = FALSE,
     panel.per.variable = TRUE,

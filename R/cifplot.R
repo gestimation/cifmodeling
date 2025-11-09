@@ -267,7 +267,7 @@ cifplot <- function(
 ) {
   dots <- list(...)
 
-  outcome.type <- .validate_outcome_type(outcome.type)
+  outcome.type <- util_validate_outcome_type(outcome.type)
 
   print_panel <- isTRUE(panel.per.variable) || isTRUE(panel.per.event) || isTRUE(panel.censoring)
   if (print_panel) {

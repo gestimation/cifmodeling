@@ -357,7 +357,7 @@ cifpanel <- function(
   dots <- list(...)
 
   if (!is.null(outcome.type) && !is.list(outcome.type)) {
-    outcome.type <- .validate_outcome_type(outcome.type)
+    outcome.type <- util_validate_outcome_type(outcome.type)
   }
 
   survfit.info.user <- survfit.info
