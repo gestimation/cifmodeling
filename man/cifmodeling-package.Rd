@@ -11,6 +11,7 @@ A compact and unified toolkit for survival and competing risks analysis in R. ci
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://gestimation.github.io/cifmodeling/}
   \item \url{https://github.com/gestimation/cifmodeling}
   \item Report bugs at \url{https://github.com/gestimation/cifmodeling/issues}
 }

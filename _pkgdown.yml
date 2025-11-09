@@ -1,7 +1,6 @@
 template:
   bootstrap: 5
 
-# 公開URLが決まっていれば入れる（例は GitHub Pages）
 url: https://gestimation.github.io/cifmodeling/
 
 development:
@@ -36,27 +35,28 @@ navbar:
           href: articles/06_arguments.html
     github:
       icon: fa-github
+      aria-label: GitHub repository
       href: https://github.com/gestimation/cifmodeling
 
 articles:
   - title: Overview
     contents:
-      - 01_overview.Rmd
+      - 01_overview
   - title: Main functions
     contents:
-      - 02_functions.Rmd
+      - 02_functions
   - title: Direct polytomous modeling of CIFs
     contents:
-      - 03_polyreg.Rmd
+      - 03_polyreg
   - title: Examples
     contents:
-      - 04_examples.Rmd
+      - 04_examples
   - title: Additional information
     contents:
-      - 05_information.Rmd
+      - 05_information
   - title: Full lists of arguments
     contents:
-      - 06_arguments.Rmd
+      - 06_arguments
 
 reference:
   - title: Estimation & plotting
@@ -64,9 +64,15 @@ reference:
       - cifcurve
       - cifplot
       - cifpanel
+      - cif-stat-arguments       # ← 公開したいなら残す。非公開なら Rd に @keywords internal
+      - cif-visual-arguments     # ← 同上
   - title: Regression
     contents:
       - polyreg
+  - title: Data
+    contents:
+      - diabetes.complications   # ← データを公開したい場合
+      - prostate                 # ← 同上
   - title: Helpers
     contents:
       - extract_time_to_event

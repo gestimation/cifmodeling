@@ -26,4 +26,5 @@
 #' @param conf.int Numeric two-sided confidence level (default \code{0.95}).
 #'
 #' @name cif-stat-arguments
+#' @keywords internal
 NULL

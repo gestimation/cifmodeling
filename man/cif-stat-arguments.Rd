@@ -36,3 +36,4 @@ Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detectio
 These arguments are shared by \code{cifplot()}, \code{cifpanel()}, and
 \code{cifcurve()}.
 }
+\keyword{internal}

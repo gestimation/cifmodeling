@@ -31,5 +31,5 @@ Imports:
     scales,
     lifecycle
 VignetteBuilder: knitr
-URL: https://github.com/gestimation/cifmodeling
+URL: https://gestimation.github.io/cifmodeling/, https://github.com/gestimation/cifmodeling
 BugReports: https://github.com/gestimation/cifmodeling/issues

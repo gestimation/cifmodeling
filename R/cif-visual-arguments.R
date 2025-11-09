@@ -66,4 +66,5 @@
 #' @param dpi.ggsave Numeric DPI passed to \code{ggplot2::ggsave()} (default \code{300}).
 #'
 #' @name cif-visual-arguments
+#' @keywords internal
 NULL

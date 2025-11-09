@@ -8,8 +8,7 @@ articles:
   04_examples: 04_examples.html
   05_information: 05_information.html
   06_arguments: 06_arguments.html
-  cifmodeling: cifmodeling.html
-last_built: 2025-11-08T06:52Z
+last_built: 2025-11-09T15:18Z
 urls:
   reference: https://gestimation.github.io/cifmodeling/reference
   article: https://gestimation.github.io/cifmodeling/articles

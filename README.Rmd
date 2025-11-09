@@ -16,7 +16,6 @@ knitr::opts_chunk$set(
 # Visualization and Modeling of Competing Risks in R — cifmodeling
 
 <!-- badges: start -->
-
 <!-- badges: end -->
 
 ```{r setup, eeval=FALSE, include=FALSE, warning=FALSE, message=FALSE}
@@ -43,11 +42,11 @@ cifplot(Event(t,epsilon) ~ fruitq, data=diabetes.complications,
 
 This is an example code snippet applying `cifplot()` to visualize Aalen–Johansen cumulative incidence functions (CIFs). In competing risks data, censoring is often coded as 0, events of interest as 1, and competing risks as 2. The variable `epsilon` in `diabetes.complications` data frame represents the occurrence of competing risks according to this coding scheme. By setting `panel.per.event=TRUE`, the CIF curve for diabetic retinopathy (`epsilon=1`) is output on the left and macrovascular complications (`epsilon=2`) on the right. 
 
-## Overview
+## Three functions for survival and competing risks analysis
 
 In clinical and epidemiological research, analysts often need to handle censoring, competing risks, and intercurrent events (e.g., treatment switching), but existing R packages typically separate these tasks into different interfaces. `cifmodeling` provides a **unified, publication-ready toolkit** that integrates description of survival and CIF curves, regression modeling, and visualization for survival and competing risks data. It covers both nonparametric estimation and regression modeling of CIFs, centered around three tightly connected functions.
 
--   `cifplot()` typically generates a survival or cumulative incidence curve with marks that represent censoring, competing risks and intercurrent events. Multiple variance estimators and confidence interval methods are supported. Visualization relies on `ggsurvfit/ggplot2`. 
+-   `cifplot()` typically generates a survival or cumulative incidence curve with marks that represent censoring, competing risks and intercurrent events. Multiple standard error estimators and confidence interval methods are supported. Visualization relies on `ggsurvfit/ggplot2`. 
 
 -   `cifpanel()` generates a multi-panel figure for survival/CIF curves, arranged either in a grid layout or as an inset overlay.
 
