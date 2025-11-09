@@ -69,11 +69,11 @@ This function produces the **Kaplan–Meier survival** or **Aalen–Johansen cum
 **Key arguments for cifplot()**
 
 -   **Data visualization**
-    -   `addConfidenceInterval` adds confidence intervals on the ggplot2-based plot
-    -   `addCompetingRiskMark` and `addIntercurrentEventMark` add symbols to describe competing risks or intercurrent events in addition to conventional censoring marks with `addCensorMark`
-    -   `addRiskTable` adds numbers at risk
-    -   `addEstimateTable` adds estimates and 95% confidence interval
-    -   `addQuantileLine` adds a line that represents median or quantile
+    -   `add.conf` adds confidence intervals on the ggplot2-based plot
+    -   `add.competing.risk.mark` and `add.intercurrent.event.mark` add symbols to describe competing risks or intercurrent events in addition to conventional censoring marks with `add.censor.mark`
+    -   `add.risktable` adds numbers at risk
+    -   `add.estimate.table` adds estimates and 95% confidence interval
+    -   `add.quantile` adds a line that represents the median or a selected quantile level
 
 -   **Plot customization**
     -   `type.y` chooses y-axis (`"surv"` for survival and `"risk"` for 1-survival or CIF)
@@ -81,9 +81,9 @@ This function produces the **Kaplan–Meier survival** or **Aalen–Johansen cum
     -   `style` specifies the appearance of plot (`"CLASSIC"`, `"BOLD"`, `"FRAMED"`, `"GRID"`, `"GRAY"` or `"GGSURVFIT"`)
 
 -   **Panel display**
-    -   `printEachVar` produces multiple survival/CIF curves per stratification variable specified in the formula
-    -   `printEachEvent` produces CIF curves for each event type
-    -   `printCensoring` produces KM-type curves for (event, censor) and (censor, event) so that censoring patterns can be inspected
+    -   `panel.per.variable` produces multiple survival/CIF curves per stratification variable specified in the formula
+    -   `panel.per.event` produces CIF curves for each event type
+    -   `panel.censoring` produces KM-type curves for (event, censor) and (censor, event) so that censoring patterns can be inspected
     -   `panel.mode` uses automatic panel mode
 
 **Return**
@@ -136,8 +136,8 @@ output1 <- cifplot(Event(t,epsilon) ~ fruitq,
                    outcome.type="COMPETING-RISK",
                    code.event1=2,
                    code.event2=1,
-                   addConfidenceInterval = FALSE,
-                   addRiskTable = FALSE,
+                   add.conf = FALSE,
+                   add.risktable = FALSE,
                    label.y="CIF of macrovascular complications",
                    label.x="Years from registration")
 output2 <- cifplot(Event(t,epsilon) ~ fruitq,
@@ -145,8 +145,8 @@ output2 <- cifplot(Event(t,epsilon) ~ fruitq,
                    outcome.type="COMPETING-RISK",
                    code.event1=2,
                    code.event2=1,
-                   addConfidenceInterval = FALSE,
-                   addRiskTable = FALSE,
+                   add.conf = FALSE,
+                   add.risktable = FALSE,
                    label.y="",
                    label.x="",
                    limits.y=c(0,0.15))
@@ -177,7 +177,7 @@ cifpanel(
  inset.right = 1.00, inset.top = 0.95,
  inset.legend.position = "none",
  legend.position = "bottom", 
- addConfidenceInterval = FALSE
+ add.conf = FALSE
 )
 ```
 

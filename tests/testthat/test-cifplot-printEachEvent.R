@@ -1,4 +1,4 @@
-test_that("printEachEvent ignored for non-CR outcomes with warning", {
+test_that("panel.per.event ignored for non-CR outcomes with warning", {
   skip_on_cran()
   data(diabetes.complications)
   diabetes.complications$status <- as.integer(diabetes.complications$epsilon > 0)
@@ -8,16 +8,16 @@ test_that("printEachEvent ignored for non-CR outcomes with warning", {
         survival::Surv(t, status) ~ fruitq1,
         data           = diabetes.complications,
         outcome.type   = "SURVIVAL",
-        addRiskTable   = FALSE,
-        printEachEvent = TRUE
+        add.risktable   = FALSE,
+        panel.per.event = TRUE
       )
       expect_s3_class(plt, "ggplot")
     },
-    "printEachEvent=TRUE is only for COMPETING-RISK"
+    "panel.per.event=TRUE is only for COMPETING-RISK"
   )
 })
 
-test_that("cifplot(printEachEvent=TRUE) returns a patchwork object", {
+test_that("cifplot(panel.per.event=TRUE) returns a patchwork object", {
   skip_on_cran()
   data(diabetes.complications)
   plt <- cifplot(
@@ -25,8 +25,8 @@ test_that("cifplot(printEachEvent=TRUE) returns a patchwork object", {
     data           = diabetes.complications,
     outcome.type   = "COMPETING-RISK",
     code.events    = c(1, 2, 0),
-    addRiskTable   = FALSE,
-    printEachEvent = TRUE
+    add.risktable   = FALSE,
+    panel.per.event = TRUE
   )
   expect_true(
     inherits(plt, c("gg", "ggplot")) ||
@@ -46,7 +46,7 @@ test_that("cifplot(printEachEvent=TRUE) returns a patchwork object", {
   )
 })
 
-test_that("cifplot(printEachEvent=TRUE) returns two panels and passes y labels", {
+test_that("cifplot(panel.per.event=TRUE) returns two panels and passes y labels", {
   skip()
   data(diabetes.complications)
   plt <- cifplot(
@@ -54,7 +54,7 @@ test_that("cifplot(printEachEvent=TRUE) returns two panels and passes y labels",
     data = diabetes.complications,
     outcome.type = "COMPETING-RISK",
     code.events = c(1, 2, 0),
-    printEachEvent = TRUE,
+    panel.per.event = TRUE,
     label.y = "Left axis"
   )
 

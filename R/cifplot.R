@@ -15,11 +15,11 @@
 #' -   `outcome.type = "COMPETING-RISK"` → Aalen–Johansen estimator
 #'
 #' **Data visualization**
-#' -   `addConfidenceInterval` adds confidence intervals on the ggplot2-based plot
-#' -   `addCompetingRiskMark` and `addIntercurrentEventMark` add symbols to describe competing risks or intercurrent events in addition to conventional censoring marks with `addCensorMark`
-#' -   `addRiskTable` adds numbers at risk
-#' -   `addEstimateTable` adds estimates and 95% confidence interval
-#' -   `addQuantileLine` adds a line that represents median or quantile
+#' -   `add.conf` adds confidence intervals on the ggplot2-based plot
+#' -   `add.competing.risk.mark` and `add.intercurrent.event.mark` add symbols to describe competing risks or intercurrent events in addition to conventional censoring marks with `add.censor.mark`
+#' -   `add.risktable` adds numbers at risk
+#' -   `add.estimate.table` adds estimates and 95% confidence interval
+#' -   `add.quantile` adds a line that represents the median or a selected quantile level
 #'
 #' **Plot customization**
 #' -   `type.y` chooses y-axis. (`"surv"` for survival curves and `"risk"` for CIFs)
@@ -27,9 +27,9 @@
 #' -   `style` specifies the appearance of plot (`"CLASSIC"`, `"BOLD"`, `"FRAMED"`, `"GRID"`, `"GRAY"` or `"GGSURVFIT"`)
 #'
 #' **Panel display**
-#' -   `printEachVar` produces multiple survival/CIF curves per stratification variable specified in the formula
-#' -   `printEachEvent` produces CIF curves for each event type
-#' -   `printCensoring` produces KM-type curves for (event, censor) and (censor, event) so that censoring patterns can be inspected
+#' -   `panel.per.variable` produces multiple survival/CIF curves per stratification variable specified in the formula
+#' -   `panel.per.event` produces CIF curves for each event type
+#' -   `panel.censoring` produces KM-type curves for (event, censor) and (censor, event) so that censoring patterns can be inspected
 #' -   `panel.mode` uses automatic panel mode
 #'
 #' @inheritParams cif-stat-arguments
@@ -40,18 +40,18 @@
 #'   The right-hand side specifies the stratification variable.
 #' @param code.events Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
 #'   When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
-#'   (primarily used when \code{cifpanel()} is called or when \code{printEachEvent = TRUE}).
-#' @param addRiskTable Logical; if \code{TRUE}, adds a numbers-at-risk table under the plot.
+#'   (primarily used when \code{cifpanel()} is called or when \code{panel.per.event = TRUE}).
+#' @param add.risktable Logical; if \code{TRUE}, adds a numbers-at-risk table under the plot.
 #'   Default \code{TRUE}. **Note:** when a panel mode is active, tables are suppressed.
-#' @param addEstimateTable Logical; if \code{TRUE}, adds a table of estimates and CIs.
+#' @param add.estimate.table Logical; if \code{TRUE}, adds a table of estimates and CIs.
 #'   Default \code{FALSE}. **Note:** when a panel mode is active, tables are suppressed.
-#' @param symbol.risktable Character specifying the symbol used in the risk table to denote
+#' @param symbol.risk.table Character specifying the symbol used in the risk table to denote
 #'   strata: \code{"square"}, \code{"circle"}, or \code{"triangle"} (default \code{"square"}).
-#' @param font.size.risktable Numeric font size for texts in risk / estimate tables (default \code{3}).
+#' @param font.size.risk.table Numeric font size for texts in risk / estimate tables (default \code{3}).
 #' @param label.strata Character vector or named character vector specifying labels for strata.
 #'   Names (if present) must match the (re-ordered) underlying strata levels.
 #'   **Note:** when any of the panel modes is active
-#'   (\code{printEachVar = TRUE}, \code{printEachEvent = TRUE}, \code{printCensoring = TRUE},
+#'   (\code{panel.per.variable = TRUE}, \code{panel.per.event = TRUE}, \code{panel.censoring = TRUE},
 #'   or \code{panel.mode = "auto"} and it actually dispatches to a panel),
 #'   strata labels are suppressed to avoid duplicated legends across sub-plots.
 #' @param level.strata Optional character vector giving the full set of expected strata levels.
@@ -61,31 +61,31 @@
 #'   in the legend / risk table. Specify the levels of strata. Levels not listed are dropped.
 #' @param legend.position Character specifying the legend position:
 #'   \code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, or \code{"none"} (default \code{"top"}).
-#' @param printEachEvent Logical. **Explicit panel mode.** If \code{TRUE} and
+#' @param panel.per.event Logical. **Explicit panel mode.** If \code{TRUE} and
 #'   \code{outcome.type == "COMPETING-RISK"}, \code{cifplot()} internally calls \code{cifpanel()}
 #'   to display two event-specific CIFs side-by-side (event 1 and event 2) using
 #'   reversed \code{code.events}. Ignored for non-competing-risk outcomes.
-#' @param printCensoring Logical. **Explicit panel mode.** If \code{TRUE} and
+#' @param panel.censoring Logical. **Explicit panel mode.** If \code{TRUE} and
 #'   \code{outcome.type == "SURVIVAL"}, \code{cifplot()} internally calls \code{cifpanel()}
 #'   to display KM-type curves for \code{(event, censor)} and \code{(censor, event)} so that
 #'   censoring patterns can be inspected.
-#' @param printEachVar Logical. **Explicit panel mode.** If \code{TRUE} and the right-hand side
+#' @param panel.per.variable Logical. **Explicit panel mode.** If \code{TRUE} and the right-hand side
 #'   of the formula has multiple covariates (e.g. \code{~ a + b + c}), the function produces
 #'   a panel where each variable in RHS is used once as the stratification factor.
 #' @param panel.mode Character specifying **Automatic panel mode.** If \code{"auto"} and none of
-#'   \code{printEachVar}, \code{printEachEvent}, \code{printCensoring} has been set to \code{TRUE},
+#'   \code{panel.per.variable}, \code{panel.per.event}, \code{panel.censoring} has been set to \code{TRUE},
 #'   the function chooses a suitable panel mode automatically:
-#'   (i) if the formula RHS has 2+ variables, it behaves like \code{printEachVar = TRUE};
+#'   (i) if the formula RHS has 2+ variables, it behaves like \code{panel.per.variable = TRUE};
 #'   (ii) otherwise, if \code{outcome.type == "COMPETING-RISK"}, it behaves like
-#'   \code{printEachEvent = TRUE}; (iii) otherwise, if \code{outcome.type == "SURVIVAL"}, it
-#'   behaves like \code{printCensoring = TRUE}. If a panel mode is explicitly specified,
+#'   \code{panel.per.event = TRUE}; (iii) otherwise, if \code{outcome.type == "SURVIVAL"}, it
+#'   behaves like \code{panel.censoring = TRUE}. If a panel mode is explicitly specified,
 #'   \code{panel.mode} is ignored.
 #'
 #' @details
 #' This function calls an internal helper \code{call_ggsurvfit()} which adds confidence intervals,
 #' risk table, censoring marks, and optional competing-risk and intercurrent-event marks.
 #'
-#' When \code{printEachEvent = TRUE}, two panels are created with
+#' When \code{panel.per.event = TRUE}, two panels are created with
 #' \code{code.events = list(c(e1, e2, c), c(e2, e1, c))}, where
 #' \code{code.events = c(e1, e2, c)} is the input coding for event1, event2, and censoring.
 #' Common legend is collected by default (\code{legend.collect = TRUE}).
@@ -104,16 +104,16 @@
 #'
 #' | Argument | Description | Default |
 #' |---|---|---|
-#' | `addConfidenceInterval` | Add confidence interval ribbon. | `TRUE` |
-#' | `addRiskTable` | Add numbers-at-risk table below the plot. | `TRUE` |
-#' | `addEstimateTable` | Add estimates and confidence intervals table. | `FALSE` |
-#' | `symbol.risktable` |  Symbol for strata in risk / estimate tables | `"square"` |
-#' | `font.size.risktable` |  Font size for texts in risk / estimate tables | `3` |
-#' | `addCensorMark` | Add censoring marks. | `TRUE` |
-#' | `addCompetingRiskMark` | Add marks for event2 of "COMPETING-RISK" outcome. | `FALSE` |
-#' | `addIntercurrentEventMark` | Add intercurrent event marks at user-specified times. | `FALSE` |
-#' | `addQuantileLine` | Add quantile lines. | `FALSE` |
-#' | `quantile` | Quantile for `addQuantileLine`. | `0.5` |
+#' | `add.conf` | Add confidence interval ribbon. | `TRUE` |
+#' | `add.risktable` | Add numbers-at-risk table below the plot. | `TRUE` |
+#' | `add.estimate.table` | Add estimates and confidence intervals table. | `FALSE` |
+#' | `symbol.risk.table` |  Symbol for strata in risk / estimate tables | `"square"` |
+#' | `font.size.risk.table` |  Font size for texts in risk / estimate tables | `3` |
+#' | `add.censor.mark` | Add censoring marks. | `TRUE` |
+#' | `add.competing.risk.mark` | Add marks for event2 of "COMPETING-RISK" outcome. | `FALSE` |
+#' | `add.intercurrent.event.mark` | Add intercurrent event marks at user-specified times. | `FALSE` |
+#' | `add.quantile` | Add quantile reference lines. | `FALSE` |
+#' | `level.quantile` | Quantile level for `add.quantile`. | `0.5` |
 #'
 #' #### Time for marks
 #'
@@ -137,12 +137,12 @@
 #'
 #' | Argument | Description |
 #' |---|---|
-#' | `printEachVar` | One panel per stratification variable |
-#' | `printEachEvent` | For competing risks, show CIFs of event 1 and event 2 |
-#' | `printCensoring` | For survival, show (event, censor) vs (censor, event) |
-#' | `panel.mode` with 2+ stratification variables | Behave like `printEachVar` |
-#' | `panel.mode` with outcome.type = "COMPETING-RISK" | Behave like `printEachEvent` |
-#' | `panel.mode` with outcome.type = "SURVIVAL" | Behave like `printCensoring` |
+#' | `panel.per.variable` | One panel per stratification variable |
+#' | `panel.per.event` | For competing risks, show CIFs of event 1 and event 2 |
+#' | `panel.censoring` | For survival, show (event, censor) vs (censor, event) |
+#' | `panel.mode` with 2+ stratification variables | Behave like `panel.per.variable` |
+#' | `panel.mode` with outcome.type = "COMPETING-RISK" | Behave like `panel.per.event` |
+#' | `panel.mode` with outcome.type = "SURVIVAL" | Behave like `panel.censoring` |
 #'
 #' #### Axes and legend
 #'
@@ -150,7 +150,7 @@
 #' |---|---|---|
 #' | `limits.x`, `limits.y` | Axis limits (`c(min, max)`) | Auto |
 #' | `breaks.x`, `breaks.y` | Tick breaks for x and y axes | Auto |
-#' | `use_coord_cartesian` | For zooming use `coord_cartesian()` | `FALSE` |
+#' | `use.coord.cartesian` | For zooming use `coord_cartesian()` | `FALSE` |
 #' | `legend.position` |`"top"`, `"right"`, `"bottom"`, `"left"`, `"none"` | `"top"` |
 #'
 #' #### Export
@@ -168,7 +168,7 @@
 #'   For ADaM-style data, use `code.event1 = 0`, `code.censoring = 1`.
 #' - Per-stratum time lists should have names identical to plotted strata labels.
 
-#' @return A \code{ggplot} object. When \code{printEachVar = TRUE}, a \pkg{patchwork}
+#' @return A \code{ggplot} object. When \code{panel.per.variable = TRUE}, a \pkg{patchwork}
 #'   object is returned with an attribute \code{attr(x, "plots")} containing the
 #'   individual \code{ggplot} panels.
 #'
@@ -181,7 +181,7 @@
 #' cifplot(Event(t,epsilon) ~ fruitq,
 #'         data = diabetes.complications,
 #'         outcome.type="COMPETING-RISK",
-#'         addRiskTable = FALSE,
+#'         add.risktable = FALSE,
 #'         label.y='CIF of diabetic retinopathy',
 #'         label.x='Years from registration')
 #'
@@ -220,28 +220,28 @@ cifplot <- function(
     limits.y                      = NULL,
     breaks.x                      = NULL,
     breaks.y                      = NULL,
-    use_coord_cartesian           = FALSE,
-    addConfidenceInterval         = TRUE,
-    addRiskTable                  = TRUE,
-    addEstimateTable              = FALSE,
-    symbol.risktable              = "square",
-    font.size.risktable           = 3,
-    addCensorMark                 = TRUE,
+    use.coord.cartesian           = FALSE,
+    add.conf         = TRUE,
+    add.risktable                  = TRUE,
+    add.estimate.table              = FALSE,
+    symbol.risk.table              = "square",
+    font.size.risk.table           = 3,
+    add.censor.mark                 = TRUE,
     shape.censor.mark             = 3,
     size.censor.mark              = 2,
-    addCompetingRiskMark          = FALSE,
+    add.competing.risk.mark          = FALSE,
     competing.risk.time           = list(),
     shape.competing.risk.mark     = 16,
     size.competing.risk.mark      = 2,
-    addIntercurrentEventMark      = FALSE,
+    add.intercurrent.event.mark      = FALSE,
     intercurrent.event.time       = list(),
     shape.intercurrent.event.mark = 1,
     size.intercurrent.event.mark  = 2,
-    addQuantileLine               = FALSE,
-    quantile                      = 0.5,
-    printEachEvent                = FALSE,
-    printCensoring                = FALSE,
-    printEachVar                  = FALSE,
+    add.quantile               = FALSE,
+    level.quantile                      = 0.5,
+    panel.per.event                = FALSE,
+    panel.censoring                = FALSE,
+    panel.per.variable                  = FALSE,
     panel.mode                    = "auto",
     rows.columns.panel            = NULL,
     style                         = "CLASSIC",
@@ -267,19 +267,19 @@ cifplot <- function(
 ) {
   dots <- list(...)
 
-  print_panel <- isTRUE(printEachVar) || isTRUE(printEachEvent) || isTRUE(printCensoring)
+  print_panel <- isTRUE(panel.per.variable) || isTRUE(panel.per.event) || isTRUE(panel.censoring)
   if (print_panel) {
     font.size <- font.size/2
     if (!is.null(label.strata)) {
       .warn("panel_disables_labelstrata")
     }
-    if (isTRUE(addRiskTable) || isTRUE(addEstimateTable)) {
+    if (isTRUE(add.risktable) || isTRUE(add.estimate.table)) {
       .warn("panel_disables_tables")
     }
     label.strata     <- NULL
     legend.position  <- "none"
-    addRiskTable     <- FALSE
-    addEstimateTable <- FALSE
+    add.risktable     <- FALSE
+    add.estimate.table <- FALSE
   }
 
   infos <- cifplot_build_info(
@@ -297,30 +297,30 @@ cifplot <- function(
     limits.y                      = limits.y,
     breaks.x                      = breaks.x,
     breaks.y                      = breaks.y,
-    use_coord_cartesian           = use_coord_cartesian,
+    use.coord.cartesian           = use.coord.cartesian,
 
-    addConfidenceInterval         = addConfidenceInterval,
-    addRiskTable                  = addRiskTable,
-    symbol.risktable              = symbol.risktable,
-    addEstimateTable              = addEstimateTable,
-    font.size.risktable           = font.size.risktable,
-    addCensorMark                 = addCensorMark,
+    add.conf         = add.conf,
+    add.risktable                  = add.risktable,
+    symbol.risk.table              = symbol.risk.table,
+    add.estimate.table              = add.estimate.table,
+    font.size.risk.table           = font.size.risk.table,
+    add.censor.mark                 = add.censor.mark,
     shape.censor.mark             = shape.censor.mark,
     size.censor.mark              = size.censor.mark,
-    addCompetingRiskMark          = addCompetingRiskMark,
+    add.competing.risk.mark          = add.competing.risk.mark,
     competing.risk.time           = competing.risk.time,
     shape.competing.risk.mark     = shape.competing.risk.mark,
     size.competing.risk.mark      = size.competing.risk.mark,
-    addIntercurrentEventMark      = addIntercurrentEventMark,
+    add.intercurrent.event.mark      = add.intercurrent.event.mark,
     intercurrent.event.time       = intercurrent.event.time,
     shape.intercurrent.event.mark = shape.intercurrent.event.mark,
     size.intercurrent.event.mark  = size.intercurrent.event.mark,
-    addQuantileLine               = addQuantileLine,
-    quantile                      = quantile,
+    add.quantile               = add.quantile,
+    level.quantile                      = level.quantile,
 
-    printEachEvent                = printEachEvent,
-    printCensoring                = printCensoring,
-    printEachVar                  = printEachVar,
+    panel.per.event                = panel.per.event,
+    panel.censoring                = panel.censoring,
+    panel.per.variable                  = panel.per.variable,
     rows.columns.panel            = rows.columns.panel,
 
     style           = style,
@@ -377,9 +377,9 @@ cifplot <- function(
     }
   }
 
-  .assert(!(isTRUE(panel.info$printEachVar) && isTRUE(panel.info$printEachEvent) && isTRUE(panel.info$printCensoring)),
+  .assert(!(isTRUE(panel.info$panel.per.variable) && isTRUE(panel.info$panel.per.event) && isTRUE(panel.info$panel.censoring)),
           "incompatible_flags",
-          which = "printEachVar, printEachEvent and printCensoring")
+          which = "panel.per.variable, panel.per.event and panel.censoring")
 
   if (!inherits(formula_or_fit, "survfit")) {
     outcome.type <- util_check_outcome_type(outcome.type, formula=formula_or_fit, data = data)
@@ -395,7 +395,7 @@ cifplot <- function(
     code.censoring <- ce[3L]
   }
 
-  if (isTRUE(addCompetingRiskMark) && length(competing.risk.time) == 0) {
+  if (isTRUE(add.competing.risk.mark) && length(competing.risk.time) == 0) {
     visual.info$competing.risk.time <- extract_time_to_event(
       formula_or_fit, data=data, subset.condition=subset.condition, na.action=na.action, which_event="event2",
       code.event1=code.event1, code.event2=code.event2, code.censoring=code.censoring)
@@ -409,18 +409,18 @@ cifplot <- function(
     panel.mode     = panel.mode
   )
 
-  panel.info$printEachVar     <- identical(panel_mode, "each_var")
-  panel.info$printEachEvent   <- identical(panel_mode, "each_event")
-  panel.info$printCensoring   <- identical(panel_mode, "censoring")
+  panel.info$panel.per.variable     <- identical(panel_mode, "each_var")
+  panel.info$panel.per.event   <- identical(panel_mode, "each_event")
+  panel.info$panel.censoring   <- identical(panel_mode, "censoring")
 
-  if (isTRUE(panel.info$printEachVar)) {
+  if (isTRUE(panel.info$panel.per.variable)) {
     style.info$legend.position <- "none"
-    .assert(!inherits(formula_or_fit, "survfit"), "need_formula_for_printEachVar")
+    .assert(!inherits(formula_or_fit, "survfit"), "need_formula_for_panel.per.variable")
     .assert(inherits(formula_or_fit, "formula"),  "formula_must_be")
     .assert(!is.null(data),                       "need_data")
 
     out_pv <- do.call(
-      plot_printEachVar,
+      plot_panel.per.variable,
       c(list(
         formula          = formula_or_fit,
         data             = data,
@@ -442,12 +442,12 @@ cifplot <- function(
     if (!is.null(out_pv)) return(out_pv)
   }
 
-  if (isTRUE(panel.info$printEachEvent)) {
+  if (isTRUE(panel.info$panel.per.event)) {
     style.info$legend.position <- "none"
     if (inherits(formula_or_fit, "survfit")) {
-      warning("printEachEvent=TRUE requires a formula interface; falling back to single-plot.")
+      warning("panel.per.event=TRUE requires a formula interface; falling back to single-plot.")
     } else {
-      out_pe <- plot_printEachEvent(
+      out_pe <- plot_panel.per.event(
         formula            = formula_or_fit,
         data               = data,
         axis.info          = axis.info,
@@ -469,12 +469,12 @@ cifplot <- function(
     }
   }
 
-  if (isTRUE(panel.info$printCensoring)) {
+  if (isTRUE(panel.info$panel.censoring)) {
     style.info$legend.position <- "none"
     if (inherits(formula_or_fit, "survfit")) {
-      warning("printCensoring=TRUE requires a formula interface; falling back to single-plot.")
+      warning("panel.censoring=TRUE requires a formula interface; falling back to single-plot.")
     } else {
-      out_pe <- plot_printCensoring(
+      out_pe <- plot_panel.censoring(
         formula            = formula_or_fit,
         data               = data,
         axis.info          = axis.info,
@@ -524,7 +524,7 @@ cifplot <- function(
   out_plot
 }
 
-plot_printEachVar <- function(
+plot_panel.per.variable <- function(
     formula,
     data,
     weights = NULL,
@@ -545,11 +545,11 @@ plot_printEachVar <- function(
   dots <- list(...)
 
   if (!inherits(formula, "formula")) {
-    warning("printEachVar=TRUE requires a formula; falling back to single-plot.")
+    warning("panel.per.variable=TRUE requires a formula; falling back to single-plot.")
     return(NULL)
   }
   if (is.null(data)) {
-    warning("printEachVar=TRUE requires `data`; falling back to single-plot.")
+    warning("panel.per.variable=TRUE requires `data`; falling back to single-plot.")
     return(NULL)
   }
 
@@ -585,9 +585,9 @@ plot_printEachVar <- function(
     nrow <- ceiling(K / ncol)
     panel.info$rows.columns.panel <- c(nrow, ncol)
   }
-  panel.info$printEachVar   <- FALSE
-  panel.info$printEachEvent <- FALSE
-  panel.info$printCensoring <- FALSE
+  panel.info$panel.per.variable   <- FALSE
+  panel.info$panel.per.event <- FALSE
+  panel.info$panel.censoring <- FALSE
   if (is.null(panel.info$title.plot)) {
     panel.info$title.plot <- vars
   }
@@ -621,7 +621,7 @@ plot_printEachVar <- function(
   res
 }
 
-plot_printEachEvent <- function(
+plot_panel.per.event <- function(
     formula,
     data,
     axis.info,
@@ -640,7 +640,7 @@ plot_printEachEvent <- function(
     na.action = na.omit
 ) {
   if (is.null(outcome.type) || outcome.type != "COMPETING-RISK") {
-    warning("printEachEvent=TRUE is only for COMPETING-RISK; falling back to single-plot.")
+    warning("panel.per.event=TRUE is only for COMPETING-RISK; falling back to single-plot.")
     return(NULL)
   }
 
@@ -721,7 +721,7 @@ plot_printEachEvent <- function(
   panel_out
 }
 
-plot_printCensoring <- function(
+plot_panel.censoring <- function(
     formula,
     data,
     axis.info,
@@ -740,7 +740,7 @@ plot_printCensoring <- function(
     na.action = na.omit
 ) {
   if (is.null(outcome.type) || outcome.type != "SURVIVAL") {
-    warning("printCensoring=TRUE is only for SURVIVAL outcome; falling back to single-plot.")
+    warning("panel.censoring=TRUE is only for SURVIVAL outcome; falling back to single-plot.")
     return(NULL)
   }
 
@@ -811,10 +811,10 @@ cifplot_single <- function(
     ggsave.info      = NULL,
     ...
 ) {
-  n_panel_flags <- sum(isTRUE(panel.info$printEachVar), isTRUE(panel.info$printEachEvent), isTRUE(panel.info$printCensoring))
+  n_panel_flags <- sum(isTRUE(panel.info$panel.per.variable), isTRUE(panel.info$panel.per.event), isTRUE(panel.info$panel.censoring))
   .assert(n_panel_flags <= 1,
           "incompatible_flags",
-          which = "printEachVar, printEachEvent, printCensoring")
+          which = "panel.per.variable, panel.per.event, panel.censoring")
 
   dots         <- list(...)
 
@@ -878,34 +878,34 @@ cifplot_single <- function(
     limits.y          = NULL,
     breaks.x          = NULL,
     breaks.y          = NULL,
-    use_coord_cartesian = FALSE
+    use.coord.cartesian = FALSE
   ), axis.info)
 
   visual.info <- panel_modify_list(list(
-    addConfidenceInterval         = TRUE,
-    addRiskTable                  = FALSE,
-    addEstimateTable              = FALSE,
-    symbol.risktable              = "square",
-    font.size.risktable           = 3,
-    addCensorMark                 = TRUE,
+    add.conf         = TRUE,
+    add.risktable                  = FALSE,
+    add.estimate.table              = FALSE,
+    symbol.risk.table              = "square",
+    font.size.risk.table           = 3,
+    add.censor.mark                 = TRUE,
     shape.censor.mark             = 3,
     size.censor.mark              = 2,
-    addCompetingRiskMark          = FALSE,
+    add.competing.risk.mark          = FALSE,
     competing.risk.time           = list(),
     shape.competing.risk.mark     = 16,
     size.competing.risk.mark      = 2,
-    addIntercurrentEventMark      = FALSE,
+    add.intercurrent.event.mark      = FALSE,
     intercurrent.event.time       = list(),
     shape.intercurrent.event.mark = 1,
     size.intercurrent.event.mark  = 2,
-    addQuantileLine               = FALSE,
-    quantile                      = 0.5
+    add.quantile               = FALSE,
+    level.quantile                      = 0.5
   ), visual.info)
 
   panel.info <- panel_modify_list(list(
-    printEachEvent     = FALSE,
-    printCensoring     = FALSE,
-    printEachVar       = FALSE,
+    panel.per.event     = FALSE,
+    panel.censoring     = FALSE,
+    panel.per.variable       = FALSE,
     rows.columns.panel = NULL
   ), panel.info)
 
@@ -941,30 +941,30 @@ cifplot_single <- function(
   limits.y            <- axis.info$limits.y
   breaks.x            <- axis.info$breaks.x
   breaks.y            <- axis.info$breaks.y
-  use_coord_cartesian <- isTRUE(axis.info$use_coord_cartesian)
+  use.coord.cartesian <- isTRUE(axis.info$use.coord.cartesian)
 
-  addConfidenceInterval        <- visual.info$addConfidenceInterval
-  addRiskTable                 <- visual.info$addRiskTable
-  addEstimateTable             <- visual.info$addEstimateTable
-  symbol.risktable             <- visual.info$symbol.risktable
-  font.size.risktable          <- visual.info$font.size.risktable
-  addCensorMark                <- visual.info$addCensorMark
+  add.conf        <- visual.info$add.conf
+  add.risktable                 <- visual.info$add.risktable
+  add.estimate.table             <- visual.info$add.estimate.table
+  symbol.risk.table             <- visual.info$symbol.risk.table
+  font.size.risk.table          <- visual.info$font.size.risk.table
+  add.censor.mark                <- visual.info$add.censor.mark
   shape.censor.mark            <- visual.info$shape.censor.mark
   size.censor.mark             <- visual.info$size.censor.mark
-  addCompetingRiskMark         <- visual.info$addCompetingRiskMark
+  add.competing.risk.mark         <- visual.info$add.competing.risk.mark
   competing.risk.time          <- visual.info$competing.risk.time
   shape.competing.risk.mark    <- visual.info$shape.competing.risk.mark
   size.competing.risk.mark     <- visual.info$size.competing.risk.mark
-  addIntercurrentEventMark     <- visual.info$addIntercurrentEventMark
+  add.intercurrent.event.mark     <- visual.info$add.intercurrent.event.mark
   intercurrent.event.time      <- visual.info$intercurrent.event.time
   shape.intercurrent.event.mark<- visual.info$shape.intercurrent.event.mark
   size.intercurrent.event.mark <- visual.info$size.intercurrent.event.mark
-  addQuantileLine              <- visual.info$addQuantileLine
-  quantile                     <- visual.info$quantile
+  add.quantile              <- visual.info$add.quantile
+  level.quantile                     <- visual.info$level.quantile
 
-  printEachEvent     <- isTRUE(panel.info$printEachEvent)
-  printCensoring     <- isTRUE(panel.info$printCensoring)
-  printEachVar       <- isTRUE(panel.info$printEachVar)
+  panel.per.event     <- isTRUE(panel.info$panel.per.event)
+  panel.censoring     <- isTRUE(panel.info$panel.censoring)
+  panel.per.variable       <- isTRUE(panel.info$panel.per.variable)
   rows.columns.panel <- panel.info$rows.columns.panel
 
   style           <- style.info$style
@@ -1019,8 +1019,8 @@ cifplot_single <- function(
     if (is.null(data)) stop("When `formula` is a formula, `data` must be provided.")
     norm_inputs <- plot_normalize_formula_data(formula_or_fit, data)
     data_working <- norm_inputs$data
-    #    if (!isTRUE(printEachEvent) &&
-    #        isTRUE(addCompetingRiskMark) &&
+    #    if (!isTRUE(panel.per.event) &&
+    #        isTRUE(add.competing.risk.mark) &&
     #        length(competing.risk.time) == 0) {
     #      competing.risk.time <- extract_time_to_event(
     #        formula_or_fit, data = data_working, which_event = "event2",
@@ -1057,22 +1057,22 @@ cifplot_single <- function(
 #' @param out_readSurv (optional) List returned by your \code{util_read_surv()} to auto-set x limits.
 #' @param conf.type Character transformation for CI on the probability scale (default \code{"arcsine-square root"}).
 
-#' @param addConfidenceInterval Logical add \code{add_confidence_interval()} to plot. It calls geom_ribbon() (default \code{TRUE}).
-#' @param addRiskTable Logical add \code{add_risktable(risktable_stats="n.risk")} to plot (default \code{TRUE}).
-#' @param addEstimateTable Logical add \code{add_risktable(risktable_stats="estimate (conf.low, conf.high)")} to plot (default \code{FALSE}).
-#' @param addCensorMark Logical add \code{add_censor_mark()} to plot. It calls geom_point() (default \code{TRUE}).
+#' @param add.conf Logical add \code{add_confidence_interval()} to plot. It calls geom_ribbon() (default \code{TRUE}).
+#' @param add.risktable Logical add \code{add_risktable(risktable_stats="n.risk")} to plot (default \code{TRUE}).
+#' @param add.estimate.table Logical add \code{add_risktable(risktable_stats="estimate (conf.low, conf.high)")} to plot (default \code{FALSE}).
+#' @param add.censor.mark Logical add \code{add_censor_mark()} to plot. It calls geom_point() (default \code{TRUE}).
 #' @param shape.censor.mark Integer point shape for censor marks (default \code{3}).
 #' @param size.censor.mark Numeric point size for censor marks (default \code{2}).
-#' @param addCompetingRiskMark Logical add time marks to describe event2 specified by Event(), usually the competing events. It calls geom_point() (default \code{TRUE}).
+#' @param add.competing.risk.mark Logical add time marks to describe event2 specified by Event(), usually the competing events. It calls geom_point() (default \code{TRUE}).
 #' @param competing.risk.time Named list of numeric vectors (names must be mapped to strata labels).
 #' @param shape.competing.risk.mark Integer point shape for competing-risk marks (default \code{16}).
 #' @param size.competing.risk.mark Numeric point size for competing-risk marks (default \code{2}).
-#' @param addIntercurrentEventMark Logical overlay user-specified time marks per strata calls geom_point() (default \code{TRUE}).
+#' @param add.intercurrent.event.mark Logical overlay user-specified time marks per strata calls geom_point() (default \code{TRUE}).
 #' @param intercurrent.event.time Named list of numeric vectors (names must be mapped to strata labels).
 #' @param shape.intercurrent.event.mark Integer point shape for intercurrent-event marks (default \code{1}).
 #' @param size.intercurrent.event.mark Numeric point size for intercurrent-event marks (default \code{2}).
-#' @param addQuantileLine Logical add \code{add_quantile()} to plot. It calls geom_segment() (default \code{TRUE}).
-#' @param quantile Numeric specify quantile for \code{add_quantile()} (default \code{0.5}).
+#' @param add.quantile Logical add \code{add_quantile()} to plot. It calls geom_segment() (default \code{TRUE}).
+#' @param level.quantile Numeric quantile level passed to \code{add_quantile()} (default \code{0.5}).
 
 #' @param type.y \code{NULL} (survival) or \code{"risk"} (display \code{1 - survival} i.e. CIF).
 #' @param label.x Character x-axis labels (default \code{"Time"}).
@@ -1083,7 +1083,7 @@ cifplot_single <- function(
 #' @param limits.y Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,1)}.
 #' @param breaks.x Numeric vectors for axis breaks (default \code{NULL}).
 #' @param breaks.y Numeric vectors for axis breaks (default \code{NULL}).
-#' @param use_coord_cartesian Logical specify use of coord_cartesian() (default \code{FALSE}).
+#' @param use.coord.cartesian Logical specify use of coord_cartesian() (default \code{FALSE}).
 
 #' @param style Character plot theme controls (default \code{"CLASSIC"}).
 #' @param font.family Character plot theme controls (default \code{"sans"}).
@@ -1124,30 +1124,30 @@ call_ggsurvfit <- function(
   limits.y            <- axis.info$limits.y
   breaks.x            <- axis.info$breaks.x
   breaks.y            <- axis.info$breaks.y
-  use_coord_cartesian <- isTRUE(axis.info$use_coord_cartesian)
+  use.coord.cartesian <- isTRUE(axis.info$use.coord.cartesian)
 
-  addConfidenceInterval         <- visual.info$addConfidenceInterval
-  addRiskTable                  <- visual.info$addRiskTable
-  addEstimateTable              <- visual.info$addEstimateTable
-  symbol.risktable              <- visual.info$symbol.risktable
-  font.size.risktable           <- visual.info$font.size.risktable
-  addCensorMark                 <- visual.info$addCensorMark
+  add.conf         <- visual.info$add.conf
+  add.risktable                  <- visual.info$add.risktable
+  add.estimate.table              <- visual.info$add.estimate.table
+  symbol.risk.table              <- visual.info$symbol.risk.table
+  font.size.risk.table           <- visual.info$font.size.risk.table
+  add.censor.mark                 <- visual.info$add.censor.mark
   shape.censor.mark             <- visual.info$shape.censor.mark
   size.censor.mark              <- visual.info$size.censor.mark
-  addCompetingRiskMark          <- visual.info$addCompetingRiskMark
+  add.competing.risk.mark          <- visual.info$add.competing.risk.mark
   competing.risk.time           <- visual.info$competing.risk.time
   shape.competing.risk.mark     <- visual.info$shape.competing.risk.mark
   size.competing.risk.mark      <- visual.info$size.competing.risk.mark
-  addIntercurrentEventMark      <- visual.info$addIntercurrentEventMark
+  add.intercurrent.event.mark      <- visual.info$add.intercurrent.event.mark
   intercurrent.event.time       <- visual.info$intercurrent.event.time
   shape.intercurrent.event.mark <- visual.info$shape.intercurrent.event.mark
   size.intercurrent.event.mark  <- visual.info$size.intercurrent.event.mark
-  addQuantileLine               <- visual.info$addQuantileLine
-  quantile                      <- visual.info$quantile
+  add.quantile               <- visual.info$add.quantile
+  level.quantile                      <- visual.info$level.quantile
 
-  printEachEvent     <- isTRUE(panel.info$printEachEvent)
-  printCensoring     <- isTRUE(panel.info$printCensoring)
-  printEachVar       <- isTRUE(panel.info$printEachVar)
+  panel.per.event     <- isTRUE(panel.info$panel.per.event)
+  panel.censoring     <- isTRUE(panel.info$panel.censoring)
+  panel.per.variable       <- isTRUE(panel.info$panel.per.variable)
 
   style              <- style.info$style
   palette            <- style.info$palette
@@ -1208,55 +1208,55 @@ call_ggsurvfit <- function(
       y = label.y.user %||% out_cg$label.y
     )
 
-  if (isTRUE(addConfidenceInterval)) {
+  if (isTRUE(add.conf)) {
     p <- p + add_confidence_interval()
   }
-  if (isTRUE(addCensorMark)) {
+  if (isTRUE(add.censor.mark)) {
     p <- p + add_censor_mark(shape = shape.censor.mark, size = size.censor.mark)
   }
-  if (isTRUE(addQuantileLine)) {
-    p <- p + add_quantile(y_value = quantile)
+  if (isTRUE(add.quantile)) {
+    p <- p + add_quantile(y_value = level.quantile)
   }
 
-  apply_add_risktable_strata_symbol <- function (p, symbol.risktable) {
-    if (symbol.risktable=="square") {
+  apply_add_risktable_strata_symbol <- function (p, symbol.risk.table) {
+    if (symbol.risk.table=="square") {
       p <- p + add_risktable_strata_symbol(symbol = "\U25A0", size = 14)
-    } else if (symbol.risktable=="circle") {
+    } else if (symbol.risk.table=="circle") {
       p <- p + add_risktable_strata_symbol(symbol = "\U25CF", size = 14)
-    } else if (symbol.risktable=="triangle") {
+    } else if (symbol.risk.table=="triangle") {
       p <- p + add_risktable_strata_symbol(symbol = "\U25B2", size = 14)
     }
     p
   }
 
-  if (isTRUE(addEstimateTable) && isTRUE(addRiskTable)) {
+  if (isTRUE(add.estimate.table) && isTRUE(add.risktable)) {
     p <- p + add_risktable(
       risktable_stats = c("n.risk", "{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"),
       stats_label     = c("No. at risk", "Estimate (95% CI)"),
       theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size),
       risktable_group = "risktable_stats",
-      size            = font.size.risktable
+      size            = font.size.risk.table
     )
-    p <- apply_add_risktable_strata_symbol(p, symbol.risktable)
-  } else if (isTRUE(addEstimateTable)) {
+    p <- apply_add_risktable_strata_symbol(p, symbol.risk.table)
+  } else if (isTRUE(add.estimate.table)) {
     p <- p + add_risktable(
       risktable_stats = c("{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"),
       stats_label     = c("Estimate (95% CI)"),
       theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size),
-      size            = font.size.risktable
+      size            = font.size.risk.table
     )
-    p <- apply_add_risktable_strata_symbol(p, symbol.risktable)
-  } else if (isTRUE(addRiskTable)) {
+    p <- apply_add_risktable_strata_symbol(p, symbol.risk.table)
+  } else if (isTRUE(add.risktable)) {
     p <- p + add_risktable(
       risktable_stats = c("n.risk"),
       stats_label     = c("No. at risk"),
       theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size),
-      size            = font.size.risktable
+      size            = font.size.risk.table
     )
-    p <- apply_add_risktable_strata_symbol(p, symbol.risktable)
+    p <- apply_add_risktable_strata_symbol(p, symbol.risk.table)
   }
 
-  if (isTRUE(addCompetingRiskMark) && length(competing.risk.time)>0) {
+  if (isTRUE(add.competing.risk.mark) && length(competing.risk.time)>0) {
     p <- plot_draw_marks(
       p, survfit_object,
       competing.risk.time, out_cg$type.y,
@@ -1264,7 +1264,7 @@ call_ggsurvfit <- function(
       size  = size.competing.risk.mark
     )
   }
-  if (isTRUE(addIntercurrentEventMark) && length(intercurrent.event.time)>0) {
+  if (isTRUE(add.intercurrent.event.mark) && length(intercurrent.event.time)>0) {
     p <- plot_draw_marks(
       p, survfit_object,
       intercurrent.event.time, out_cg$type.y,
@@ -1274,7 +1274,7 @@ call_ggsurvfit <- function(
   }
 
   x_max <- plot_make_x_max(survfit_object)
-  if (isTRUE(use_coord_cartesian)) {
+  if (isTRUE(use.coord.cartesian)) {
     if (!is.null(breaks.x)) p <- p + ggplot2::scale_x_continuous(breaks = breaks.x)
     if (!is.null(breaks.y)) p <- p + ggplot2::scale_y_continuous(breaks = breaks.y)
     if (!is.null(limits.x) || !is.null(limits.y)) {
@@ -1358,12 +1358,12 @@ check_ggsurvfit <- function(
   limits.y            <- axis.info$limits.y
   breaks.x            <- axis.info$breaks.x
   breaks.y            <- axis.info$breaks.y
-  use_coord_cartesian <- isTRUE(axis.info$use_coord_cartesian)
+  use.coord.cartesian <- isTRUE(axis.info$use.coord.cartesian)
 
-  addConfidenceInterval         <- visual.info$addConfidenceInterval
-  addCensorMark                 <- visual.info$addCensorMark
-  addCompetingRiskMark          <- visual.info$addCompetingRiskMark
-  addIntercurrentEventMark      <- visual.info$addIntercurrentEventMark
+  add.conf         <- visual.info$add.conf
+  add.censor.mark                 <- visual.info$add.censor.mark
+  add.competing.risk.mark          <- visual.info$add.competing.risk.mark
+  add.intercurrent.event.mark      <- visual.info$add.intercurrent.event.mark
   shape.censor.mark             <- visual.info$shape.censor.mark
   shape.competing.risk.mark     <- visual.info$shape.competing.risk.mark
   shape.intercurrent.event.mark <- visual.info$shape.intercurrent.event.mark
@@ -1373,15 +1373,15 @@ check_ggsurvfit <- function(
   linewidth <- style.info$linewidth
   linetype  <- style.info$linetype
 
-  if (isTRUE(addCensorMark) && isTRUE(addIntercurrentEventMark) &&
+  if (isTRUE(add.censor.mark) && isTRUE(add.intercurrent.event.mark) &&
       identical(shape.censor.mark, shape.intercurrent.event.mark)) {
     .warn("shape_identical", a = "shape.censor.mark", b = "shape.intercurrent.event.mark")
   }
-  if (isTRUE(addCensorMark) && isTRUE(addCompetingRiskMark) &&
+  if (isTRUE(add.censor.mark) && isTRUE(add.competing.risk.mark) &&
       identical(shape.censor.mark, shape.competing.risk.mark)) {
     .warn("shape_identical", a = "shape.censor.mark", b = "shape.competing.risk.mark")
   }
-  if (isTRUE(addCompetingRiskMark) && isTRUE(addIntercurrentEventMark) &&
+  if (isTRUE(add.competing.risk.mark) && isTRUE(add.intercurrent.event.mark) &&
       identical(shape.competing.risk.mark, shape.intercurrent.event.mark)) {
     .warn("shape_identical", a = "shape.competing.risk.mark", b = "shape.intercurrent.event.mark")
   }
@@ -1427,7 +1427,7 @@ check_ggsurvfit <- function(
     if (any(surv < limits.y[1] | surv > limits.y[2], na.rm = TRUE))
       .warn("est_outside_limits_y", arg = "limits.y", a = limits.y[1], b = limits.y[2])
 
-    if (isTRUE(addConfidenceInterval)) {
+    if (isTRUE(add.conf)) {
       if (!is.null(upper) && any(upper < limits.y[1] | upper > limits.y[2], na.rm = TRUE))
         .warn("upper_outside_limits_y", arg = "limits.y", a = limits.y[1], b = limits.y[2])
       if (!is.null(lower) && any(lower < limits.y[1] | lower > limits.y[2], na.rm = TRUE))

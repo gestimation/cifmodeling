@@ -57,7 +57,7 @@
 #' cifplot(out_cifcurve,
 #'         outcome.type = "COMPETING-RISK",
 #'         type.y = "risk",
-#'         addRiskTable = FALSE,
+#'         add.risktable = FALSE,
 #'         label.y = "CIF of diabetic retinopathy",
 #'         label.x = "Years from registration")
 #'

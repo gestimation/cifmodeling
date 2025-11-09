@@ -81,34 +81,34 @@ library(patchwork)
 -   `label.x` Character x-axis labels (default `"Time"`).
 -   `label.y` Character y-axis labels (default internally set to `"Survival"` or `"Cumulative incidence"`).
 -   `label.strata` Character vector of labels for strata.
--   `order.strata` Optional ordering of strata levels. When `printEachVar = TRUE`, supply a named list `list(var = c("L1","L2",...))` for each RHS variable; unmatched levels are dropped. When `printEachVar = FALSE`, supply a character vector `c("L1","L2",...)` that specifies the display order (legend/risktable) of the single stratification factor. Levels not listed are dropped. If `label.strata` is a named vector, its names must match the (re-ordered) levels.
+-   `order.strata` Optional ordering of strata levels. When `panel.per.variable = TRUE`, supply a named list `list(var = c("L1","L2",...))` for each RHS variable; unmatched levels are dropped. When `panel.per.variable = FALSE`, supply a character vector `c("L1","L2",...)` that specifies the display order (legend/risktable) of the single stratification factor. Levels not listed are dropped. If `label.strata` is a named vector, its names must match the (re-ordered) levels.
 -   `limits.x` Numeric length-2 vectors for axis limits. If `NULL` it is internally set to `c(0,max(out_readSurv$t))`.
 -   `limits.y` Numeric length-2 vectors for axis limits. If `NULL` it is internally set to `c(0,1)`.
 -   `breaks.x` Numeric vectors for axis breaks (default `NULL`).
 -   `breaks.y` Numeric vectors for axis breaks (default `NULL`).
--   `use_coord_cartesian` Logical specify use of `coord_cartesian()` (default `FALSE`).
--   `addConfidenceInterval` Logical add `add_confidence_interval()` to plot. It calls `geom_ribbon()` (default `TRUE`).
--   `addRiskTable` Logical add `add_risktable(risktable_stats="n.risk")` to plot (default `TRUE`).
--   `addEstimateTable` Logical add `add_risktable(risktable_stats="estimate (conf.low, conf.high)")` to plot (default `FALSE`).
--   `symbol.risktable` Character specifying the symbol used in the risk table to denote strata: `"square"`, `"circle"`, or `"triangle"` (default `"square"`).
--   `font.size.risktable` Numeric font size for texts in risk / estimate tables (default `3`).
--   `addCensorMark` Logical add `add_censor_mark()` to plot. It calls `geom_point()` (default `TRUE`).
+-   `use.coord.cartesian` Logical specify use of `coord_cartesian()` (default `FALSE`).
+-   `add.conf` Logical add `add_confidence_interval()` to plot. It calls `geom_ribbon()` (default `TRUE`).
+-   `add.risktable` Logical add `add_risktable(risktable_stats="n.risk")` to plot (default `TRUE`).
+-   `add.estimate.table` Logical add `add_risktable(risktable_stats="estimate (conf.low, conf.high)")` to plot (default `FALSE`).
+-   `symbol.risk.table` Character specifying the symbol used in the risk table to denote strata: `"square"`, `"circle"`, or `"triangle"` (default `"square"`).
+-   `font.size.risk.table` Numeric font size for texts in risk / estimate tables (default `3`).
+-   `add.censor.mark` Logical add `add_censor_mark()` to plot. It calls `geom_point()` (default `TRUE`).
 -   `shape.censor.mark` Integer point shape for censor marks (default `3`).
 -   `size.censor.mark` Numeric point size for censor marks (default `2`).
--   `addCompetingRiskMark` Logical add time marks to describe event2 specified by `Event()`, usually the competing events. It calls `geom_point()` (default `TRUE`).
+-   `add.competing.risk.mark` Logical add time marks to describe event2 specified by `Event()`, usually the competing events. It calls `geom_point()` (default `TRUE`).
 -   `competing.risk.time` Named list of numeric vectors (names must be mapped to strata labels).
 -   `shape.competing.risk.mark` Integer point shape for competing-risk marks (default `16`).
 -   `size.competing.risk.mark` Numeric point size for competing-risk marks (default `2`).
--   `addIntercurrentEventMark` Logical overlay user-specified time marks per strata calls `geom_point()` (default `TRUE`).
+-   `add.intercurrent.event.mark` Logical overlay user-specified time marks per strata calls `geom_point()` (default `TRUE`).
 -   `intercurrent.event.time` Named list of numeric vectors (names must be mapped to strata labels).
 -   `shape.intercurrent.event.mark` Integer point shape for intercurrent-event marks (default `1`).
 -   `size.intercurrent.event.mark` Numeric point size for intercurrent-event marks (default `2`).
--   `addQuantileLine` Logical add `add_quantile()` to plot. It calls `geom_segment()` (default `TRUE`).
--   `quantile` Numeric specify quantile for `add_quantile()` (default `0.5`).
--   `printEachEvent` Logical. Explicit panel mode. If `TRUE` and `outcome.type == "COMPETING-RISK"`, `cifplot()` internally calls `cifpanel()` to display two event-specific CIFs side-by-side (event 1 and event 2) using reversed `code.events`. Ignored for non-competing-risk outcomes.
--   `printCensoring` Logical. Explicit panel mode. If `TRUE` and `outcome.type == "SURVIVAL"`, `cifplot()` internally calls `cifpanel()` to display KM-type curves for (event, censor) and (censor, event) so that censoring patterns can be inspected.
--   `printEachVar` Logical. Explicit panel mode. If `TRUE` and the right-hand side of the formula has multiple covariates (e.g. `~ a + b + c`), the function produces a panel where each variable in RHS is used once as the stratification factor.
--   `panel.mode` Character specifying Automatic panel mode. If `"auto"` and none of `printEachVar`, `printEachEvent`, `printCensoring` has been set to `TRUE`, the function chooses a suitable panel mode automatically: (i) if the formula RHS has 2+ variables, it behaves like `printEachVar = TRUE`; (ii) otherwise, if `outcome.type == "COMPETING-RISK"`, it behaves like `printEachEvent = TRUE`; (iii) otherwise, if `outcome.type == "SURVIVAL"`, it behaves like `printCensoring = TRUE`. If a panel mode is explicitly specified, `panel.mode` is ignored.
+-   `add.quantile` Logical add `add_quantile()` to plot. It calls `geom_segment()` (default `TRUE`).
+-   `level.quantile` Numeric quantile level for `add_quantile()` (default `0.5`).
+-   `panel.per.event` Logical. Explicit panel mode. If `TRUE` and `outcome.type == "COMPETING-RISK"`, `cifplot()` internally calls `cifpanel()` to display two event-specific CIFs side-by-side (event 1 and event 2) using reversed `code.events`. Ignored for non-competing-risk outcomes.
+-   `panel.censoring` Logical. Explicit panel mode. If `TRUE` and `outcome.type == "SURVIVAL"`, `cifplot()` internally calls `cifpanel()` to display KM-type curves for (event, censor) and (censor, event) so that censoring patterns can be inspected.
+-   `panel.per.variable` Logical. Explicit panel mode. If `TRUE` and the right-hand side of the formula has multiple covariates (e.g. `~ a + b + c`), the function produces a panel where each variable in RHS is used once as the stratification factor.
+-   `panel.mode` Character specifying Automatic panel mode. If `"auto"` and none of `panel.per.variable`, `panel.per.event`, `panel.censoring` has been set to `TRUE`, the function chooses a suitable panel mode automatically: (i) if the formula RHS has 2+ variables, it behaves like `panel.per.variable = TRUE`; (ii) otherwise, if `outcome.type == "COMPETING-RISK"`, it behaves like `panel.per.event = TRUE`; (iii) otherwise, if `outcome.type == "SURVIVAL"`, it behaves like `panel.censoring = TRUE`. If a panel mode is explicitly specified, `panel.mode` is ignored.
 -   `rows.columns.panel` Optional integer vector `c(nrow, ncol)` controlling the panel layout. If `NULL`, an automatic layout is used.
 -   `style` Character plot theme controls (default `"CLASSIC"`).
 -   `palette` Optional character vector specify color palette, e.g. `palette=c("blue", "cyan", "navy", "green")` (default `NULL`).
@@ -132,7 +132,7 @@ library(patchwork)
 -   `code.event1` Integer code of the event of interest (default `1`).
 -   `code.event2` Integer code of the competing event (default `2`).
 -   `code.censoring` Integer code of censoring (default `0`).
--   `code.events` Optional numeric length-3 vector `c(event1, event2, censoring)`. When supplied, it overrides `code.event1`, `code.event2`, and `code.censoring` (primarily used when `cifpanel()` is called or when `printEachEvent = TRUE`).
+-   `code.events` Optional numeric length-3 vector `c(event1, event2, censoring)`. When supplied, it overrides `code.event1`, `code.event2`, and `code.censoring` (primarily used when `cifpanel()` is called or when `panel.per.event = TRUE`).
 -   `error` Character specifying the method for variance and standard error used internally. For `"SURVIVAL"` typically `"greenwood"`. For `"COMPETING-RISK"` pass options supported by `calculateAalenDeltaSE()` (`"aalen"`, `"delta"`, `"none"`).
 -   `conf.type` Character transformation for CI on the probability scale (default `"arcsine-square root"`).
 -   `conf.int` numeric two-sided confidence level (default `0.95`).
@@ -142,7 +142,7 @@ library(patchwork)
 -   `order.strata` Optional list of character vectors for ordering labels per panel (passed to `cifplot()`).
 -   `limits.x`, `limits.y` Optional vectors/lists of numeric length-2 axis limits per panel.
 -   `breaks.x`, `breaks.y` Optional vectors/lists of axis breaks per panel (forwarded to `breaks.x` / `breaks.y` in `cifplot()`).
--   `addConfidenceInterval`, `addCensorMark`, `addCompetingRiskMark`, `addIntercurrentEventMark`, `addQuantileLine` Optional logical vectors/lists per panel to toggle features in `cifplot()`. If `NULL`, sensible defaults are used (CI/Censor on; others off).
+-   `add.conf`, `add.censor.mark`, `add.competing.risk.mark`, `add.intercurrent.event.mark`, `add.quantile` Optional logical vectors/lists per panel to toggle features in `cifplot()`. If `NULL`, sensible defaults are used (CI/Censor on; others off).
 -   `rows.columns.panel` Integer vector `c(nrow, ncol)` specifying the grid size.
 -   `title.panel`, `subtitle.panel`, `caption.panel` Optional strings for panel annotation.
 -   `tag.panel` Passed to `patchwork::plot_annotation(tag_levels = ...)`.

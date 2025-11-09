@@ -198,6 +198,33 @@ test_that("cifpanel() with two formulas shows per-plot titles", {
   expect_equal(res$plots[[2]]$labels$title, "Plot-x2")
 })
 
+test_that("panel flags work", {
+  skip_on_cran()
+  skip_if_not_installed("survival")
+  skip_if_not_installed("ggsurvfit")
+  skip_if_not_installed("patchwork")
+
+  data(diabetes.complications)
+
+  f1 <- Event(t, epsilon) ~ fruitq
+  f2 <- Event(t, epsilon) ~ sex
+
+  res <- cifpanel(
+    formulas           = list(f1, f2),
+    data               = diabetes.complications,
+    outcome.type       = "COMPETING-RISK",
+    panel.per.event    = TRUE,
+    panel.censoring    = FALSE,
+    panel.per.variable = TRUE,
+    print.panel        = FALSE
+  )
+
+  expect_true(is.list(res))
+  expect_true(
+    inherits(res$out_patchwork, "patchwork") || inherits(res$out_patchwork, "gg")
+  )
+})
+
 test_that("cifpanel() applies panel-level tag_levels", {
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
@@ -223,7 +250,7 @@ test_that("cifpanel() applies panel-level tag_levels", {
   expect_equal(ann$tag_levels, "A")
 })
 
-test_that("cifplot(printEachEvent=TRUE) creates 2-event panel", {
+test_that("cifplot(panel.per.event=TRUE) creates 2-event panel", {
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
 
@@ -238,8 +265,8 @@ test_that("cifplot(printEachEvent=TRUE) creates 2-event panel", {
     data             = df,
     outcome.type     = "COMPETING-RISK",
     code.events      = c(1, 2, 0),
-    printEachEvent   = TRUE,
-    addRiskTable     = FALSE,
+    panel.per.event   = TRUE,
+    add.risktable     = FALSE,
     label.y          = c("Cumulative incidence of interest", "Cumulative incidence of competing risk"),
     print.panel      = FALSE
   )
