@@ -154,19 +154,23 @@ panel_strip_overrides_from_dots <- function(dots, override_names) {
   if (length(override_names) == 0L) return(dots)
   dots[setdiff(names(dots), override_names)]
 }
+
 panel_is_surv <- function(x) {
-  x <- toupper(as.character(x %||% ""))
-  x %in% c("S", "survival")
+  x <- tolower(as.character(x %||% ""))
+  x %in% c("s", "survival")
 }
+
 panel_is_comp <- function(x) {
-  x <- toupper(as.character(x %||% ""))
-  x %in% c("C", "competing-risk", "COMPETING_RISK", "COMPETINGRISK")
+  x <- tolower(as.character(x %||% ""))
+  x %in% c("c", "competing-risk", "competing_risk", "competingrisk")
 }
+
 panel_norm_outcome <- function(x) {
-  if (panel_is_surv(x)) return("S")
-  if (panel_is_comp(x)) return("C")
-  stop("Unknown outcome.type: ", x, " (use 'S'/'SURVIVAL' or 'C'/'COMPETING-RISK').")
+  if (panel_is_surv(x)) return("s")
+  if (panel_is_comp(x)) return("c")
+  stop("Unknown outcome.type: ", x, " (use 's'/'survival' or 'c'/'competing-risk').")
 }
+
 panel_validate_code_events <- function(code_events_list, outcome_flags) {
   stopifnot(length(code_events_list) == length(outcome_flags))
   for (i in seq_along(code_events_list)) {

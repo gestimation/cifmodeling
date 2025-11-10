@@ -300,21 +300,21 @@ calculateAJ <- function(data) {
 }
 
 curve_check_error <- function(x, outcome.type) {
-  ot <- toupper(as.character(outcome.type))
-  out <- if (is.null(x)) if (ot == "survival") "greenwood" else "delta" else tolower(x)
+  ot <- util_check_outcome_type(x = outcome.type, auto_message = FALSE)
+  choices <- switch(ot,
+                    "survival"          = c("greenwood", "tsiatis", "jackknife"),
+                    "competing-risk"    = c("aalen", "delta", "jackknife"),
+                    stop(sprintf("Invalid outcome.type: %s", outcome.type), call. = FALSE)
+  )
+  fallback <- if (ot == "survival") "greenwood" else "delta"
 
-  if (ot == "survival") {
-    if (!out %in% c("greenwood", "tsiatis", "jackknife")) {
-      warning(.msg$error_surv, call. = FALSE); out <- "greenwood"
-    }
-  } else if (ot == "competing-risk") {
-    if (!out %in% c("aalen", "delta", "jackknife")) {
-      warning(.msg$error_cr, call. = FALSE); out <- "delta"
-    }
-  } else {
-    stop(sprintf("Invalid outcome.type: %s", outcome.type), call. = FALSE)
-  }
-  out
+  if (is.null(x)) return(fallback)
+
+  x_norm <- tolower(as.character(x))
+  if (x_norm %in% choices) return(x_norm)
+
+  warning(sprintf("%s: unsupported error='%s'; falling back to '%s'.", ot, x_norm, fallback), call. = FALSE)
+  return(fallback)
 }
 
 call_calculateAJ_Rcpp <- function(t, epsilon, w = NULL, strata = NULL,

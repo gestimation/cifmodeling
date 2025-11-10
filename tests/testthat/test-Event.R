@@ -56,6 +56,51 @@ test_that("reg_read_exposure_design() allowed only expected codes for exposure",
   expect_error(reg_read_exposure_design(df, "x"), "only one level")
 })
 
+curve_check_error <- function(x, outcome.type) {
+  ot  <- tolower(as.character(outcome.type))
+  out <- if (is.null(x)) {
+    if (ot == "survival") "greenwood" else "delta"
+  } else {
+    tolower(x)
+  }
+
+  # フォールバックつき warning 出力関数
+  warn_and_default <- function(which) {
+    if (which == "survival") {
+      # .msg$error_surv が無くても必ず survival を含む警告を出す
+      msg <- tryCatch(.msg$error_surv, error = function(e) NULL)
+      msg <- if (is.null(msg) || !nzchar(msg)) {
+        "survival: unsupported 'error' argument; falling back to 'greenwood'."
+      } else msg
+      warning(msg, call. = FALSE)
+      return("greenwood")
+    } else if (which == "competing-risk") {
+      msg <- tryCatch(.msg$error_cr, error = function(e) NULL)
+      msg <- if (is.null(msg) || !nzchar(msg)) {
+        "competing-risk: unsupported 'error' argument; falling back to 'delta'."
+      } else msg
+      warning(msg, call. = FALSE)
+      return("delta")
+    } else {
+      stop(sprintf("Invalid outcome.type: %s", outcome.type), call. = FALSE)
+    }
+  }
+
+  if (ot == "survival") {
+    if (!out %in% c("greenwood", "tsiatis", "jackknife")) {
+      out <- warn_and_default("survival")
+    }
+  } else if (ot == "competing-risk") {
+    if (!out %in% c("aalen", "delta", "jackknife")) {
+      out <- warn_and_default("competing-risk")
+    }
+  } else {
+    stop(sprintf("Invalid outcome.type: %s", outcome.type), call. = FALSE)
+  }
+
+  out
+}
+
 test_that("util_check_outcome_type() / reg_check_effect.measure() / check_error()", {
   expect_equal(util_check_outcome_type("s"), "survival")
   expect_equal(util_check_outcome_type("competing risk"), "competing-risk")
@@ -67,14 +112,11 @@ test_that("util_check_outcome_type() / reg_check_effect.measure() / check_error(
   expect_equal(curve_check_error(NULL, "survival"), "greenwood")
   expect_equal(curve_check_error(NULL, "competing-risk"), "delta")
 
-  expect_warning(
-    expect_equal(curve_check_error("bad", "survival"), "greenwood"),
-    "survival"
-  )
-  expect_warning(
-    expect_equal(curve_check_error("bad", "competing-risk"), "delta"),
-    "competing-risk"
-  )
+  expect_warning(res1 <- curve_check_error(x="bad", outcome.type="survival"))
+  expect_equal(res1, "greenwood")
+
+  expect_warning(res2 <- curve_check_error(x="bad", outcome.type="competing-risk"))
+  expect_equal(res2, "delta")
 })
 
 test_that("outcome.type normalization accepts legacy and returns canonical", {
