@@ -75,7 +75,7 @@ Standard error and CIs are provided per \code{conf.type}. Note that some methods
 Core estimation routine that computes a \code{survfit}-compatible object
 from a formula + data interface (\code{Event()} or \code{survival::Surv()} on
 the left-hand side, and a stratification variable on the right-hand side if necessary).
-Use this when you want \strong{numbers only} (KM/AJ, SE, CI and influence function) and
+Use this when you want \strong{numbers only} (KM / CIF + SE + CI) and
 you will plot it yourself (for example with \code{ggsurvfit} or \code{\link{cifplot}}).
 
 \strong{Outcome type and estimator}
@@ -112,10 +112,7 @@ cumulative incidence for \code{code.event1}. The returned \code{$surv} is
 }
 }
 \examples{
-if (requireNamespace("cifmodeling", quietly = TRUE) &&
-             requireNamespace("ggplot2", quietly = TRUE) &&
-             requireNamespace("ggsurvfit", quietly = TRUE) &&
-             requireNamespace("patchwork", quietly = TRUE)) {
+\dontrun{
 data(diabetes.complications)
 out_cifcurve <- cifcurve(Event(t,epsilon) ~ fruitq,
                          data = diabetes.complications,
