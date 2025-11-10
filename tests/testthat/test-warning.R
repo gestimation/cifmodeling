@@ -14,7 +14,6 @@ test_that(".warn: emits simple warning", {
     regexp = "^add.risktable/add.estimate.table are ignored in panel mode",
     fixed  = FALSE
   )
-  # 戻り値は TRUE または NULL を許容（古いビルド互換）
   expect_true(isTRUE(res) || is.null(res))
 })
 
