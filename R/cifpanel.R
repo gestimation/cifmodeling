@@ -4,9 +4,9 @@
 #' \code{cifpanel()} is the panel-building counterpart of \code{cifplot()}.
 #' It takes one or more model formulas (or, alternatively, one formula and several
 #' event-coding specifications) and returns a multi-panel figure, typically as a
-#' \pkg{patchwork} object. Most display options (axis labels, marks, style, ggsave options)
-#' are shared with \code{cifplot()}, but per-panel legends and risk tables are
-#' suppressed to avoid duplicated display.
+#' list that contains \pkg{patchwork} object. Most display options
+#' (axis labels, marks, style, ggsave options) are shared with \code{cifplot()},
+#' but per-panel legends and risk tables are suppressed to avoid duplicated display.
 #'
 #' Panel layout is specified by length-2 vector \code{rows.columns.panel}.
 #' This function can also automatically determine the panel count in the following order:
@@ -193,6 +193,10 @@
 #'   Internal lists used for programmatic control. Not intended for direct user input.
 #'
 #' @examples
+#' if (requireNamespace("cifmodeling", quietly = TRUE) &&
+#'              requireNamespace("ggplot2", quietly = TRUE) &&
+#'              requireNamespace("ggsurvfit", quietly = TRUE) &&
+#'              requireNamespace("patchwork", quietly = TRUE)) {
 #' data(diabetes.complications)
 #' cifpanel(
 #'   title.panel = "A comparison of cumulative incidence of competing events",
@@ -255,14 +259,12 @@
 #'          inset.align.to = "plot",
 #'          inset.legend.position = "none",
 #'          legend.position = "bottom")
+#' }
 #'
 #' @importFrom ggplot2 ggplot theme_void ggsave theme element_text labs
 #' @importFrom patchwork wrap_plots plot_layout inset_element plot_annotation
 #'
 #' @name cifpanel
-#' @section Lifecycle:
-#' \lifecycle{experimental}
-#'
 #' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifplot()] for display of a CIF; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 cifpanel <- function(

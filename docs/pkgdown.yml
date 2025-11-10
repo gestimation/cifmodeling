@@ -1,5 +1,5 @@
 pandoc: 3.6.3
-pkgdown: 2.1.3
+pkgdown: 2.1.1
 pkgdown_sha: ~
 articles:
   01_overview: 01_overview.html
@@ -8,7 +8,7 @@ articles:
   04_examples: 04_examples.html
   05_information: 05_information.html
   06_arguments: 06_arguments.html
-last_built: 2025-11-09T15:18Z
+last_built: 2025-11-10T05:01Z
 urls:
   reference: https://gestimation.github.io/cifmodeling/reference
   article: https://gestimation.github.io/cifmodeling/articles

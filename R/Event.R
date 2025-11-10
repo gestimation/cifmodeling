@@ -1,5 +1,6 @@
-#' Create a survival or competing-risks response
+#' @title Create a survival or competing-risks response
 #'
+#' @description
 #' A lightweight response constructor used in \code{cifcurve()} and \code{polyreg()}
 #' to pass survival and competing-risks data via a model formula.
 #'
@@ -23,9 +24,6 @@
 #' )
 #'
 #' @name Event
-#' @section Lifecycle:
-#' \lifecycle{stable}
-#'
 #' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifplot()] for display of a CIF; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 Event <- function(time, event, allowed = getOption("cifmodeling.allowed", c(0, 1, 2))) {

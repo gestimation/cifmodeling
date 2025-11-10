@@ -3,7 +3,7 @@
 #' Core estimation routine that computes a \code{survfit}-compatible object
 #' from a formula + data interface (\code{Event()} or \code{survival::Surv()} on
 #' the left-hand side, and a stratification variable on the right-hand side if necessary).
-#' Use this when you want **numbers only** (KM / CIF + SE + CI) and
+#' Use this when you want **numbers only** (KM/AJ, SE, CI and influence function) and
 #' you will plot it yourself (for example with \code{ggsurvfit} or \code{\link{cifplot}}).
 #'
 #' **Outcome type and estimator**
@@ -50,6 +50,10 @@
 #' Standard error and CIs are provided per \code{conf.type}. Note that some methods for \code{survfit} (e.g., \code{residuals.survfit}) may not be supported.
 #'
 #' @examples
+#' if (requireNamespace("cifmodeling", quietly = TRUE) &&
+#'              requireNamespace("ggplot2", quietly = TRUE) &&
+#'              requireNamespace("ggsurvfit", quietly = TRUE) &&
+#'              requireNamespace("patchwork", quietly = TRUE)) {
 #' data(diabetes.complications)
 #' out_cifcurve <- cifcurve(Event(t,epsilon) ~ fruitq,
 #'                          data = diabetes.complications,
@@ -60,15 +64,13 @@
 #'         add.risktable = FALSE,
 #'         label.y = "CIF of diabetic retinopathy",
 #'         label.x = "Years from registration")
+#' }
 #'
 #' @importFrom Rcpp sourceCpp
 #' @importFrom Rcpp evalCpp
 #' @importFrom stats formula
 #'
 #' @name cifcurve
-#' @section Lifecycle:
-#' \lifecycle{stable}
-#'
 #' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifplot()] for display of a CIF; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 cifcurve <- function(

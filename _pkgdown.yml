@@ -59,20 +59,20 @@ articles:
       - 06_arguments
 
 reference:
-  - title: Estimation & plotting
+  - title: Estimation & visualization
     contents:
       - cifcurve
       - cifplot
       - cifpanel
-      - cif-stat-arguments       # ← 公開したいなら残す。非公開なら Rd に @keywords internal
-      - cif-visual-arguments     # ← 同上
-  - title: Regression
+      - cif-stat-arguments
+      - cif-visual-arguments
+  - title: Direct polytomous regression
     contents:
       - polyreg
   - title: Data
     contents:
-      - diabetes.complications   # ← データを公開したい場合
-      - prostate                 # ← 同上
+      - diabetes.complications
+      - prostate
   - title: Helpers
     contents:
       - extract_time_to_event

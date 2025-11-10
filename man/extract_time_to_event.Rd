@@ -61,11 +61,6 @@ This function is typically used internally by plotting and model functions,
 but can also be called directly to inspect the per-stratum event-time
 structure of a data frame.
 }
-\section{Lifecycle}{
-
-\lifecycle{stable}
-}
-
 \examples{
 data(diabetes.complications)
 output <- extract_time_to_event(Event(t,epsilon) ~ fruitq,
@@ -81,6 +76,7 @@ cifplot(Event(t,epsilon) ~ fruitq,
         competing.risk.time=output,
         label.y='CIF of diabetic retinopathy',
         label.x='Years from registration')
+
 }
 \seealso{
 \code{\link[=polyreg]{polyreg()}} for log-odds product modeling of CIFs; \code{\link[=cifcurve]{cifcurve()}} for KM/AJ estimators; \code{\link[=cifplot]{cifplot()}} for display of a CIF; \code{\link[=cifpanel]{cifpanel()}} for display of multiple CIFs; \link[ggsurvfit:ggsurvfit]{ggsurvfit::ggsurvfit}, \link[patchwork:patchwork-package]{patchwork::patchwork} and \link[modelsummary:modelsummary]{modelsummary::modelsummary} for display helpers.

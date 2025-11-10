@@ -31,7 +31,7 @@ this coding scheme. By setting `panel.per.event=TRUE`, the CIF curve for
 diabetic retinopathy (`epsilon=1`) is output on the left and
 macrovascular complications (`epsilon=2`) on the right.
 
-## Three functions for survival and competing risks analysis
+## Tools for survival and competing risks analysis
 
 In clinical and epidemiological research, analysts often need to handle
 censoring, competing risks, and intercurrent events (e.g., treatment
@@ -362,7 +362,7 @@ such as **modelsummary** or **broom** for reporting.
 
 - `summary` — a summary of estimated exposure effects
 
-## Example1. Unadjusted competing risks analysis
+## Example 1. Unadjusted competing risks analysis
 
 For the initial illustration, unadjusted analysis focusing on cumulative
 incidence of diabetic retinopathy (event 1) and macrovascular
@@ -393,7 +393,7 @@ cifplot(Event(t,epsilon)~fruitq+fruitq1, data=diabetes.complications,
 
 <img src="man/figures/README-example1-1-1.png" width="100%" />
 
-In the second graph, censoring marks are added along each curve
+In the second figure, censoring marks are added along each curve
 (`add.censor.mark = TRUE`) to indicate individuals who were censored
 before experiencing any event. These marks visualize the timing and
 frequency of censoring, allowing a clearer understanding of
@@ -444,9 +444,9 @@ contain stratum information. Therefore, the following code inputs the
 formula and data. `label.strata` is used by combining `level.strata` and
 `order.strata`. `level.strata` specifies the levels of the
 stratification variable corresponding to each label in `label.strata`.
-The levels specified in `level.strata` are then displayed in the graph
-in the order defined by `order.strata`. A graph enclosed in a square was
-generated, which is due to `style="FRAMED"` specification.
+The levels specified in `level.strata` are then displayed in the figure
+in the order defined by `order.strata`. A figure enclosed in a square
+was generated, which is due to `style="FRAMED"` specification.
 
 ``` r
 cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
@@ -462,7 +462,7 @@ cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications,
 
 By specifying `add.estimate.table=TRUE`, the risks of diabetic
 retinopathy (estimates for CIFs) along with their confidence interval
-are shown in the table at the bottom of the graph. The risk ratios at a
+are shown in the table at the bottom of the figure The risk ratios at a
 specific time point (e.g. 8 years) for competing events can be jointly
 and coherently estimated using `polyreg()` with
 `outcome.type="COMPETING-RISK"`. In the code of `polyreg()` below, no

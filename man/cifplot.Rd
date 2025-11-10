@@ -390,12 +390,11 @@ For ADaM-style data, use \code{code.event1 = 0}, \code{code.censoring = 1}.
 
 }
 }
-\section{Lifecycle}{
-
-\lifecycle{stable}
-}
-
 \examples{
+if (requireNamespace("cifmodeling", quietly = TRUE) &&
+             requireNamespace("ggplot2", quietly = TRUE) &&
+             requireNamespace("ggsurvfit", quietly = TRUE) &&
+             requireNamespace("patchwork", quietly = TRUE)) {
 data(diabetes.complications)
 cifplot(Event(t,epsilon) ~ fruitq,
         data = diabetes.complications,
@@ -403,6 +402,7 @@ cifplot(Event(t,epsilon) ~ fruitq,
         add.risktable = FALSE,
         label.y='CIF of diabetic retinopathy',
         label.x='Years from registration')
+}
 
 }
 \seealso{

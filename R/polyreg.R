@@ -3,6 +3,7 @@
 #' @description The direct polytomous regression enables coherent modeling and
 #' estimation of a variety of multiplicative effects of a categorical exposure under
 #' several outcome types, including competing risks, survival and binomial outcomes.
+#'
 #' @param nuisance.model A \code{formula} describing the outcome and
 #'   nuisance covariates, excluding the exposure of interest.
 #'   The left-hand side must be \code{Event(time, status)} or \code{survival::Surv(time, status)}.
@@ -251,6 +252,7 @@
 #'   outcomes).
 #'
 #' @examples
+#' if (requireNamespace("cifmodeling", quietly = TRUE)) {
 #' data(diabetes.complications)
 #' output <- polyreg(
 #'   nuisance.model = Event(t, epsilon) ~ +1,
@@ -264,11 +266,10 @@
 #' if (requireNamespace("modelsummary", quietly = TRUE)) {
 #' modelsummary::msummary(output$summary, statistic = c("conf.int", "p.value"), exponentiate = TRUE)
 #' }
+#' }
+#'
 #'
 #' @name polyreg
-#' @section Lifecycle:
-#' \lifecycle{experimental}
-#'
 #' @seealso [cifcurve()] for KM/AJ estimators; [cifplot()] for display of a CIF; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 polyreg <- function(

@@ -177,6 +177,10 @@
 #'   Internal lists used for programmatic control. Not intended for direct user input.
 #'
 #' @examples
+#' if (requireNamespace("cifmodeling", quietly = TRUE) &&
+#'              requireNamespace("ggplot2", quietly = TRUE) &&
+#'              requireNamespace("ggsurvfit", quietly = TRUE) &&
+#'              requireNamespace("patchwork", quietly = TRUE)) {
 #' data(diabetes.complications)
 #' cifplot(Event(t,epsilon) ~ fruitq,
 #'         data = diabetes.complications,
@@ -184,6 +188,7 @@
 #'         add.risktable = FALSE,
 #'         label.y='CIF of diabetic retinopathy',
 #'         label.x='Years from registration')
+#' }
 #'
 #' @importFrom ggsurvfit ggsurvfit add_confidence_interval add_risktable add_risktable_strata_symbol add_censor_mark add_quantile
 #' @importFrom ggplot2 theme_classic theme_bw element_text labs lims geom_point aes ggsave guides scale_color_discrete scale_fill_discrete element_text element_rect element_blank scale_color_manual scale_fill_manual scale_linetype_manual scale_shape_manual scale_linetype_discrete scale_shape_discrete
@@ -191,9 +196,6 @@
 #' @importFrom patchwork wrap_plots
 #'
 #' @name cifplot
-#' @section Lifecycle:
-#' \lifecycle{stable}
-#'
 #' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 cifplot <- function(

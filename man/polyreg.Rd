@@ -350,12 +350,8 @@ use-specified initial values, or reducing the number of nuisance parameters
 }
 }
 }
-\section{Lifecycle}{
-
-\lifecycle{experimental}
-}
-
 \examples{
+if (requireNamespace("cifmodeling", quietly = TRUE)) {
 data(diabetes.complications)
 output <- polyreg(
   nuisance.model = Event(t, epsilon) ~ +1,
@@ -369,6 +365,8 @@ output <- polyreg(
 if (requireNamespace("modelsummary", quietly = TRUE)) {
 modelsummary::msummary(output$summary, statistic = c("conf.int", "p.value"), exponentiate = TRUE)
 }
+}
+
 
 }
 \seealso{
