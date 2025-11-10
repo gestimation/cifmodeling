@@ -58,9 +58,11 @@ Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detectio
 
 \item{conf.int}{Numeric two-sided confidence level (default \code{0.95}).}
 
-\item{return_if}{Logical. When \code{TRUE} and \code{engine = "calculateAJ_Rcpp"}, the influence function is also computed and returned (default \code{FALSE}).}
+\item{return_if}{Logical. When \code{TRUE} and \code{engine = "calculateAJ_Rcpp"},
+the influence function is also computed and returned (default \code{FALSE}).}
 
-\item{report.survfit.std.err}{Logical. If \code{TRUE}, report SE on the log-survival scale (survfit's convention). Otherwise SE is on the probability scale.}
+\item{report.survfit.std.err}{Logical. If \code{TRUE}, report SE on the log-survival
+scale (survfit's convention). Otherwise SE is on the probability scale.}
 
 \item{engine}{Character. One of \code{"auto"}, \code{"calculateKM"}, or \code{"calculateAJ_Rcpp"} (default \code{"calculateAJ_Rcpp"}).}
 
@@ -69,7 +71,8 @@ Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detectio
 \value{
 A \code{survfit} object. For \code{outcome.type="survival"}, \code{$surv} is the survival function.
 For \code{outcome.type="competing-risk"}, \code{$surv} equals \code{1 - CIF} for \code{code.event1}.
-Standard error and CIs are provided per \code{conf.type}. Note that some methods for \code{survfit} (e.g., \code{residuals.survfit}) may not be supported.
+Standard error and CIs are provided per \code{conf.type}. Note that some methods
+for \code{survfit} (e.g., \code{residuals.survfit}) may not be supported.
 }
 \description{
 Core estimation routine that computes a \code{survfit}-compatible object
