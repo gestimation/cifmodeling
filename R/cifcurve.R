@@ -1,7 +1,7 @@
 #' @title Calculate the Kaplan–Meier estimator and the Aalen–Johansen estimator
 #' @description
 #' Core estimation routine that computes a \code{survfit}-compatible object
-#' from a formula + data interface (\code{Event()} or \code{Surv()} on
+#' from a formula + data interface (\code{Event()} or \code{survival::Surv()} on
 #' the left-hand side, and a stratification variable on the right-hand side if necessary).
 #' Use this when you want **numbers only** (KM / CIF + SE + CI) and
 #' you will plot it yourself (for example with \code{ggsurvfit} or \code{\link{cifplot}}).
@@ -19,20 +19,14 @@
 #' @inheritParams cif-stat-arguments
 #'
 #' @param formula A model formula specifying the time-to-event outcome on the
-#'   left-hand side (typically \code{Event(time, status)} or \code{survfit::Surv(time, status)})
+#'   left-hand side (typically \code{Event(time, status)} or \code{survival::Surv(time, status)})
 #'   and, optionally, a stratification variable on the right-hand side.
 #'   Unlike \code{\link{cifplot}}, this function does not accept a fitted
 #'   \code{survfit} object.
-#' @param report.survfit.std.err Logical. If \code{TRUE}, standard errors are
-#'   reported on the \emph{log-survival} scale, matching \code{survfit()}'s
-#'   default behaviour. If \code{FALSE} (default), SEs are on the probability
-#'   scale, which is often more convenient when displaying CIFs.
-#' @param engine Character. One of \code{"auto"}, \code{"calculateKM"},
-#'   \code{"calculateAJ"}, or \code{"calculateAJ_Rcpp"}. Default \code{"auto"}
-#'   selects \code{"calculateKM"} for survival curves and \code{"calculateAJ_Rcpp"}
-#'   for competing risks. \code{"calculateKM"} does not support CIF estimation.
-#' @param return_if Logical. When \code{TRUE} and \code{engine = "calculateAJ_Rcpp"},
-#'   the influence function is also computed and returned. Default \code{FALSE}.
+#' @param return_if Logical. When \code{TRUE} and \code{engine = "calculateAJ_Rcpp"}, the influence function is also computed and returned (default \code{FALSE}).
+#' @param report.survfit.std.err Logical. If \code{TRUE}, report SE on the log-survival scale (survfit's convention). Otherwise SE is on the probability scale.
+#' @param engine Character. One of \code{"auto"}, \code{"calculateKM"}, or \code{"calculateAJ_Rcpp"} (default \code{"calculateAJ_Rcpp"}).
+#' @param prob.bound Numeric lower bound used to internally truncate probabilities away from 0 and 1 (default \code{1e-7}).
 #'
 #' @details
 #' - When \code{outcome.type = "SURVIVAL"}, this is a thin wrapper around KM with the
@@ -72,6 +66,9 @@
 #' @importFrom stats formula
 #'
 #' @name cifcurve
+#' @section Lifecycle:
+#' \lifecycle{stable}
+#'
 #' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifplot()] for display of a CIF; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 cifcurve <- function(
@@ -87,9 +84,10 @@ cifcurve <- function(
     error = NULL,
     conf.type = "arcsine-square root",
     conf.int = 0.95,
+    return_if = FALSE,
     report.survfit.std.err = FALSE,
     engine = "calculateAJ_Rcpp",
-    return_if = FALSE
+    prob.bound = 1e-7
 ) {
   outcome.type  <- util_check_outcome_type(outcome.type, formula = formula, data = data)
   out_readSurv  <- util_read_surv(formula, data, weights,
@@ -111,7 +109,6 @@ cifcurve <- function(
   epsilon_norm[out_readSurv$epsilon == code.event1]    <- 1L
   epsilon_norm[out_readSurv$epsilon == code.event2]    <- 2L
   epsilon_norm[out_readSurv$epsilon == code.censoring] <- 0L
-
 
   if (identical(outcome.type, "SURVIVAL") && identical(engine, "calculateKM")) {
     out_km <- calculateKM(out_readSurv$t, out_readSurv$d,
@@ -195,15 +192,16 @@ cifcurve <- function(
     return(survfit_object)
   }
 
-  out_cpp <- calculateAJ_Rcpp_route(
+  out_cpp <- call_calculateAJ_Rcpp(
     t = out_readSurv$t,
     epsilon = as.integer(epsilon_norm),
     w = out_readSurv$w,
     strata = as.integer(out_readSurv$strata),
     error = error,
     conf.type = conf.type,
+    conf.int = conf.int,
     return_if = return_if,
-    conf.int = conf.int
+    prob.bound = prob.bound
   )
   if (length(strata_fullnames) && length(out_cpp$strata)) {
     names(out_cpp$strata) <- strata_fullnames
@@ -319,14 +317,12 @@ curve_check_error <- function(x, outcome.type) {
   out
 }
 
-#' Route to Rcpp AJ engine with normalized vectors
-#' Internal helper: expects normalized vectors already prepared upstream.
-#' @keywords internal
-calculateAJ_Rcpp_route <- function(t, epsilon, w = NULL, strata = NULL,
+call_calculateAJ_Rcpp <- function(t, epsilon, w = NULL, strata = NULL,
                                    error = "greenwood",
                                    conf.type = "arcsin",
+                                   conf.int = 0.95,
                                    return_if = FALSE,
-                                   conf.int = 0.95) {
+                                   prob.bound = 1e-5) {
   calculateAJ_Rcpp(
     t = t,
     epsilon = epsilon,
@@ -334,8 +330,9 @@ calculateAJ_Rcpp_route <- function(t, epsilon, w = NULL, strata = NULL,
     strata = strata %||% integer(),
     error = error,
     conf_type = conf.type,
+    conf_int = conf.int,
     return_if = isTRUE(return_if),
-    conf_int = conf.int
+    prob_bound = prob.bound
   )
 }
 
