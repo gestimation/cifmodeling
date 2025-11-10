@@ -147,12 +147,12 @@ output2 <- cifplot(Event(t,epsilon) ~ fruitq,
                    limits.y=c(0,0.15))
 output3 <- list(a=output1, b=output2)
 cifpanel(plots = output3,
-         title.plot = c("Fruit intake and macrovascular complications", "Zoomed-in view"),
-         inset.panel = TRUE,
-         inset.left = 0.40, inset.bottom = 0.45,
-         inset.right = 1.00, inset.top = 0.95,
-         inset.legend.position = "none",
-         legend.position = "bottom")
+         title.plot=c("Fruit intake and macrovascular complications", "Zoomed-in view"),
+         inset.panel=TRUE,
+         inset.left=0.40, inset.bottom=0.45,
+         inset.right=1.00, inset.top=0.95,
+         inset.legend.position="none",
+         legend.position="bottom")
 ```
 
 The code below, in which a formula and data is given directly, produces the same output as above. 
