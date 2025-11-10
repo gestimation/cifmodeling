@@ -73,10 +73,19 @@
 <!-- badges: start -->
 <!-- badges: end -->
 <div class="section level2">
-<h2 id="model-specification">Model specification<a class="anchor" aria-label="anchor" href="#model-specification"></a>
+<h2 id="coherent-modeling-of-cifs-using-polytomous-log-odds-products">Coherent modeling of CIFs using polytomous log odds products<a class="anchor" aria-label="anchor" href="#coherent-modeling-of-cifs-using-polytomous-log-odds-products"></a>
 </h2>
-<p>The model for <code><a href="../reference/polyreg.html">polyreg()</a></code> is specified by three main
-components:</p>
+<p>In analyzing competing risks data, standard semiparametric regression
+modeling that treats each cause separately has two drawbacks: potential
+loss of information due to ignoring the correlation between causes and
+an incoherence in modeling that fails to ensure that the sum of
+cause-specific CIFs does not exceed one. Direct polytomous regression
+addresses these challenges by reparameterizing nuisance parameters using
+polytomous log odds products, which naturally enforces the sum
+restriction. This approach is applicable to semiparametric models with
+common multiplicative effects over time as well as models focused on a
+specific time point.</p>
+<p>This model is specified by three main components:</p>
 <ul>
 <li><p>Nuisance model: Describes the relationship between outcomes and
 covariates (excluding exposure).</p></li>
@@ -144,10 +153,15 @@ effects are estimated.</p>
 are specified, Kaplan-Meier weights are used.</p>
 </div>
 <div class="section level2">
-<h2 id="confidence-intervals">Confidence intervals<a class="anchor" aria-label="anchor" href="#confidence-intervals"></a>
+<h2 id="estimator-and-confidence-intervals">Estimator and confidence intervals<a class="anchor" aria-label="anchor" href="#estimator-and-confidence-intervals"></a>
 </h2>
-<p>By default, <code><a href="../reference/polyreg.html">polyreg()</a></code> chooses a single, simple
-confidence interval method based on <code>outcome.type</code>:</p>
+<p>In <code><a href="../reference/polyreg.html">polyreg()</a></code>, the regression parameters are calculated
+by the stratified inverse probability of censoring weighted estimators,
+which asymptotically achieve minimum variance within a class of
+augmented IPCW estimators, without the computational burden of deriving
+augmentation terms for each cause. For confidence intervals,
+<code><a href="../reference/polyreg.html">polyreg()</a></code> normally chooses a single, simple method based on
+<code>outcome.type</code>:</p>
 <ul>
 <li>
 <code>"COMPETING-RISK"</code>, <code>"SURVIVAL"</code>,

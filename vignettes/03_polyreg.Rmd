@@ -9,9 +9,11 @@ vignette: >
 
 <!-- badges: start --> <!-- badges: end -->
 
-## Model specification
+## Coherent modeling of CIFs using polytomous log odds products
 
-The model for `polyreg()` is specified by three main components:
+In analyzing competing risks data, standard semiparametric regression modeling that treats each cause separately has two drawbacks: potential loss of information due to ignoring the correlation between causes and an incoherence in modeling that fails to ensure that the sum of cause-specific CIFs does not exceed one. Direct polytomous regression addresses these challenges by reparameterizing nuisance parameters using polytomous log odds products, which naturally enforces the sum restriction. This approach is applicable to semiparametric models with common multiplicative effects over time as well as models focused on a specific time point. 
+
+This model is specified by three main components:
 
 -   Nuisance model: Describes the relationship between outcomes and covariates (excluding exposure).
 
@@ -65,9 +67,9 @@ Set the desired measure using `effect.measure1` and, for competing risks analysi
 
 Inverse probability weights adjust for dependent censoring. Use `strata=` to specify stratification variables. If no strata are specified, Kaplan-Meier weights are used.
 
-## Confidence intervals
+## Estimator and confidence intervals
 
-By default, `polyreg()` chooses a single, simple confidence interval method based on `outcome.type`:
+In `polyreg()`, the regression parameters are calculated by the stratified inverse probability of censoring weighted estimators, which asymptotically achieve minimum variance within a class of augmented IPCW estimators, without the computational burden of deriving augmentation terms for each cause. For confidence intervals, `polyreg()` normally chooses a single, simple method based on `outcome.type`:
 
 -   `"COMPETING-RISK"`, `"SURVIVAL"`, `"BINOMIAL"` — Wald CIs based on sandwich variance
 -   `"PROPORTIONAL-COMPETING-RISK"`, `"PROPORTIONAL-SURVIVAL"` — Bootstrap CIs (normal approximation)

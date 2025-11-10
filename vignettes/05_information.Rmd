@@ -9,7 +9,7 @@ vignette: >
 
 <!-- badges: start --> <!-- badges: end -->
 
-## Comparison of model formula and outcome.type across cifcurve() and polyreg()
+## Model formula and outcome.type in cifcurve() and polyreg()
 
 **Common ground**
 
@@ -22,7 +22,7 @@ vignette: >
 -   In `polyreg()` the `nuisance.model` formula describes only the outcome and nuisance covariates (i.e. confounders), while the exposure is passed separately through the `exposure` argument. The exposure design matrix, reference level handling, and scaling of nuisance covariates are handled explicitly for regression fitting.
 -   `cifcurve()` focuses on two estimands, selecting between Kaplan–Meier and Aalen–Johansen calculations via `outcome.type = "SURVIVAL"` or `"COMPETING-RISK"`. In contrast, `polyreg()` supports additional time-constant and binomial estimands (`"PROPORTIONAL-SURVIVAL"`, `"PROPORTIONAL-COMPETING-RISK"`, `"BINOMIAL"`) and enforces time-point requirements accordingly—for example `time.point` is mandatory for survival/competing-risk contrasts, while time-constant-effect (e.g. proportional subdistribution hazards) models can either use all observed event times or a user-specified grid supplied via a (vector) `time.point`.
 
-## Event coding conventions in package cifmodeling and CDISC ADaM ADTTE
+## Event coding conventions incifmodeling and CDISC ADaM ADTTE
 
 When working with survival data, one common source of confusion arises from inconsistent event coding conventions between the standard input of `Surv()`, provided by survival package, and the CDISC ADaM ADTTE (Analysis Data Model for Time-to-Event Endpoints) used in regulatory clinical trials. With `Surv()`, event is often coded as 1 and censoring is coded as 0. By contrast, the CDISC ADaM ADTTE (commonly used in pharmaceutical submissions and SDTM-based analyses) follows the opposite convention. `CNSR = 0` means that event occurred and `CNSR = 1` represents censoring, which aligns with the broader ADaM convention (where `1 = TRUE`). 
 
@@ -39,7 +39,7 @@ A user-specified model formula in `Event()` or `Surv()` is first parsed by `util
 
 - The `error` argument determines how standard errors are computed. For survival data (`outcome.type = "SURVIVAL"`) it maps to Greenwood (default) or Tsiatis estimators, while for competing-risks data (`outcome.type = "COMPETING-RISK"`) `"aalen"` reproduces the classic Aalen standard errors and `"delta"` implements the delta method.
 
-## Variance and confidence interval options for cifcurve()
+## Confidence interval options for cifcurve()
 
 **Standard errors** For standard errors of Kaplan–Meier estimator, the default is Greenwood estimator, with alternatives `"tsiatis"` for the Tsiatis estimator The Greenwood formula is a sum of terms d/(n(n-m)), where d is the number of events at a given time point, n is the number at risk, and m is the cumulative sum of events at that time. This formula is derived from a binomial argument, so extension to the weighted case is ad hoc. Tsiatis (1981) proposes a sum of terms d/(n\*n), based on a counting process argument which includes the weighted case. For confidence intervals of cumulative incidence curves, the default `"delta"` applies the delta-method, while `"aalen"` uses the Aalen variance decomposition. By default `cifcurve()` rescales the Greenwood/Tsiatis quantities so that `std.err` is reported on the probability scale; set `report.survfit.std.err = TRUE` to return the conventional log-survival standard errors from `survfit()`.
 
