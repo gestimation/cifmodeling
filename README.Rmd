@@ -13,8 +13,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Visualization and Modeling of Competing Risks in R — cifmodeling
-
 <!-- badges: start -->
 <!-- badges: end -->
 
@@ -35,6 +33,8 @@ library(modelsummary)
 data("diabetes.complications", package = "cifmodeling")
 set.seed(1)
 ```
+
+# Visualization and Modeling of Competing Risks in R — cifmodeling
 
 ## Quick start
 

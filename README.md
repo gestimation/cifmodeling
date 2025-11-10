@@ -1,11 +1,11 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# Visualization and Modeling of Competing Risks in R — cifmodeling
-
 <!-- badges: start -->
 
 <!-- badges: end -->
+
+# Visualization and Modeling of Competing Risks in R — cifmodeling
 
 ## Quick start
 
@@ -576,7 +576,7 @@ Survival curves from cifplot()
 
 The code below specifies the Richardson model on the risk of diabetic
 retinopathy or macrovascular complications at 8 years
-(outcome.type=“SURVIVAL”). Dependent censoring is adjusted by stratified
+(outcome.type=“survival”). Dependent censoring is adjusted by stratified
 IPCW method (`strata='strata'`). Estimates other than the effects of
 exposure (e.g. intercept) are suppressed when
 `report.nuisance.parameter` is not specified.
