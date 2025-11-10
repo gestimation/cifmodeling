@@ -118,6 +118,7 @@
   .assert(x[1L] < x[2L], "limits_increasing", arg = arg)
   invisible(TRUE)
 }
+
 util_check_outcome_type <- function(
     x = NULL,
     formula = NULL,
@@ -125,11 +126,9 @@ util_check_outcome_type <- function(
     na.action = stats::na.omit,
     auto_message = TRUE
 ) {
-  # 0) 文字列の正規化: 大文字化 + 記号/空白を除去
   .norm <- function(s) gsub("[^A-Z0-9]+", "", toupper(trimws(as.character(s))))
 
   if (!is.null(x)) {
-    # 1) 正式名 → エイリアスの対応（大文字・記号無視でマッチ）
     map <- list(
       "COMPETING-RISK"              = c(
         "competing-risk","competing risk","competingrisks","competing-risks",
@@ -141,7 +140,6 @@ util_check_outcome_type <- function(
       "BINOMIAL"                    = c("binomial","b")
     )
 
-    # 正規化テーブルを作成
     ali_norm <- lapply(map, .norm)
     names(ali_norm) <- names(map)
     alias_rev <- stats::setNames(
@@ -149,21 +147,17 @@ util_check_outcome_type <- function(
       unlist(ali_norm, use.names = FALSE)
     )
 
-    # 入力を正規化
     ux <- .norm(x)
     ux <- ux[!is.na(ux) & nzchar(ux)]
 
-    # 正式名/エイリアスを正式名に解決（'[' で安全アクセス）
     canon <- unique(stats::na.omit(vapply(
       ux,
       function(u) {
         if (u %in% .norm(names(map))) {
-          # すでに正式名に一致（正規化後）
-          # 正規化前の正式名を取り直す
           idx <- match(u, .norm(names(map)))
           names(map)[idx]
         } else {
-          cn <- unname(alias_rev[u])  # ← [[ ではなく [ を使う
+          cn <- unname(alias_rev[u])
           if (length(cn) == 0L || is.na(cn)) NA_character_ else cn
         }
       },
@@ -173,10 +167,9 @@ util_check_outcome_type <- function(
     if (length(canon) == 1L) {
       return(canon)
     } else if (length(canon) > 1L) {
-      stop("`outcome.type` is ambiguous: matched multiple types: ",
+      stop("`outcome.type` is ambiguous and matched multiple types: ",
            paste(canon, collapse = ", "), call. = FALSE)
     } else {
-      # 許可される入力一覧（正式名 + エイリアス）
       allowed <- sort(unique(c(
         names(map),
         unlist(map, use.names = FALSE)
@@ -186,7 +179,6 @@ util_check_outcome_type <- function(
     }
   }
 
-  # ここから自動判定
   if (is.null(formula) || is.null(data))
     .err("req", arg = "formula and data (for automatic detection)")
 
@@ -206,6 +198,59 @@ util_check_outcome_type <- function(
     if (isTRUE(auto_message)) message("Detected <= 2 status levels; outcome.type set to 'SURVIVAL'.")
     return("SURVIVAL")
   }
+}
+
+util_check_type_y <- function(x = NULL) {
+  .norm <- function(s) gsub("[^A-Z0-9]+", "", toupper(trimws(as.character(s))))
+
+  if (!is.null(x)) {
+    buckets <- list(
+      surv = c("surv", "s", "survival", "km", "kaplan-meier", "kaplanmeier",
+               "survival-probability", "survivalprobability"),
+      risk = c("risk", "r", "cif", "ci", "cumulative-incidence", "cumulativeincidence",
+               "cuminc", "failure", "incidence")
+    )
+
+    ali_norm <- lapply(buckets, .norm)
+    names(ali_norm) <- names(buckets)
+    alias_rev <- stats::setNames(
+      rep(names(ali_norm), lengths(ali_norm)),
+      unlist(ali_norm, use.names = FALSE)
+    )
+
+    ux <- .norm(x)
+    ux <- ux[!is.na(ux) & nzchar(ux)]
+
+    canon <- unique(stats::na.omit(vapply(
+      ux,
+      function(u) {
+        if (u %in% .norm(names(buckets))) {
+          idx <- match(u, .norm(names(buckets)))
+          names(buckets)[idx]
+        } else {
+          cn <- unname(alias_rev[u])
+          if (length(cn) == 0L || is.na(cn)) NA_character_ else cn
+        }
+      },
+      FUN.VALUE = character(1)
+    )))
+
+    if (length(canon) == 1L) {
+      return(canon)
+    } else if (length(canon) > 1L) {
+      stop("`type.y` is ambiguous and matched multiple types: ",
+           paste(canon, collapse = ", "), call. = FALSE)
+    } else {
+      allowed <- sort(unique(c(
+        names(buckets),
+        unlist(buckets, use.names = FALSE)
+      )))
+      stop("Invalid `type.y`. Allowed values are: ",
+           paste(allowed, collapse = ", "), call. = FALSE)
+    }
+    return(canon)
+  }
+  return(NULL)
 }
 
 check_weights <- function(w) {

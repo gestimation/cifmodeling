@@ -5,7 +5,7 @@
 #' several outcome types, including competing risks, survival and binomial outcomes.
 #' @param nuisance.model A \code{formula} describing the outcome and
 #'   nuisance covariates, excluding the exposure of interest.
-#'   The left-hand side must be \code{Event(time, status)} or \code{survfit::Surv(time, status)}.
+#'   The left-hand side must be \code{Event(time, status)} or \code{survival::Surv(time, status)}.
 #' @param exposure A character string giving the name of the categorical exposure
 #'   variable in \code{data}.
 #' @param strata Optional character string with the name of the stratification
@@ -87,9 +87,9 @@
 #'   when the Levenberg-Marquardt step is unsuccessful (default \code{0.5}).
 #' @param data.initial.values Optional data frame providing starting values for
 #'   the optimization (default \code{NULL}).
-#' @param should.normalize.covariate Logical indicating whether covariates should
+#' @param normalize.covariate Logical indicating whether covariates should
 #'   be centered and scaled prior to optimization (default \code{TRUE}).
-#' @param should.terminate.time.point Logical indicating whether time points
+#' @param terminate.time.point Logical indicating whether time points
 #'   that contribute estimation are terminated by min of max follow-up times
 #'   of each exposure level (default \code{TRUE}).
 #' @param prob.bound Numeric lower bound used to internally truncate probabilities away
@@ -193,8 +193,8 @@
 #' |---|---|---|
 #' | `subset.condition` | An expression (as character) to subset `data` | `NULL` |
 #' | `na.action` | NA handling function | `stats::na.omit` |
-#' | `should.normalize.covariate` | Center/scale nuisance covariates | `TRUE` |
-#' | `should.terminate.time.point` | Truncate support by exposure-wise follow-up maxima | `TRUE` |
+#' | `normalize.covariate` | Center/scale nuisance covariates | `TRUE` |
+#' | `terminate.time.point` | Truncate support by exposure-wise follow-up maxima | `TRUE` |
 #' | `prob.bound` | Truncate probabilities away from 0/1 (numerical guard) | `1e-5` |
 #' | `data.initial.values` | Optional starting values data frame | `NULL` |
 #'
@@ -231,8 +231,10 @@
 #' @importFrom boot boot boot.ci
 #' @importFrom Rcpp sourceCpp
 #' @importFrom stats IQR as.formula binomial coef glm mad median
-#' @importFrom stats model.extract model.frame model.matrix na.omit na.pass
+#' @importFrom stats model.extract model.frame model.matrix update na.omit na.pass
 #' @importFrom stats pnorm qnorm rbinom reformulate rexp sd setNames terms time var
+#' @importFrom stats runif rnorm
+#'
 #' @useDynLib cifmodeling, .registration = TRUE
 #'
 #' @return A list containing fitted exposure effects and supporting results. The
@@ -257,8 +259,11 @@
 #' if (requireNamespace("modelsummary", quietly = TRUE)) {
 #' modelsummary::msummary(output$summary, statistic = c("conf.int", "p.value"), exponentiate = TRUE)
 #' }
-
+#'
 #' @name polyreg
+#' @section Lifecycle:
+#' \lifecycle{experimental}
+#'
 #' @seealso [cifcurve()] for KM/AJ estimators; [cifplot()] for display of a CIF; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 polyreg <- function(
@@ -300,9 +305,9 @@ polyreg <- function(
     optim.parameter12 = 2,
     optim.parameter13 = 0.5,
     data.initial.values = NULL,
-    should.normalize.covariate = TRUE,
-    should.terminate.time.point = TRUE,
-    prob.bound = 1e-5
+    normalize.covariate = TRUE,
+    terminate.time.point = TRUE,
+    prob.bound = 1e-7
 ) {
 
   #######################################################################################################
@@ -311,15 +316,15 @@ polyreg <- function(
   computation.time0 <- proc.time()
   outcome.type  <- util_check_outcome_type(outcome.type, formula=formula, data=data)
   ce <- reg_check_effect.measure(effect.measure1, effect.measure2)
-  ci <- reg_check_input(data, nuisance.model, exposure, code.event1, code.event2, code.censoring, code.exposure.ref, outcome.type, conf.level, report.sandwich.conf, report.boot.conf, nleqslv.method, should.normalize.covariate)
-  should.normalize.covariate <- ci$should.normalize.covariate
+  ci <- reg_check_input(data, nuisance.model, exposure, code.event1, code.event2, code.censoring, code.exposure.ref, outcome.type, conf.level, report.sandwich.conf, report.boot.conf, nleqslv.method, normalize.covariate)
+  normalize.covariate <- ci$normalize.covariate
   report.sandwich.conf <- ci$report.sandwich.conf
   report.boot.conf <- ci$report.boot.conf
 
   data <- createAnalysisDataset(formula=nuisance.model, data=data, other.variables.analyzed=c(exposure, strata), subset.condition=subset.condition, na.action=na.action)
-  out_normalizeCovariate <- reg_normalize_covariate(nuisance.model, data, should.normalize.covariate, outcome.type, ci$out_readExposureDesign$exposure.levels)
+  out_normalizeCovariate <- reg_normalize_covariate(nuisance.model, data, normalize.covariate, outcome.type, ci$out_readExposureDesign$exposure.levels)
   normalized_data <- out_normalizeCovariate$normalized_data
-  tp <- reg_read_time.point(nuisance.model, normalized_data, ci$out_readExposureDesign$x_a, outcome.type, code.censoring, should.terminate.time.point, time.point)
+  tp <- reg_read_time.point(nuisance.model, normalized_data, ci$out_readExposureDesign$x_a, outcome.type, code.censoring, terminate.time.point, time.point)
   index.vector <- reg_index_for_parameter(NA, ci$x_l, ci$x_a, length(tp))
 
   estimand <- list(
@@ -542,7 +547,7 @@ polyreg <- function(
 
   out_normalizeEstimate <- reg_normalize_estimate(
     outcome.type               = outcome.type,
-    should.normalize.covariate = should.normalize.covariate,
+    normalize.covariate        = normalize.covariate,
     current_params             = current_params,
     out_getResults             = out_getResults,
     estimand                   = estimand,
@@ -613,7 +618,7 @@ polyreg <- function(
   #######################################################################################################
   out_summary <- reportEffects(
     outcome.type, report.nuisance.parameter, report.optim.convergence, report.sandwich.conf, report.boot.conf,
-    nuisance.model, exposure, estimand, alpha_beta_estimated, cov_estimated,
+    nuisance.model, exposure, estimand, alpha_beta_estimated, cov_estimated, cov_bootstrap,
     out_bootstrap, out_getResults, iteration, converged.by, objective.function, max.absolute.difference, relative.difference,
     out_nleqslv, conf.level, optim.method$nleqslv.method
   )

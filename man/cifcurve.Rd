@@ -17,14 +17,15 @@ cifcurve(
   error = NULL,
   conf.type = "arcsine-square root",
   conf.int = 0.95,
+  return_if = FALSE,
   report.survfit.std.err = FALSE,
   engine = "calculateAJ_Rcpp",
-  return_if = FALSE
+  prob.bound = 1e-07
 )
 }
 \arguments{
 \item{formula}{A model formula specifying the time-to-event outcome on the
-left-hand side (typically \code{Event(time, status)} or \code{survfit::Surv(time, status)})
+left-hand side (typically \code{Event(time, status)} or \code{survival::Surv(time, status)})
 and, optionally, a stratification variable on the right-hand side.
 Unlike \code{\link{cifplot}}, this function does not accept a fitted
 \code{survfit} object.}
@@ -57,18 +58,13 @@ Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detectio
 
 \item{conf.int}{Numeric two-sided confidence level (default \code{0.95}).}
 
-\item{report.survfit.std.err}{Logical. If \code{TRUE}, standard errors are
-reported on the \emph{log-survival} scale, matching \code{survfit()}'s
-default behaviour. If \code{FALSE} (default), SEs are on the probability
-scale, which is often more convenient when displaying CIFs.}
+\item{return_if}{Logical. When \code{TRUE} and \code{engine = "calculateAJ_Rcpp"}, the influence function is also computed and returned (default \code{FALSE}).}
 
-\item{engine}{Character. One of \code{"auto"}, \code{"calculateKM"},
-\code{"calculateAJ"}, or \code{"calculateAJ_Rcpp"}. Default \code{"auto"}
-selects \code{"calculateKM"} for survival curves and \code{"calculateAJ_Rcpp"}
-for competing risks. \code{"calculateKM"} does not support CIF estimation.}
+\item{report.survfit.std.err}{Logical. If \code{TRUE}, report SE on the log-survival scale (survfit's convention). Otherwise SE is on the probability scale.}
 
-\item{return_if}{Logical. When \code{TRUE} and \code{engine = "calculateAJ_Rcpp"},
-the influence function is also computed and returned. Default \code{FALSE}.}
+\item{engine}{Character. One of \code{"auto"}, \code{"calculateKM"}, or \code{"calculateAJ_Rcpp"} (default \code{"calculateAJ_Rcpp"}).}
+
+\item{prob.bound}{Numeric lower bound used to internally truncate probabilities away from 0 and 1 (default \code{1e-7}).}
 }
 \value{
 A \code{survfit} object. For \code{outcome.type="SURVIVAL"}, \code{$surv} is the survival function.
@@ -77,7 +73,7 @@ Standard error and CIs are provided per \code{conf.type}. Note that some methods
 }
 \description{
 Core estimation routine that computes a \code{survfit}-compatible object
-from a formula + data interface (\code{Event()} or \code{Surv()} on
+from a formula + data interface (\code{Event()} or \code{survival::Surv()} on
 the left-hand side, and a stratification variable on the right-hand side if necessary).
 Use this when you want \strong{numbers only} (KM / CIF + SE + CI) and
 you will plot it yourself (for example with \code{ggsurvfit} or \code{\link{cifplot}}).
@@ -115,6 +111,11 @@ cumulative incidence for \code{code.event1}. The returned \code{$surv} is
 
 }
 }
+\section{Lifecycle}{
+
+\lifecycle{stable}
+}
+
 \examples{
 data(diabetes.complications)
 out_cifcurve <- cifcurve(Event(t,epsilon) ~ fruitq,

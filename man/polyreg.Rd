@@ -44,15 +44,15 @@ polyreg(
   optim.parameter12 = 2,
   optim.parameter13 = 0.5,
   data.initial.values = NULL,
-  should.normalize.covariate = TRUE,
-  should.terminate.time.point = TRUE,
-  prob.bound = 1e-05
+  normalize.covariate = TRUE,
+  terminate.time.point = TRUE,
+  prob.bound = 1e-07
 )
 }
 \arguments{
 \item{nuisance.model}{A \code{formula} describing the outcome and
 nuisance covariates, excluding the exposure of interest.
-The left-hand side must be \code{Event(time, status)} or \code{survfit::Surv(time, status)}.}
+The left-hand side must be \code{Event(time, status)} or \code{survival::Surv(time, status)}.}
 
 \item{exposure}{A character string giving the name of the categorical exposure
 variable in \code{data}.}
@@ -172,10 +172,10 @@ when the Levenberg-Marquardt step is unsuccessful (default \code{0.5}).}
 \item{data.initial.values}{Optional data frame providing starting values for
 the optimization (default \code{NULL}).}
 
-\item{should.normalize.covariate}{Logical indicating whether covariates should
+\item{normalize.covariate}{Logical indicating whether covariates should
 be centered and scaled prior to optimization (default \code{TRUE}).}
 
-\item{should.terminate.time.point}{Logical indicating whether time points
+\item{terminate.time.point}{Logical indicating whether time points
 that contribute estimation are terminated by min of max follow-up times
 of each exposure level (default \code{TRUE}).}
 
@@ -303,8 +303,8 @@ Choose the effect scale for event 1 and (optionally) event 2:\tabular{llll}{
    Argument \tab Meaning \tab Default \cr
    \code{subset.condition} \tab An expression (as character) to subset \code{data} \tab \code{NULL} \cr
    \code{na.action} \tab NA handling function \tab \code{stats::na.omit} \cr
-   \code{should.normalize.covariate} \tab Center/scale nuisance covariates \tab \code{TRUE} \cr
-   \code{should.terminate.time.point} \tab Truncate support by exposure-wise follow-up maxima \tab \code{TRUE} \cr
+   \code{normalize.covariate} \tab Center/scale nuisance covariates \tab \code{TRUE} \cr
+   \code{terminate.time.point} \tab Truncate support by exposure-wise follow-up maxima \tab \code{TRUE} \cr
    \code{prob.bound} \tab Truncate probabilities away from 0/1 (numerical guard) \tab \code{1e-5} \cr
    \code{data.initial.values} \tab Optional starting values data frame \tab \code{NULL} \cr
 }
@@ -345,6 +345,11 @@ use-specified initial values, or reducing the number of nuisance parameters
 }
 }
 }
+\section{Lifecycle}{
+
+\lifecycle{experimental}
+}
+
 \examples{
 data(diabetes.complications)
 output <- polyreg(
@@ -359,6 +364,7 @@ output <- polyreg(
 if (requireNamespace("modelsummary", quietly = TRUE)) {
 modelsummary::msummary(output$summary, statistic = c("conf.int", "p.value"), exponentiate = TRUE)
 }
+
 }
 \seealso{
 \code{\link[=cifcurve]{cifcurve()}} for KM/AJ estimators; \code{\link[=cifplot]{cifplot()}} for display of a CIF; \code{\link[=cifpanel]{cifpanel()}} for display of multiple CIFs; \link[ggsurvfit:ggsurvfit]{ggsurvfit::ggsurvfit}, \link[patchwork:patchwork-package]{patchwork::patchwork} and \link[modelsummary:modelsummary]{modelsummary::modelsummary} for display helpers.

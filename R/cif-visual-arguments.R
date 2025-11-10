@@ -2,9 +2,7 @@
 #'
 #' These arguments are shared by \code{cifplot()}, \code{cifpanel()}, and
 #' \code{cifcurve()}.
-#'
-#' @param type.y Either \code{NULL} (plot on the survival scale) or \code{"risk"} (plot on the
-#'   cumulative-incidence / failure scale, i.e. \code{1 - survival}).
+#' @param type.y Optional vector/list per panel: \code{"surv"} or \code{"risk"} (display 1 - survival i.e. CIF).
 #' @param label.x Character x-axis label (default \code{"Time"}).
 #' @param label.y Character y-axis label (default is chosen automatically from \code{outcome.type}
 #'   and \code{type.y}, e.g. \dQuote{Survival} or \dQuote{Cumulative incidence}).
@@ -56,6 +54,7 @@
 #' \code{"FRAMED"}, \code{"GRID"}, \code{"GRAY"} or \code{"GGSURVFIT"} (default \code{"CLASSIC"}).
 #'   Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also accepted.
 #' @param palette Optional character vector specifying the color palette to use across strata.
+#' @param linewidth Optional numeric specifying the line width of curves.
 #' @param font.family Character specifying the font family: \code{"sans"},  \code{"serif"}, or
 #' \code{"mono"} (default \code{"sans"}).
 #' @param font.size Integer specifying the base font size (default \code{12}).

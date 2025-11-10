@@ -4,8 +4,7 @@
 \alias{cif-visual-arguments}
 \title{Common visual arguments for CIF functions}
 \arguments{
-\item{type.y}{Either \code{NULL} (plot on the survival scale) or \code{"risk"} (plot on the
-cumulative-incidence / failure scale, i.e. \code{1 - survival}).}
+\item{type.y}{Optional vector/list per panel: \code{"surv"} or \code{"risk"} (display 1 - survival i.e. CIF).}
 
 \item{label.x}{Character x-axis label (default \code{"Time"}).}
 
@@ -73,6 +72,8 @@ layout is determined from the number of subplots.}
 Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also accepted.}
 
 \item{palette}{Optional character vector specifying the color palette to use across strata.}
+
+\item{linewidth}{Optional numeric specifying the line width of curves.}
 
 \item{font.family}{Character specifying the font family: \code{"sans"},  \code{"serif"}, or
 \code{"mono"} (default \code{"sans"}).}

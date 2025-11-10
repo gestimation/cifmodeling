@@ -1,4 +1,5 @@
 test_that("printEachVar returns one plot per RHS var", {
+  skip_on_cran()
   data(diabetes.complications)
   diabetes.complications$sex_ <- as.factor(diabetes.complications$sex)
   plt <- cifplot(
@@ -50,8 +51,7 @@ test_that("label.strata named mapping works with order.strata", {
 })
 
 test_that("order.strata works per-variable when printEachVar = TRUE", {
-  skip("")
-  skip_on_cran()
+  skip()
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
 

@@ -54,6 +54,7 @@ cifpanel(
   title.plot = NULL,
   style = "CLASSIC",
   palette = NULL,
+  linewidth = 1,
   font.family = "sans",
   font.size = 8,
   legend.position = "top",
@@ -121,8 +122,7 @@ When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{co
 
 \item{conf.int}{Numeric two-sided confidence level (default \code{0.95}).}
 
-\item{type.y}{Either \code{NULL} (plot on the survival scale) or \code{"risk"} (plot on the
-cumulative-incidence / failure scale, i.e. \code{1 - survival}).}
+\item{type.y}{Optional vector/list per panel: \code{"surv"} or \code{"risk"} (display 1 - survival i.e. CIF).}
 
 \item{label.x}{Character x-axis label (default \code{"Time"}).}
 
@@ -208,6 +208,8 @@ Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also
 
 \item{palette}{Optional character vector specifying the color palette to use across strata.}
 
+\item{linewidth}{Optional numeric specifying the line width of curves.}
+
 \item{font.family}{Character specifying the font family: \code{"sans"},  \code{"serif"}, or
 \code{"mono"} (default \code{"sans"}).}
 
@@ -255,10 +257,6 @@ backward compatibility.}
 \item{dpi.ggsave}{Numeric DPI passed to \code{ggplot2::ggsave()} (default \code{300}).}
 
 \item{survfit.info, axis.info, visual.info, panel.info, style.info, print.info, ggsave.info, inset.info}{Internal lists used for programmatic control. Not intended for direct user input.}
-
-\item{engine}{Character scalar selecting the internal plotting engine.
-Currently only \code{"cifplot"} is supported and used to construct each panel
-via \code{cifplot_single()}. This argument is reserved for future extensions.}
 
 \item{...}{Additional arguments forwarded to the internal \code{cifplot_single()}
 calls that build each panel. Use this to pass low-level options such as
@@ -405,6 +403,11 @@ element of \code{plots} or to the composed \code{out_patchwork}.
 }
 }
 }
+\section{Lifecycle}{
+
+\lifecycle{experimental}
+}
+
 \examples{
 data(diabetes.complications)
 cifpanel(

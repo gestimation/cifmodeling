@@ -21,6 +21,11 @@ An object of class \code{"Event"} (a 2-column matrix) with columns \code{time}, 
 A lightweight response constructor used in \code{cifcurve()} and \code{polyreg()}
 to pass survival and competing-risks data via a model formula.
 }
+\section{Lifecycle}{
+
+\lifecycle{stable}
+}
+
 \examples{
 ## event: 0=censor, 1=primary, 2=competing
 data(diabetes.complications)
@@ -33,6 +38,7 @@ output <- polyreg(
   time.point = 8,
   outcome.type = "COMPETING-RISK"
 )
+
 }
 \seealso{
 \code{\link[=polyreg]{polyreg()}} for log-odds product modeling of CIFs; \code{\link[=cifcurve]{cifcurve()}} for KM/AJ estimators; \code{\link[=cifplot]{cifplot()}} for display of a CIF; \code{\link[=cifpanel]{cifpanel()}} for display of multiple CIFs; \link[ggsurvfit:ggsurvfit]{ggsurvfit::ggsurvfit}, \link[patchwork:patchwork-package]{patchwork::patchwork} and \link[modelsummary:modelsummary]{modelsummary::modelsummary} for display helpers.

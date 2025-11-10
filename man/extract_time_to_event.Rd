@@ -61,6 +61,11 @@ This function is typically used internally by plotting and model functions,
 but can also be called directly to inspect the per-stratum event-time
 structure of a data frame.
 }
+\section{Lifecycle}{
+
+\lifecycle{stable}
+}
+
 \examples{
 data(diabetes.complications)
 output <- extract_time_to_event(Event(t,epsilon) ~ fruitq,

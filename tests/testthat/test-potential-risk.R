@@ -30,7 +30,7 @@ test_that("LM path handles multi-level exposure", {
   df <- data.frame(a = factor(rep(c("a0", "a1", "a2"), length.out = n)))
   design <- cifmodeling:::reg_read_exposure_design(df, exposure = "a", code.exposure.ref = "a0")
   x_a <- design$x_a
-  x_l <- cbind(1, rnorm(n))
+  x_l <- cbind(1, stats::rnorm(n))
   iv <- cifmodeling:::reg_index_for_parameter(NA, x_l, x_a, length.time.point = 1L)
   estimand <- list(
     exposure.levels = design$exposure.levels,
@@ -89,7 +89,7 @@ test_that("PROPORTIONAL-SURVIVAL style loop yields finite EY", {
 
 test_that("calculateCovSurvival names exposures when multiple levels", {
   n <- 4
-  x_l <- cbind(1, rnorm(n))
+  x_l <- cbind(1, stats::rnorm(n))
   exposure <- factor(c(0, 1, 2, 1))
   design <- cifmodeling:::reg_read_exposure_design(
     data.frame(a = exposure),
@@ -104,9 +104,9 @@ test_that("calculateCovSurvival names exposures when multiple levels", {
     effect.measure1 = "RR"
   )
   set.seed(321)
-  potential <- matrix(runif(n * design$exposure.levels, 0.1, 0.4), nrow = n)
+  potential <- matrix(stats::runif(n * design$exposure.levels, 0.1, 0.4), nrow = n)
   obj <- list(
-    score = matrix(runif(n * iv[3], 0.01, 0.2), nrow = n, ncol = iv[3]),
+    score = matrix(stats::runif(n * iv[3], 0.01, 0.2), nrow = n, ncol = iv[3]),
     ey_1 = rep(0.2, n),
     w11 = rep(5, n),
     t = seq_len(n),

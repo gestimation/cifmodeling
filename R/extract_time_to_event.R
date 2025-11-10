@@ -50,6 +50,9 @@
 #'         label.y='CIF of diabetic retinopathy',
 #'         label.x='Years from registration')
 #' @name extract_time_to_event
+#' @section Lifecycle:
+#' \lifecycle{stable}
+#'
 #' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifplot()] for display of a CIF; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 extract_time_to_event <- function(

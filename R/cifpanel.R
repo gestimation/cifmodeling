@@ -41,14 +41,12 @@
 #'   (primarily used when \code{cifpanel()} is called or when \code{printEachEvent = TRUE}).
 #' @param legend.collect Logical; if \code{TRUE}, try to collect a single legend
 #'   for all panels (passed to \pkg{patchwork}). Default \code{TRUE}.
-#'
 #' @param inset.panel Logical. If \code{FALSE} (default), all panels are arranged
 #'   in a regular grid using \code{patchwork::wrap_plots()} and \code{plot_layout()}.
 #'   If \code{TRUE}, the function switches to “inset mode”: the **first** plot becomes
 #'   the main plot and the **second** plot (only the second) is drawn on top of it
 #'   as an inset. Additional plots beyond the second are ignored in inset mode.
 #'   Use grid mode to display more than two panels (inset.panel = FALSE).
-#'
 #' @param inset.left,inset.bottom,inset.right,inset.top Numeric values in the range
 #'   \code{[0, 1]} that define the inset box as fractions of the reference area.
 #'   \code{inset.left} / \code{inset.right} control the horizontal position,
@@ -56,7 +54,6 @@
 #'   Values are interpreted as “from the left/bottom” of the reference.
 #'   For example, \code{inset.left = 0.4}, \code{inset.right = 1.0} draws the inset
 #'   over the right 60% of the reference area.
-#'
 #' @param inset.align.to Character string specifying the coordinate system for the
 #'   inset box. One of:
 #'   \itemize{
@@ -67,30 +64,21 @@
 #'     \item \code{"full"}: the box is placed relative to the **full patchwork canvas**.
 #'   }
 #'   This argument is passed to \code{patchwork::inset_element()}.
-#'
 #' @param inset.legend.position Optional legend position **for the inset plot only**.
 #'   If \code{NULL} (default), the inset plot keeps whatever legend position was
 #'   defined for it (often this means a legend will also be inset).
 #'   Set, for example, \code{"none"} to hide the legend inside the inset,
 #'   while still showing the main plot's legend.
-#'
 #' @param title.panel,subtitle.panel,caption.panel Character annotations applied to the
 #'   **whole** panel layout (not to individual plots). These are passed to
 #'   \code{patchwork::plot_annotation()} and are useful for creating figure-like
 #'   outputs (title + subfigures + caption).
-#'
 #' @param tag.panel Passed to \code{patchwork::plot_annotation()} to auto-label
 #'   individual panels (e.g. \code{"A"}, \code{"B"}, \code{"C"}). Typical values are
 #'   \code{"A"}, \code{"1"}, or \code{"a"}. See \code{?patchwork::plot_annotation}.
-#'
 #' @param title.plot Character vector of titles for **each panel** in the order they
 #'   are drawn. Length-1 values are recycled to all panels. In inset mode, the first
 #'   element refers to the main plot and the second (if present) to the inset.
-#'
-#' @param engine Character scalar selecting the internal plotting engine.
-#'   Currently only \code{"cifplot"} is supported and used to construct each panel
-#'   via \code{cifplot_single()}. This argument is reserved for future extensions.
-#'
 #' @param print.panel Logical. If \code{TRUE}, the composed patchwork object is
 #'   printed immediately (for interactive use). If \code{FALSE}, the object is
 #'   returned invisibly so that it can be assigned, modified, or saved. Kept for
@@ -270,8 +258,11 @@
 #'
 #' @importFrom ggplot2 ggplot theme_void ggsave theme element_text labs
 #' @importFrom patchwork wrap_plots plot_layout inset_element plot_annotation
-
+#'
 #' @name cifpanel
+#' @section Lifecycle:
+#' \lifecycle{experimental}
+#'
 #' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifplot()] for display of a CIF; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 cifpanel <- function(
@@ -324,6 +315,7 @@ cifpanel <- function(
     title.plot                    = NULL,
     style                         = "CLASSIC",
     palette                       = NULL,
+    linewidth                     = 1,
     font.family                   = "sans",
     font.size                     = 8,
     legend.position               = "top",
@@ -372,13 +364,13 @@ cifpanel <- function(
   print.info.user   <- print.info
   ggsave.info.user  <- ggsave.info
 
-  survfit.info <- modifyList(list(
+  survfit.info <- panel_modify_list(list(
     error     = error,
     conf.type = conf.type,
     conf.int  = conf.int
   ), survfit.info %||% list())
 
-  axis.info <- modifyList(list(
+  axis.info <- panel_modify_list(list(
     type.y            = type.y,
     label.x           = label.x,
     label.y           = label.y,
@@ -392,7 +384,7 @@ cifpanel <- function(
     use_coord_cartesian = get0("use_coord_cartesian", ifnotfound = NULL)
   ), axis.info %||% list())
 
-  visual.info <- modifyList(list(
+  visual.info <- panel_modify_list(list(
     addConfidenceInterval    = addConfidenceInterval,
     ci.alpha                 = 0.25,
     addRiskTable             = FALSE,
@@ -415,7 +407,7 @@ cifpanel <- function(
     font.size.risktable      = NULL
   ), visual.info %||% list())
 
-  panel.info <- modifyList(list(
+  panel.info <- panel_modify_list(list(
     printEachEvent     = FALSE,
     printEachVar       = FALSE,
     rows.columns.panel = rows.columns.panel,
@@ -429,21 +421,23 @@ cifpanel <- function(
   style.info <- style.info %||% list()
   style.info$style           <- style.info$style           %||% style
   style.info$palette         <- style.info$palette         %||% palette
+  style.info$linewidth       <- style.info$linewidth       %||% linewidth
   style.info$font.family     <- style.info$font.family     %||% font.family
   style.info$font.size       <- style.info$font.size       %||% font.size
   style.info$legend.position <- style.info$legend.position %||% legend.position
   style.info$legend.collect  <- style.info$legend.collect  %||% legend.collect
 
-  style.info <- modifyList(list(
+  style.info <- panel_modify_list(list(
     style           = "CLASSIC",
     palette         = NULL,
+    linewidth       = NULL,
     font.family     = "sans",
     font.size       = 12,
     legend.position = "top",
     legend.collect  = FALSE
   ), style.info)
 
-  inset.info <- modifyList(list(
+  inset.info <- panel_modify_list(list(
     inset.panel           = inset.panel,
     inset.align.to        = inset.align.to,
     inset.left            = inset.left,
@@ -453,11 +447,11 @@ cifpanel <- function(
     inset.legend.position = inset.legend.position
   ), inset.info %||% list())
 
-  print.info <- modifyList(list(
+  print.info <- panel_modify_list(list(
     print.panel = print.panel
   ), print.info %||% list())
 
-  ggsave.info <- modifyList(list(
+  ggsave.info <- panel_modify_list(list(
     filename.ggsave = filename.ggsave,
     width.ggsave    = width.ggsave,
     height.ggsave   = height.ggsave,
@@ -760,7 +754,6 @@ cifpanel <- function(
     outcome.list    = outcome.list,
     typey.list      = typey.list,
     labely.list     = labely.list,
-    typex.list      = typex.list,
     labelx.list     = labelx.list,
     limsx.list      = limsx.list,
     limsy.list      = limsy.list,
@@ -782,13 +775,11 @@ cifpanel <- function(
   plots <- lapply(seq_len(prep$K), function(i) {
     pa <- prep$plot_args[[i]]
 
-    # ① 親を入れる（順番は親→子）
-    pa$axis.info    <- modifyList(axis.info,    pa$axis.info %||% list())
-    pa$visual.info  <- modifyList(visual.info,  pa$visual.info %||% list())
-    pa$style.info   <- modifyList(style.info,   pa$style.info %||% list())
-    pa$survfit.info <- modifyList(survfit.info, pa$survfit.info %||% list())
+    pa$axis.info    <- panel_modify_list(axis.info,    pa$axis.info %||% list())
+    pa$visual.info  <- panel_modify_list(visual.info,  pa$visual.info %||% list())
+    pa$style.info   <- panel_modify_list(style.info,   pa$style.info %||% list())
+    pa$survfit.info <- panel_modify_list(survfit.info, pa$survfit.info %||% list())
 
-    # ② ★ここでパネルのものを全部たたき込む（これが最優先）
     pa <- panel_force_apply(
       pa,
       i,
@@ -805,7 +796,6 @@ cifpanel <- function(
       addQ.list   = addQ.list
     )
 
-    # --- ここで competing.risk.time を自動生成 ---
     if (isTRUE(pa$addCompetingRiskMark)) {
       ce <- code.events[[i]]
       has_event2 <- !is.null(ce) && length(ce) >= 3L && !is.na(ce[2])
@@ -842,7 +832,7 @@ cifpanel <- function(
         use_coord_cartesian = pa$use_coord_cartesian
       )
 
-      visual_i <- modifyList(visual.info, list(
+      visual_i <- panel_modify_list(visual.info, list(
         addConfidenceInterval    = pa$addConfidenceInterval,
         addRiskTable             = pa$addRiskTable,
         addEstimateTable         = pa$addEstimateTable,

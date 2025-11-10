@@ -1,26 +1,34 @@
 Package: cifmodeling
 Title: Visualize Cumulative Incidence Functions and Fit Coherent Regression Models Based on Polytomous Log Odds Products
-Version: 0.6.0
+Version: 0.7.0
 Authors@R: person("Shiro", "Tanaka", , "gestimation@gmail.com", role = c("aut", "cre", "cph"))
-Description: A compact and unified toolkit for survival and competing risks analysis in R. It covers both nonparametric estimation and regression modeling of cumulative incidence functions (CIFs). cifcurve() estimates and visualizes Kaplan-Meier survival or Aalen-Johansen cumulative incidence curves with a familiar survival::survfit object. polyreg() performs regression modeling of counting process based on polytomous log odds products and stratified IPCW estimator and estimates risk ratios, odds ratios, or subdistribution hazard ratios of a categorical exposure. Both functions adopt a formula + data syntax, return tidy, publication-ready outputs, and integrate seamlessly with ggsurvfit and modelsummary for visualization. Key numerical routines are implemented in C++ via 'Rcpp'. 
+Description: A compact and unified toolkit for survival and competing risks analysis in R. cifcurve() estimates and visualizes Kaplan-Meier survival or Aalen-Johansen cumulative incidence curves with a familiar survival::survfit object. polyreg() performs regression modeling of cumulative incidence functions based on polytomous log odds products to estimate risk ratios, odds ratios, or subdistribution hazard ratios of a categorical exposure. Both functions adopt a formula + data syntax, return tidy, publication-ready outputs, and integrate seamlessly with ggsurvfit and modelsummary for visualization. Key numerical routines are implemented in C++ via 'Rcpp'. 
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
+RdMacros: lifecycle
 Depends: R (>= 4.1.0)
 Suggests: 
-    survival, 
-    mets, 
-    modelsummary, 
-    gtsummary, 
-    knitr, 
+    survival,
+    mets,
+    modelsummary,
+    gtsummary,
+    knitr,
     rmarkdown,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 LinkingTo: 
     Rcpp
 Imports:
-    Rcpp, nleqslv, boot, ggsurvfit, ggplot2, patchwork, scales
+    Rcpp,
+    nleqslv,
+    boot,
+    ggsurvfit,
+    ggplot2,
+    patchwork,
+    scales,
+    lifecycle
 VignetteBuilder: knitr
 URL: https://github.com/gestimation/cifmodeling
 BugReports: https://github.com/gestimation/cifmodeling/issues
