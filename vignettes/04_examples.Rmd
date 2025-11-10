@@ -186,7 +186,7 @@ cifplot(Event(t,epsilon) ~ fruitq1,
 cifplot(Event(t,epsilon) ~ fruitq1,
         data                    = diabetes.complications,
         outcome.type            = "COMPETING-RISK",
-        add.conf = FALSE, 
+        add.conf                = FALSE, 
         add.risktable           = FALSE, 
         add.censor.mark         = FALSE)
 ```

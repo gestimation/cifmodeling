@@ -35,7 +35,7 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/01_overview.html">Overview</a></li>
     <li><a class="dropdown-item" href="../articles/02_functions.html">Main functions</a></li>
-    <li><a class="dropdown-item" href="../articles/03_polyreg.html">Direct polytomous modeling of CIFs</a></li>
+    <li><a class="dropdown-item" href="../articles/03_polyreg.html">Direct polytomous regression</a></li>
     <li><a class="dropdown-item" href="../articles/04_examples.html">Examples</a></li>
     <li><a class="dropdown-item" href="../articles/05_information.html">Additional information</a></li>
     <li><a class="dropdown-item" href="../articles/06_arguments.html">Full lists of arguments</a></li>
@@ -79,7 +79,7 @@
 Kaplan–Meier/Aalen–Johansen curves, visualization, and direct polytomous
 regression for survival and competing risks data.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gestimation.github.io/cifmodeling/">cifmodeling</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/gestimation/cifmodeling" class="external-link">cifmodeling</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">diabetes.complications</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/cifplot.html">cifplot</a></span><span class="op">(</span><span class="fu"><a href="../reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="va">fruitq</span>, data<span class="op">=</span><span class="va">diabetes.complications</span>, </span>
 <span>        outcome.type<span class="op">=</span><span class="st">"COMPETING-RISK"</span>, panel.per.event<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
@@ -99,7 +99,7 @@ retinopathy (<code>epsilon=1</code>) is output on the left and
 macrovascular complications (<code>epsilon=2</code>) on the right.</p>
 </div>
 <div class="section level2">
-<h2 id="three-functions-for-survival-and-competing-risks-analysis">Three functions for survival and competing risks analysis<a class="anchor" aria-label="anchor" href="#three-functions-for-survival-and-competing-risks-analysis"></a>
+<h2 id="tools-for-survival-and-competing-risks-analysis">Tools for survival and competing risks analysis<a class="anchor" aria-label="anchor" href="#tools-for-survival-and-competing-risks-analysis"></a>
 </h2>
 <p>In clinical and epidemiological research, analysts often need to
 handle censoring, competing risks, and intercurrent events (e.g.,
