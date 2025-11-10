@@ -107,10 +107,10 @@ subset of \code{data} to analyze (default \code{NULL}).}
 \item{na.action}{A function specifying the action to take on missing values (default \code{na.omit}).}
 
 \item{outcome.type}{Character string specifying the type of time-to-event outcome.
-One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
+One of \code{"survival"} (Kaplan–Meier type) or \code{"competing-risk"} (Aalen–Johansen type).
 If \code{NULL} (default), the function automatically infers the outcome type from the data:
-if the event variable has more than two unique levels, \code{"COMPETING-RISK"} is assumed;
-otherwise, \code{"SURVIVAL"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
+if the event variable has more than two unique levels, \code{"competing-risk"} is assumed;
+otherwise, \code{"survival"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
 Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detection based on the event coding.}
 
 \item{code.events}{Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
@@ -305,7 +305,7 @@ list in \code{formulas} (one per panel). When both are provided, \code{formulas}
 
 \subsection{Outcome type & event coding}{
 \itemize{
-\item Use \code{outcome.type} to set per-panel estimator (\code{"SURVIVAL"}=KM, \code{"COMPETING-RISK"}=AJ).
+\item Use \code{outcome.type} to set per-panel estimator (\code{"survival"}=KM, \code{"competing-risk"}=AJ).
 \item Alternatively, pass \code{code.events} per panel to infer the type:
 \itemize{
 \item length 2 = SURVIVAL: \code{c(event1, censor)}
@@ -418,7 +418,7 @@ cifpanel(
   rows.columns.panel = c(1,2),
   formula = Event(t, epsilon) ~ fruitq,
   data = diabetes.complications,
-  outcome.type = "COMPETING-RISK",
+  outcome.type = "competing-risk",
   code.events = list(c(1,2,0), c(2,1,0)),
   label.y = c("Diabetic retinopathy", "Macrovascular complications"),
   label.x = "Years from registration",
@@ -434,7 +434,7 @@ cifpanel(
   inset.panel = TRUE,
   formula = Event(t, epsilon) ~ fruitq,
   data = diabetes.complications,
-  outcome.type = "COMPETING-RISK",
+  outcome.type = "competing-risk",
   code.events = list(c(2,1,0), c(2,1,0)),
   label.y = c("CIF of macrovascular complications", ""),
   label.x = c("Years from registration", ""),
@@ -449,7 +449,7 @@ cifpanel(
 
 output1 <- cifplot(Event(t,epsilon) ~ fruitq,
                    data = diabetes.complications,
-                   outcome.type="COMPETING-RISK",
+                   outcome.type="competing-risk",
                    code.event1=2,
                    code.event2=1,
                    add.conf = FALSE,
@@ -458,7 +458,7 @@ output1 <- cifplot(Event(t,epsilon) ~ fruitq,
                    label.x='Years from registration')
 output2 <- cifplot(Event(t,epsilon) ~ fruitq,
                    data = diabetes.complications,
-                   outcome.type="COMPETING-RISK",
+                   outcome.type="competing-risk",
                    code.event1=2,
                    code.event2=1,
                    add.conf = FALSE,

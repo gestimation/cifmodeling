@@ -17,7 +17,7 @@ regression for survival and competing risks data.
 library(cifmodeling)
 data(diabetes.complications)
 cifplot(Event(t,epsilon)~fruitq, data=diabetes.complications, 
-        outcome.type="COMPETING-RISK", panel.per.event=TRUE)
+        outcome.type="competing-risk", panel.per.event=TRUE)
 ```
 
 <div class="figure">
@@ -162,8 +162,8 @@ You may also pass a survfit-compatible object directly.
   - `formula` A model formula specifying the time-to-event outcome on
     the left-hand side (`Event(time, status)` or `Surv(time, status)`)
     and, optionally, a stratification variable on the right-hand side.
-  - `outcome.type = "SURVIVAL"` → Kaplan–Meier estimator
-  - `outcome.type = "COMPETING-RISK"` → Aalen–Johansen estimator
+  - `outcome.type = "survival"` → Kaplan–Meier estimator
+  - `outcome.type = "competing-risk"` → Aalen–Johansen estimator
 - **Confidence intervals**
   - `conf.int` sets the two-sided level (default 0.95)  
   - `conf.type` chooses the transformation (`"arcsine-square root"`,
@@ -271,7 +271,7 @@ position and size of the zoomed-in-view panel is specified by
 ``` r
 output1 <- cifplot(Event(t,epsilon) ~ fruitq,
                    data = diabetes.complications,
-                   outcome.type="COMPETING-RISK",
+                   outcome.type="competing-risk",
                    code.event1=2,
                    code.event2=1,
                    addConfidenceInterval = FALSE,
@@ -280,7 +280,7 @@ output1 <- cifplot(Event(t,epsilon) ~ fruitq,
                    label.x="Years from registration")
 output2 <- cifplot(Event(t,epsilon) ~ fruitq,
                    data = diabetes.complications,
-                   outcome.type="COMPETING-RISK",
+                   outcome.type="competing-risk",
                    code.event1=2,
                    code.event2=1,
                    addConfidenceInterval = FALSE,
@@ -317,7 +317,7 @@ cifpanel(
  inset.panel = TRUE,
  formula = Event(t, epsilon) ~ fruitq,
  data = diabetes.complications,
- outcome.type = "COMPETING-RISK",
+ outcome.type = "competing-risk",
  code.events = list(c(2,1,0), c(2,1,0)),
  label.y = c("CIF of macrovascular complications", ""),
  label.x = c("Years from registration", ""),
@@ -359,11 +359,11 @@ such as **modelsummary** or **broom** for reporting.
   one binary or categorical variable.
 - `effect.measure1` and `effect.measure2` — specifies the effect
   measures for event1 and event2 (`"RR"`, `"OR"` or `"SHR"`).
-- `outcome.type` selects the outcome type (`"COMPETING-RISK"`,
-  `"SURVIVAL"`, `"BINOMIAL"`, `"PROPORTIONAL-SURVIVAL"` or
-  `"PROPORTIONAL-COMPETING-RISK"`).
+- `outcome.type` selects the outcome type (`"competing-risk"`,
+  `"survival"`, `"binomial"`, `"proportional-survival"` or
+  `"proportional-competing-risk"`).
 - `time.point` — specifies time points at which the exposure effect is
-  evaluated. Required for `"COMPETING-RISK"` and `"SURVIVAL"` outcomes.
+  evaluated. Required for `"competing-risk"` and `"survival"` outcomes.
 - `strata` — specifies the stratification variable used to adjust for
   dependent censoring.
 
@@ -402,7 +402,7 @@ diabetes.complications$fruitq1 <- ifelse(
   diabetes.complications$fruitq == "Q1","Q1","Q2 to Q4"
 )
 cifplot(Event(t,epsilon)~fruitq+fruitq1, data=diabetes.complications, 
-        outcome.type="COMPETING-RISK",
+        outcome.type="competing-risk",
         add.conf=TRUE, add.censor.mark=FALSE, 
         add.competing.risk.mark=FALSE, panel.per.variable=TRUE)
 ```
@@ -423,7 +423,7 @@ before experiencing any event. These marks visualize the timing and
 frequency of censoring, allowing a clearer understanding of
 loss-to-censoring patterns over follow-up. Here the workflow differs
 slightly from the previous code. First, we compute a survfit-compatible
-object `output1` using `cifcurve()` with `outcome.type="COMPETING-RISK"`
+object `output1` using `cifcurve()` with `outcome.type="competing-risk"`
 by calculating Aalen–Johansen estimator stratified by `fruitq1`. Then,
 `cifplot()` is used to generate the figure. The `label.y`, `label.x` and
 `limit.x` arguments are also used to customize the axis labels and
@@ -431,7 +431,7 @@ limits.
 
 ``` r
 output1 <- cifcurve(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
-                    outcome.type="COMPETING-RISK")
+                    outcome.type="competing-risk")
 cifplot(output1, add.conf=FALSE, add.risktable=FALSE, 
         add.censor.mark=TRUE, add.competing.risk.mark=FALSE, 
         label.y="CIF of diabetic retinopathy", label.x="Years from registration",
@@ -490,7 +490,7 @@ was generated, which is due to `style="FRAMED"` specification.
 
 ``` r
 cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
-        outcome.type="COMPETING-RISK", add.conf=FALSE, add.risktable=FALSE, 
+        outcome.type="competing-risk", add.conf=FALSE, add.risktable=FALSE, 
         add.estimate.table=TRUE, add.censor.mark=FALSE, add.competing.risk.mark=TRUE, 
         competing.risk.time=output2, label.y="CIF of diabetic retinopathy", 
         label.x="Years from registration", limits.x=c(0,8),
@@ -513,7 +513,7 @@ retinopathy (estimates for CIFs) along with their confidence interval
 are shown in the table at the bottom of the figure The risk ratios at a
 specific time point (e.g. 8 years) for competing events can be jointly
 and coherently estimated using `polyreg()` with
-`outcome.type="COMPETING-RISK"`. In the code of `polyreg()` below, no
+`outcome.type="competing-risk"`. In the code of `polyreg()` below, no
 covariates are included in the nuisance model (`~1` specifies intercept
 only). The effect of low fruit intake `fruitq1` is estimated as an
 unadjusted risk ratio (`effect.measure1="RR"`) for diabetic retinopathy
@@ -523,7 +523,7 @@ unadjusted risk ratio (`effect.measure1="RR"`) for diabetic retinopathy
 ``` r
 output3 <- polyreg(nuisance.model=Event(t,epsilon)~1, exposure="fruitq1", 
           data=diabetes.complications, effect.measure1="RR", effect.measure2="RR", 
-          time.point=8, outcome.type="COMPETING-RISK", 
+          time.point=8, outcome.type="competing-risk", 
           report.nuisance.parameter=TRUE)
 print(output3$coefficient)
 #> [1] -1.38313159 -0.30043942 -3.99147406 -0.07582595
@@ -550,7 +550,7 @@ such as p-values or confidence intervals.
 ## Example 2. Survival analysis
 
 The second example is time to first event analysis
-(`outcome.type="SURVIVAL"`) to estimate the effect on the risk of
+(`outcome.type="survival"`) to estimate the effect on the risk of
 diabetic retinopathy or macrovascular complications at 8 years. In the
 code below, `cifplot()` is directly used to generate a
 survfit-compatible object internally and plot it.
@@ -558,7 +558,7 @@ survfit-compatible object internally and plot it.
 ``` r
 diabetes.complications$d <- as.integer(diabetes.complications$epsilon>0)
 cifplot(Event(t,d) ~ fruitq1, data=diabetes.complications, 
-outcome.type="SURVIVAL", add.conf=TRUE, add.censor.mark=FALSE, 
+outcome.type="survival", add.conf=TRUE, add.censor.mark=FALSE, 
 add.competing.risk.mark=FALSE, label.y="Survival probability", 
 label.x="Years from registration", label.strata=c("High intake","Low intake"),
 level.strata=c("Q2 to Q4","Q1"), order.strata=c("Q1", "Q2 to Q4"))
@@ -584,5 +584,5 @@ exposure (e.g. intercept) are suppressed when
 ``` r
 output4 <- polyreg(nuisance.model=Event(t,d)~1, 
           exposure="fruitq1", strata="strata", data=diabetes.complications,
-          effect.measure1="RR", time.point=8, outcome.type="SURVIVAL")
+          effect.measure1="RR", time.point=8, outcome.type="survival")
 ```

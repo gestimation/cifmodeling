@@ -39,15 +39,15 @@ Default event codes:
 
 Event codes can be customized using `code.event1`, `code.event2`, and `code.censoring`. The `outcome.type` argument must be set to:
 
--   Effects on cumulative incidence probabilities at a specific time: `"COMPETING-RISK"`
+-   Effects on cumulative incidence probabilities at a specific time: `"competing-risk"`
 
--   Effects on a risk at a specific time: `"SURVIVAL"`
+-   Effects on a risk at a specific time: `"survival"`
 
--   Common effects on cumulative incidence probabilities over time: `"PROPORTIONAL-COMPETING-RISK"`
+-   Common effects on cumulative incidence probabilities over time: `"proportional-competing-risk"`
 
--   Common effects on a risk over time: `"PROPORTIONAL-SURVIVAL"`
+-   Common effects on a risk over time: `"proportional-survival"`
 
--   Effects on a risk of a binomial outcome: `"BINOMIAL"`
+-   Effects on a risk of a binomial outcome: `"binomial"`
 
 Covariates included in `nuisance.model` should adjust for confounding factors to obtain unbiased exposure effect estimates.
 
@@ -71,8 +71,8 @@ Inverse probability weights adjust for dependent censoring. Use `strata=` to spe
 
 In `polyreg()`, the regression parameters are calculated by the stratified inverse probability of censoring weighted estimators, which asymptotically achieve minimum variance within a class of augmented IPCW estimators, without the computational burden of deriving augmentation terms for each cause. For confidence intervals, `polyreg()` normally chooses a single, simple method based on `outcome.type`:
 
--   `"COMPETING-RISK"`, `"SURVIVAL"`, `"BINOMIAL"` — Wald CIs based on sandwich variance
--   `"PROPORTIONAL-COMPETING-RISK"`, `"PROPORTIONAL-SURVIVAL"` — Bootstrap CIs (normal approximation)
+-   `"competing-risk"`, `"survival"`, `"binomial"` — Wald CIs based on sandwich variance
+-   `"proportional-competing-risk"`, `"proportional-survival"` — Bootstrap CIs (normal approximation)
 
 For time-point (non-proportional) models, the default is Wald confidence intervals using a sandwich variance directly from influence functions. If `report.boot.conf = TRUE`, the variance is instead estimated by a wild (multiplier) bootstrap applied to the influence functions (`boot.multiplier`, boot.replications), and Wald confidence intervals are formed from that bootstrap variance. For common effects (proportional models), `boot()` refits the estimator in each replicate and forms normal-approximate confidence intervals from the bootstrap mean and SD. If desired, BCa confidence intervals can be requested via `boot.bca = TRUE` (only for proportional models). Users normally do not need to set any confidence interval flags. 
 

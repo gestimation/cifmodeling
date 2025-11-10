@@ -7,7 +7,7 @@ test_that("panel.per.event ignored for non-CR outcomes with warning", {
       plt <- cifplot(
         survival::Surv(t, status) ~ fruitq1,
         data           = diabetes.complications,
-        outcome.type   = "SURVIVAL",
+        outcome.type   = "survival",
         add.risktable   = FALSE,
         panel.per.event = TRUE
       )
@@ -23,7 +23,7 @@ test_that("cifplot(panel.per.event=TRUE) returns a patchwork object", {
   plt <- cifplot(
     Event(t, epsilon) ~ fruitq1,
     data           = diabetes.complications,
-    outcome.type   = "COMPETING-RISK",
+    outcome.type   = "competing-risk",
     code.events    = c(1, 2, 0),
     add.risktable   = FALSE,
     panel.per.event = TRUE
@@ -52,7 +52,7 @@ test_that("cifplot(panel.per.event=TRUE) returns two panels and passes y labels"
   plt <- cifplot(
     Event(t, epsilon) ~ fruitq1,
     data = diabetes.complications,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.events = c(1, 2, 0),
     panel.per.event = TRUE,
     label.y = "Left axis"

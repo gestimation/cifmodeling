@@ -156,11 +156,11 @@ panel_strip_overrides_from_dots <- function(dots, override_names) {
 }
 panel_is_surv <- function(x) {
   x <- toupper(as.character(x %||% ""))
-  x %in% c("S", "SURVIVAL")
+  x %in% c("S", "survival")
 }
 panel_is_comp <- function(x) {
   x <- toupper(as.character(x %||% ""))
-  x %in% c("C", "COMPETING-RISK", "COMPETING_RISK", "COMPETINGRISK")
+  x %in% c("C", "competing-risk", "COMPETING_RISK", "COMPETINGRISK")
 }
 panel_norm_outcome <- function(x) {
   if (panel_is_surv(x)) return("S")

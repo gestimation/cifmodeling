@@ -5,7 +5,7 @@ test_that("panel.per.variable returns one plot per RHS var", {
   plt <- cifplot(
     Event(t, epsilon) ~ sex_ + fruitq,
     data = diabetes.complications,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.event1 = 1, code.event2 = 2, code.censoring = 0,
     panel.per.variable = TRUE,
     add.risktable = FALSE,
@@ -24,7 +24,7 @@ test_that("order.strata and label.strata (positional) are respected", {
   plt <- cifplot(
     Event(t, epsilon) ~ fruitq,
     data = diabetes.complications,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.event1 = 1, code.event2 = 2, code.censoring = 0,
     panel.per.variable = TRUE,
     rows.columns.panel = c(1, 1),
@@ -40,7 +40,7 @@ test_that("label.strata named mapping works with order.strata", {
   plt <- cifplot(
     Event(t, epsilon) ~ fruitq,
     data = diabetes.complications,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.event1 = 1, code.event2 = 2, code.censoring = 0,
     panel.per.variable = TRUE,
     rows.columns.panel = c(1, 1),
@@ -69,7 +69,7 @@ test_that("order.strata works per-variable when panel.per.variable = TRUE", {
   patch <- cifplot(
     Event(t, epsilon) ~ fruitq + z2,
     data = df,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     type.y = "risk",
     panel.per.variable = TRUE,
     order.strata = ord_list,

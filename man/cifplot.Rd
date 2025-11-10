@@ -11,7 +11,7 @@ cifplot(
   weights = NULL,
   subset.condition = NULL,
   na.action = na.omit,
-  outcome.type = c("COMPETING-RISK", "SURVIVAL"),
+  outcome.type = c("competing-risk", "survival"),
   code.event1 = 1,
   code.event2 = 2,
   code.censoring = 0,
@@ -90,10 +90,10 @@ subset of \code{data} to analyze (default \code{NULL}).}
 \item{na.action}{A function specifying the action to take on missing values (default \code{na.omit}).}
 
 \item{outcome.type}{Character string specifying the type of time-to-event outcome.
-One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
+One of \code{"survival"} (Kaplan–Meier type) or \code{"competing-risk"} (Aalen–Johansen type).
 If \code{NULL} (default), the function automatically infers the outcome type from the data:
-if the event variable has more than two unique levels, \code{"COMPETING-RISK"} is assumed;
-otherwise, \code{"SURVIVAL"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
+if the event variable has more than two unique levels, \code{"competing-risk"} is assumed;
+otherwise, \code{"survival"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
 Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detection based on the event coding.}
 
 \item{code.event1}{Integer code of the event of interest (default \code{1}).}
@@ -197,12 +197,12 @@ times per stratum. Default \code{FALSE}.}
 \item{level.quantile}{Numeric quantile level to be shown (default \code{0.5} for the median).}
 
 \item{panel.per.event}{Logical. \strong{Explicit panel mode.} If \code{TRUE} and
-\code{outcome.type == "COMPETING-RISK"}, \code{cifplot()} internally calls \code{cifpanel()}
+\code{outcome.type == "competing-risk"}, \code{cifplot()} internally calls \code{cifpanel()}
 to display two event-specific CIFs side-by-side (event 1 and event 2) using
 reversed \code{code.events}. Ignored for non-competing-risk outcomes.}
 
 \item{panel.censoring}{Logical. \strong{Explicit panel mode.} If \code{TRUE} and
-\code{outcome.type == "SURVIVAL"}, \code{cifplot()} internally calls \code{cifpanel()}
+\code{outcome.type == "survival"}, \code{cifplot()} internally calls \code{cifpanel()}
 to display KM-type curves for \code{(event, censor)} and \code{(censor, event)} so that
 censoring patterns can be inspected.}
 
@@ -214,8 +214,8 @@ a panel where each variable in RHS is used once as the stratification factor.}
 \code{panel.per.variable}, \code{panel.per.event}, \code{panel.censoring} has been set to \code{TRUE},
 the function chooses a suitable panel mode automatically:
 (i) if the formula RHS has 2+ variables, it behaves like \code{panel.per.variable = TRUE};
-(ii) otherwise, if \code{outcome.type == "COMPETING-RISK"}, it behaves like
-\code{panel.per.event = TRUE}; (iii) otherwise, if \code{outcome.type == "SURVIVAL"}, it
+(ii) otherwise, if \code{outcome.type == "competing-risk"}, it behaves like
+\code{panel.per.event = TRUE}; (iii) otherwise, if \code{outcome.type == "survival"}, it
 behaves like \code{panel.censoring = TRUE}. If a panel mode is explicitly specified,
 \code{panel.mode} is ignored.}
 
@@ -267,8 +267,8 @@ This function returns a regular \code{ggplot} object (compatible with \code{+} a
 
 \strong{Outcome type and estimator}
 \itemize{
-\item \code{outcome.type = "SURVIVAL"} → Kaplan–Meier estimator
-\item \code{outcome.type = "COMPETING-RISK"} → Aalen–Johansen estimator
+\item \code{outcome.type = "survival"} → Kaplan–Meier estimator
+\item \code{outcome.type = "competing-risk"} → Aalen–Johansen estimator
 }
 
 \strong{Data visualization}
@@ -320,7 +320,7 @@ The arguments below fine-tune internal estimation and figure appearance.
    \code{symbol.risk.table} \tab Symbol for strata in risk / estimate tables \tab \code{"square"} \cr
    \code{font.size.risk.table} \tab Font size for texts in risk / estimate tables \tab \code{3} \cr
    \code{add.censor.mark} \tab Add censoring marks. \tab \code{TRUE} \cr
-   \code{add.competing.risk.mark} \tab Add marks for event2 of "COMPETING-RISK" outcome. \tab \code{FALSE} \cr
+   \code{add.competing.risk.mark} \tab Add marks for event2 of "competing-risk" outcome. \tab \code{FALSE} \cr
    \code{add.intercurrent.event.mark} \tab Add intercurrent event marks at user-specified times. \tab \code{FALSE} \cr
    \code{add.quantile} \tab Add quantile reference lines. \tab \code{FALSE} \cr
    \code{level.quantile} \tab Quantile level for \code{add.quantile}. \tab \code{0.5} \cr
@@ -354,8 +354,8 @@ The arguments below fine-tune internal estimation and figure appearance.
    \code{panel.per.event} \tab For competing risks, show CIFs of event 1 and event 2 \cr
    \code{panel.censoring} \tab For survival, show (event, censor) vs (censor, event) \cr
    \code{panel.mode} with 2+ stratification variables \tab Behave like \code{panel.per.variable} \cr
-   \code{panel.mode} with outcome.type = "COMPETING-RISK" \tab Behave like \code{panel.per.event} \cr
-   \code{panel.mode} with outcome.type = "SURVIVAL" \tab Behave like \code{panel.censoring} \cr
+   \code{panel.mode} with outcome.type = "competing-risk" \tab Behave like \code{panel.per.event} \cr
+   \code{panel.mode} with outcome.type = "survival" \tab Behave like \code{panel.censoring} \cr
 }
 
 }
@@ -399,7 +399,7 @@ For ADaM-style data, use \code{code.event1 = 0}, \code{code.censoring = 1}.
 data(diabetes.complications)
 cifplot(Event(t,epsilon) ~ fruitq,
         data = diabetes.complications,
-        outcome.type="COMPETING-RISK",
+        outcome.type="competing-risk",
         add.risktable = FALSE,
         label.y='CIF of diabetic retinopathy',
         label.x='Years from registration')

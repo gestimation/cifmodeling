@@ -98,7 +98,7 @@
 #'
 #' ### Outcome type & event coding
 #'
-#' - Use `outcome.type` to set per-panel estimator (`"SURVIVAL"`=KM, `"COMPETING-RISK"`=AJ).
+#' - Use `outcome.type` to set per-panel estimator (`"survival"`=KM, `"competing-risk"`=AJ).
 #' - Alternatively, pass `code.events` per panel to infer the type:
 #'   - length 2 = SURVIVAL: `c(event1, censor)`
 #'   - length 3 = COMPETING-RISK: `c(event1, event2, censor)`
@@ -199,7 +199,7 @@
 #'   rows.columns.panel = c(1,2),
 #'   formula = Event(t, epsilon) ~ fruitq,
 #'   data = diabetes.complications,
-#'   outcome.type = "COMPETING-RISK",
+#'   outcome.type = "competing-risk",
 #'   code.events = list(c(1,2,0), c(2,1,0)),
 #'   label.y = c("Diabetic retinopathy", "Macrovascular complications"),
 #'   label.x = "Years from registration",
@@ -215,7 +215,7 @@
 #'   inset.panel = TRUE,
 #'   formula = Event(t, epsilon) ~ fruitq,
 #'   data = diabetes.complications,
-#'   outcome.type = "COMPETING-RISK",
+#'   outcome.type = "competing-risk",
 #'   code.events = list(c(2,1,0), c(2,1,0)),
 #'   label.y = c("CIF of macrovascular complications", ""),
 #'   label.x = c("Years from registration", ""),
@@ -230,7 +230,7 @@
 #'
 #' output1 <- cifplot(Event(t,epsilon) ~ fruitq,
 #'                    data = diabetes.complications,
-#'                    outcome.type="COMPETING-RISK",
+#'                    outcome.type="competing-risk",
 #'                    code.event1=2,
 #'                    code.event2=1,
 #'                    add.conf = FALSE,
@@ -239,7 +239,7 @@
 #'                    label.x='Years from registration')
 #' output2 <- cifplot(Event(t,epsilon) ~ fruitq,
 #'                    data = diabetes.complications,
-#'                    outcome.type="COMPETING-RISK",
+#'                    outcome.type="competing-risk",
 #'                    code.event1=2,
 #'                    code.event2=1,
 #'                    add.conf = FALSE,

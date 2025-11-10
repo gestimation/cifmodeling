@@ -918,9 +918,9 @@ plot_decide_panel_mode <- function(
     return("each_var")
   }
 
-  if (identical(outcome.type, "COMPETING-RISK")) {
+  if (identical(outcome.type, "competing-risk")) {
     return("each_event")
-  } else if (identical(outcome.type, "SURVIVAL")) {
+  } else if (identical(outcome.type, "survival")) {
     return("censoring")
   }
 

@@ -16,11 +16,11 @@ vignette: >
 -   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative.
 -   `subset.condition` Optional character expression to subset `data` before analysis.
 -   `na.action` A function specifying the action to take on missing values. The default is `na.omit`.
--   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"SURVIVAL"` (Kaplan–Meier type) or `"COMPETING-RISK"` (Aalen–Johansen type). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"COMPETING-RISK"` is assumed; otherwise, `"SURVIVAL"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
+-   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"survival"` (Kaplan–Meier type) or `"competing-risk"` (Aalen–Johansen type). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"competing-risk"` is assumed; otherwise, `"survival"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
 -   `code.event1` Integer code of the event of interest (default `1`).
 -   `code.event2` Integer code of the competing event (default `2`).
 -   `code.censoring` Integer code of censoring (default `0`).
--   `error` Character specifying the method for variance and standard error used internally. For `"SURVIVAL"` typically `"greenwood"`. For `"COMPETING-RISK"` pass options supported by `calculateAalenDeltaSE()` (`"aalen"`, `"delta"`, `"none"`).
+-   `error` Character specifying the method for variance and standard error used internally. For `"survival"` typically `"greenwood"`. For `"competing-risk"` pass options supported by `calculateAalenDeltaSE()` (`"aalen"`, `"delta"`, `"none"`).
 -   `conf.type` Character transformation for CI on the probability scale (default `"arcsine-square root"`).
 -   `conf.int` numeric two-sided confidence level (default `0.95`).
 -   `return_if` Logical. When `TRUE` and `engine = "calculateAJ_Rcpp"`, the influence function is also computed and returned (default `FALSE`).
@@ -35,11 +35,11 @@ vignette: >
 -   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative.
 -   `subset.condition` Optional character expression to subset `data` before analysis.
 -   `na.action` A function specifying the action to take on missing values. The default is `na.omit`.
--   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"SURVIVAL"` (Kaplan–Meier type) or `"COMPETING-RISK"` (Aalen–Johansen type). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"COMPETING-RISK"` is assumed; otherwise, `"SURVIVAL"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
+-   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"survival"` (Kaplan–Meier type) or `"competing-risk"` (Aalen–Johansen type). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"competing-risk"` is assumed; otherwise, `"survival"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
 -   `code.event1` Integer code of the event of interest (default `1`).
 -   `code.event2` Integer code of the competing event (default `2`).
 -   `code.censoring` Integer code of censoring (default `0`).
--   `error` Character specifying the method for variance and standard error used internally. For `"SURVIVAL"` typically `"greenwood"`. For `"COMPETING-RISK"` pass options supported by `calculateAalenDeltaSE()` (`"aalen"`, `"delta"`, `"none"`).
+-   `error` Character specifying the method for variance and standard error used internally. For `"survival"` typically `"greenwood"`. For `"competing-risk"` pass options supported by `calculateAalenDeltaSE()` (`"aalen"`, `"delta"`, `"none"`).
 -   `conf.type` Character transformation for CI on the probability scale (default `"arcsine-square root"`).
 -   `conf.int` numeric two-sided confidence level (default `0.95`).
 -   `type.y` Optional vector/list per panel: `"surv"` or `"risk"` (display `1 - survival` i.e. CIF).
@@ -70,10 +70,10 @@ vignette: >
 -   `size.intercurrent.event.mark` Numeric point size for intercurrent-event marks (default `2`).
 -   `add.quantile` Logical add `add_quantile()` to plot. It calls `geom_segment()` (default `TRUE`).
 -   `level.quantile` Numeric quantile level for `add_quantile()` (default `0.5`).
--   `panel.per.event` Logical. Explicit panel mode. If `TRUE` and `outcome.type == "COMPETING-RISK"`, `cifplot()` internally calls `cifpanel()` to display two event-specific CIFs side-by-side (event 1 and event 2) using reversed `code.events`. Ignored for non-competing-risk outcomes.
--   `panel.censoring` Logical. Explicit panel mode. If `TRUE` and `outcome.type == "SURVIVAL"`, `cifplot()` internally calls `cifpanel()` to display KM-type curves for (event, censor) and (censor, event) so that censoring patterns can be inspected.
+-   `panel.per.event` Logical. Explicit panel mode. If `TRUE` and `outcome.type == "competing-risk"`, `cifplot()` internally calls `cifpanel()` to display two event-specific CIFs side-by-side (event 1 and event 2) using reversed `code.events`. Ignored for non-competing-risk outcomes.
+-   `panel.censoring` Logical. Explicit panel mode. If `TRUE` and `outcome.type == "survival"`, `cifplot()` internally calls `cifpanel()` to display KM-type curves for (event, censor) and (censor, event) so that censoring patterns can be inspected.
 -   `panel.per.variable` Logical. Explicit panel mode. If `TRUE` and the right-hand side of the formula has multiple covariates (e.g. `~ a + b + c`), the function produces a panel where each variable in RHS is used once as the stratification factor.
--   `panel.mode` Character specifying Automatic panel mode. If `"auto"` and none of `panel.per.variable`, `panel.per.event`, `panel.censoring` has been set to `TRUE`, the function chooses a suitable panel mode automatically: (i) if the formula RHS has 2+ variables, it behaves like `panel.per.variable = TRUE`; (ii) otherwise, if `outcome.type == "COMPETING-RISK"`, it behaves like `panel.per.event = TRUE`; (iii) otherwise, if `outcome.type == "SURVIVAL"`, it behaves like `panel.censoring = TRUE`. If a panel mode is explicitly specified, `panel.mode` is ignored.
+-   `panel.mode` Character specifying Automatic panel mode. If `"auto"` and none of `panel.per.variable`, `panel.per.event`, `panel.censoring` has been set to `TRUE`, the function chooses a suitable panel mode automatically: (i) if the formula RHS has 2+ variables, it behaves like `panel.per.variable = TRUE`; (ii) otherwise, if `outcome.type == "competing-risk"`, it behaves like `panel.per.event = TRUE`; (iii) otherwise, if `outcome.type == "survival"`, it behaves like `panel.censoring = TRUE`. If a panel mode is explicitly specified, `panel.mode` is ignored.
 -   `rows.columns.panel` Optional integer vector `c(nrow, ncol)` controlling the panel layout. If `NULL`, an automatic layout is used.
 -   `style` Character plot theme controls (default `"CLASSIC"`).
 -   `palette` Optional character vector specify color palette, e.g. `palette=c("blue", "cyan", "navy", "green")` (default `NULL`).
@@ -95,12 +95,12 @@ vignette: >
 -   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative.
 -   `subset.condition` Optional character expression to subset `data` before analysis.
 -   `na.action` A function specifying the action to take on missing values. The default is `na.omit`.
--   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"SURVIVAL"` (Kaplan–Meier type) or `"COMPETING-RISK"` (Aalen–Johansen type). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"COMPETING-RISK"` is assumed; otherwise, `"SURVIVAL"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
+-   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"survival"` (Kaplan–Meier type) or `"competing-risk"` (Aalen–Johansen type). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"competing-risk"` is assumed; otherwise, `"survival"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
 -   `code.event1` Integer code of the event of interest (default `1`).
 -   `code.event2` Integer code of the competing event (default `2`).
 -   `code.censoring` Integer code of censoring (default `0`).
 -   `code.events` Optional numeric length-3 vector `c(event1, event2, censoring)`. When supplied, it overrides `code.event1`, `code.event2`, and `code.censoring` (primarily used when `cifpanel()` is called or when `panel.per.event = TRUE`).
--   `error` Character specifying the method for variance and standard error used internally. For `"SURVIVAL"` typically `"greenwood"`. For `"COMPETING-RISK"` pass options supported by `calculateAalenDeltaSE()` (`"aalen"`, `"delta"`, `"none"`).
+-   `error` Character specifying the method for variance and standard error used internally. For `"survival"` typically `"greenwood"`. For `"competing-risk"` pass options supported by `calculateAalenDeltaSE()` (`"aalen"`, `"delta"`, `"none"`).
 -   `conf.type` Character transformation for CI on the probability scale (default `"arcsine-square root"`).
 -   `conf.int` numeric two-sided confidence level (default `0.95`).
 -   `type.y` Optional vector/list per panel: `"surv"` or `"risk"` (display `1 - survival` i.e. CIF).
@@ -144,13 +144,13 @@ vignette: >
 -   `effect.measure1` Character string specifying the effect measure for the primary event. Supported values are `"RR"`, `"OR"` and `"SHR"`.
 -   `effect.measure2` Character string specifying the effect measure for the competing event. Supported values are `"RR"`, `"OR"` and `"SHR"`.
 -   `time.point` Numeric time point at which the exposure effect is evaluated. Required for survival and competing risk analyses.
--   `outcome.type` Character string selecting the outcome type. Valid values are `"COMPETING-RISK"`, `"SURVIVAL"`, `"BINOMIAL"`, `"PROPORTIONAL-SURVIVAL"` and `"PROPORTIONAL-COMPETING-RISK"`. Defaults to `"COMPETING-RISK"`. If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels,
-`"COMPETING-RISK"` is assumed; otherwise, `"SURVIVAL"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
+-   `outcome.type` Character string selecting the outcome type. Valid values are `"competing-risk"`, `"survival"`, `"binomial"`, `"proportional-survival"` and `"proportional-competing-risk"`. Defaults to `"competing-risk"`. If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels,
+`"competing-risk"` is assumed; otherwise, `"survival"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
 -   `conf.int` numeric two-sided confidence level (default `0.95`).
 -   `report.nuisance.parameter` Logical if `TRUE`, the returned object includes estimates of the nuisance model parameters (default `FALSE`).
 -   `report.optim.convergence` Logical if `TRUE`, optimization convergence summaries are returned (default `FALSE`).
--   `report.sandwich.conf` Logical or `NULL`. When `TRUE`, confidence intervals based on sandwich variance are computed. When `FALSE`, they are omitted (default `TRUE`). This confidence interval is default for time-point models (`"outcome.type=COMPETING-RISK"`, `"SURVIVAL"` or `"BINOMIAL"`) and is not available otherwise. 
--   `report.boot.conf` Logical or `NULL`. When `TRUE`, bootstrap confidence intervals are computed. When `FALSE`, they are omitted. If `NULL`, the function chooses based on `outcome.type` (default `NULL`). This confidence interval is default for proportional models (`outcome.type="PROPORTIONAL-COMPETING-RISK"` or `"PROPORTIONAL-SURVIVAL"`).
+-   `report.sandwich.conf` Logical or `NULL`. When `TRUE`, confidence intervals based on sandwich variance are computed. When `FALSE`, they are omitted (default `TRUE`). This confidence interval is default for time-point models (`"outcome.type=COMPETING-RISK"`, `"survival"` or `"binomial"`) and is not available otherwise. 
+-   `report.boot.conf` Logical or `NULL`. When `TRUE`, bootstrap confidence intervals are computed. When `FALSE`, they are omitted. If `NULL`, the function chooses based on `outcome.type` (default `NULL`). This confidence interval is default for proportional models (`outcome.type="proportional-competing-risk"` or `"proportional-survival"`).
 -   `boot.bca` Logical indicating the bootstrap confidence interval method. Use `TRUE` for bias-corrected and accelerated intervals or `FALSE` for the normal approximation (default to `FALSE`).
 -   `boot.replications` Integer giving the number of bootstrap replications (default to `200`).
 -   `boot.seed` Numeric seed used for resampling of bootstrap.

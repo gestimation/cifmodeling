@@ -11,8 +11,8 @@
 #' This function returns a regular \code{ggplot} object (compatible with \code{+} and \code{%+%}).
 #'
 #' **Outcome type and estimator**
-#' -   `outcome.type = "SURVIVAL"` → Kaplan–Meier estimator
-#' -   `outcome.type = "COMPETING-RISK"` → Aalen–Johansen estimator
+#' -   `outcome.type = "survival"` → Kaplan–Meier estimator
+#' -   `outcome.type = "competing-risk"` → Aalen–Johansen estimator
 #'
 #' **Data visualization**
 #' -   `add.conf` adds confidence intervals on the ggplot2-based plot
@@ -62,11 +62,11 @@
 #' @param legend.position Character specifying the legend position:
 #'   \code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, or \code{"none"} (default \code{"top"}).
 #' @param panel.per.event Logical. **Explicit panel mode.** If \code{TRUE} and
-#'   \code{outcome.type == "COMPETING-RISK"}, \code{cifplot()} internally calls \code{cifpanel()}
+#'   \code{outcome.type == "competing-risk"}, \code{cifplot()} internally calls \code{cifpanel()}
 #'   to display two event-specific CIFs side-by-side (event 1 and event 2) using
 #'   reversed \code{code.events}. Ignored for non-competing-risk outcomes.
 #' @param panel.censoring Logical. **Explicit panel mode.** If \code{TRUE} and
-#'   \code{outcome.type == "SURVIVAL"}, \code{cifplot()} internally calls \code{cifpanel()}
+#'   \code{outcome.type == "survival"}, \code{cifplot()} internally calls \code{cifpanel()}
 #'   to display KM-type curves for \code{(event, censor)} and \code{(censor, event)} so that
 #'   censoring patterns can be inspected.
 #' @param panel.per.variable Logical. **Explicit panel mode.** If \code{TRUE} and the right-hand side
@@ -76,8 +76,8 @@
 #'   \code{panel.per.variable}, \code{panel.per.event}, \code{panel.censoring} has been set to \code{TRUE},
 #'   the function chooses a suitable panel mode automatically:
 #'   (i) if the formula RHS has 2+ variables, it behaves like \code{panel.per.variable = TRUE};
-#'   (ii) otherwise, if \code{outcome.type == "COMPETING-RISK"}, it behaves like
-#'   \code{panel.per.event = TRUE}; (iii) otherwise, if \code{outcome.type == "SURVIVAL"}, it
+#'   (ii) otherwise, if \code{outcome.type == "competing-risk"}, it behaves like
+#'   \code{panel.per.event = TRUE}; (iii) otherwise, if \code{outcome.type == "survival"}, it
 #'   behaves like \code{panel.censoring = TRUE}. If a panel mode is explicitly specified,
 #'   \code{panel.mode} is ignored.
 #'
@@ -110,7 +110,7 @@
 #' | `symbol.risk.table` |  Symbol for strata in risk / estimate tables | `"square"` |
 #' | `font.size.risk.table` |  Font size for texts in risk / estimate tables | `3` |
 #' | `add.censor.mark` | Add censoring marks. | `TRUE` |
-#' | `add.competing.risk.mark` | Add marks for event2 of "COMPETING-RISK" outcome. | `FALSE` |
+#' | `add.competing.risk.mark` | Add marks for event2 of "competing-risk" outcome. | `FALSE` |
 #' | `add.intercurrent.event.mark` | Add intercurrent event marks at user-specified times. | `FALSE` |
 #' | `add.quantile` | Add quantile reference lines. | `FALSE` |
 #' | `level.quantile` | Quantile level for `add.quantile`. | `0.5` |
@@ -141,8 +141,8 @@
 #' | `panel.per.event` | For competing risks, show CIFs of event 1 and event 2 |
 #' | `panel.censoring` | For survival, show (event, censor) vs (censor, event) |
 #' | `panel.mode` with 2+ stratification variables | Behave like `panel.per.variable` |
-#' | `panel.mode` with outcome.type = "COMPETING-RISK" | Behave like `panel.per.event` |
-#' | `panel.mode` with outcome.type = "SURVIVAL" | Behave like `panel.censoring` |
+#' | `panel.mode` with outcome.type = "competing-risk" | Behave like `panel.per.event` |
+#' | `panel.mode` with outcome.type = "survival" | Behave like `panel.censoring` |
 #'
 #' #### Axes and legend
 #'
@@ -180,7 +180,7 @@
 #' data(diabetes.complications)
 #' cifplot(Event(t,epsilon) ~ fruitq,
 #'         data = diabetes.complications,
-#'         outcome.type="COMPETING-RISK",
+#'         outcome.type="competing-risk",
 #'         add.risktable = FALSE,
 #'         label.y='CIF of diabetic retinopathy',
 #'         label.x='Years from registration')
@@ -202,7 +202,7 @@ cifplot <- function(
     weights                       = NULL,
     subset.condition              = NULL,
     na.action                     = na.omit,
-    outcome.type                  = c("COMPETING-RISK", "SURVIVAL"),
+    outcome.type                  = c("competing-risk", "survival"),
     code.event1                   = 1,
     code.event2                   = 2,
     code.censoring                = 0,
@@ -573,7 +573,7 @@ plot_panel.per.variable <- function(
   formulas <- lapply(vars, function(v) as.formula(paste0(lhs_chr, " ~ ", v)))
   K        <- length(formulas)
 
-  if (identical(outcome.type, "COMPETING-RISK")) {
+  if (identical(outcome.type, "competing-risk")) {
     code.events <- rep(list(c(code.event1, code.event2, code.censoring)), K)
   } else {
     code.events <- rep(list(c(code.event1, code.censoring)), K)
@@ -639,7 +639,7 @@ plot_panel.per.event <- function(
     subset.condition = NULL,
     na.action = na.omit
 ) {
-  if (is.null(outcome.type) || outcome.type != "COMPETING-RISK") {
+  if (is.null(outcome.type) || outcome.type != "competing-risk") {
     warning("panel.per.event=TRUE is only for COMPETING-RISK; falling back to single-plot.")
     return(NULL)
   }
@@ -689,7 +689,7 @@ plot_panel.per.event <- function(
     data              = data,
     subset.condition  = subset.condition,
     na.action         = na.action,
-    outcome.type      = "COMPETING-RISK",
+    outcome.type      = "competing-risk",
     code.events       = list(ce_panel, c(ce_panel[2L], ce_panel[1L], ce_panel[3L])),
     axis.info         = axis.info.panel,
     visual.info       = visual.info.panel,
@@ -739,7 +739,7 @@ plot_panel.censoring <- function(
     subset.condition = NULL,
     na.action = na.omit
 ) {
-  if (is.null(outcome.type) || outcome.type != "SURVIVAL") {
+  if (is.null(outcome.type) || outcome.type != "survival") {
     warning("panel.censoring=TRUE is only for SURVIVAL outcome; falling back to single-plot.")
     return(NULL)
   }
@@ -764,7 +764,7 @@ plot_panel.censoring <- function(
     data              = data,
     subset.condition  = subset.condition,
     na.action         = na.action,
-    outcome.type      = "SURVIVAL",
+    outcome.type      = "survival",
     code.events       = list(
       c(code.event1,    code.censoring),
       c(code.censoring, code.event1)
@@ -798,7 +798,7 @@ cifplot_single <- function(
     weights          = NULL,
     subset.condition = NULL,
     na.action        = na.omit,
-    outcome.type     = c("COMPETING-RISK", "SURVIVAL"),
+    outcome.type     = c("competing-risk", "survival"),
     code.event1      = 1,
     code.event2      = 2,
     code.censoring   = 0,
@@ -1012,7 +1012,7 @@ cifplot_single <- function(
     outcome.type <- util_check_outcome_type(formula = if (inherits(formula_or_fit,"survfit")) NULL
                                             else formula_or_fit, data = data, na.action = na.action, auto_message = FALSE)
   } else {
-    outcome.type <- match.arg(outcome.type, c("COMPETING-RISK","SURVIVAL"))
+    outcome.type <- match.arg(outcome.type, c("competing-risk","survival"))
   }
 
   if (!inherits(formula_or_fit, "survfit")) {

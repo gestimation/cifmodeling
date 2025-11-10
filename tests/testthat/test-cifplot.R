@@ -6,7 +6,7 @@ test_that("label.strata only adjusts labels and suppresses fill legend", {
   p <- cifplot(
     Event(t, epsilon) ~ fruitq1,
     data = diabetes.complications,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.events  = c(1, 2, 0),
     label.strata = label,
     level.strata = level,
@@ -35,7 +35,7 @@ test_that("label.strata is reflected in color legend NEW", {
   p <- cifplot(
     Event(t, epsilon) ~ fruitq1,
     data = diabetes.complications,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.events  = c(1, 2, 0),
     label.strata = c("Low intake", "High intake"),
     level.strata = c(0, 1),
@@ -69,7 +69,7 @@ test_that("label.strata overrides palette labels", {
   p <- cifplot(
     Event(t, epsilon) ~ fruitq1,
     data = diabetes.complications,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.events  = c(1, 2, 0),
     palette = pal,
     label.strata = lbls,
@@ -165,7 +165,7 @@ test_that("palette only uses manual color scale", {
   p <- cifplot(
     Event(t, epsilon) ~ fruitq1,
     data = diabetes.complications,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.events  = c(1, 2, 0),
     palette = pal,
     add.risktable = FALSE

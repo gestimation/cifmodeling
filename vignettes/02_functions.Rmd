@@ -53,8 +53,8 @@ This function produces the **Kaplan–Meier survival** or **Aalen–Johansen cum
 
 -   **Outcome type and estimator**
     -   `formula` A model formula specifying the time-to-event outcome on the left-hand side (`Event(time, status)` or `Surv(time, status)`) and, optionally, a stratification variable on the right-hand side. 
-    -   `outcome.type = "SURVIVAL"` → Kaplan–Meier estimator
-    -   `outcome.type = "COMPETING-RISK"` → Aalen–Johansen estimator
+    -   `outcome.type = "survival"` → Kaplan–Meier estimator
+    -   `outcome.type = "competing-risk"` → Aalen–Johansen estimator
 -   **Confidence intervals**
     -   `conf.int` sets the two-sided level (default 0.95)\
     -   `conf.type` chooses the transformation (`"arcsine-square root"`, `"plain"`, `"log"`, `"log-log"`, `"logit"`, or `"none"`)
@@ -128,7 +128,7 @@ In the first example, `cifplot()` called `cifpanel()` to combine multiple plots.
 ```{r example02-1, fig.cap="Zoomed-in-view panel using cifplot() and cifpanel()", warning=FALSE, message=FALSE}
 output1 <- cifplot(Event(t,epsilon) ~ fruitq,
                    data = diabetes.complications,
-                   outcome.type="COMPETING-RISK",
+                   outcome.type="competing-risk",
                    code.event1=2,
                    code.event2=1,
                    addConfidenceInterval = FALSE,
@@ -137,7 +137,7 @@ output1 <- cifplot(Event(t,epsilon) ~ fruitq,
                    label.x="Years from registration")
 output2 <- cifplot(Event(t,epsilon) ~ fruitq,
                    data = diabetes.complications,
-                   outcome.type="COMPETING-RISK",
+                   outcome.type="competing-risk",
                    code.event1=2,
                    code.event2=1,
                    addConfidenceInterval = FALSE,
@@ -163,7 +163,7 @@ cifpanel(
  inset.panel = TRUE,
  formula = Event(t, epsilon) ~ fruitq,
  data = diabetes.complications,
- outcome.type = "COMPETING-RISK",
+ outcome.type = "competing-risk",
  code.events = list(c(2,1,0), c(2,1,0)),
  label.y = c("CIF of macrovascular complications", ""),
  label.x = c("Years from registration", ""),
@@ -187,8 +187,8 @@ The function follows the familiar **formula + data** syntax with `Event()` or `S
 -   `nuisance.model` — a formula describing the outcome and nuisance covariates, excluding the exposure of interest. 
 -   `exposure` — specifies the exposure variable. This argument accepts one binary or categorical variable.
 -   `effect.measure1` and `effect.measure2` — specifies the effect measures for event1 and event2 (`"RR"`, `"OR"` or `"SHR"`). 
--   `outcome.type` selects the outcome type (`"COMPETING-RISK"`, `"SURVIVAL"`, `"BINOMIAL"`, `"PROPORTIONAL-SURVIVAL"` or `"PROPORTIONAL-COMPETING-RISK"`). 
--   `time.point` — specifies time points at which the exposure effect is evaluated. Required for `"COMPETING-RISK"` and `"SURVIVAL"` outcomes.
+-   `outcome.type` selects the outcome type (`"competing-risk"`, `"survival"`, `"binomial"`, `"proportional-survival"` or `"proportional-competing-risk"`). 
+-   `time.point` — specifies time points at which the exposure effect is evaluated. Required for `"competing-risk"` and `"survival"` outcomes.
 -   `strata` — specifies the stratification variable used to adjust for dependent censoring. 
 
 **Return**
@@ -206,7 +206,7 @@ The function follows the familiar **formula + data** syntax with `Event()` or `S
 ```{r example02-3, eval=FALSE, warning=FALSE, message=FALSE}
 output <- polyreg(nuisance.model=Event(t,epsilon)~1, exposure="fruitq", 
           data=diabetes.complications, effect.measure1="RR", 
-          effect.measure2="RR", time.point=8, outcome.type="COMPETING-RISK")
+          effect.measure2="RR", time.point=8, outcome.type="competing-risk")
 ```
 
 If you only need the core functionality of `cifcurve()` and `polyreg()`, installing `Rcpp` and `nleqslv` are enough; the other packages are optional but recommended to reproduce the examples below.

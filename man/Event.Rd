@@ -36,7 +36,7 @@ output <- polyreg(
   effect.measure1 = "RR",
   effect.measure2 = "RR",
   time.point = 8,
-  outcome.type = "COMPETING-RISK"
+  outcome.type = "competing-risk"
 )
 
 }

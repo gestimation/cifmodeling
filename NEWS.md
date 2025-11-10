@@ -1,3 +1,7 @@
+# cifmodeling (development version)
+
+* Standardized outcome.type canonical values to lowercase; legacy uppercase and short aliases remain accepted. Internals now use tolower().
+
 <<<<<<< HEAD
 # cifmodeling 0.6.0
 =======

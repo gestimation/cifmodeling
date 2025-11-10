@@ -20,7 +20,7 @@ vignette: >
 
 -   In `cifcurve()` the right-hand side of the formula defines the grouping variable(s) whose curves are estimated; weights (if any) are supplied separately. There is no dedicated exposure argument because all strata are handled through the formula term that is turned into a factor for plotting and estimation.
 -   In `polyreg()` the `nuisance.model` formula describes only the outcome and nuisance covariates (i.e. confounders), while the exposure is passed separately through the `exposure` argument. The exposure design matrix, reference level handling, and scaling of nuisance covariates are handled explicitly for regression fitting.
--   `cifcurve()` focuses on two estimands, selecting between Kaplan–Meier and Aalen–Johansen calculations via `outcome.type = "SURVIVAL"` or `"COMPETING-RISK"`. In contrast, `polyreg()` supports additional time-constant and binomial estimands (`"PROPORTIONAL-SURVIVAL"`, `"PROPORTIONAL-COMPETING-RISK"`, `"BINOMIAL"`) and enforces time-point requirements accordingly—for example `time.point` is mandatory for survival/competing-risk contrasts, while time-constant-effect (e.g. proportional subdistribution hazards) models can either use all observed event times or a user-specified grid supplied via a (vector) `time.point`.
+-   `cifcurve()` focuses on two estimands, selecting between Kaplan–Meier and Aalen–Johansen calculations via `outcome.type = "survival"` or `"competing-risk"`. In contrast, `polyreg()` supports additional time-constant and binomial estimands (`"proportional-survival"`, `"proportional-competing-risk"`, `"binomial"`) and enforces time-point requirements accordingly—for example `time.point` is mandatory for survival/competing-risk contrasts, while time-constant-effect (e.g. proportional subdistribution hazards) models can either use all observed event times or a user-specified grid supplied via a (vector) `time.point`.
 
 ## Event coding conventions incifmodeling and CDISC ADaM ADTTE
 
@@ -30,14 +30,14 @@ To accommodate differences in coding conventions, one can explicitly specify eve
 
 ```{r example5, eval=FALSE, warning=FALSE, message=FALSE}
 polyreg(Event(AVAL, CNSR) ~ ARM, data = adtte, 
-        outcome.type = "SURVIVAL", code.event1=0, code.censoring=1)
+        outcome.type = "survival", code.event1=0, code.censoring=1)
 ```
 
 ## Processing pipeline of cifcurve()
 
 A user-specified model formula in `Event()` or `Surv()` is first parsed by `util_read_surv()` to extract the time-to-event, the event indicator, optional weights, and any strata variable. Those components are then passed to the back-end estimators implemented in `src/calculateAJ_Rcpp.cpp`. The C++ routine supports both weighted and stratified data, so the heavy lifting for Kaplan–Meier or Aalen–Johansen estimates (and associated at-risk, event, and censor counts) happens efficiently regardless of how the input was specified. 
 
-- The `error` argument determines how standard errors are computed. For survival data (`outcome.type = "SURVIVAL"`) it maps to Greenwood (default) or Tsiatis estimators, while for competing-risks data (`outcome.type = "COMPETING-RISK"`) `"aalen"` reproduces the classic Aalen standard errors and `"delta"` implements the delta method.
+- The `error` argument determines how standard errors are computed. For survival data (`outcome.type = "survival"`) it maps to Greenwood (default) or Tsiatis estimators, while for competing-risks data (`outcome.type = "competing-risk"`) `"aalen"` reproduces the classic Aalen standard errors and `"delta"` implements the delta method.
 
 ## Confidence interval options for cifcurve()
 
@@ -54,7 +54,7 @@ The weighted estimating equations are then solved by `solveEstimatingEquation()`
 ## Reproducibility and conventions for polyreg()
 
  - If convergence warnings appear, relax/tighten tolerances or cap the parameter bound (`optim.parameter1` to `3`) and inspect `report.optim.convergence = TRUE`.
- - If necessary, try modifying other `optim.parameter`, providing user-specified initial values, or reducing the number of nuisance parameters (e.g. provide a `time.point` grid that contributes to estimation when using `"PROPORTIONAL-SURVIVAL"` and `"PROPORTIONAL-COMPETING-RISK"`).
+ - If necessary, try modifying other `optim.parameter`, providing user-specified initial values, or reducing the number of nuisance parameters (e.g. provide a `time.point` grid that contributes to estimation when using `"proportional-survival"` and `"proportional-competing-risk"`).
  - Set `boot.seed` for reproducible bootstrap results.
  - Match CDISC ADaM conventions via `code.event1 = 0`, `code.censoring = 1` (and, if applicable, `code.event2` for competing events).
 
