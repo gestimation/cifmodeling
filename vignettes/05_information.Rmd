@@ -46,24 +46,47 @@ Let $t_1 < t_2 < \cdots < t_D$ represent the distinct event times. For each even
 Survival data is expected when `outcome.type = "SURVIVAL"`. Let $d_i$ be the number of failures at $t_i$. The Kaplan–Meier estimator of the survival function $S(t_i)$ is
 
 $$
-\hat{S}(t_i) = \prod_{j=1}^i \left( 1 - \frac{d_j}{Y_j} \right)
+\hat{S}(t) = \prod_{t_i \le t} \left( 1 - \frac{d_i}{Y_i} \right)
 $$
-Note that the estimators are defined to be right-continuous, so the events at $t_i$ are included in the estimate of $\hat{S}(t_i)$. 
+Note that the estimator is defined to be right-continuous, so the events at $t_i$ are included in the estimate of $\hat{S}(t_i)$. 
 
-The standard error of the Kaplan–Meier estimator is often calculated with the Greenwood formula. This formula is derived from a binomial argument, so extension to the weighted case is ad hoc. Alternatively, Tsiatis (1981) proposes a slightly different formula based on a counting process argument which includes the weighted case. 
+The variance or standard error of the Kaplan–Meier estimator is often calculated with the Greenwood formula. This formula is derived from a binomial argument, so extension to the weighted case is ad hoc. Alternatively, Tsiatis (1981) proposes a slightly different formula based on a counting process argument which includes the weighted case. 
 
-**Greenwood standard error**
+**Greenwood variance**
 $$
-\hat{\sigma}\!\left(\hat{S}(t_i)\right)
-= \hat{S}(t_i)\,\sqrt{ \sum_{j=1}^i \frac{d_j}{Y_j\,(Y_j - d_j)} }
-$$
-
-**Tsiatis standard error**
-$$
-\hat{\sigma}\!\left(\hat{S}(t_i)\right)
-= \hat{S}(t_i)\,\sqrt{ \sum_{j=1}^i \frac{d_j}{Y_j^{2}} }.
+\textrm{Var}\!\left\{\hat{S}(t)\right \}
+= \hat{S}(t)^2\sum_{t_i \le t} \frac{d_i}{Y_i\,(Y_i - d_i)}
 $$
 
+**Tsiatis variance**
+$$
+\textrm{Var}\!\left\{\hat{S}(t)\right \}
+= \hat{S}(t)^2\sum_{t_i \le t} \frac{d_i}{Y_i^2}
+$$
+
+Suppose that the survival data consists of $\{T_j, d_j, w_j\}$, independent sample of right-censored survival data with weights ($j=1,...,N$). Let $d_i^w$ and $Y_i^w$ be the weighted number of failures and the weighted number at risk, respectively, at time $t_i$. The weighted Kaplan–Meier estimator of the survival function $S(t)$ is
+
+$$
+\hat{S}(t) = \prod_{t_i \le t} \left( 1 - \frac{d_i^w}{Y_i^w} \right). 
+$$
+Xie and Liu (2005) proposed the Greenwood-type variance for the weighted Kaplan–Meier estimator. 
+
+**Greenwood variance**
+$$
+\textrm{Var}\!\left\{\hat{S}(t)\right \}
+= \hat{S}(t)^2\sum_{t_i \le t} \frac{d_i^w Y_i}{M_i Y_i^w(Y_i^w - d_i^w)}, 
+$$
+where $M_i$ is an adjustment factor defined as 
+$$
+M_i = \frac{\left(\sum_{t_j \geq t_i} w_j \right)^2}{\sum_{t_j \geq t_i} w_j^2}. 
+$$
+The Tsiatis-type variance is calculated as follows in the same spirits. 
+
+**Tsiatis variance**
+$$
+\textrm{Var}\!\left\{\hat{S}(t)\right \}
+= \hat{S}(t)^2\sum_{t_i \le t} \frac{d_i^w Y_i}{M_i (Y_i^w)^2}
+$$
 Competing risks (`outcome.type = "COMPETING-RISK"`) arise in studies in which individuals are exposed to two or more mutually exclusive failure events. When a failure occurs, we observe the time to event $T$ and the cause of failure $\epsilon$. Suppose that $\epsilon=1$ and $\epsilon=2$ represent the event of interest and the competing risk, respectively. Let $d_{ij}$ be the number of failures of cause $j$ at time $t_i$, and now the total number of failures at $t_i$ is $d_i = d_{i1} + d_{i2}$. 
 
 The Aalen–Johansen estimator of CIF for cause $\epsilon=j$ is
@@ -74,10 +97,10 @@ $$
 
 Two standard error estimators of the Aalen–Johansen estimator are commonly used: one based on counting process theory (Aalen, 1978) and the other based on the delta method. 
 
-**Aalen standard error**
+**Aalen variance**
 $$
 \begin{aligned}
-\hat{\sigma}^2\!\left(\hat{F}_j(t)\right)
+\textrm{Var}\!\left\{\hat{F}_j(t)\right \}
 &= \sum_{t_i \le t}
 \bigl[\hat{F}_j(t) - \hat{F}_j(t_i)\bigr]^2
 \frac{d_i}{(Y_i-1)(Y_i - d_i)}
@@ -93,10 +116,10 @@ $$
 \end{aligned}
 $$
 
-**Delta standard error**
+**Delta variance**
 $$
 \begin{aligned}
-\hat{\sigma}^2\!\left(\hat{F}_j(t)\right)
+\textrm{Var}\!\left\{\hat{F}_j(t)\right \}
 &= \sum_{t_i \le t}
 \bigl[\hat{F}_j(t) - \hat{F}_j(t_i)\bigr]^2
 \frac{d_i}{Y_l\,(Y_i - d_i)}
