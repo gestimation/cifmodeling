@@ -67,8 +67,8 @@ times per stratum. Default \code{FALSE}.}
 the layout of the panel returned by the panel modes. If \code{NULL}, an automatic
 layout is determined from the number of subplots.}
 
-\item{style}{Character choosing the base plot style: \code{"CLASSIC"}, \code{"BOLD"},
-\code{"FRAMED"}, \code{"GRID"}, \code{"GRAY"} or \code{"GGSURVFIT"} (default \code{"CLASSIC"}).
+\item{style}{Character choosing the base plot style: \code{"classsic"}, \code{"bold"},
+\code{"framed"}, \code{"grid"}, \code{"gray"} or \code{"ggsurvfit"} (default \code{"classsic"}).
 Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also accepted.}
 
 \item{palette}{Optional character vector specifying the color palette to use across strata.}

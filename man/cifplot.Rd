@@ -53,7 +53,7 @@ cifplot(
   panel.per.variable = FALSE,
   panel.mode = "auto",
   rows.columns.panel = NULL,
-  style = "CLASSIC",
+  style = "classsic",
   palette = NULL,
   linewidth = 0.8,
   linetype = FALSE,
@@ -223,8 +223,8 @@ behaves like \code{panel.censoring = TRUE}. If a panel mode is explicitly specif
 the layout of the panel returned by the panel modes. If \code{NULL}, an automatic
 layout is determined from the number of subplots.}
 
-\item{style}{Character choosing the base plot style: \code{"CLASSIC"}, \code{"BOLD"},
-\code{"FRAMED"}, \code{"GRID"}, \code{"GRAY"} or \code{"GGSURVFIT"} (default \code{"CLASSIC"}).
+\item{style}{Character choosing the base plot style: \code{"classsic"}, \code{"bold"},
+\code{"framed"}, \code{"grid"}, \code{"gray"} or \code{"ggsurvfit"} (default \code{"classsic"}).
 Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also accepted.}
 
 \item{palette}{Optional character vector specifying the color palette to use across strata.}
@@ -284,7 +284,7 @@ This function returns a regular \code{ggplot} object (compatible with \code{+} a
 \itemize{
 \item \code{type.y} chooses y-axis. (\code{"surv"} for survival curves and \code{"risk"} for CIFs)
 \item \code{limits.x}, \code{limits.y}, \code{breaks.x}, \code{breaks.y} numeric vectors for axis control
-\item \code{style} specifies the appearance of plot (\code{"CLASSIC"}, \code{"BOLD"}, \code{"FRAMED"}, \code{"GRID"}, \code{"GRAY"} or \code{"GGSURVFIT"})
+\item \code{style} specifies the appearance of plot (\code{"classsic"}, \code{"bold"}, \code{"framed"}, \code{"grid"}, \code{"gray"} or \code{"ggsurvfit"})
 }
 
 \strong{Panel display}

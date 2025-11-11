@@ -56,7 +56,7 @@
 #' data(diabetes.complications)
 #' out_cifcurve <- cifcurve(Event(t,epsilon) ~ fruitq,
 #'                          data = diabetes.complications,
-#'                          outcome.type='COMPETING-RISK')
+#'                          outcome.type="competing-risk")
 #' cifplot(out_cifcurve,
 #'         outcome.type = "competing-risk",
 #'         type.y = "risk",

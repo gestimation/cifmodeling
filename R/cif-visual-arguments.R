@@ -50,8 +50,8 @@
 #'   the layout of the panel returned by the panel modes. If \code{NULL}, an automatic
 #'   layout is determined from the number of subplots.
 #'
-#' @param style Character choosing the base plot style: \code{"CLASSIC"}, \code{"BOLD"},
-#' \code{"FRAMED"}, \code{"GRID"}, \code{"GRAY"} or \code{"GGSURVFIT"} (default \code{"CLASSIC"}).
+#' @param style Character choosing the base plot style: \code{"classsic"}, \code{"bold"},
+#' \code{"framed"}, \code{"grid"}, \code{"gray"} or \code{"ggsurvfit"} (default \code{"classsic"}).
 #'   Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also accepted.
 #' @param palette Optional character vector specifying the color palette to use across strata.
 #' @param linewidth Optional numeric specifying the line width of curve (default \code{0.8}).

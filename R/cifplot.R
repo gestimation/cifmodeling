@@ -24,7 +24,7 @@
 #' **Plot customization**
 #' -   `type.y` chooses y-axis. (`"surv"` for survival curves and `"risk"` for CIFs)
 #' -   `limits.x`, `limits.y`, `breaks.x`, `breaks.y` numeric vectors for axis control
-#' -   `style` specifies the appearance of plot (`"CLASSIC"`, `"BOLD"`, `"FRAMED"`, `"GRID"`, `"GRAY"` or `"GGSURVFIT"`)
+#' -   `style` specifies the appearance of plot (`"classsic"`, `"bold"`, `"framed"`, `"grid"`, `"gray"` or `"ggsurvfit"`)
 #'
 #' **Panel display**
 #' -   `panel.per.variable` produces multiple survival/CIF curves per stratification variable specified in the formula
@@ -221,30 +221,30 @@ cifplot <- function(
     breaks.x                      = NULL,
     breaks.y                      = NULL,
     use.coord.cartesian           = FALSE,
-    add.conf         = TRUE,
-    add.risktable                  = TRUE,
-    add.estimate.table              = FALSE,
-    symbol.risk.table              = "square",
-    font.size.risk.table           = 3,
-    add.censor.mark                 = TRUE,
+    add.conf                      = TRUE,
+    add.risktable                 = TRUE,
+    add.estimate.table            = FALSE,
+    symbol.risk.table             = "square",
+    font.size.risk.table          = 3,
+    add.censor.mark               = TRUE,
     shape.censor.mark             = 3,
     size.censor.mark              = 2,
-    add.competing.risk.mark          = FALSE,
+    add.competing.risk.mark       = FALSE,
     competing.risk.time           = list(),
     shape.competing.risk.mark     = 16,
     size.competing.risk.mark      = 2,
-    add.intercurrent.event.mark      = FALSE,
+    add.intercurrent.event.mark   = FALSE,
     intercurrent.event.time       = list(),
     shape.intercurrent.event.mark = 1,
     size.intercurrent.event.mark  = 2,
-    add.quantile               = FALSE,
-    level.quantile                      = 0.5,
-    panel.per.event                = FALSE,
-    panel.censoring                = FALSE,
-    panel.per.variable                  = FALSE,
+    add.quantile                  = FALSE,
+    level.quantile                = 0.5,
+    panel.per.event               = FALSE,
+    panel.censoring               = FALSE,
+    panel.per.variable            = FALSE,
     panel.mode                    = "auto",
     rows.columns.panel            = NULL,
-    style                         = "CLASSIC",
+    style                         = "classsic",
     palette                       = NULL,
     linewidth                     = 0.8,
     linetype                      = FALSE,
@@ -910,7 +910,7 @@ cifplot_single <- function(
   ), panel.info)
 
   style.info <- panel_modify_list(list(
-    style           = "CLASSIC",
+    style           = "classsic",
     palette         = NULL,
     linewidth       = 0.8,
     linetype        = FALSE,
@@ -1085,7 +1085,7 @@ cifplot_single <- function(
 #' @param breaks.y Numeric vectors for axis breaks (default \code{NULL}).
 #' @param use.coord.cartesian Logical specify use of coord_cartesian() (default \code{FALSE}).
 
-#' @param style Character plot theme controls (default \code{"CLASSIC"}).
+#' @param style Character plot theme controls (default \code{"classsic"}).
 #' @param font.family Character plot theme controls (default \code{"sans"}).
 #' @param font.size Integer plot theme controls (default \code{14}).
 #' @param legend.position Character specify position of legend: \code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, or \code{"none"} (default \code{"top"}).
@@ -1303,7 +1303,7 @@ call_ggsurvfit <- function(
     }
   }
 
-  if (!identical(style, "GGSURVFIT")) {
+  if (!identical(style, "ggsurvfit")) {
     p <- plot_apply_style(
       p,
       style               = style,

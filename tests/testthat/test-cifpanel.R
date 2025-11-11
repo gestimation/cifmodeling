@@ -67,7 +67,7 @@ make_min_inputs <- function() {
     addQ.list = list(FALSE),
     strata.list = NULL,
     legend.position = "top",
-    dots = list(style = "CLASSIC", font.family = NULL, font.size = NULL)
+    dots = list(style = "classsic", font.family = NULL, font.size = NULL)
   )
 }
 
@@ -94,7 +94,7 @@ make_inputs_2panel <- function(df) {
     addQ.list = list(FALSE, FALSE),
     strata.list = NULL,
     legend.position = "top",
-    dots = list(style = "CLASSIC", font.family = NULL, font.size = NULL)
+    dots = list(style = "classsic", font.family = NULL, font.size = NULL)
   )
 }
 

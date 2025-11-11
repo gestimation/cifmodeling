@@ -52,7 +52,7 @@ cifpanel(
   caption.panel = NULL,
   tag.panel = NULL,
   title.plot = NULL,
-  style = "CLASSIC",
+  style = "classsic",
   palette = NULL,
   linewidth = 0.8,
   linetype = FALSE,
@@ -203,8 +203,8 @@ individual panels (e.g. \code{"A"}, \code{"B"}, \code{"C"}). Typical values are
 are drawn. Length-1 values are recycled to all panels. In inset mode, the first
 element refers to the main plot and the second (if present) to the inset.}
 
-\item{style}{Character choosing the base plot style: \code{"CLASSIC"}, \code{"BOLD"},
-\code{"FRAMED"}, \code{"GRID"}, \code{"GRAY"} or \code{"GGSURVFIT"} (default \code{"CLASSIC"}).
+\item{style}{Character choosing the base plot style: \code{"classsic"}, \code{"bold"},
+\code{"framed"}, \code{"grid"}, \code{"gray"} or \code{"ggsurvfit"} (default \code{"classsic"}).
 Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also accepted.}
 
 \item{palette}{Optional character vector specifying the color palette to use across strata.}

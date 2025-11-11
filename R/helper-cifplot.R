@@ -123,7 +123,7 @@ plot_resolve_palette_color <- function(levels_final, palette, n, fallback_colors
 
 plot_apply_style <- function(
     p,
-    style = c("CLASSIC", "BOLD", "FRAMED", "GRID", "GRAY"),
+    style = c("classsic", "bold", "framed", "grid", "gray"),
     font.family = "sans",
     font.size = 12,
     legend.position = "top",

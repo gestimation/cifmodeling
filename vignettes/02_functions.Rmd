@@ -72,7 +72,7 @@ This function produces the **Kaplan–Meier survival** or **Aalen–Johansen cum
 -   **Plot customization**
     -   `type.y` chooses y-axis (`"surv"` for survival and `"risk"` for 1-survival/CIF)
     -   `limits.x`, `limits.y`, `breaks.x`, `breaks.y` numeric vectors for axis control
-    -   `style` specifies the appearance of plot (`"CLASSIC"`, `"BOLD"`, `"FRAMED"`, `"GRID"`, `"GRAY"` or `"GGSURVFIT"`)
+    -   `style` specifies the appearance of plot (`"classsic"`, `"bold"`, `"framed"`, `"grid"`, `"gray"` or `"ggsurvfit"`)
     -   `palette` specifies color of each curve (e.g. `palette=c("blue1", "cyan3", "navy", "deepskyblue3"))`)
 
 -   **Panel display**

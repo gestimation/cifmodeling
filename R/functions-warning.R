@@ -274,19 +274,3 @@ reg_check_effect.measure <- function(effect.measure1, effect.measure2) {
     effect.measure2 = normalize_effect_measure(effect.measure2, "effect.measure2")
   )
 }
-
-#plot_check_style <- function(x) {
-#  map <- list(
-#    "CLASSIC"     = c("classic","c"),
-#    "BOLD"        = c("bold","b"),
-#    "FRAMED"      = c("framed","f"),
-#    "GRID"        = c("grid","g"),
-#    "GRAY"        = c("gray"),
-#    "GGSURVFIT"   = c("ggsurvfit")
-#  )
-#  ux <- toupper(gsub("[[:space:]]+", " ", x))
-#  for (k in names(map)) {
-#    if (ux == k || tolower(ux) %in% tolower(map[[k]])) return(k)
-#  }
-#  .err("style", choices = paste(names(map), collapse = ", "))
-#}
