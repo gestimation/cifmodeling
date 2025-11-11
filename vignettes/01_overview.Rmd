@@ -54,17 +54,17 @@ This is an example code snippet applying `cifplot()` to visualize the Aalen–Jo
 
 In clinical and epidemiological research, analysts often need to handle censoring, competing risks, and intercurrent events (e.g., treatment switching), but existing R packages typically separate these tasks into different interfaces. `cifmodeling` provides a **unified, publication-ready toolkit** that integrates description of survival and CIF curves, regression modeling, and visualization for survival and competing risks data. It covers both nonparametric estimation and regression modeling of CIFs, centered around three tightly connected functions.
 
--   `cifplot()` typically generates a survival or cumulative incidence curve with marks that represent censoring, competing risks and intercurrent events. Multiple standard error estimators and confidence interval methods are supported. Visualization relies on `ggsurvfit/ggplot2`. 
+-   `cifplot()` typically generates a survival or CIF curve with marks that represent censoring, competing risks and intercurrent events. Multiple standard error (SE) estimators and confidence interval (CI) methods are supported. Visualization relies on `ggsurvfit/ggplot2`. 
 
 -   `cifpanel()` generates a multi-panel figure for survival/CIF curves, arranged either in a grid layout or as an inset overlay.
 
--   `polyreg()` fits coherent regression models of CIFs based on polytomous log odds products and the stratified IPCW estimator. This function is particularly well-suited for causal inference in terms of typical effect measures, namely risk ratios, odds ratios, and subdistribution hazard ratios, with a competing risks, survival, or binary outcome. 
+-   `polyreg()` fits coherent regression models of CIFs based on polytomous log odds products and the stratified inverse probability of censoring weighting (IPCW) estimator. This function is particularly well-suited for causal inference in terms of typical effect measures, namely risk ratios, odds ratios, and subdistribution hazard ratios, with a competing risks, survival, or binary outcome. 
 
 These functions adopt a formula + data syntax, return tidy, publication-ready outputs, and integrate seamlessly with `ggsurvfit` and `modelsummary` for visualization.
 
 ## Installation
 
-The package is implemented in R and relies on `Rcpp`, `nleqslv` and `boot` for the numerical back-end. The examples in this README also use `ggplot2`, `ggsurvfit`, `patchwork` and `modelsummary` for tabulation and plotting. Install the core package and these companion packages with:
+The package is implemented in R and relies on `Rcpp`, `nleqslv` and `boot` for the numerical back-end. The examples in this document also use `ggplot2`, `ggsurvfit`, `patchwork` and `modelsummary` for tabulation and plotting. Install the core package and these companion packages with:
 
 ``` r
 install.packages("Rcpp")
@@ -79,11 +79,11 @@ devtools::install_github("gestimation/cifmodeling")
 
 ## Interoperability
 
-There are several excellent R packages for survival and competing-risk analysis. The `survival` package provides the canonical API for time-to-event data. In combination with `ggsurvfit`, `survival::survfit()` can generate publication-ready survival plots. For cumulative incidence (CIF) plots, integration in the general ecosystem is not as streamlined; `cifmodeling` fills this gap by offering `cifplot()` for survival/CIF plots and multi-panel figures via a single, unified interface.
+There are several excellent R packages for survival and competing-risk analysis. The `survival` package provides the canonical API for survival data. In combination with `ggsurvfit`, `survival::survfit()` can generate publication-ready survival plots. For CIF plots, integration in the general ecosystem is not as streamlined; `cifmodeling` fills this gap by offering `cifplot()` for survival/CIF plots and multi-panel figures via a single, unified interface.
 
 If you need fine-grained plot customization, compute the estimator and keep a survfit-compatible object with `cifcurve()` (or supply your own survfit object) and then style it using `ggsurvfit/ggplot2` layers. In other words, use `cifcurve()` for estimation, `cifplot()/cifpanel()` for quick high-quality figures, and fall back to the `ggplot` ecosystem when you want full artistic control.
 
-For interval estimation with unweighted survival data, `cifcurve()` mirrors the confidence-interval options of `survival::survfit()` (`error="greenwood"` and `"tsiatis"`). For weighted survival data, `cifcurve()` adds valid confidence intervals and standard error of Xie and Liu (2005), and for competing risk data, `error="delta"` and `"aalen"` options. The defaults in `cifmodeling` are chosen from external and internal simulation evidence; they should be sensible for most applications, while still allowing experts to override them when needed. 
+For interval estimation with unweighted survival data, `cifcurve()` mirrors the CI options of `survival::survfit()` (`error="greenwood"` and `"tsiatis"`). For weighted survival data, `cifcurve()` adds valid CIs and SEs of Xie and Liu (2005), and for competing risk data, `error="delta"` and `"aalen"` options. The defaults in `cifmodeling` are chosen from external and internal simulation evidence; they should be sensible for most applications, while still allowing experts to override them when needed. 
 
 The `mets` package is a more specialized toolkit that provides advanced statistical methods for competing risk analysis. `cifmodeling::polyreg()` focuses on coherent modeling of all CIFs simultaneously to estimate RR/OR/SHR at user-specified times; this coherence can come with longer runtimes on large problems. If you prefer fitting separate regression models for each competing event or need Fine–Gray specifically, `mets::cifreg()` (and `mets::binreg()` for RR and OR estimation) are excellent choices. 
 
