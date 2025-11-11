@@ -30,8 +30,8 @@
   need_formula_or_formulas = "Provide either formula (single) or formulas (list).",
   numeric       = "`{arg}` must be numeric.",
   outcome_type  = "Invalid input for outcome.type. Choose one of: {choices}.",
-  panel_disables_tables = "addRiskTable/addEstimateTable are ignored in panel mode (printEachVar/printEachEvent/cifpanel); set to FALSE internally.",
-  panel_disables_labelstrata = "label.strata is ignored in panel mode (printEachVar/printEachEvent/cifpanel).",
+  panel_disables_tables = "add.risktable/add.estimate.table are ignored in panel mode (panel.per.variable/panel.per.event/cifpanel); set to FALSE internally.",
+  panel_disables_labelstrata = "label.strata is ignored in panel mode (panel.per.variable/panel.per.event/cifpanel).",
   recycle_empty = "Cannot recycle an empty object to nonzero length.",
   req           = "`{arg}` is required.",
   style         = "Invalid input for style. Choose one of: {choices}.",
@@ -50,9 +50,9 @@
   plots_extra_dropped = "There are {n_plots} plots but grid holds {n_slots}. Extra plots are dropped.",
   shape_identical = "{a} and {b} specify an identical type of symbol.",
   order_strata_type = "`order.strata` must be a character vector or a named list.",
-  need_formula_for_printEachVar = "printEachVar=TRUE requires a formula interface (not a survfit object).",
-  need_rhs_vars_for_printEachVar = "printEachVar=TRUE requires one or more variables on the RHS.",
-  no_transform_for_printEachVar = "printEachVar=TRUE does not support transformations/interactions. Remove: {which}.",
+  need_formula_for_panel.per.variable = "panel.per.variable=TRUE requires a formula interface (not a survfit object).",
+  need_rhs_vars_for_panel.per.variable = "panel.per.variable=TRUE requires one or more variables on the RHS.",
+  no_transform_for_panel.per.variable = "panel.per.variable=TRUE does not support transformations/interactions. Remove: {which}.",
   need_formula_or_formulas = "Provide a formula or a fitted survfit-like object.",
   weights_num   = "weights must be numeric.",
   weights_fin   = "weights must be finite.",
@@ -124,79 +124,79 @@ util_check_outcome_type <- function(
     formula = NULL,
     data = NULL,
     na.action = stats::na.omit,
-    auto_message = TRUE
+    auto_message = TRUE,
+    allow_multiple = FALSE
 ) {
-  .norm <- function(s) gsub("[^A-Z0-9]+", "", toupper(trimws(as.character(s))))
-
-  if (!is.null(x)) {
-    map <- list(
-      "COMPETING-RISK"              = c(
-        "competing-risk","competing risk","competingrisks","competing-risks",
-        "cr","c","comp","com","competing"
-      ),
-      "SURVIVAL"                    = c("survival","s","surv"),
-      "PROPORTIONAL-COMPETING-RISK" = c("proportional-competing-risk","pc","pcr"),
-      "PROPORTIONAL-SURVIVAL"       = c("proportional-survival","ps"),
-      "BINOMIAL"                    = c("binomial","b")
-    )
-
-    ali_norm <- lapply(map, .norm)
-    names(ali_norm) <- names(map)
-    alias_rev <- stats::setNames(
-      rep(names(ali_norm), lengths(ali_norm)),
-      unlist(ali_norm, use.names = FALSE)
-    )
-
-    ux <- .norm(x)
-    ux <- ux[!is.na(ux) & nzchar(ux)]
-
-    canon <- unique(stats::na.omit(vapply(
-      ux,
-      function(u) {
-        if (u %in% .norm(names(map))) {
-          idx <- match(u, .norm(names(map)))
-          names(map)[idx]
-        } else {
-          cn <- unname(alias_rev[u])
-          if (length(cn) == 0L || is.na(cn)) NA_character_ else cn
-        }
-      },
-      FUN.VALUE = character(1)
-    )))
-
-    if (length(canon) == 1L) {
-      return(canon)
-    } else if (length(canon) > 1L) {
-      stop("`outcome.type` is ambiguous and matched multiple types: ",
-           paste(canon, collapse = ", "), call. = FALSE)
-    } else {
-      allowed <- sort(unique(c(
-        names(map),
-        unlist(map, use.names = FALSE)
-      )))
-      stop("Invalid `outcome.type`. Allowed values are: ",
-           paste(allowed, collapse = ", "), call. = FALSE)
+  normalize_na_action <- function(na) {
+    if (is.function(na)) return(na)
+    if (is.character(na) && length(na) == 1L) {
+      if (na %in% c("na.omit", "na.exclude", "na.pass", "na.fail")) {
+        return(get(na, envir = asNamespace("stats"), inherits = FALSE))
+      }
     }
+    stats::na.omit
+  }
+  na.action <- normalize_na_action(na.action)
+
+  ok <- c("competing-risk", "survival", "binomial",
+          "proportional-competing-risk", "proportional-survival")
+
+  normalize <- function(z) {
+    if (is.null(z)) return(character())
+    z <- as.character(z)
+    z <- tolower(trimws(z))
+    z <- gsub("[[:space:]_.]+", "-", z)
+    z <- gsub("-{2,}", "-", z)
+    z <- gsub("^-|-$", "", z)
+    map <- c(
+      "c"   = "competing-risk", "cr"  = "competing-risk", "competing" = "competing-risk",
+      "s"   = "survival",       "surv" = "survival",
+      "b"   = "binomial",       "bin" = "binomial",
+      "pc"  = "proportional-competing-risk", "pcr" = "proportional-competing-risk",
+      "ps"  = "proportional-survival"
+    )
+    ifelse(z %in% names(map), unname(map[z]), z)
   }
 
-  if (is.null(formula) || is.null(data))
-    .err("req", arg = "formula and data (for automatic detection)")
+  if (!is.null(x)) {
+    canon <- normalize(x)
+    invalid <- is.na(canon) | !nzchar(canon) | !(canon %in% ok)
+    if (any(invalid)) {
+      bad <- unique(canon[invalid])
+      bad <- bad[!is.na(bad)]
+      stop(sprintf("Invalid outcome.type: '%s'. Allowed: %s",
+                   paste(bad, collapse = ", "), paste(ok, collapse = ", ")),
+           call. = FALSE)
+    }
+    u <- unique(canon)
+    if (length(u) == 1L) return(u)
+    if (isTRUE(allow_multiple)) return(canon)
+    stop("`outcome.type` is ambiguous and matched multiple types: ",
+         paste(u, collapse = ", "), call. = FALSE)
+  }
 
-  Terms <- stats::terms(formula, specials = c("strata","offset","cluster"), data = data)
-  mf    <- stats::model.frame(Terms, data = data, na.action = na.action)
+  if (is.null(formula) || is.null(data)) {
+    stop("Provide either `outcome.type` or both `formula` and `data` for automatic detection.", call. = FALSE)
+  }
+
+  Terms <- stats::terms(formula, specials = c("strata", "offset", "cluster"), data = data)
+  mf <- tryCatch(
+    stats::model.frame(Terms, data = data, na.action = na.action),
+    error = function(e) stats::model.frame(Terms, data = data, na.action = stats::na.omit)
+  )
 
   Y <- stats::model.extract(mf, "response")
-  if (!inherits(Y, c("Event","Surv"))) .err("surv_expected")
+  if (!inherits(Y, c("Event", "Surv")))
+    stop("Response must be Event() or Surv().", call. = FALSE)
 
-  status    <- suppressWarnings(as.numeric(Y[, 2]))
-  n_levels  <- length(unique(stats::na.omit(status)))
-
+  status <- suppressWarnings(as.numeric(Y[, 2]))
+  n_levels <- length(unique(stats::na.omit(status)))
   if (n_levels > 2L) {
-    if (isTRUE(auto_message)) message("Detected >2 status levels; outcome.type set to 'COMPETING-RISK'.")
-    return("COMPETING-RISK")
+    if (isTRUE(auto_message)) message("Detected >2 status levels; outcome.type set to 'competing-risk'.")
+    "competing-risk"
   } else {
-    if (isTRUE(auto_message)) message("Detected <= 2 status levels; outcome.type set to 'SURVIVAL'.")
-    return("SURVIVAL")
+    if (isTRUE(auto_message)) message("Detected <= 2 status levels; outcome.type set to 'survival'.")
+    "survival"
   }
 }
 
@@ -274,19 +274,3 @@ reg_check_effect.measure <- function(effect.measure1, effect.measure2) {
     effect.measure2 = normalize_effect_measure(effect.measure2, "effect.measure2")
   )
 }
-
-#plot_check_style <- function(x) {
-#  map <- list(
-#    "CLASSIC"     = c("classic","c"),
-#    "BOLD"        = c("bold","b"),
-#    "FRAMED"      = c("framed","f"),
-#    "GRID"        = c("grid","g"),
-#    "GRAY"        = c("gray"),
-#    "GGSURVFIT"   = c("ggsurvfit")
-#  )
-#  ux <- toupper(gsub("[[:space:]]+", " ", x))
-#  for (k in names(map)) {
-#    if (ux == k || tolower(ux) %in% tolower(map[[k]])) return(k)
-#  }
-#  .err("style", choices = paste(names(map), collapse = ", "))
-#}

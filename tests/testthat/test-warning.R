@@ -11,7 +11,7 @@ test_that(".warn: emits simple warning", {
   res <- NULL
   expect_warning(
     { res <- w$fn("panel_disables_tables", .messages = w$msgs) },
-    regexp = "^addRiskTable/addEstimateTable are ignored in panel mode",
+    regexp = "^add.risktable/add.estimate.table are ignored in panel mode",
     fixed  = FALSE
   )
   # 戻り値は TRUE または NULL を許容（古いビルド互換）

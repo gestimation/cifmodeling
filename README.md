@@ -1,11 +1,11 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# Visualization and Modeling of Competing Risks in R — cifmodeling
-
 <!-- badges: start -->
 
 <!-- badges: end -->
+
+# Visualization and Modeling of Competing Risks in R — cifmodeling
 
 ## Quick start
 
@@ -16,22 +16,30 @@ regression for survival and competing risks data.
 ``` r
 library(cifmodeling)
 data(diabetes.complications)
-cifplot(Event(t,epsilon) ~ fruitq, data=diabetes.complications, 
-        outcome.type="COMPETING-RISK", printEachEvent=TRUE)
+cifplot(Event(t,epsilon)~fruitq, data=diabetes.complications, 
+        outcome.type="competing-risk", panel.per.event=TRUE)
 ```
 
-<img src="man/figures/README-example0-1-1.png" width="100%" />
+<div class="figure">
+
+<img src="man/figures/README-example01-1-1.png" alt="Aalen–Johansen cumulative incidence curves from cifplot()" width="70%" />
+<p class="caption">
+
+Aalen–Johansen cumulative incidence curves from cifplot()
+</p>
+
+</div>
 
 This is an example code snippet applying `cifplot()` to visualize
 Aalen–Johansen cumulative incidence functions (CIFs). In competing risks
 data, censoring is often coded as 0, events of interest as 1, and
 competing risks as 2. The variable `epsilon` in `diabetes.complications`
 data frame represents the occurrence of competing risks according to
-this coding scheme. By setting `printEachEvent=TRUE`, the CIF curve for
+this coding scheme. By setting `panel.per.event=TRUE`, the CIF curve for
 diabetic retinopathy (`epsilon=1`) is output on the left and
 macrovascular complications (`epsilon=2`) on the right.
 
-## Overview
+## Three functions for survival and competing risks analysis
 
 In clinical and epidemiological research, analysts often need to handle
 censoring, competing risks, and intercurrent events (e.g., treatment
@@ -45,7 +53,7 @@ functions.
 
 - `cifplot()` typically generates a survival or cumulative incidence
   curve with marks that represent censoring, competing risks and
-  intercurrent events. Multiple variance estimators and confidence
+  intercurrent events. Multiple standard error estimators and confidence
   interval methods are supported. Visualization relies on
   `ggsurvfit/ggplot2`.
 
@@ -154,8 +162,8 @@ You may also pass a survfit-compatible object directly.
   - `formula` A model formula specifying the time-to-event outcome on
     the left-hand side (`Event(time, status)` or `Surv(time, status)`)
     and, optionally, a stratification variable on the right-hand side.
-  - `outcome.type = "SURVIVAL"` → Kaplan–Meier estimator
-  - `outcome.type = "COMPETING-RISK"` → Aalen–Johansen estimator
+  - `outcome.type = "survival"` → Kaplan–Meier estimator
+  - `outcome.type = "competing-risk"` → Aalen–Johansen estimator
 - **Confidence intervals**
   - `conf.int` sets the two-sided level (default 0.95)  
   - `conf.type` chooses the transformation (`"arcsine-square root"`,
@@ -166,14 +174,14 @@ You may also pass a survfit-compatible object directly.
 **Key arguments for cifplot()**
 
 - **Data visualization**
-  - `addConfidenceInterval` adds confidence intervals on the
-    ggplot2-based plot
-  - `addCompetingRiskMark` and `addIntercurrentEventMark` add symbols to
-    describe competing risks or intercurrent events in addition to
-    conventional censoring marks with `addCensorMark`
-  - `addRiskTable` adds numbers at risk
-  - `addEstimateTable` adds estimates and 95% confidence interval
-  - `addQuantileLine` adds a line that represents median or quantile
+  - `add.conf` adds confidence intervals on the ggplot2-based plot
+  - `add.competing.risk.mark` and `add.intercurrent.event.mark` add
+    symbols to describe competing risks or intercurrent events in
+    addition to conventional censoring marks with `add.censor.mark`
+  - `add.risktable` adds numbers at risk
+  - `add.estimate.table` adds estimates and 95% confidence interval
+  - `add.quantile` adds a line that represents the median or a selected
+    quantile level
 - **Plot customization**
   - `type.y` chooses y-axis (`"surv"` for survival and `"risk"` for
     1-survival/CIF)
@@ -184,10 +192,10 @@ You may also pass a survfit-compatible object directly.
   - `palette` specifies color of each curve
     (e.g. `palette=c("blue1", "cyan3", "navy", "deepskyblue3"))`)
 - **Panel display**
-  - `printEachVar` produces multiple survival/CIF curves per
+  - `panel.per.variable` produces multiple survival/CIF curves per
     stratification variable specified in the formula
-  - `printEachEvent` produces CIF curves for each event type
-  - `printCensoring` produces KM-type curves for (event, censor) and
+  - `panel.per.event` produces CIF curves for each event type
+  - `panel.censoring` produces KM-type curves for (event, censor) and
     (censor, event) so that censoring patterns can be inspected
   - `panel.mode` uses automatic panel mode
 
@@ -263,7 +271,7 @@ position and size of the zoomed-in-view panel is specified by
 ``` r
 output1 <- cifplot(Event(t,epsilon) ~ fruitq,
                    data = diabetes.complications,
-                   outcome.type="COMPETING-RISK",
+                   outcome.type="competing-risk",
                    code.event1=2,
                    code.event2=1,
                    addConfidenceInterval = FALSE,
@@ -272,7 +280,7 @@ output1 <- cifplot(Event(t,epsilon) ~ fruitq,
                    label.x="Years from registration")
 output2 <- cifplot(Event(t,epsilon) ~ fruitq,
                    data = diabetes.complications,
-                   outcome.type="COMPETING-RISK",
+                   outcome.type="competing-risk",
                    code.event1=2,
                    code.event2=1,
                    addConfidenceInterval = FALSE,
@@ -282,15 +290,23 @@ output2 <- cifplot(Event(t,epsilon) ~ fruitq,
                    limits.y=c(0,0.15))
 output3 <- list(a=output1, b=output2)
 cifpanel(plots = output3,
-         title.plot = c("Fruit intake and macrovascular complications", "Zoomed-in view"),
-         inset.panel = TRUE,
-         inset.left = 0.40, inset.bottom = 0.45,
-         inset.right = 1.00, inset.top = 0.95,
-         inset.legend.position = "none",
-         legend.position = "bottom")
+         title.plot=c("Fruit intake and macrovascular complications", "Zoomed-in view"),
+         inset.panel=TRUE,
+         inset.left=0.40, inset.bottom=0.45,
+         inset.right=1.00, inset.top=0.95,
+         inset.legend.position="none",
+         legend.position="bottom")
 ```
 
-<img src="man/figures/README-example0-2-1.png" width="100%" />
+<div class="figure">
+
+<img src="man/figures/README-example02-1-1.png" alt="Zoomed-in-view panel using cifplot() and cifpanel()" width="70%" />
+<p class="caption">
+
+Zoomed-in-view panel using cifplot() and cifpanel()
+</p>
+
+</div>
 
 The code below, in which a formula and data is given directly, produces
 the same output as above.
@@ -301,7 +317,7 @@ cifpanel(
  inset.panel = TRUE,
  formula = Event(t, epsilon) ~ fruitq,
  data = diabetes.complications,
- outcome.type = "COMPETING-RISK",
+ outcome.type = "competing-risk",
  code.events = list(c(2,1,0), c(2,1,0)),
  label.y = c("CIF of macrovascular complications", ""),
  label.x = c("Years from registration", ""),
@@ -310,7 +326,7 @@ cifpanel(
  inset.right = 1.00, inset.top = 0.95,
  inset.legend.position = "none",
  legend.position = "bottom", 
- addConfidenceInterval = FALSE
+ add.conf = FALSE
 )
 ```
 
@@ -343,11 +359,11 @@ such as **modelsummary** or **broom** for reporting.
   one binary or categorical variable.
 - `effect.measure1` and `effect.measure2` — specifies the effect
   measures for event1 and event2 (`"RR"`, `"OR"` or `"SHR"`).
-- `outcome.type` selects the outcome type (`"COMPETING-RISK"`,
-  `"SURVIVAL"`, `"BINOMIAL"`, `"PROPORTIONAL-SURVIVAL"` or
-  `"PROPORTIONAL-COMPETING-RISK"`).
+- `outcome.type` selects the outcome type (`"competing-risk"`,
+  `"survival"`, `"binomial"`, `"proportional-survival"` or
+  `"proportional-competing-risk"`).
 - `time.point` — specifies time points at which the exposure effect is
-  evaluated. Required for `"COMPETING-RISK"` and `"SURVIVAL"` outcomes.
+  evaluated. Required for `"competing-risk"` and `"survival"` outcomes.
 - `strata` — specifies the stratification variable used to adjust for
   dependent censoring.
 
@@ -362,18 +378,18 @@ such as **modelsummary** or **broom** for reporting.
 
 - `summary` — a summary of estimated exposure effects
 
-## Example1. Unadjusted competing risks analysis
+## Example 1. Unadjusted competing risks analysis
 
 For the initial illustration, unadjusted analysis focusing on cumulative
 incidence of diabetic retinopathy (event 1) and macrovascular
 complications (event 2) at 8 years of follow-up is demonstrated. To
 visualize each covariate separately when multiple strata are supplied,
-set `printEachVar = TRUE`. Each variable on the right-hand side is
+set `panel.per.variable = TRUE`. Each variable on the right-hand side is
 plotted in its own panel, and the layout can be controlled with
 `rows.columns.panel`. The figure below contrasts the cumulative
-incidence curves of diabetic retinopathy for quartile `fruitq1` and a
-binary exposure `fruitq1`, low (Q1) and high (Q2 to 4) intake of fruit,
-generated by `cifplot()`. The `addConfidenceInterval=TRUE` argument adds
+incidence curves of diabetic retinopathy for the quartiles `fruitq` and
+a binary exposure `fruitq1`, low (Q1) and high (Q2 to 4) intake of
+fruit, generated by `cifplot()`. The `add.conf=TRUE` argument adds
 confidence intervals to the plot. This helps visualize the statistical
 uncertainty of estimated probabilities across exposure levels. When
 using numeric variables for stratification, discretize them beforehand
@@ -386,56 +402,81 @@ diabetes.complications$fruitq1 <- ifelse(
   diabetes.complications$fruitq == "Q1","Q1","Q2 to Q4"
 )
 cifplot(Event(t,epsilon)~fruitq+fruitq1, data=diabetes.complications, 
-        outcome.type="COMPETING-RISK",
-        addConfidenceInterval=TRUE, addCensorMark=FALSE, 
-        addCompetingRiskMark=FALSE, printEachVar = TRUE)
+        outcome.type="competing-risk",
+        add.conf=TRUE, add.censor.mark=FALSE, 
+        add.competing.risk.mark=FALSE, panel.per.variable=TRUE)
 ```
 
-<img src="man/figures/README-example1-1-1.png" width="100%" />
+<div class="figure">
 
-In the second graph, censoring marks are added along each curve
-(`addCensorMark = TRUE`) to indicate individuals who were censored
+<img src="man/figures/README-example04-1-1-1.png" alt="Cumulative incidence curves per each stratification variable" width="70%" />
+<p class="caption">
+
+Cumulative incidence curves per each stratification variable
+</p>
+
+</div>
+
+In the second figure, censoring marks are added along each curve
+(`add.censor.mark = TRUE`) to indicate individuals who were censored
 before experiencing any event. These marks visualize the timing and
 frequency of censoring, allowing a clearer understanding of
 loss-to-censoring patterns over follow-up. Here the workflow differs
 slightly from the previous code. First, we compute a survfit-compatible
-object `output1` using `cifcurve()` with `outcome.type="COMPETING-RISK"`
-by calculating Aalen–Johansen estimator stratified by fruitq1. Then,
+object `output1` using `cifcurve()` with `outcome.type="competing-risk"`
+by calculating Aalen–Johansen estimator stratified by `fruitq1`. Then,
 `cifplot()` is used to generate the figure. The `label.y`, `label.x` and
 `limit.x` arguments are also used to customize the axis labels and
 limits.
 
 ``` r
 output1 <- cifcurve(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
-                    outcome.type="COMPETING-RISK")
-cifplot(output1, addConfidenceInterval=FALSE, addRiskTable=FALSE, 
-        addCensorMark=TRUE, addCompetingRiskMark=FALSE, 
+                    outcome.type="competing-risk")
+cifplot(output1, add.conf=FALSE, add.risktable=FALSE, 
+        add.censor.mark=TRUE, add.competing.risk.mark=FALSE, 
         label.y="CIF of diabetic retinopathy", label.x="Years from registration",
         limits.x=c(0,8))
 ```
 
-<img src="man/figures/README-example1-2-1.png" width="100%" />
+<div class="figure">
 
-Next, competing risk marks are added (`addCompetingRiskMark = TRUE`) to
-indicate individuals who experienced the competing event (macrovascular
-complications) before diabetic retinopathy. The time points at which the
-macrovascular complications occurred were obtained as `output2` for each
-strata using a helper function `extract_time_to_event()`. These symbols
-help distinguish between events due to the primary cause and those
-attributable to competing causes. Note that the names of
-`competing.risk.time` and `intercurrent.event.time` must match the
-strata labels used in the plot if supplied by the user.
+<img src="man/figures/README-example04-1-2-1.png" alt="Cumulative incidence curves with censor marks and axis labels" width="70%" />
+<p class="caption">
+
+Cumulative incidence curves with censor marks and axis labels
+</p>
+
+</div>
+
+Next, competing risk marks are added (`add.competing.risk.mark = TRUE`)
+to indicate individuals who experienced the competing event
+(macrovascular complications) before diabetic retinopathy. The time
+points at which the macrovascular complications occurred were obtained
+as `output2` for each strata using a helper function
+`extract_time_to_event()`. These symbols help distinguish between events
+due to the primary cause and those attributable to competing causes.
+Note that the names of `competing.risk.time` and
+`intercurrent.event.time` must match the strata labels used in the plot
+if supplied by the user.
 
 ``` r
 output2 <- extract_time_to_event(Event(t,epsilon)~fruitq1, 
                                  data=diabetes.complications, which_event="event2")
-cifplot(output1, addConfidenceInterval=FALSE, addRiskTable=FALSE, 
-        addCensorMark=FALSE, addCompetingRiskMark=TRUE, competing.risk.time=output2, 
+cifplot(output1, add.conf=FALSE, add.risktable=FALSE, 
+        add.censor.mark=FALSE, add.competing.risk.mark=TRUE, competing.risk.time=output2, 
         label.y="CIF of diabetic retinopathy", label.x="Years from registration",
         limits.x=c(0,8))
 ```
 
-<img src="man/figures/README-example1-3-1.png" width="100%" />
+<div class="figure">
+
+<img src="man/figures/README-example04-1-3-1.png" alt="Cumulative incidence curves with competing risk marks" width="70%" />
+<p class="caption">
+
+Cumulative incidence curves with competing risk marks
+</p>
+
+</div>
 
 `label.strata` is another argument for customizing labels, but when
 inputting a survfit object, it becomes invalid because it does not
@@ -443,37 +484,46 @@ contain stratum information. Therefore, the following code inputs the
 formula and data. `label.strata` is used by combining `level.strata` and
 `order.strata`. `level.strata` specifies the levels of the
 stratification variable corresponding to each label in `label.strata`.
-The levels specified in `level.strata` are then displayed in the graph
-in the order defined by `order.strata`. A graph enclosed in a square was
-generated, which is due to `style="FRAMED"` specification.
+The levels specified in `level.strata` are then displayed in the figure
+in the order defined by `order.strata`. A figure enclosed in a square
+was generated, which is due to `style="FRAMED"` specification.
 
 ``` r
 cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
-        outcome.type="COMPETING-RISK", addConfidenceInterval=FALSE, addRiskTable=FALSE, 
-        addEstimateTable=TRUE, addCensorMark=FALSE, addCompetingRiskMark=TRUE, 
+        outcome.type="competing-risk", add.conf=FALSE, add.risktable=FALSE, 
+        add.estimate.table=TRUE, add.censor.mark=FALSE, add.competing.risk.mark=TRUE, 
         competing.risk.time=output2, label.y="CIF of diabetic retinopathy", 
         label.x="Years from registration", limits.x=c(0,8),
         label.strata=c("High intake","Low intake"), level.strata=c("Q2 to Q4","Q1"), 
         order.strata=c("Q1", "Q2 to Q4"), style="FRAMED")
 ```
 
-<img src="man/figures/README-example1-4-1.png" width="100%" />
+<div class="figure">
 
-By specifying `addEstimateTable=TRUE`, the risks of diabetic retinopathy
-(estimates for CIFs) along with their confidence interval are shown in
-the table at the bottom of the graph. The risk ratios at a specific time
-point (e.g. 8 years) for competing events can be jointly and coherently
-estimated using `polyreg()` with `outcome.type="COMPETING-RISK"`. In the
-code of `polyreg()` below, no covariates are included in the nuisance
-model (`~1` specifies intercept only). The effect of low fruit intake
-`fruitq1` is estimated as an unadjusted risk ratio
-(`effect.measure1="RR"`) for diabetic retinopathy (event 1) and
-macrovascular complications (event 2) at 8 years (`time.point=8`).
+<img src="man/figures/README-example04-1-4-1.png" alt="Cumulative incidence curves with strata labels and FRAMED style" width="70%" />
+<p class="caption">
+
+Cumulative incidence curves with strata labels and FRAMED style
+</p>
+
+</div>
+
+By specifying `add.estimate.table=TRUE`, the risks of diabetic
+retinopathy (estimates for CIFs) along with their confidence interval
+are shown in the table at the bottom of the figure The risk ratios at a
+specific time point (e.g. 8 years) for competing events can be jointly
+and coherently estimated using `polyreg()` with
+`outcome.type="competing-risk"`. In the code of `polyreg()` below, no
+covariates are included in the nuisance model (`~1` specifies intercept
+only). The effect of low fruit intake `fruitq1` is estimated as an
+unadjusted risk ratio (`effect.measure1="RR"`) for diabetic retinopathy
+(event 1) and macrovascular complications (event 2) at 8 years
+(`time.point=8`).
 
 ``` r
 output3 <- polyreg(nuisance.model=Event(t,epsilon)~1, exposure="fruitq1", 
           data=diabetes.complications, effect.measure1="RR", effect.measure2="RR", 
-          time.point=8, outcome.type="COMPETING-RISK", 
+          time.point=8, outcome.type="competing-risk", 
           report.nuisance.parameter=TRUE)
 print(output3$coefficient)
 #> [1] -1.38313159 -0.30043942 -3.99147406 -0.07582595
@@ -497,123 +547,36 @@ ratios, or subdistribution hazard ratios using `exponentiate` option.
 The summaries can be displayed in the Viewer with customized statistics
 such as p-values or confidence intervals.
 
-``` r
-msummary(output3$summary, statistic = c("conf.int", "p.value"), exponentiate = TRUE)
-```
-
-<table style="width:99%;">
-<colgroup>
-<col style="width: 32%" />
-<col style="width: 44%" />
-<col style="width: 22%" />
-</colgroup>
-<thead>
-<tr>
-<th></th>
-<th>event1</th>
-<th>event2</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Intercept</td>
-<td>0.251</td>
-<td>0.018</td>
-</tr>
-<tr>
-<td></td>
-<td>[0.194, 0.324]</td>
-<td>[0.012, 0.028]</td>
-</tr>
-<tr>
-<td></td>
-<td>(&lt;0.001)</td>
-<td>(&lt;0.001)</td>
-</tr>
-<tr>
-<td>fruitq1, Q2 to Q4 vs 0</td>
-<td>0.740</td>
-<td>0.927</td>
-</tr>
-<tr>
-<td></td>
-<td>[0.593, 0.924]</td>
-<td>[0.583, 1.474]</td>
-</tr>
-<tr>
-<td></td>
-<td>(0.008)</td>
-<td>(0.749)</td>
-</tr>
-<tr>
-<td>effect.measure</td>
-<td>RR at 8</td>
-<td>RR at 8</td>
-</tr>
-<tr>
-<td>n.events</td>
-<td>279 in N = 978</td>
-<td>79 in N = 978</td>
-</tr>
-<tr>
-<td>median.follow.up</td>
-<td>8</td>
-<td><ul>
-<li></li>
-</ul></td>
-</tr>
-<tr>
-<td>range.follow.up</td>
-<td>[ 0.05 , 11 ]</td>
-<td><ul>
-<li></li>
-</ul></td>
-</tr>
-<tr>
-<td>n.parameters</td>
-<td>4</td>
-<td><ul>
-<li></li>
-</ul></td>
-</tr>
-<tr>
-<td>converged.by</td>
-<td>Converged in objective function</td>
-<td><ul>
-<li></li>
-</ul></td>
-</tr>
-<tr>
-<td>nleqslv.message</td>
-<td>Function criterion near zero</td>
-<td><ul>
-<li></li>
-</ul></td>
-</tr>
-</tbody>
-</table>
-
 ## Example 2. Survival analysis
 
 The second example is time to first event analysis
-(`outcome.type="SURVIVAL"`) to estimate the effect on the risk of
+(`outcome.type="survival"`) to estimate the effect on the risk of
 diabetic retinopathy or macrovascular complications at 8 years. In the
 code below, `cifplot()` is directly used to generate a
 survfit-compatible object internally and plot it.
 
 ``` r
 diabetes.complications$d <- as.integer(diabetes.complications$epsilon>0)
-cifplot(Event(t,d)~fruitq1, data=diabetes.complications, 
-outcome.type="SURVIVAL", addConfidenceInterval=TRUE, addCensorMark=FALSE, 
-addCompetingRiskMark=FALSE, label.y="Survival probability", 
-label.x="Years from registration", label.strata=c("High intake","Low intake"))
+cifplot(Event(t,d) ~ fruitq1, data=diabetes.complications, 
+outcome.type="survival", add.conf=TRUE, add.censor.mark=FALSE, 
+add.competing.risk.mark=FALSE, label.y="Survival probability", 
+label.x="Years from registration", label.strata=c("High intake","Low intake"),
+level.strata=c("Q2 to Q4","Q1"), order.strata=c("Q1", "Q2 to Q4"))
 ```
 
-<img src="man/figures/README-example2-1-1.png" width="100%" />
+<div class="figure">
+
+<img src="man/figures/README-example04-2-1-1.png" alt="Survival curves from cifplot()" width="70%" />
+<p class="caption">
+
+Survival curves from cifplot()
+</p>
+
+</div>
 
 The code below specifies the Richardson model on the risk of diabetic
 retinopathy or macrovascular complications at 8 years
-(outcome.type=“SURVIVAL”). Dependent censoring is adjusted by stratified
+(outcome.type=“survival”). Dependent censoring is adjusted by stratified
 IPCW method (`strata='strata'`). Estimates other than the effects of
 exposure (e.g. intercept) are suppressed when
 `report.nuisance.parameter` is not specified.
@@ -621,19 +584,5 @@ exposure (e.g. intercept) are suppressed when
 ``` r
 output4 <- polyreg(nuisance.model=Event(t,d)~1, 
           exposure="fruitq1", strata="strata", data=diabetes.complications,
-          effect.measure1="RR", time.point=8, outcome.type="SURVIVAL")
-msummary(output4$summary, statistic=c("conf.int", "p.value"), exponentiate=TRUE)
+          effect.measure1="RR", time.point=8, outcome.type="survival")
 ```
-
-|                        | event 1 (no competing risk)     |
-|------------------------|---------------------------------|
-| fruitq1, Q2 to Q4 vs 0 | 0.777                           |
-|                        | \[0.001, 685.697\]              |
-|                        | (0.942)                         |
-| effect.measure         | RR at 8                         |
-| n.events               | 358 in N = 978                  |
-| median.follow.up       | 8                               |
-| range.follow.up        | \[ 0.05 , 11 \]                 |
-| n.parameters           | 2                               |
-| converged.by           | Converged in objective function |
-| nleqslv.message        | Function criterion near zero    |

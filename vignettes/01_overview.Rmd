@@ -7,60 +7,54 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
-# Load required packages for the vignette
+```{r setup01, include=FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.path = "man/figures/vignette-",
-  fig.width  = 6,   
-  fig.height = 4,   
-  dpi        = 300,     
-  fig.retina = 2,       
-  out.width  = "70%",   
-#  dev = "ragg_png",     
-  comment = "#>"
+  collapse   = TRUE,
+  comment    = "#>",
+  fig.path   = "fig/overview-", 
+  fig.ext    = "png",
+  fig.width  = 6,
+  fig.height = 4,
+  dpi        = 300,
+  fig.retina = 2,
+  fig.align  = "center",
+  out.width  = "70%"
 )
 
-.has_cifmodeling <- requireNamespace("cifmodeling", quietly = TRUE)
-if (.has_cifmodeling) {
-library(cifmodeling)
+if (requireNamespace("cifmodeling", quietly = TRUE)) {
+  library(cifmodeling)
+} else {
+  stop("Package 'cifmodeling' is not available during vignette build.")
 }
-set.seed(1)
-```
-
-<!-- badges: start --> <!-- badges: end -->
-
-```{r setup, include=FALSE, warning=FALSE}
-#pak::pak("gestimation/cifmodeling")
-#devtools::install_github("gestimation/cifmodeling") 
-#library(cifmodeling)
 library(nleqslv)
 library(boot)
 library(ggplot2)
 library(ggsurvfit)
 library(patchwork)
+data("diabetes.complications", package = "cifmodeling")
+set.seed(1)
 ```
 
+<!-- badges: start --> <!-- badges: end -->
 
 ## Quick start
 
-This package is a compact and unified toolkit for Kaplan–Meier/Aalen–Johansen curves, visualization, and direct polytomous regression for survival and competing risks data. 
+This package is a compact and unified toolkit for the Kaplan–Meier/Aalen–Johansen curves, visualization, and direct polytomous regression for survival and competing risks data. 
 
-```{r example0-1, warning=FALSE, message=FALSE}
+```{r example01-1, fig.cap="Aalen–Johansen cumulative incidence curves from cifplot()", warning=FALSE, message=FALSE}
 library(cifmodeling)
 data(diabetes.complications)
-cifplot(Event(t,epsilon) ~ fruitq, data=diabetes.complications, 
-        outcome.type="COMPETING-RISK", printEachEvent=TRUE)
+cifplot(Event(t,epsilon)~fruitq, data=diabetes.complications, 
+        outcome.type="competing-risk", panel.per.event=TRUE)
 ```
 
-This is an example code snippet applying `cifplot()` to visualize Aalen–Johansen cumulative incidence functions (CIFs). In competing risks data, censoring is often coded as 0, events of interest as 1, and competing risks as 2. The variable `epsilon` in `diabetes.complications` data frame represents the occurrence of competing risks according to this coding scheme. By setting `printEachEvent=TRUE`, the CIF curve for diabetic retinopathy (`epsilon=1`) is output on the left and macrovascular complications (`epsilon=2`) on the right. 
+This is an example code snippet applying `cifplot()` to visualize the Aalen–Johansen cumulative incidence functions (CIFs). In competing risks data, censoring is often coded as 0, events of interest as 1, and competing risks as 2. The variable `epsilon` in `diabetes.complications` data frame represents the occurrence of competing risks according to this coding scheme. By setting `panel.per.event=TRUE`, the CIF curve for diabetic retinopathy (`epsilon=1`) is output on the left and macrovascular complications (`epsilon=2`) on the right. 
 
-## Overview
+## Tools for survival and competing risks analysis
 
 In clinical and epidemiological research, analysts often need to handle censoring, competing risks, and intercurrent events (e.g., treatment switching), but existing R packages typically separate these tasks into different interfaces. `cifmodeling` provides a **unified, publication-ready toolkit** that integrates description of survival and CIF curves, regression modeling, and visualization for survival and competing risks data. It covers both nonparametric estimation and regression modeling of CIFs, centered around three tightly connected functions.
 
--   `cifplot()` typically generates a survival or cumulative incidence curve with marks that represent censoring, competing risks and intercurrent events. Multiple variance estimators and confidence interval methods are supported. Visualization relies on `ggsurvfit/ggplot2`. 
+-   `cifplot()` typically generates a survival or cumulative incidence curve with marks that represent censoring, competing risks and intercurrent events. Multiple standard error estimators and confidence interval methods are supported. Visualization relies on `ggsurvfit/ggplot2`. 
 
 -   `cifpanel()` generates a multi-panel figure for survival/CIF curves, arranged either in a grid layout or as an inset overlay.
 
@@ -82,15 +76,16 @@ install.packages("patchwork")
 install.packages("modelsummary")
 devtools::install_github("gestimation/cifmodeling")
 ```
+
 ## Interoperability
 
-There are several excellent R packages for survival and competing-risk analysis. The survival package provides the canonical API for time-to-event data (e.g., `survival` and `mets`). In combination with `ggsurvfit`, you can produce publication-ready survival plots. For cumulative incidence (CIF) plots, integration in the general ecosystem is not as streamlined; `cifmodeling` fills this gap by offering `cifplot()` for survival/CIF plots and multi-panel figures via a single, unified interface.
+There are several excellent R packages for survival and competing-risk analysis. The `survival` package provides the canonical API for time-to-event data. In combination with `ggsurvfit`, `survival::survfit()` can generate publication-ready survival plots. For cumulative incidence (CIF) plots, integration in the general ecosystem is not as streamlined; `cifmodeling` fills this gap by offering `cifplot()` for survival/CIF plots and multi-panel figures via a single, unified interface.
 
 If you need fine-grained plot customization, compute the estimator and keep a survfit-compatible object with `cifcurve()` (or supply your own survfit object) and then style it using `ggsurvfit/ggplot2` layers. In other words, use `cifcurve()` for estimation, `cifplot()/cifpanel()` for quick high-quality figures, and fall back to the `ggplot` ecosystem when you want full artistic control.
 
-For interval estimation, `cifcurve()` mirrors the confidence-interval options of `survival::survfit()` for survival curves and adds `delta` and `aalen` options for CIFs. The defaults in `cifmodeling` are chosen from external and internal simulation evidence; they should be sensible for most applications, while still allowing experts to override them when needed. 
+For interval estimation with unweighted survival data, `cifcurve()` mirrors the confidence-interval options of `survival::survfit()` (`error="greenwood"` and `"tsiatis"`). For weighted survival data, `cifcurve()` adds valid confidence intervals and standard error of Xie and Liu (2005), and for competing risk data, `error="delta"` and `"aalen"` options. The defaults in `cifmodeling` are chosen from external and internal simulation evidence; they should be sensible for most applications, while still allowing experts to override them when needed. 
 
-`mets` package is a more specialized toolkit that provides advanced statistical methods for competing risk analysis. `cifmodeling::polyreg()` focuses on coherent modeling of all CIFs simultaneously using polytomous log odds products to estimate RR/OR/SHR at user-specified times; this coherence can come with longer runtimes on large problems. If you prefer fitting separate regression models for each competing event or need Fine–Gray specifically, `mets::cifreg()` (and `mets::binreg()` for RR and OR estimation) are excellent choices. 
+The `mets` package is a more specialized toolkit that provides advanced statistical methods for competing risk analysis. `cifmodeling::polyreg()` focuses on coherent modeling of all CIFs simultaneously to estimate RR/OR/SHR at user-specified times; this coherence can come with longer runtimes on large problems. If you prefer fitting separate regression models for each competing event or need Fine–Gray specifically, `mets::cifreg()` (and `mets::binreg()` for RR and OR estimation) are excellent choices. 
 
 ## Quality control
 

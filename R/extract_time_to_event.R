@@ -41,11 +41,11 @@
 #'                                 which_event = "event2")
 #' cifplot(Event(t,epsilon) ~ fruitq,
 #'         data = diabetes.complications,
-#'         outcome.type="COMPETING-RISK",
-#'         addConfidenceInterval=FALSE,
-#'         addRiskTable=FALSE,
-#'         addCensorMark=FALSE,
-#'         addCompetingRiskMark=TRUE,
+#'         outcome.type="competing-risk",
+#'         add.conf=FALSE,
+#'         add.risktable=FALSE,
+#'         add.censor.mark=FALSE,
+#'         add.competing.risk.mark=TRUE,
 #'         competing.risk.time=output,
 #'         label.y='CIF of diabetic retinopathy',
 #'         label.x='Years from registration')

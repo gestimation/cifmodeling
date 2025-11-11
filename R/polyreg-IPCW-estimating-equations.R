@@ -50,7 +50,7 @@ estimating_equation_ipcw <- function(
   q  <- ql + qa
   iv <- estimand$index.vector
 
-  if (outcome.type == "SURVIVAL" || outcome.type == "BINOMIAL") {
+  if (outcome.type == "survival" || outcome.type == "binomial") {
     y_0 <- ifelse(epsilon == estimand$code.censoring | t > estimand$time.point, 1, 0)
     y_1 <- ifelse(epsilon == estimand$code.event1   & t <= estimand$time.point, 1, 0)
     y_0_ <- ifelse(epsilon == estimand$code.censoring, 1, 0)
@@ -90,7 +90,7 @@ estimating_equation_ipcw <- function(
     ))
   }
 
-  if (outcome.type == "PROPORTIONAL-SURVIVAL") {
+  if (outcome.type == "proportional-survival") {
     if (is.null(estimand$time.point)) {
       tp <- with(data, t[epsilon > 0]); time.point <- unique(tp)
     }
@@ -575,11 +575,11 @@ solveEstimatingEquation <- function(
     prob.bound,
     alpha_beta_0
 ) {
-  if (outcome.type == "COMPETING-RISK" | outcome.type == "SURVIVAL") {
+  if (outcome.type == "competing-risk" | outcome.type == "survival") {
     ip.weight.matrix <- calculateIPCW(nuisance.model, normalized_data, estimand$code.censoring, strata, estimand$time.point)
-  } else if (outcome.type == "BINOMIAL") {
+  } else if (outcome.type == "binomial") {
     ip.weight.matrix <- matrix(1,nrow(normalized_data),1)
-  } else if (outcome.type == "PROPORTIONAL-SURVIVAL" | outcome.type == "PROPORTIONAL-COMPETING-RISK") {
+  } else if (outcome.type == "proportional-survival" | outcome.type == "proportional-competing-risk") {
     ip.weight.matrix <- calculateIPCWMatrix(nuisance.model, normalized_data, estimand$code.censoring, strata, estimand, out_normalizeCovariate)
   }
 

@@ -10,7 +10,7 @@ cifcurve(
   weights = NULL,
   subset.condition = NULL,
   na.action = na.omit,
-  outcome.type = c("SURVIVAL", "COMPETING-RISK"),
+  outcome.type = c("survival", "competing-risk"),
   code.event1 = 1,
   code.event2 = 2,
   code.censoring = 0,
@@ -40,10 +40,10 @@ subset of \code{data} to analyze (default \code{NULL}).}
 \item{na.action}{A function specifying the action to take on missing values (default \code{na.omit}).}
 
 \item{outcome.type}{Character string specifying the type of time-to-event outcome.
-One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
+One of \code{"survival"} (Kaplan–Meier type) or \code{"competing-risk"} (Aalen–Johansen type).
 If \code{NULL} (default), the function automatically infers the outcome type from the data:
-if the event variable has more than two unique levels, \code{"COMPETING-RISK"} is assumed;
-otherwise, \code{"SURVIVAL"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
+if the event variable has more than two unique levels, \code{"competing-risk"} is assumed;
+otherwise, \code{"survival"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
 Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detection based on the event coding.}
 
 \item{code.event1}{Integer code of the event of interest (default \code{1}).}
@@ -58,18 +58,21 @@ Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detectio
 
 \item{conf.int}{Numeric two-sided confidence level (default \code{0.95}).}
 
-\item{return_if}{Logical. When \code{TRUE} and \code{engine = "calculateAJ_Rcpp"}, the influence function is also computed and returned (default \code{FALSE}).}
+\item{return_if}{Logical. When \code{TRUE} and \code{engine = "calculateAJ_Rcpp"},
+the influence function is also computed and returned (default \code{FALSE}).}
 
-\item{report.survfit.std.err}{Logical. If \code{TRUE}, report SE on the log-survival scale (survfit's convention). Otherwise SE is on the probability scale.}
+\item{report.survfit.std.err}{Logical. If \code{TRUE}, report SE on the log-survival
+scale (survfit's convention). Otherwise SE is on the probability scale.}
 
 \item{engine}{Character. One of \code{"auto"}, \code{"calculateKM"}, or \code{"calculateAJ_Rcpp"} (default \code{"calculateAJ_Rcpp"}).}
 
 \item{prob.bound}{Numeric lower bound used to internally truncate probabilities away from 0 and 1 (default \code{1e-7}).}
 }
 \value{
-A \code{survfit} object. For \code{outcome.type="SURVIVAL"}, \code{$surv} is the survival function.
-For \code{outcome.type="COMPETING-RISK"}, \code{$surv} equals \code{1 - CIF} for \code{code.event1}.
-Standard error and CIs are provided per \code{conf.type}. Note that some methods for \code{survfit} (e.g., \code{residuals.survfit}) may not be supported.
+A \code{survfit} object. For \code{outcome.type="survival"}, \code{$surv} is the survival function.
+For \code{outcome.type="competing-risk"}, \code{$surv} equals \code{1 - CIF} for \code{code.event1}.
+Standard error and CIs are provided per \code{conf.type}. Note that some methods
+for \code{survfit} (e.g., \code{residuals.survfit}) may not be supported.
 }
 \description{
 Core estimation routine that computes a \code{survfit}-compatible object
@@ -80,8 +83,8 @@ you will plot it yourself (for example with \code{ggsurvfit} or \code{\link{cifp
 
 \strong{Outcome type and estimator}
 \itemize{
-\item \code{outcome.type = "SURVIVAL"} → Kaplan–Meier estimator
-\item \code{outcome.type = "COMPETING-RISK"} → Aalen–Johansen estimator
+\item \code{outcome.type = "survival"} → Kaplan–Meier estimator
+\item \code{outcome.type = "competing-risk"} → Aalen–Johansen estimator
 }
 
 \strong{Confidence intervals}
@@ -94,9 +97,9 @@ for survival curves and \code{"delta"} or \code{"aalen"} for CIFs)
 }
 \details{
 \itemize{
-\item When \code{outcome.type = "SURVIVAL"}, this is a thin wrapper around KM with the
+\item When \code{outcome.type = "survival"}, this is a thin wrapper around KM with the
 chosen variance / CI transformation.
-\item When \code{outcome.type = "COMPETING-RISK"}, this computes the Aalen–Johansen
+\item When \code{outcome.type = "competing-risk"}, this computes the Aalen–Johansen
 cumulative incidence for \code{code.event1}. The returned \code{$surv} is
 \code{1 - CIF}, i.e. in the format that \pkg{ggsurvfit} expects.
 \item Use \code{\link{cifplot}} if you want to go straight to a figure; use
@@ -120,11 +123,11 @@ cumulative incidence for \code{code.event1}. The returned \code{$surv} is
 data(diabetes.complications)
 out_cifcurve <- cifcurve(Event(t,epsilon) ~ fruitq,
                          data = diabetes.complications,
-                         outcome.type='COMPETING-RISK')
+                         outcome.type="competing-risk")
 cifplot(out_cifcurve,
-        outcome.type = "COMPETING-RISK",
+        outcome.type = "competing-risk",
         type.y = "risk",
-        addRiskTable = FALSE,
+        add.risktable = FALSE,
         label.y = "CIF of diabetic retinopathy",
         label.x = "Years from registration")
 

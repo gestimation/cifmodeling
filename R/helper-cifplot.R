@@ -43,7 +43,7 @@ plot_make_dots_clean <- function(dots) {
   }
   dots1 <- plot_drop_panel_only_args(dots)
   allowed <- setdiff(names(formals(cifplot_single)), "...")
-  drop_extra <- c("printEachVar")
+  drop_extra <- c("panel.per.variable")
   dots2 <- dots1[setdiff(names(dots1), drop_extra)]
 
   dots_clean <- if (!is.null(names(dots2))) {
@@ -123,7 +123,7 @@ plot_resolve_palette_color <- function(levels_final, palette, n, fallback_colors
 
 plot_apply_style <- function(
     p,
-    style = c("CLASSIC", "BOLD", "FRAMED", "GRID", "GRAY"),
+    style = c("classsic", "bold", "framed", "grid", "gray"),
     font.family = "sans",
     font.size = 12,
     legend.position = "top",
@@ -894,9 +894,9 @@ plot_decide_panel_mode <- function(
     panel.info,
     panel.mode
 ) {
-  if (isTRUE(panel.info$printEachVar))   return("each_var")
-  if (isTRUE(panel.info$printEachEvent)) return("each_event")
-  if (isTRUE(panel.info$printCensoring)) return("censoring")
+  if (isTRUE(panel.info$panel.per.variable))   return("each_var")
+  if (isTRUE(panel.info$panel.per.event)) return("each_event")
+  if (isTRUE(panel.info$panel.censoring)) return("censoring")
 
   if (panel.mode=="auto") {
     return("none")
@@ -918,9 +918,9 @@ plot_decide_panel_mode <- function(
     return("each_var")
   }
 
-  if (identical(outcome.type, "COMPETING-RISK")) {
+  if (identical(outcome.type, "competing-risk")) {
     return("each_event")
-  } else if (identical(outcome.type, "SURVIVAL")) {
+  } else if (identical(outcome.type, "survival")) {
     return("censoring")
   }
 
@@ -999,30 +999,30 @@ cifplot_build_info <- function(
   limits.y,
   breaks.x,
   breaks.y,
-  use_coord_cartesian,
+  use.coord.cartesian,
 
-  addConfidenceInterval,
-  addRiskTable,
-  addEstimateTable,
-  symbol.risktable,
-  font.size.risktable,
-  addCensorMark,
+  add.conf,
+  add.risktable,
+  add.estimate.table,
+  symbol.risk.table,
+  font.size.risk.table,
+  add.censor.mark,
   shape.censor.mark,
   size.censor.mark,
-  addCompetingRiskMark,
+  add.competing.risk.mark,
   competing.risk.time,
   shape.competing.risk.mark,
   size.competing.risk.mark,
-  addIntercurrentEventMark,
+  add.intercurrent.event.mark,
   intercurrent.event.time,
   shape.intercurrent.event.mark,
   size.intercurrent.event.mark,
-  addQuantileLine,
-  quantile,
+  add.quantile,
+  level.quantile,
 
-  printEachEvent,
-  printCensoring,
-  printEachVar,
+  panel.per.event,
+  panel.censoring,
+  panel.per.variable,
   rows.columns.panel,
 
   style,
@@ -1063,34 +1063,34 @@ cifplot_build_info <- function(
     limits.y            = limits.y,
     breaks.x            = breaks.x,
     breaks.y            = breaks.y,
-    use_coord_cartesian = use_coord_cartesian
+    use.coord.cartesian = use.coord.cartesian
   ), axis.info %||% list())
 
   visual.info <- panel_modify_list(list(
-    addConfidenceInterval        = addConfidenceInterval,
-    addRiskTable                 = addRiskTable,
-    addEstimateTable             = addEstimateTable,
-    symbol.risktable             = symbol.risktable,
-    font.size.risktable          = font.size.risktable,
-    addCensorMark                = addCensorMark,
+    add.conf        = add.conf,
+    add.risktable                 = add.risktable,
+    add.estimate.table             = add.estimate.table,
+    symbol.risk.table             = symbol.risk.table,
+    font.size.risk.table          = font.size.risk.table,
+    add.censor.mark                = add.censor.mark,
     shape.censor.mark            = shape.censor.mark,
     size.censor.mark             = size.censor.mark,
-    addCompetingRiskMark         = addCompetingRiskMark,
+    add.competing.risk.mark         = add.competing.risk.mark,
     competing.risk.time          = competing.risk.time,
     shape.competing.risk.mark    = shape.competing.risk.mark,
     size.competing.risk.mark     = size.competing.risk.mark,
-    addIntercurrentEventMark     = addIntercurrentEventMark,
+    add.intercurrent.event.mark     = add.intercurrent.event.mark,
     intercurrent.event.time      = intercurrent.event.time,
     shape.intercurrent.event.mark= shape.intercurrent.event.mark,
     size.intercurrent.event.mark = size.intercurrent.event.mark,
-    addQuantileLine              = addQuantileLine,
-    quantile                     = quantile
+    add.quantile              = add.quantile,
+    level.quantile                     = level.quantile
   ), visual.info %||% list())
 
   panel.info <- panel_modify_list(list(
-    printEachEvent     = printEachEvent,
-    printCensoring     = printCensoring,
-    printEachVar       = printEachVar,
+    panel.per.event     = panel.per.event,
+    panel.censoring     = panel.censoring,
+    panel.per.variable       = panel.per.variable,
     rows.columns.panel = rows.columns.panel
   ), panel.info %||% list())
 

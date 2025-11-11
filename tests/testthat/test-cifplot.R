@@ -6,11 +6,11 @@ test_that("label.strata only adjusts labels and suppresses fill legend", {
   p <- cifplot(
     Event(t, epsilon) ~ fruitq1,
     data = diabetes.complications,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.events  = c(1, 2, 0),
     label.strata = label,
     level.strata = level,
-    addRiskTable = FALSE
+    add.risktable = FALSE
   )
 
   expect_s3_class(p, "ggplot")
@@ -35,11 +35,11 @@ test_that("label.strata is reflected in color legend NEW", {
   p <- cifplot(
     Event(t, epsilon) ~ fruitq1,
     data = diabetes.complications,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.events  = c(1, 2, 0),
     label.strata = c("Low intake", "High intake"),
     level.strata = c(0, 1),
-    addRiskTable = FALSE
+    add.risktable = FALSE
   )
 
   sc_col <- p$scales$get_scales("colour")
@@ -69,11 +69,11 @@ test_that("label.strata overrides palette labels", {
   p <- cifplot(
     Event(t, epsilon) ~ fruitq1,
     data = diabetes.complications,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.events  = c(1, 2, 0),
     palette = pal,
     label.strata = lbls,
-    addRiskTable = FALSE
+    add.risktable = FALSE
   )
 
   sc_col  <- p$scales$get_scales("colour")
@@ -165,10 +165,10 @@ test_that("palette only uses manual color scale", {
   p <- cifplot(
     Event(t, epsilon) ~ fruitq1,
     data = diabetes.complications,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.events  = c(1, 2, 0),
     palette = pal,
-    addRiskTable = FALSE
+    add.risktable = FALSE
   )
 
   sc_col <- p$scales$get_scales("colour")

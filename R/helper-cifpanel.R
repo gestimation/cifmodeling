@@ -100,11 +100,11 @@ panel_prepare <- function(
       limits.x                 = if (!is.null(limsx.list))   limsx.list[[i]]   else NULL,
       breaks.x                 = if (!is.null(breakx.list))  breakx.list[[i]]  else NULL,
       breaks.y                 = if (!is.null(breaky.list))  breaky.list[[i]]  else NULL,
-      addConfidenceInterval    = if (!is.null(addCI.list))   addCI.list[[i]]   else TRUE,
-      addCensorMark            = if (!is.null(addCen.list))  addCen.list[[i]]  else TRUE,
-      addCompetingRiskMark     = if (!is.null(addCR.list))   addCR.list[[i]]   else FALSE,
-      addIntercurrentEventMark = if (!is.null(addIC.list))   addIC.list[[i]]   else FALSE,
-      addQuantileLine          = if (!is.null(addQ.list))    addQ.list[[i]]    else FALSE,
+      add.conf    = if (!is.null(addCI.list))   addCI.list[[i]]   else TRUE,
+      add.censor.mark            = if (!is.null(addCen.list))  addCen.list[[i]]  else TRUE,
+      add.competing.risk.mark     = if (!is.null(addCR.list))   addCR.list[[i]]   else FALSE,
+      add.intercurrent.event.mark = if (!is.null(addIC.list))   addIC.list[[i]]   else FALSE,
+      add.quantile          = if (!is.null(addQ.list))    addQ.list[[i]]    else FALSE,
       label.strata             = if (!is.null(strata.list))  strata.list[[i]]  else NULL,
       font.family              = fonts$family,
       font.size                = fonts$size
@@ -154,19 +154,23 @@ panel_strip_overrides_from_dots <- function(dots, override_names) {
   if (length(override_names) == 0L) return(dots)
   dots[setdiff(names(dots), override_names)]
 }
+
 panel_is_surv <- function(x) {
-  x <- toupper(as.character(x %||% ""))
-  x %in% c("S", "SURVIVAL")
+  x <- tolower(as.character(x %||% ""))
+  x %in% c("s", "survival")
 }
+
 panel_is_comp <- function(x) {
-  x <- toupper(as.character(x %||% ""))
-  x %in% c("C", "COMPETING-RISK", "COMPETING_RISK", "COMPETINGRISK")
+  x <- tolower(as.character(x %||% ""))
+  x %in% c("c", "competing-risk", "competing_risk", "competingrisk")
 }
+
 panel_norm_outcome <- function(x) {
-  if (panel_is_surv(x)) return("S")
-  if (panel_is_comp(x)) return("C")
-  stop("Unknown outcome.type: ", x, " (use 'S'/'SURVIVAL' or 'C'/'COMPETING-RISK').")
+  if (panel_is_surv(x)) return("s")
+  if (panel_is_comp(x)) return("c")
+  stop("Unknown outcome.type: ", x, " (use 's'/'survival' or 'c'/'competing-risk').")
 }
+
 panel_validate_code_events <- function(code_events_list, outcome_flags) {
   stopifnot(length(code_events_list) == length(outcome_flags))
   for (i in seq_along(code_events_list)) {

@@ -1,7 +1,6 @@
 template:
   bootstrap: 5
 
-# 公開URLが決まっていれば入れる（例は GitHub Pages）
 url: https://gestimation.github.io/cifmodeling/
 
 development:
@@ -26,7 +25,7 @@ navbar:
           href: articles/01_overview.html
         - text: Main functions
           href: articles/02_functions.html
-        - text: Direct polytomous modeling of CIFs
+        - text: Direct polytomous regression
           href: articles/03_polyreg.html
         - text: Examples
           href: articles/04_examples.html
@@ -36,37 +35,44 @@ navbar:
           href: articles/06_arguments.html
     github:
       icon: fa-github
+      aria-label: GitHub repository
       href: https://github.com/gestimation/cifmodeling
 
 articles:
   - title: Overview
     contents:
-      - 01_overview.Rmd
+      - 01_overview
   - title: Main functions
     contents:
-      - 02_functions.Rmd
-  - title: Direct polytomous modeling of CIFs
+      - 02_functions
+  - title: Direct polytomous regression
     contents:
-      - 03_polyreg.Rmd
+      - 03_polyreg
   - title: Examples
     contents:
-      - 04_examples.Rmd
+      - 04_examples
   - title: Additional information
     contents:
-      - 05_information.Rmd
+      - 05_information
   - title: Full lists of arguments
     contents:
-      - 06_arguments.Rmd
+      - 06_arguments
 
 reference:
-  - title: Estimation & plotting
+  - title: Estimation & visualization
     contents:
       - cifcurve
       - cifplot
       - cifpanel
-  - title: Regression
+      - cif-stat-arguments
+      - cif-visual-arguments
+  - title: Direct polytomous regression
     contents:
       - polyreg
+  - title: Data
+    contents:
+      - diabetes.complications
+      - prostate
   - title: Helpers
     contents:
       - extract_time_to_event

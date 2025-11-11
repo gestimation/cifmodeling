@@ -7,44 +7,38 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
-# Load required packages for the vignette
+```{r setup02, include=FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.path = "man/figures/vignette-",
-  fig.width  = 6,   
-  fig.height = 4,   
-  dpi        = 300,     
-  fig.retina = 2,       
-  out.width  = "70%",   
-#  dev = "ragg_png",     
-  comment = "#>"
+  collapse   = TRUE,
+  comment    = "#>",
+  fig.path   = "fig/function-",
+  fig.ext    = "png",
+  fig.width  = 6,
+  fig.height = 4,
+  dpi        = 300,
+  fig.retina = 2,
+  fig.align  = "center",
+  out.width  = "70%"
 )
 
-.has_cifmodeling <- requireNamespace("cifmodeling", quietly = TRUE)
-if (.has_cifmodeling) {
-library(cifmodeling)
+if (requireNamespace("cifmodeling", quietly = TRUE)) {
+  library(cifmodeling)
+} else {
+  stop("Package 'cifmodeling' is not available during vignette build.")
 }
-set.seed(1)
-```
-
-<!-- badges: start --> <!-- badges: end -->
-
-```{r setup, include=FALSE, warning=FALSE}
-#pak::pak("gestimation/cifmodeling")
-#devtools::install_github("gestimation/cifmodeling") 
-#library(cifmodeling)
 library(nleqslv)
 library(boot)
 library(ggplot2)
 library(ggsurvfit)
 library(patchwork)
+
+data("diabetes.complications", package = "cifmodeling")
+set.seed(1)
 ```
 
-## Main functions
+<!-- badges: start --> <!-- badges: end -->
 
-### cifplot()
+## cifplot()
 
 This function produces the **Kaplan–Meier survival** or **Aalen–Johansen cumulative incidence** curve from a unified formula + data interface. It auto-labels axes based on `outcome.type` and `type.y` (`"risk"` for 1-survival or CIF), can add censoring/competing-risk/intercurrent-event marks, and returns a regular ggplot object (compatible with + and %+%). You may also pass a survfit-compatible object directly.
 
@@ -59,8 +53,8 @@ This function produces the **Kaplan–Meier survival** or **Aalen–Johansen cum
 
 -   **Outcome type and estimator**
     -   `formula` A model formula specifying the time-to-event outcome on the left-hand side (`Event(time, status)` or `Surv(time, status)`) and, optionally, a stratification variable on the right-hand side. 
-    -   `outcome.type = "SURVIVAL"` → Kaplan–Meier estimator
-    -   `outcome.type = "COMPETING-RISK"` → Aalen–Johansen estimator
+    -   `outcome.type = "survival"` → Kaplan–Meier estimator
+    -   `outcome.type = "competing-risk"` → Aalen–Johansen estimator
 -   **Confidence intervals**
     -   `conf.int` sets the two-sided level (default 0.95)\
     -   `conf.type` chooses the transformation (`"arcsine-square root"`, `"plain"`, `"log"`, `"log-log"`, `"logit"`, or `"none"`)
@@ -76,9 +70,10 @@ This function produces the **Kaplan–Meier survival** or **Aalen–Johansen cum
     -   `addQuantileLine` adds a line that represents median or quantile
 
 -   **Plot customization**
-    -   `type.y` chooses y-axis (`"surv"` for survival and `"risk"` for 1-survival or CIF)
+    -   `type.y` chooses y-axis (`"surv"` for survival and `"risk"` for 1-survival/CIF)
     -   `limits.x`, `limits.y`, `breaks.x`, `breaks.y` numeric vectors for axis control
-    -   `style` specifies the appearance of plot (`"CLASSIC"`, `"BOLD"`, `"FRAMED"`, `"GRID"`, `"GRAY"` or `"GGSURVFIT"`)
+    -   `style` specifies the appearance of plot (`"classsic"`, `"bold"`, `"framed"`, `"grid"`, `"gray"` or `"ggsurvfit"`)
+    -   `palette` specifies color of each curve (e.g. `palette=c("blue1", "cyan3", "navy", "deepskyblue3"))`)
 
 -   **Panel display**
     -   `printEachVar` produces multiple survival/CIF curves per stratification variable specified in the formula
@@ -101,7 +96,7 @@ This function produces the **Kaplan–Meier survival** or **Aalen–Johansen cum
 
 Furthermore, the cifmodeling package provides a workflow for a **ggplot2-based visualization** based on the survfit-compatible objects by passing them to `cifplot()` and `cifpanel`. 
 
-### cifpanel()
+## cifpanel()
 
 `cifpanel()` arranges multiple `cifplot()/cifcurve()` results into a unified grid layout with consistent scales, shared legend, and synchronized themes. It is ideal for visual comparison across outcomes, time scales, or strata. The inset feature also allows you to display another plot within a plot.
 
@@ -130,10 +125,10 @@ Furthermore, the cifmodeling package provides a workflow for a **ggplot2-based v
 
 In the first example, `cifplot()` called `cifpanel()` to combine multiple plots. `cifpanel()` is a function for creating a panel with multiple plots like this. `cifpanel()` can also display one plot inside another. The cumulative incidence probability for macrovascular complications is low, making it difficult to discern differences between groups. The following code uses `inset.panel=` to display plot `output2`, with an enlarged vertical axis, inside plot `output1`. The position and size of the zoomed-in-view panel is specified by `inset.left`, `inset.bottom`, `inset.right`, and `inset.top`. 
 
-```{r example0-2, warning=FALSE, message=FALSE}
+```{r example02-1, fig.cap="Zoomed-in-view panel using cifplot() and cifpanel()", warning=FALSE, message=FALSE}
 output1 <- cifplot(Event(t,epsilon) ~ fruitq,
                    data = diabetes.complications,
-                   outcome.type="COMPETING-RISK",
+                   outcome.type="competing-risk",
                    code.event1=2,
                    code.event2=1,
                    addConfidenceInterval = FALSE,
@@ -142,7 +137,7 @@ output1 <- cifplot(Event(t,epsilon) ~ fruitq,
                    label.x="Years from registration")
 output2 <- cifplot(Event(t,epsilon) ~ fruitq,
                    data = diabetes.complications,
-                   outcome.type="COMPETING-RISK",
+                   outcome.type="competing-risk",
                    code.event1=2,
                    code.event2=1,
                    addConfidenceInterval = FALSE,
@@ -152,23 +147,23 @@ output2 <- cifplot(Event(t,epsilon) ~ fruitq,
                    limits.y=c(0,0.15))
 output3 <- list(a=output1, b=output2)
 cifpanel(plots = output3,
-         title.plot = c("Fruit intake and macrovascular complications", "Zoomed-in view"),
-         inset.panel = TRUE,
-         inset.left = 0.40, inset.bottom = 0.45,
-         inset.right = 1.00, inset.top = 0.95,
-         inset.legend.position = "none",
-         legend.position = "bottom")
+         title.plot=c("Fruit intake and macrovascular complications", "Zoomed-in view"),
+         inset.panel=TRUE,
+         inset.left=0.40, inset.bottom=0.45,
+         inset.right=1.00, inset.top=0.95,
+         inset.legend.position="none",
+         legend.position="bottom")
 ```
 
 The code below, in which a formula and data is given directly, produces the same output as above. 
 
-```{r example0-3, eval=FALSE, warning=FALSE, message=FALSE}
+```{r example02-2, eval=FALSE, warning=FALSE, message=FALSE}
 cifpanel(
  title.plot = c("Fruit intake and macrovascular complications", "Zoomed-in view"),
  inset.panel = TRUE,
  formula = Event(t, epsilon) ~ fruitq,
  data = diabetes.complications,
- outcome.type = "COMPETING-RISK",
+ outcome.type = "competing-risk",
  code.events = list(c(2,1,0), c(2,1,0)),
  label.y = c("CIF of macrovascular complications", ""),
  label.x = c("Years from registration", ""),
@@ -181,9 +176,9 @@ cifpanel(
 )
 ```
 
-### polyreg()
+## polyreg()
 
-`polyreg()` implements **log odds product modeling** for CIFs at user-specified time points, focusing on multiplicative effects of a categorical exposure, or constant effects over time like Cox regression and Fine-Gray models. It estimates multiplicative effects such as **risk ratios**, **odds ratios**, or **subdistribution hazard ratios**, while ensuring that the probabilities across competing events sum to one. This is achieved through **reparameterization using polytomous log odds products**, which fits so-called effect-measure models and nuisance models on multiple competing events simultaneously. Additionally, `polyreg()` supports direct binomial regression for survival outcomes and the Richardson model for binomial outcomes, both of which use log odds products.
+`polyreg()` implements **log odds product modeling** of CIFs at user-specified time points, focusing on multiplicative effects of a categorical exposure, or constant effects over time like Cox regression and Fine-Gray models. It estimates multiplicative effects such as **risk ratios**, **odds ratios**, or **subdistribution hazard ratios**, while ensuring that the probabilities across competing events sum to one. This is achieved through **reparameterization using polytomous log odds products**, which fits so-called effect-measure models and nuisance models on multiple competing events simultaneously. Additionally, `polyreg()` supports direct binomial regression for survival outcomes and the Richardson model for binomial outcomes, both of which use log odds products.
 
 The function follows the familiar **formula + data** syntax with `Event()` or `Surv()` and outputs tidy results, including point estimates, standard errors, confidence intervals, and p-values. Its results can be easily summarized with `summary()` or combined with tools such as **modelsummary** or **broom** for reporting.
 
@@ -192,8 +187,8 @@ The function follows the familiar **formula + data** syntax with `Event()` or `S
 -   `nuisance.model` — a formula describing the outcome and nuisance covariates, excluding the exposure of interest. 
 -   `exposure` — specifies the exposure variable. This argument accepts one binary or categorical variable.
 -   `effect.measure1` and `effect.measure2` — specifies the effect measures for event1 and event2 (`"RR"`, `"OR"` or `"SHR"`). 
--   `outcome.type` selects the outcome type (`"COMPETING-RISK"`, `"SURVIVAL"`, `"BINOMIAL"`, `"PROPORTIONAL-SURVIVAL"` or `"PROPORTIONAL-COMPETING-RISK"`). 
--   `time.point` — specifies time points at which the exposure effect is evaluated. Required for `"COMPETING-RISK"` and `"SURVIVAL"` outcomes.
+-   `outcome.type` selects the outcome type (`"competing-risk"`, `"survival"`, `"binomial"`, `"proportional-survival"` or `"proportional-competing-risk"`). 
+-   `time.point` — specifies time points at which the exposure effect is evaluated. Required for `"competing-risk"` and `"survival"` outcomes.
 -   `strata` — specifies the stratification variable used to adjust for dependent censoring. 
 
 **Return**
@@ -208,10 +203,10 @@ The function follows the familiar **formula + data** syntax with `Event()` or `S
 
 ### An example of usage
 
-```{r example0-4, eval=FALSE, warning=FALSE, message=FALSE}
+```{r example02-3, eval=FALSE, warning=FALSE, message=FALSE}
 output <- polyreg(nuisance.model=Event(t,epsilon)~1, exposure="fruitq", 
           data=diabetes.complications, effect.measure1="RR", 
-          effect.measure2="RR", time.point=8, outcome.type="COMPETING-RISK")
+          effect.measure2="RR", time.point=8, outcome.type="competing-risk")
 ```
 
 If you only need the core functionality of `cifcurve()` and `polyreg()`, installing `Rcpp` and `nleqslv` are enough; the other packages are optional but recommended to reproduce the examples below.

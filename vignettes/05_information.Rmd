@@ -7,44 +7,9 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
-# Load required packages for the vignette
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.path = "man/figures/vignette-",
-  fig.width  = 6,   
-  fig.height = 4,   
-  dpi        = 300,     
-  fig.retina = 2,       
-  out.width  = "70%",   
-#  dev = "ragg_png",     
-  comment = "#>"
-)
-
-.has_cifmodeling <- requireNamespace("cifmodeling", quietly = TRUE)
-if (.has_cifmodeling) {
-library(cifmodeling)
-}
-set.seed(1)
-```
-
 <!-- badges: start --> <!-- badges: end -->
 
-```{r setup, include=FALSE, warning=FALSE}
-#pak::pak("gestimation/cifmodeling")
-#devtools::install_github("gestimation/cifmodeling") 
-#library(cifmodeling)
-library(nleqslv)
-library(boot)
-library(ggplot2)
-library(ggsurvfit)
-library(patchwork)
-```
-
-## Additional information
-
-### Comparison of model formula and outcome.type across cifcurve() and polyreg()
+## Model formula and outcome.type in cifcurve() and polyreg()
 
 **Common ground**
 
@@ -55,9 +20,9 @@ library(patchwork)
 
 -   In `cifcurve()` the right-hand side of the formula defines the grouping variable(s) whose curves are estimated; weights (if any) are supplied separately. There is no dedicated exposure argument because all strata are handled through the formula term that is turned into a factor for plotting and estimation.
 -   In `polyreg()` the `nuisance.model` formula describes only the outcome and nuisance covariates (i.e. confounders), while the exposure is passed separately through the `exposure` argument. The exposure design matrix, reference level handling, and scaling of nuisance covariates are handled explicitly for regression fitting.
--   `cifcurve()` focuses on two estimands, selecting between Kaplan–Meier and Aalen–Johansen calculations via `outcome.type = "SURVIVAL"` or `"COMPETING-RISK"`. In contrast, `polyreg()` supports additional time-constant and binomial estimands (`"PROPORTIONAL-SURVIVAL"`, `"PROPORTIONAL-COMPETING-RISK"`, `"BINOMIAL"`) and enforces time-point requirements accordingly—for example `time.point` is mandatory for survival/competing-risk contrasts, while time-constant-effect (e.g. proportional subdistribution hazards) models can either use all observed event times or a user-specified grid supplied via a (vector) `time.point`.
+-   `cifcurve()` focuses on two estimands, selecting between Kaplan–Meier and Aalen–Johansen calculations via `outcome.type = "survival"` or `"competing-risk"`. In contrast, `polyreg()` supports additional time-constant and binomial estimands (`"proportional-survival"`, `"proportional-competing-risk"`, `"binomial"`) and enforces time-point requirements accordingly—for example `time.point` is mandatory for survival/competing-risk contrasts, while time-constant-effect (e.g. proportional subdistribution hazards) models can either use all observed event times or a user-specified grid supplied via a (vector) `time.point`.
 
-### Event coding conventions in package cifmodeling and CDISC ADaM ADTTE
+## Event coding conventions incifmodeling and CDISC ADaM ADTTE
 
 When working with survival data, one common source of confusion arises from inconsistent event coding conventions between the standard input of `Surv()`, provided by survival package, and the CDISC ADaM ADTTE (Analysis Data Model for Time-to-Event Endpoints) used in regulatory clinical trials. With `Surv()`, event is often coded as 1 and censoring is coded as 0. By contrast, the CDISC ADaM ADTTE (commonly used in pharmaceutical submissions and SDTM-based analyses) follows the opposite convention. `CNSR = 0` means that event occurred and `CNSR = 1` represents censoring, which aligns with the broader ADaM convention (where `1 = TRUE`). 
 
@@ -65,35 +30,131 @@ To accommodate differences in coding conventions, one can explicitly specify eve
 
 ```{r example5, eval=FALSE, warning=FALSE, message=FALSE}
 polyreg(Event(AVAL, CNSR) ~ ARM, data = adtte, 
-        outcome.type = "SURVIVAL", code.event1=0, code.censoring=1)
+        outcome.type = "survival", code.event1=0, code.censoring=1)
 ```
 
-### Processing pipeline of cifcurve()
+## Processing pipeline of cifcurve()
 
 A user-specified model formula in `Event()` or `Surv()` is first parsed by `util_read_surv()` to extract the time-to-event, the event indicator, optional weights, and any strata variable. Those components are then passed to the back-end estimators implemented in `src/calculateAJ_Rcpp.cpp`. The C++ routine supports both weighted and stratified data, so the heavy lifting for Kaplan–Meier or Aalen–Johansen estimates (and associated at-risk, event, and censor counts) happens efficiently regardless of how the input was specified. 
 
-- The `error` argument determines how standard errors are computed. For survival data (`outcome.type = "SURVIVAL"`) it maps to Greenwood (default) or Tsiatis estimators, while for competing-risks data (`outcome.type = "COMPETING-RISK"`) `"aalen"` reproduces the classic Aalen standard errors and `"delta"` implements the delta method.
+- The `error` argument determines how standard errors are computed. For survival data (`outcome.type = "survival"`) it maps to Greenwood (default) or Tsiatis estimators, while for competing-risks data (`outcome.type = "competing-risk"`) `"aalen"` reproduces the classic Aalen standard errors and `"delta"` implements the delta method.
 
-### Variance and confidence interval options for cifcurve()
+## Computational formulas in cifcurve()
 
-**Standard errors** For standard errors of Kaplan–Meier estimator, the default is Greenwood estimator, with alternatives `"tsiatis"` for the Tsiatis estimator The Greenwood formula is a sum of terms d/(n(n-m)), where d is the number of events at a given time point, n is the number at risk, and m is the cumulative sum of events at that time. This formula is derived from a binomial argument, so extension to the weighted case is ad hoc. Tsiatis (1981) proposes a sum of terms d/(n\*n), based on a counting process argument which includes the weighted case. For confidence intervals of cumulative incidence curves, the default `"delta"` applies the delta-method, while `"aalen"` uses the Aalen variance decomposition. By default `cifcurve()` rescales the Greenwood/Tsiatis quantities so that `std.err` is reported on the probability scale; set `report.survfit.std.err = TRUE` to return the conventional log-survival standard errors from `survfit()`.
+Let $t_1 < t_2 < \cdots < t_D$ represent the distinct event times. For each event time $i=1,\ldots,D$, let $Y_i$ be the size of the risk set (the number of surviving observations) just prior to $t_i$.
 
-**Confidence intervals** `src/calculateAJ_Rcpp.cpp` constructs intervals on the probability scale using the requested transformation: `"arcsine-square root"`/`"arcsine"`/`"a"` (default), `"plain`, `"log"`, `"log-log"`, or `"logit"`. Passing `"none"`/`"n"` skips interval computation entirely. The function exponentiates back to the probability scale, clips bounds to [0, 1], and replaces undefined values with `NA` so that interval endpoints remain well behaved in plots and summaries.
+Survival data is expected when `outcome.type = "SURVIVAL"`. Let $d_i$ be the number of failures at $t_i$. The Kaplan–Meier estimator of the survival function $S(t_i)$ is
 
-### Processing pipeline of polyreg()
+$$
+\hat{S}(t) = \prod_{t_i \le t} \left( 1 - \frac{d_i}{Y_i} \right)
+$$
+Note that the estimator is defined to be right-continuous, so the events at $t_i$ are included in the estimate of $\hat{S}(t_i)$. 
+
+The variance or standard error of the Kaplan–Meier estimator is often calculated with the Greenwood formula. This formula is derived from a binomial argument, so extension to the weighted case is ad hoc. Alternatively, Tsiatis (1981) proposes a slightly different formula based on a counting process argument which includes the weighted case. 
+
+**Greenwood variance**
+$$
+\textrm{Var}\!\left\{\hat{S}(t)\right \}
+= \hat{S}(t)^2\sum_{t_i \le t} \frac{d_i}{Y_i\,(Y_i - d_i)}
+$$
+
+**Tsiatis variance**
+$$
+\textrm{Var}\!\left\{\hat{S}(t)\right \}
+= \hat{S}(t)^2\sum_{t_i \le t} \frac{d_i}{Y_i^2}
+$$
+
+Suppose that the survival data consists of $\{T_j, d_j, w_j\}$, independent sample of right-censored survival data with weights ($j=1,...,N$). Let $d_i^w$ and $Y_i^w$ be the weighted number of failures and the weighted number at risk, respectively, at time $t_i$. The weighted Kaplan–Meier estimator of the survival function $S(t)$ is
+
+$$
+\hat{S}(t) = \prod_{t_i \le t} \left( 1 - \frac{d_i^w}{Y_i^w} \right). 
+$$
+Xie and Liu (2005) proposed the Greenwood-type variance for the weighted Kaplan–Meier estimator. 
+
+**Greenwood variance**
+$$
+\textrm{Var}\!\left\{\hat{S}(t)\right \}
+= \hat{S}(t)^2\sum_{t_i \le t} \frac{d_i^w Y_i}{M_i Y_i^w(Y_i^w - d_i^w)}, 
+$$
+where $M_i$ is an adjustment factor defined as 
+$$
+M_i = \frac{\left(\sum_{t_j \geq t_i} w_j \right)^2}{\sum_{t_j \geq t_i} w_j^2}. 
+$$
+The Tsiatis-type variance is calculated as follows in the same spirits. 
+
+**Tsiatis variance**
+$$
+\textrm{Var}\!\left\{\hat{S}(t)\right \}
+= \hat{S}(t)^2\sum_{t_i \le t} \frac{d_i^w Y_i}{M_i (Y_i^w)^2}
+$$
+Competing risks (`outcome.type = "COMPETING-RISK"`) arise in studies in which individuals are exposed to two or more mutually exclusive failure events. When a failure occurs, we observe the time to event $T$ and the cause of failure $\epsilon$. Suppose that $\epsilon=1$ and $\epsilon=2$ represent the event of interest and the competing risk, respectively. Let $d_{ij}$ be the number of failures of cause $j$ at time $t_i$, and now the total number of failures at $t_i$ is $d_i = d_{i1} + d_{i2}$. 
+
+The Aalen–Johansen estimator of CIF for cause $\epsilon=j$ is
+$$
+\hat{F}_j(t)
+= \sum_{t_i \le t} \frac{d_{ij}}{Y_i}\,\hat{S}(t_{i-1}).
+$$
+
+Two standard error estimators of the Aalen–Johansen estimator are commonly used: one based on counting process theory (Aalen, 1978) and the other based on the delta method. 
+
+**Aalen variance**
+$$
+\begin{aligned}
+\textrm{Var}\!\left\{\hat{F}_j(t)\right \}
+&= \sum_{t_i \le t}
+\bigl[\hat{F}_j(t) - \hat{F}_j(t_i)\bigr]^2
+\frac{d_i}{(Y_i-1)(Y_i - d_i)}
+\\[2pt]
+&\quad + \sum_{t_i \le t}
+\hat{S}^2(t_{i-1})
+\frac{d_{ij}\,(Y_i - d_{ij})}{Y_i^2\,(Y_i-1)}
+\\[2pt]
+&\quad - 2 \sum_{t_i \le t}
+\bigl[\hat{F}_j(t) - \hat{F}_j(t_i)\bigr]\,
+\hat{S}(t_{i-1})
+\frac{d_{ij}\,(Y_i - d_{ij})}{Y_i\,(Y_i - d_i)\,(Y_i-1)}.
+\end{aligned}
+$$
+
+**Delta variance**
+$$
+\begin{aligned}
+\textrm{Var}\!\left\{\hat{F}_j(t)\right \}
+&= \sum_{t_i \le t}
+\bigl[\hat{F}_j(t) - \hat{F}_j(t_i)\bigr]^2
+\frac{d_i}{Y_l\,(Y_i - d_i)}
+\\[2pt]
+&\quad + \sum_{t_i \le t}
+\hat{S}^2(t_{i-1})
+\frac{d_{ij}\,(Y_i - d_{ij})}{Y_i^3}
+\\[2pt]
+&\quad - 2 \sum_{t_i \le t}
+\bigl[\hat{F}_j(t) - \hat{F}_j(t_i)\bigr]\,
+\hat{S}(t_{i-1})
+\frac{d_{ij}}{Y_i^2}.
+\end{aligned}
+$$
+
+## Confidence interval options in cifcurve()
+
+**Standard errors** The default in `cifcurve()` is the Greenwood standard error when `outcome.type="survival"` and the delta standard error when `outcome.type="competing-risk"`. By default `cifcurve()` rescales the Greenwood/Tsiatis quantities so that `std.err` is reported on the probability scale; set `report.survfit.std.err = TRUE` to return the conventional log-survival standard errors from `survival::survfit()`. 
+
+**Confidence intervals** `cifcurve()` constructs intervals on the probability scale using the requested transformation: `"arcsine-square root"`/`"arcsin"`/`"a"` (default), `"plain`, `"log"`, `"log-log"`, or `"logit"`. Passing `"none"`/`"n"` skips interval computation entirely. The function exponentiates back to the probability scale, clips bounds to [0, 1], and replaces undefined values with `NA` so that interval endpoints remain well behaved in plots and summaries.
+
+## Processing pipeline of polyreg()
 
 Input pre-processing mirrors the survival workflow by calling `checkInput()` to parse event codes, exposure levels, and requested estimands before `createAnalysisDataset()` builds the modeling frame and `reg_normalize_covariate()` rescales covariates by default. Starting values are obtained from the nuisance model fits via `getInitialValues()` or `getInitialValuesProportional()`, or, when necessary, from user-supplied data frame of starting values. Inverse-probability-of-censoring weights for survival and competing-risks outcomes are calculated by `calculateIPCW()`, which in turn wraps the `calculateKM()` C++ routine to obtain Kaplan-Meier estimates of censoring, while time-constant effects assemble matrices through `calculateIPCWMatrix()`.
 
 The weighted estimating equations are then solved by `solveEstimatingEquation()`, which dispatches to specific score functions such as `estimating_equation_ipcw()`, `estimating_equation_survival()`, and `estimating_equation_proportional()` and iterates with `nleqslv`/Levenberg–Marquardt updates until the convergence criteria in `assessConvergence()` are met. Sandwich variances come from `calculateCov()` or `calculateCovSurvival()` and are rescaled back to the original covariate scale by `reg_normalize_estimate()`, while optional bootstrap intervals reuse the same solver inside the `boot` resampling loop. The resulting influence functions, weights, and fitted cumulative incidence probabilities are retained in `diagnostic.statistics` for downstream diagnostics.
 
-### Reproducibility and conventions for polyreg()
+## Reproducibility and conventions for polyreg()
 
  - If convergence warnings appear, relax/tighten tolerances or cap the parameter bound (`optim.parameter1` to `3`) and inspect `report.optim.convergence = TRUE`.
- - If necessary, try modifying other `optim.parameter`, providing user-specified initial values, or reducing the number of nuisance parameters (e.g. provide a `time.point` grid that contributes to estimation when using `"PROPORTIONAL-SURVIVAL"` and `"PROPORTIONAL-COMPETING-RISK"`).
+ - If necessary, try modifying other `optim.parameter`, providing user-specified initial values, or reducing the number of nuisance parameters (e.g. provide a `time.point` grid that contributes to estimation when using `"proportional-survival"` and `"proportional-competing-risk"`).
  - Set `boot.seed` for reproducible bootstrap results.
  - Match CDISC ADaM conventions via `code.event1 = 0`, `code.censoring = 1` (and, if applicable, `code.event2` for competing events).
 
-### Key arguments of msummary() that are helpful when reporting polyreg() results
+## Key arguments of msummary() that are helpful when reporting polyreg() results
 
 -   `output` – controls the destination of the table (e.g., `"markdown"`, `"latex"`, `"html"`, or a file path such as `'results/cif_table.docx'`).
 -   `coef_map` or `coef_rename` – renames model terms for interpretability.
