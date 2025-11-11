@@ -39,11 +39,84 @@ A user-specified model formula in `Event()` or `Surv()` is first parsed by `util
 
 - The `error` argument determines how standard errors are computed. For survival data (`outcome.type = "survival"`) it maps to Greenwood (default) or Tsiatis estimators, while for competing-risks data (`outcome.type = "competing-risk"`) `"aalen"` reproduces the classic Aalen standard errors and `"delta"` implements the delta method.
 
-## Confidence interval options for cifcurve()
+## Computational formulas in cifcurve()
 
-**Standard errors** For standard errors of Kaplan–Meier estimator, the default is Greenwood estimator, with alternatives `"tsiatis"` for the Tsiatis estimator The Greenwood formula is a sum of terms d/(n(n-m)), where d is the number of events at a given time point, n is the number at risk, and m is the cumulative sum of events at that time. This formula is derived from a binomial argument, so extension to the weighted case is ad hoc. Tsiatis (1981) proposes a sum of terms d/(n\*n), based on a counting process argument which includes the weighted case. For confidence intervals of cumulative incidence curves, the default `"delta"` applies the delta-method, while `"aalen"` uses the Aalen variance decomposition. By default `cifcurve()` rescales the Greenwood/Tsiatis quantities so that `std.err` is reported on the probability scale; set `report.survfit.std.err = TRUE` to return the conventional log-survival standard errors from `survfit()`.
+Let $t_1 < t_2 < \cdots < t_D$ represent the distinct event times. For each event time $i=1,\ldots,D$, let $Y_i$ be the size of the risk set (the number of surviving observations) just prior to $t_i$.
 
-**Confidence intervals** `src/calculateAJ_Rcpp.cpp` constructs intervals on the probability scale using the requested transformation: `"arcsine-square root"`/`"arcsine"`/`"a"` (default), `"plain`, `"log"`, `"log-log"`, or `"logit"`. Passing `"none"`/`"n"` skips interval computation entirely. The function exponentiates back to the probability scale, clips bounds to [0, 1], and replaces undefined values with `NA` so that interval endpoints remain well behaved in plots and summaries.
+Survival data is expected when `outcome.type = "SURVIVAL"`. Let $d_i$ be the number of failures at $t_i$. The Kaplan–Meier estimator of the survival function $S(t_i)$ is
+
+$$
+\hat{S}(t_i) = \prod_{j=1}^i \left( 1 - \frac{d_j}{Y_j} \right)
+$$
+Note that the estimators are defined to be right-continuous, so the events at $t_i$ are included in the estimate of $\hat{S}(t_i)$. 
+
+The standard error of the Kaplan–Meier estimator is often calculated with the Greenwood formula. This formula is derived from a binomial argument, so extension to the weighted case is ad hoc. Alternatively, Tsiatis (1981) proposes a slightly different formula based on a counting process argument which includes the weighted case. 
+
+**Greenwood standard error**
+$$
+\hat{\sigma}\!\left(\hat{S}(t_i)\right)
+= \hat{S}(t_i)\,\sqrt{ \sum_{j=1}^i \frac{d_j}{Y_j\,(Y_j - d_j)} }
+$$
+
+**Tsiatis standard error**
+$$
+\hat{\sigma}\!\left(\hat{S}(t_i)\right)
+= \hat{S}(t_i)\,\sqrt{ \sum_{j=1}^i \frac{d_j}{Y_j^{2}} }.
+$$
+
+Competing risks (`outcome.type = "COMPETING-RISK"`) arise in studies in which individuals are exposed to two or more mutually exclusive failure events. When a failure occurs, we observe the time to event $T$ and the cause of failure $\epsilon$. Suppose that $\epsilon=1$ and $\epsilon=2$ represent the event of interest and the competing risk, respectively. Let $d_{ij}$ be the number of failures of cause $j$ at time $t_i$, and now the total number of failures at $t_i$ is $d_i = d_{i1} + d_{i2}$. 
+
+The Aalen–Johansen estimator of CIF for cause $\epsilon=j$ is
+$$
+\hat{F}_j(t)
+= \sum_{t_i \le t} \frac{d_{ij}}{Y_i}\,\hat{S}(t_{i-1}).
+$$
+
+Two standard error estimators of the Aalen–Johansen estimator are commonly used: one based on counting process theory (Aalen, 1978) and the other based on the delta method. 
+
+**Aalen standard error**
+$$
+\begin{aligned}
+\hat{\sigma}^2\!\left(\hat{F}_j(t)\right)
+&= \sum_{t_i \le t}
+\bigl[\hat{F}_j(t) - \hat{F}_j(t_i)\bigr]^2
+\frac{d_i}{(Y_i-1)(Y_i - d_i)}
+\\[2pt]
+&\quad + \sum_{t_i \le t}
+\hat{S}^2(t_{i-1})
+\frac{d_{ij}\,(Y_i - d_{ij})}{Y_i^2\,(Y_i-1)}
+\\[2pt]
+&\quad - 2 \sum_{t_i \le t}
+\bigl[\hat{F}_j(t) - \hat{F}_j(t_i)\bigr]\,
+\hat{S}(t_{i-1})
+\frac{d_{ij}\,(Y_i - d_{ij})}{Y_i\,(Y_i - d_i)\,(Y_i-1)}.
+\end{aligned}
+$$
+
+**Delta standard error**
+$$
+\begin{aligned}
+\hat{\sigma}^2\!\left(\hat{F}_j(t)\right)
+&= \sum_{t_i \le t}
+\bigl[\hat{F}_j(t) - \hat{F}_j(t_i)\bigr]^2
+\frac{d_i}{Y_l\,(Y_i - d_i)}
+\\[2pt]
+&\quad + \sum_{t_i \le t}
+\hat{S}^2(t_{i-1})
+\frac{d_{ij}\,(Y_i - d_{ij})}{Y_i^3}
+\\[2pt]
+&\quad - 2 \sum_{t_i \le t}
+\bigl[\hat{F}_j(t) - \hat{F}_j(t_i)\bigr]\,
+\hat{S}(t_{i-1})
+\frac{d_{ij}}{Y_i^2}.
+\end{aligned}
+$$
+
+## Confidence interval options in cifcurve()
+
+**Standard errors** The default in `cifcurve()` is the Greenwood standard error when `outcome.type="survival"` and the delta standard error when `outcome.type="competing-risk"`. By default `cifcurve()` rescales the Greenwood/Tsiatis quantities so that `std.err` is reported on the probability scale; set `report.survfit.std.err = TRUE` to return the conventional log-survival standard errors from `survival::survfit()`. 
+
+**Confidence intervals** `cifcurve()` constructs intervals on the probability scale using the requested transformation: `"arcsine-square root"`/`"arcsin"`/`"a"` (default), `"plain`, `"log"`, `"log-log"`, or `"logit"`. Passing `"none"`/`"n"` skips interval computation entirely. The function exponentiates back to the probability scale, clips bounds to [0, 1], and replaces undefined values with `NA` so that interval endpoints remain well behaved in plots and summaries.
 
 ## Processing pipeline of polyreg()
 
