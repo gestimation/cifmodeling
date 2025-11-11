@@ -293,7 +293,7 @@ cifplot(output1, add.conf=FALSE, add.risktable=FALSE,
 ```
 
 `label.strata` is another argument for customizing labels, but when inputting a survfit object, it becomes invalid because it does not contain stratum information.
-Therefore, the following code inputs the formula and data. `label.strata` is used by combining `level.strata` and `order.strata`. `level.strata` specifies the levels of the stratification variable corresponding to each label in `label.strata`. The levels specified in `level.strata` are then displayed in the figure in the order defined by `order.strata`. A figure enclosed in a square was generated, which is due to `style="FRAMED"` specification.
+Therefore, the following code inputs the formula and data. `label.strata` is used by combining `level.strata` and `order.strata`. `level.strata` specifies the levels of the stratification variable corresponding to each label in `label.strata`. The levels specified in `level.strata` are then displayed in the figure in the order defined by `order.strata`. A figure enclosed in a square was generated, which is due to `style="framed"` specification.
 
 ```{r example04-1-4, fig.cap="Cumulative incidence curves with strata labels and FRAMED style", warning=FALSE, message=FALSE}
 cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
@@ -302,7 +302,7 @@ cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications,
         competing.risk.time=output2, label.y="CIF of diabetic retinopathy", 
         label.x="Years from registration", limits.x=c(0,8),
         label.strata=c("High intake","Low intake"), level.strata=c("Q2 to Q4","Q1"), 
-        order.strata=c("Q1", "Q2 to Q4"), style="FRAMED")
+        order.strata=c("Q1", "Q2 to Q4"), style="framed")
 ```
 
 By specifying `add.estimate.table=TRUE`, the risks of diabetic retinopathy (estimates for CIFs) along with their confidence interval are shown in the table at the bottom of the figure The risk ratios at a specific time point (e.g. 8 years) for competing events can be jointly and coherently estimated using `polyreg()` with `outcome.type="competing-risk"`. In the code of `polyreg()` below, no covariates are included in the nuisance model (`~1` specifies intercept only). The effect of low fruit intake `fruitq1` is estimated as an unadjusted risk ratio (`effect.measure1="RR"`) for diabetic retinopathy (event 1) and macrovascular complications (event 2) at 8 years (`time.point=8`). 

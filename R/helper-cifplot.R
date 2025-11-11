@@ -132,15 +132,15 @@ plot_apply_style <- function(
     strata_levels_final = NULL,
     strata_labels_final = NULL
 ) {
-  if (style=="G") style <- "GRID"
+  if (style=="g") style <- "grid"
   style <- match.arg(style)
   style_theme <- switch(
     style,
-    CLASSIC    = plot_style_classic(font.family, font.size, legend.position),
-    BOLD       = plot_style_bold(font.family, font.size, legend.position),
-    FRAMED     = plot_style_framed(font.family, font.size, legend.position),
-    GRID       = plot_style_grid(font.family, font.size, legend.position),
-    GRAY       = plot_style_gray(font.family, font.size, legend.position)
+    classic    = plot_style_classic(font.family, font.size, legend.position),
+    bold       = plot_style_bold(font.family, font.size, legend.position),
+    framed     = plot_style_framed(font.family, font.size, legend.position),
+    grid       = plot_style_grid(font.family, font.size, legend.position),
+    gray       = plot_style_gray(font.family, font.size, legend.position)
   )
 
   p <- p + style_theme
