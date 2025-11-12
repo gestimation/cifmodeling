@@ -230,7 +230,7 @@
 #'                    label.x="",
 #'                    limits.y=c(0,0.15))
 #' output4 <- list(a = output2$plot, b = output3$plot)
-#' output5 <- cifpanel(plots = output3,
+#' output5 <- cifpanel(plots = output4,
 #'          inset.panel = TRUE,
 #'          inset.left = 0.40, inset.bottom = 0.45,
 #'          inset.right = 1.00, inset.top = 0.95,
