@@ -18,14 +18,10 @@ test_that("label.strata only adjusts labels and suppresses fill legend", {
   sc_lin   <- p$scales$get_scales("linetype")
   sc_fill  <- p$scales$get_scales("fill")
   sc_shape <- p$scales$get_scales("shape")
-  print(sc_col$get_labels())
-  print(sc_lin$get_labels())
 
-  # ここを「順序まで完全一致」→「内容が一致」に緩める
   expect_setequal(sc_col$get_labels(), unname(label))
   expect_setequal(sc_lin$get_labels(), unname(label))
 
-  # fill / shape は非表示のままでOK
   expect_identical(sc_fill$guide, "none")
   expect_identical(sc_shape$guide, "none")
 })

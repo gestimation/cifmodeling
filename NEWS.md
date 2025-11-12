@@ -2,9 +2,6 @@
 
 * Standardized outcome.type canonical values to lowercase; legacy uppercase and short aliases remain accepted. Internals now use tolower().
 
-<<<<<<< HEAD
-# cifmodeling 0.6.0
-=======
 # cifmodeling 0.7.0
 
 # cifmodeling 0.4.0
@@ -22,7 +19,6 @@
 
 # cifmodeling 0.2.0
 
-3# cifmodeling 0.1.0
->>>>>>> 8cb48b52ceae88e76eaa96eb4e5a44b4956cdada
+# cifmodeling 0.1.0
 
 * Initial CRAN submission.

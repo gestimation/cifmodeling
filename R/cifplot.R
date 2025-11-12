@@ -1019,22 +1019,10 @@ cifplot_single <- function(
     if (is.null(data)) stop("When `formula` is a formula, `data` must be provided.")
     norm_inputs <- plot_normalize_formula_data(formula_or_fit, data)
     data_working <- norm_inputs$data
-    #    if (!isTRUE(panel.per.event) &&
-    #        isTRUE(add.competing.risk.mark) &&
-    #        length(competing.risk.time) == 0) {
-    #      competing.risk.time <- extract_time_to_event(
-    #        formula_or_fit, data = data_working, which_event = "event2",
-    #        code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring)
-    #    }
     formula_or_fit <- cifcurve(formula_or_fit, data = data_working, weights = weights, subset.condition = subset.condition, na.action = na.action,
                                outcome.type = outcome.type, code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
                                error = error, conf.type = conf.type, conf.int = conf.int)
     formula_or_fit <- plot_survfit_short_strata_names(formula_or_fit)
-    #    if (!is.null(axis.info$label.strata) && !is.null(formula_or_fit$strata)) {
-    #      formula_or_fit <- plot_survfit_strata_labels(
-    #        formula_or_fit, axis.info$label.strata
-    #      )
-    #    }
   }
 
   p <- call_ggsurvfit(
@@ -1126,28 +1114,28 @@ call_ggsurvfit <- function(
   breaks.y            <- axis.info$breaks.y
   use.coord.cartesian <- isTRUE(axis.info$use.coord.cartesian)
 
-  add.conf         <- visual.info$add.conf
-  add.risktable                  <- visual.info$add.risktable
-  add.estimate.table              <- visual.info$add.estimate.table
-  symbol.risk.table              <- visual.info$symbol.risk.table
-  font.size.risk.table           <- visual.info$font.size.risk.table
-  add.censor.mark                 <- visual.info$add.censor.mark
+  add.conf                      <- visual.info$add.conf
+  add.risktable                 <- visual.info$add.risktable
+  add.estimate.table            <- visual.info$add.estimate.table
+  symbol.risk.table             <- visual.info$symbol.risk.table
+  font.size.risk.table          <- visual.info$font.size.risk.table
+  add.censor.mark               <- visual.info$add.censor.mark
   shape.censor.mark             <- visual.info$shape.censor.mark
   size.censor.mark              <- visual.info$size.censor.mark
-  add.competing.risk.mark          <- visual.info$add.competing.risk.mark
+  add.competing.risk.mark       <- visual.info$add.competing.risk.mark
   competing.risk.time           <- visual.info$competing.risk.time
   shape.competing.risk.mark     <- visual.info$shape.competing.risk.mark
   size.competing.risk.mark      <- visual.info$size.competing.risk.mark
-  add.intercurrent.event.mark      <- visual.info$add.intercurrent.event.mark
+  add.intercurrent.event.mark   <- visual.info$add.intercurrent.event.mark
   intercurrent.event.time       <- visual.info$intercurrent.event.time
   shape.intercurrent.event.mark <- visual.info$shape.intercurrent.event.mark
   size.intercurrent.event.mark  <- visual.info$size.intercurrent.event.mark
-  add.quantile               <- visual.info$add.quantile
-  level.quantile                      <- visual.info$level.quantile
+  add.quantile                  <- visual.info$add.quantile
+  level.quantile                <- visual.info$level.quantile
 
-  panel.per.event     <- isTRUE(panel.info$panel.per.event)
-  panel.censoring     <- isTRUE(panel.info$panel.censoring)
-  panel.per.variable       <- isTRUE(panel.info$panel.per.variable)
+  panel.per.event               <- isTRUE(panel.info$panel.per.event)
+  panel.censoring               <- isTRUE(panel.info$panel.censoring)
+  panel.per.variable            <- isTRUE(panel.info$panel.per.variable)
 
   style              <- style.info$style
   palette            <- style.info$palette

@@ -539,9 +539,6 @@ cifpanel <- function(
   add.intercurrent.event.mark <- visual.info$add.intercurrent.event.mark
   add.quantile          <- visual.info$add.quantile
 
-  # ------------------------------------------------------------
-  # 1) plots が指定されているときは「並べるだけ」モード
-  # ------------------------------------------------------------
   if (!is.null(plots)) {
     if (!is.list(plots)) {
       stop("`plots` must be a list of ggplot objects.")
@@ -550,7 +547,6 @@ cifpanel <- function(
       stop("All elements of `plots` must inherit from 'ggplot'.")
     }
 
-    # ここは ggsurvfit の warning を避けるために touch_colour = FALSE にしてもよい
     plots <- apply_strata_to_plots(
       plots,
       order_data   = axis.info$order.strata,
@@ -638,9 +634,6 @@ cifpanel <- function(
   ncol   <- as.integer(rows.columns.panel[2])
   n_slots <- nrow * ncol
 
-  # ------------------------------------------------------------
-  # 2) ここから「推定して描く」通常モード
-  # ------------------------------------------------------------
   if (is.null(data)) stop("data must be provided.")
   if (is.null(code.events) || !is.list(code.events) || length(code.events) == 0)
     .err("need_code_events")
@@ -686,7 +679,6 @@ cifpanel <- function(
   labelstrata.list  <- make_panel_list_preserve_vector(label.strata,  K)
   orderstrata.list  <- make_panel_list_preserve_vector(order.strata,  K)
 
-  # limits/breaksをパネルごとにしておく
   limsx.list <- NULL
   if (!is.null(limits.x)) {
     limsx.list <- if (is.list(limits.x)) limits.x else list(limits.x)
@@ -713,7 +705,6 @@ cifpanel <- function(
   if (!is.null(addIC.list))   visual.info$add.intercurrent.event.mark <- NULL
   if (!is.null(addQ.list))    visual.info$add.quantile          <- NULL
 
-  # outcome.flag 判定
   infer_flag_by_codes <- function(v) if (length(v) == 2L) "S" else if (length(v) == 3L) "C" else NA_character_
   if (!is.null(outcome.list)) {
     outcome.flags <- vapply(outcome.list, panel_norm_outcome, character(1))
@@ -723,7 +714,6 @@ cifpanel <- function(
   }
   panel_validate_code_events(code.events, outcome.flags)
 
-  # dots の中にある「パネルで決めた値と衝突するやつ」を抜く
   kill_names <- c()
   if (!is.null(outcome.list))     kill_names <- c(kill_names, "outcome.type")
   if (!is.null(typey.list))       kill_names <- c(kill_names, "type.y")
@@ -743,11 +733,9 @@ cifpanel <- function(
 
   dots <- panel_strip_overrides_from_dots(dots, unique(kill_names))
 
-  # engine をパネル数にそろえる（★ここが今回の肝）
   engine.list <- panel_to_list(engine)
   engine.list <- panel_recycle_to(engine.list, K)
 
-  # パネル内部は panel_prepare でまとめて生成させる（いままで通り）
   prep <- panel_prepare(
     K               = K,
     formulas        = formulas,
@@ -966,8 +954,8 @@ cifpanel <- function(
   invisible(list(
     plots        = plots,
     out_patchwork= out_patchwork,
-    axis.info    = axis.info,
     survfit.info = survfit.info,
+    axis.info    = axis.info,
     visual.info  = visual.info,
     panel.info   = panel.info,
     style.info   = style.info,
