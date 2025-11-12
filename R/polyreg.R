@@ -47,13 +47,13 @@
 #' confidence intervals based on sandwich variance are computed.
 #' When \code{FALSE}, they are omitted (default \code{TRUE}).
 #' This confidence interval is default for time-point models
-#' (\code{"outcome.type=COMPETING-RISK"}, \code{"survival"} or \code{"binomial"}) and
+#' (\code{"outcome.type=competing-risk"}, \code{"survival"} or \code{"binomial"}) and
 #' is not available otherwise.
 #' @param report.boot.conf Logical or \code{NULL}. When \code{TRUE}, bootstrap
 #' confidence intervals are computed. When \code{FALSE}, they are omitted.
 #' If \code{NULL}, the function chooses based on \code{outcome.type} (default \code{NULL}).
 #' This confidence interval is default for proportional models
-#' (\code{outcome.type="proportional-competing-risk"} or \code{"proportional-survival"}).
+#' (\code{outcome.type="PROPORTIONAL-COMPETING-RISK"} or \code{"PROPORTIONAL-SURVIVAL"}).
 #' @param boot.bca Logical indicating the bootstrap confidence interval method.
 #'   Use \code{TRUE} for bias-corrected and accelerated intervals or \code{FALSE}
 #'   for the normal approximation (default \code{FALSE}).

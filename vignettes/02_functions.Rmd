@@ -38,7 +38,7 @@ set.seed(1)
 
 <!-- badges: start --> <!-- badges: end -->
 
-## cifplot()
+### cifplot()
 
 This function produces the **Kaplan–Meier survival** or **Aalen–Johansen cumulative incidence** curve from a unified formula + data interface. It auto-labels axes based on `outcome.type` and `type.y` (`"risk"` for 1-survival or CIF), can add censoring/competing-risk/intercurrent-event marks, and returns a regular ggplot object (compatible with + and %+%). You may also pass a survfit-compatible object directly.
 
@@ -46,28 +46,28 @@ This function produces the **Kaplan–Meier survival** or **Aalen–Johansen cum
 
 -   Draw one survival/CIF curve set by exposure groups (e.g., treatment vs control).
 -   Call `cifpanel()` with a simplified code to create a panel displaying plots of multiple stratified survival/CIF curves or CIF curves for each event type.
--   Add confidence intervals and censor/competing-risk/intercurrent-event marks.
--   Add a risk table to display the number at risk or the estimated survival probabilities or CIFs and 95% confidence intervals at each point in time.
+-   Add CIs and censor/competing-risk/intercurrent-event marks.
+-   Add a risk table to display the number at risk or the estimated survival probabilities or CIFs and CIs at each point in time.
 
 **Key arguments shared with cifcurve()**
 
 -   **Outcome type and estimator**
-    -   `formula` A model formula specifying the time-to-event outcome on the left-hand side (`Event(time, status)` or `Surv(time, status)`) and, optionally, a stratification variable on the right-hand side. 
+    -   `formula` A model formula specifying the outcome (`Event(time, status)` or `Surv(time, status)`) on the left-hand side (LHS) and, optionally, a stratification variable on the right-hand side (RHS). 
     -   `outcome.type = "survival"` → Kaplan–Meier estimator
     -   `outcome.type = "competing-risk"` → Aalen–Johansen estimator
 -   **Confidence intervals**
     -   `conf.int` sets the two-sided level (default 0.95)\
     -   `conf.type` chooses the transformation (`"arcsine-square root"`, `"plain"`, `"log"`, `"log-log"`, `"logit"`, or `"none"`)
-    -   `error` chooses the estimator for standard error (`"greenwood"` or `"tsiatis"` for survival curves and `"delta"` or `"aalen"` for CIFs)
+    -   `error` chooses the estimator for SE (`"greenwood"` or `"tsiatis"` for survival curves and `"delta"` or `"aalen"` for CIFs)
 
 **Key arguments for cifplot()**
 
 -   **Data visualization**
-    -   `addConfidenceInterval` adds confidence intervals on the ggplot2-based plot
-    -   `addCompetingRiskMark` and `addIntercurrentEventMark` add symbols to describe competing risks or intercurrent events in addition to conventional censoring marks with `addCensorMark`
-    -   `addRiskTable` adds numbers at risk
-    -   `addEstimateTable` adds estimates and 95% confidence interval
-    -   `addQuantileLine` adds a line that represents median or quantile
+    -   `add.conf` adds CIs on the ggplot2-based plot
+    -   `add.competing.risk.mark` and `add.intercurrent.event.mark` add symbols to describe competing risks or intercurrent events in addition to conventional censoring marks with `add.censor.mark`
+    -   `add.risktable` adds numbers at risk
+    -   `add.estimate.table` adds estimated survival probabilities or CIFs and CIs at each point in time
+    -   `add.quantile` adds a line that represents the median or a selected quantile level
 
 -   **Plot customization**
     -   `type.y` chooses y-axis (`"surv"` for survival and `"risk"` for 1-survival/CIF)
@@ -76,9 +76,9 @@ This function produces the **Kaplan–Meier survival** or **Aalen–Johansen cum
     -   `palette` specifies color of each curve (e.g. `palette=c("blue1", "cyan3", "navy", "deepskyblue3"))`)
 
 -   **Panel display**
-    -   `printEachVar` produces multiple survival/CIF curves per stratification variable specified in the formula
-    -   `printEachEvent` produces CIF curves for each event type
-    -   `printCensoring` produces KM-type curves for (event, censor) and (censor, event) so that censoring patterns can be inspected
+    -   `panel.per.variable` produces multiple survival/CIF curves per stratification variable specified in the formula
+    -   `panel.per.event` produces CIF curves for each event type
+    -   `panel.censoring` produces the Kaplan–Meier curves for (event, censor) and (censor, event) so that censoring patterns can be inspected
     -   `panel.mode` uses automatic panel mode
 
 **Return**
@@ -89,14 +89,14 @@ This function produces the **Kaplan–Meier survival** or **Aalen–Johansen cum
 
 `cifplot()` is a streamlined, opinionated wrapper around `cifcurve()`, which calculates the Kaplan–Meier estimator and the Aalen–Johansen estimator. `cifcurve()` returns a survfit-compatible object, enabling an independent use of standard methods such as:
 
--   `summary()` — time-by-time estimates with standard errors and confidence intervals
+-   `summary()` — time-by-time estimates with SEs and CIs
 -   `plot()` — base R stepwise survival/CIF curves
--   `mean()` — restricted mean survival estimates with confidence intervals
--   `quantile()` — quantile estimates with confidence intervals
+-   `mean()` — restricted mean survival estimates with CIs
+-   `quantile()` — quantile estimates with CIs
 
 Furthermore, the cifmodeling package provides a workflow for a **ggplot2-based visualization** based on the survfit-compatible objects by passing them to `cifplot()` and `cifpanel`. 
 
-## cifpanel()
+### cifpanel()
 
 `cifpanel()` arranges multiple `cifplot()/cifcurve()` results into a unified grid layout with consistent scales, shared legend, and synchronized themes. It is ideal for visual comparison across outcomes, time scales, or strata. The inset feature also allows you to display another plot within a plot.
 
@@ -119,7 +119,7 @@ Furthermore, the cifmodeling package provides a workflow for a **ggplot2-based v
 
 **Return**
 
--   A **patchwork** object (still ggplot-compatible).
+-   A List that in contains **patchwork** object (still ggplot-compatible).
 
 **An example of usage**
 
@@ -178,9 +178,9 @@ cifpanel(
 
 ## polyreg()
 
-`polyreg()` implements **log odds product modeling** of CIFs at user-specified time points, focusing on multiplicative effects of a categorical exposure, or constant effects over time like Cox regression and Fine-Gray models. It estimates multiplicative effects such as **risk ratios**, **odds ratios**, or **subdistribution hazard ratios**, while ensuring that the probabilities across competing events sum to one. This is achieved through **reparameterization using polytomous log odds products**, which fits so-called effect-measure models and nuisance models on multiple competing events simultaneously. Additionally, `polyreg()` supports direct binomial regression for survival outcomes and the Richardson model for binomial outcomes, both of which use log odds products.
+This function implements **log odds product modeling** of CIFs at user-specified time points, focusing on multiplicative effects of a categorical exposure, or constant effects over time like Cox regression and Fine-Gray models. It estimates multiplicative effects such as **risk ratios**, **odds ratios**, or **subdistribution hazard ratios**, while ensuring that the probabilities across competing events sum to one. This is achieved through **reparameterization using polytomous log odds products**, which fits so-called effect-measure models and nuisance models on multiple competing events simultaneously. Additionally, `polyreg()` supports direct binomial regression for a survival outcome and the Richardson model for a binomial outcome, both of which use log odds products.
 
-The function follows the familiar **formula + data** syntax with `Event()` or `Surv()` and outputs tidy results, including point estimates, standard errors, confidence intervals, and p-values. Its results can be easily summarized with `summary()` or combined with tools such as **modelsummary** or **broom** for reporting.
+The function follows the familiar **formula + data** syntax with `Event()` or `Surv()` and outputs tidy results, including point estimates, SEs, CIs, and p-values. Its results can be easily summarized with `summary()` or combined with tools such as **modelsummary** or **broom** for reporting.
 
 **Key arguments**
 
@@ -189,7 +189,7 @@ The function follows the familiar **formula + data** syntax with `Event()` or `S
 -   `effect.measure1` and `effect.measure2` — specifies the effect measures for event1 and event2 (`"RR"`, `"OR"` or `"SHR"`). 
 -   `outcome.type` selects the outcome type (`"competing-risk"`, `"survival"`, `"binomial"`, `"proportional-survival"` or `"proportional-competing-risk"`). 
 -   `time.point` — specifies time points at which the exposure effect is evaluated. Required for `"competing-risk"` and `"survival"` outcomes.
--   `strata` — specifies the stratification variable used to adjust for dependent censoring. 
+-   `strata` — specifies the stratification variable used for the IPCW adjustment for dependent censoring. 
 
 **Return**
 

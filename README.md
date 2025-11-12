@@ -9,7 +9,7 @@
 
 ## Quick start
 
-This package is a compact and unified toolkit for
+This package is a compact and unified toolkit for the
 Kaplan–Meier/Aalen–Johansen curves, visualization, and direct polytomous
 regression for survival and competing risks data.
 
@@ -30,7 +30,7 @@ Aalen–Johansen cumulative incidence curves from cifplot()
 
 </div>
 
-This is an example code snippet applying `cifplot()` to visualize
+This is an example code snippet applying `cifplot()` to visualize the
 Aalen–Johansen cumulative incidence functions (CIFs). In competing risks
 data, censoring is often coded as 0, events of interest as 1, and
 competing risks as 2. The variable `epsilon` in `diabetes.complications`
@@ -39,7 +39,7 @@ this coding scheme. By setting `panel.per.event=TRUE`, the CIF curve for
 diabetic retinopathy (`epsilon=1`) is output on the left and
 macrovascular complications (`epsilon=2`) on the right.
 
-## Three functions for survival and competing risks analysis
+## Tools for survival and competing risks analysis
 
 In clinical and epidemiological research, analysts often need to handle
 censoring, competing risks, and intercurrent events (e.g., treatment
@@ -51,21 +51,20 @@ competing risks data. It covers both nonparametric estimation and
 regression modeling of CIFs, centered around three tightly connected
 functions.
 
-- `cifplot()` typically generates a survival or cumulative incidence
-  curve with marks that represent censoring, competing risks and
-  intercurrent events. Multiple standard error estimators and confidence
-  interval methods are supported. Visualization relies on
-  `ggsurvfit/ggplot2`.
+- `cifplot()` typically generates a survival or CIF curve with marks
+  that represent censoring, competing risks and intercurrent events.
+  Multiple standard error (SE) estimators and confidence interval (CI)
+  methods are supported. Visualization relies on `ggsurvfit/ggplot2`.
 
 - `cifpanel()` generates a multi-panel figure for survival/CIF curves,
   arranged either in a grid layout or as an inset overlay.
 
 - `polyreg()` fits coherent regression models of CIFs based on
-  polytomous log odds products and the stratified IPCW estimator. This
-  function is particularly well-suited for causal inference in terms of
-  typical effect measures, namely risk ratios, odds ratios, and
-  subdistribution hazard ratios, with a competing risks, survival, or
-  binary outcome.
+  polytomous log odds products and the stratified inverse probability of
+  censoring weighting (IPCW) estimator. This function is particularly
+  well-suited for causal inference in terms of typical effect measures,
+  namely risk ratios, odds ratios, and subdistribution hazard ratios,
+  with a competing risks, survival, or binary outcome.
 
 These functions adopt a formula + data syntax, return tidy,
 publication-ready outputs, and integrate seamlessly with `ggsurvfit` and
@@ -74,10 +73,10 @@ publication-ready outputs, and integrate seamlessly with `ggsurvfit` and
 ## Installation
 
 The package is implemented in R and relies on `Rcpp`, `nleqslv` and
-`boot` for the numerical back-end. The examples in this README also use
-`ggplot2`, `ggsurvfit`, `patchwork` and `modelsummary` for tabulation
-and plotting. Install the core package and these companion packages
-with:
+`boot` for the numerical back-end. The examples in this document also
+use `ggplot2`, `ggsurvfit`, `patchwork` and `modelsummary` for
+tabulation and plotting. Install the core package and these companion
+packages with:
 
 ``` r
 install.packages("Rcpp")
@@ -93,13 +92,12 @@ devtools::install_github("gestimation/cifmodeling")
 ## Interoperability
 
 There are several excellent R packages for survival and competing-risk
-analysis. The `survival` package provides the canonical API for
-time-to-event data. In combination with `ggsurvfit`,
-`survival::survfit()` can generate publication-ready survival plots. For
-cumulative incidence (CIF) plots, integration in the general ecosystem
-is not as streamlined; `cifmodeling` fills this gap by offering
-`cifplot()` for survival/CIF plots and multi-panel figures via a single,
-unified interface.
+analysis. The `survival` package provides the canonical API for survival
+data. In combination with `ggsurvfit`, `survival::survfit()` can
+generate publication-ready survival plots. For CIF plots, integration in
+the general ecosystem is not as streamlined; `cifmodeling` fills this
+gap by offering `cifplot()` for survival/CIF plots and multi-panel
+figures via a single, unified interface.
 
 If you need fine-grained plot customization, compute the estimator and
 keep a survfit-compatible object with `cifcurve()` (or supply your own
@@ -108,12 +106,14 @@ other words, use `cifcurve()` for estimation, `cifplot()/cifpanel()` for
 quick high-quality figures, and fall back to the `ggplot` ecosystem when
 you want full artistic control.
 
-For interval estimation, `cifcurve()` mirrors the confidence-interval
-options of `survival::survfit()` for survival curves and adds `delta`
-and `aalen` options for CIFs. The defaults in `cifmodeling` are chosen
-from external and internal simulation evidence; they should be sensible
-for most applications, while still allowing experts to override them
-when needed.
+For interval estimation with unweighted survival data, `cifcurve()`
+mirrors the CI options of `survival::survfit()` (`error="greenwood"` and
+`"tsiatis"`). For weighted survival data, `cifcurve()` adds valid CIs
+and SEs of Xie and Liu (2005), and for competing risk data,
+`error="delta"` and `"aalen"` options. The defaults in `cifmodeling` are
+chosen from external and internal simulation evidence; they should be
+sensible for most applications, while still allowing experts to override
+them when needed.
 
 The `mets` package is a more specialized toolkit that provides advanced
 statistical methods for competing risk analysis.
@@ -150,36 +150,36 @@ You may also pass a survfit-compatible object directly.
 - Call `cifpanel()` with a simplified code to create a panel displaying
   plots of multiple stratified survival/CIF curves or CIF curves for
   each event type.
-- Add confidence intervals and censor/competing-risk/intercurrent-event
-  marks.
+- Add CIs and censor/competing-risk/intercurrent-event marks.
 - Add a risk table to display the number at risk or the estimated
-  survival probabilities or CIFs and 95% confidence intervals at each
-  point in time.
+  survival probabilities or CIFs and CIs at each point in time.
 
 **Key arguments shared with cifcurve()**
 
 - **Outcome type and estimator**
-  - `formula` A model formula specifying the time-to-event outcome on
-    the left-hand side (`Event(time, status)` or `Surv(time, status)`)
-    and, optionally, a stratification variable on the right-hand side.
+  - `formula` A model formula specifying the outcome
+    (`Event(time, status)` or `Surv(time, status)`) on the left-hand
+    side (LHS) and, optionally, a stratification variable on the
+    right-hand side (RHS).
   - `outcome.type = "survival"` → Kaplan–Meier estimator
   - `outcome.type = "competing-risk"` → Aalen–Johansen estimator
 - **Confidence intervals**
   - `conf.int` sets the two-sided level (default 0.95)  
   - `conf.type` chooses the transformation (`"arcsine-square root"`,
     `"plain"`, `"log"`, `"log-log"`, `"logit"`, or `"none"`)
-  - `error` chooses the estimator for standard error (`"greenwood"` or
-    `"tsiatis"` for survival curves and `"delta"` or `"aalen"` for CIFs)
+  - `error` chooses the estimator for SE (`"greenwood"` or `"tsiatis"`
+    for survival curves and `"delta"` or `"aalen"` for CIFs)
 
 **Key arguments for cifplot()**
 
 - **Data visualization**
-  - `add.conf` adds confidence intervals on the ggplot2-based plot
+  - `add.conf` adds CIs on the ggplot2-based plot
   - `add.competing.risk.mark` and `add.intercurrent.event.mark` add
     symbols to describe competing risks or intercurrent events in
     addition to conventional censoring marks with `add.censor.mark`
   - `add.risktable` adds numbers at risk
-  - `add.estimate.table` adds estimates and 95% confidence interval
+  - `add.estimate.table` adds estimated survival probabilities or CIFs
+    and CIs at each point in time
   - `add.quantile` adds a line that represents the median or a selected
     quantile level
 - **Plot customization**
@@ -187,16 +187,17 @@ You may also pass a survfit-compatible object directly.
     1-survival/CIF)
   - `limits.x`, `limits.y`, `breaks.x`, `breaks.y` numeric vectors for
     axis control
-  - `style` specifies the appearance of plot (`"CLASSIC"`, `"BOLD"`,
-    `"FRAMED"`, `"GRID"`, `"GRAY"` or `"GGSURVFIT"`)
+  - `style` specifies the appearance of plot (`"classsic"`, `"bold"`,
+    `"framed"`, `"grid"`, `"gray"` or `"ggsurvfit"`)
   - `palette` specifies color of each curve
     (e.g. `palette=c("blue1", "cyan3", "navy", "deepskyblue3"))`)
 - **Panel display**
   - `panel.per.variable` produces multiple survival/CIF curves per
     stratification variable specified in the formula
   - `panel.per.event` produces CIF curves for each event type
-  - `panel.censoring` produces KM-type curves for (event, censor) and
-    (censor, event) so that censoring patterns can be inspected
+  - `panel.censoring` produces the Kaplan–Meier curves for (event,
+    censor) and (censor, event) so that censoring patterns can be
+    inspected
   - `panel.mode` uses automatic panel mode
 
 **Return**
@@ -210,12 +211,10 @@ which calculates the Kaplan–Meier estimator and the Aalen–Johansen
 estimator. `cifcurve()` returns a survfit-compatible object, enabling an
 independent use of standard methods such as:
 
-- `summary()` — time-by-time estimates with standard errors and
-  confidence intervals
+- `summary()` — time-by-time estimates with SEs and CIs
 - `plot()` — base R stepwise survival/CIF curves
-- `mean()` — restricted mean survival estimates with confidence
-  intervals
-- `quantile()` — quantile estimates with confidence intervals
+- `mean()` — restricted mean survival estimates with CIs
+- `quantile()` — quantile estimates with CIs
 
 Furthermore, the cifmodeling package provides a workflow for a
 **ggplot2-based visualization** based on the survfit-compatible objects
@@ -254,7 +253,8 @@ layout.
 
 **Return**
 
-- A **patchwork** object (still ggplot-compatible).
+- A List that in contains **patchwork** object (still
+  ggplot-compatible).
 
 **An example of usage**
 
@@ -332,7 +332,7 @@ cifpanel(
 
 ### polyreg()
 
-`polyreg()` implements **log odds product modeling** of CIFs at
+This function implements **log odds product modeling** of CIFs at
 user-specified time points, focusing on multiplicative effects of a
 categorical exposure, or constant effects over time like Cox regression
 and Fine-Gray models. It estimates multiplicative effects such as **risk
@@ -386,15 +386,14 @@ complications (event 2) at 8 years of follow-up is demonstrated. To
 visualize each covariate separately when multiple strata are supplied,
 set `panel.per.variable = TRUE`. Each variable on the right-hand side is
 plotted in its own panel, and the layout can be controlled with
-`rows.columns.panel`. The figure below contrasts the cumulative
-incidence curves of diabetic retinopathy for the quartiles `fruitq` and
-a binary exposure `fruitq1`, low (Q1) and high (Q2 to 4) intake of
-fruit, generated by `cifplot()`. The `add.conf=TRUE` argument adds
-confidence intervals to the plot. This helps visualize the statistical
-uncertainty of estimated probabilities across exposure levels. When
-using numeric variables for stratification, discretize them beforehand
-with `cut()` or `factor()`. The labels of x-axis (Time) and y-axis
-(Cumulative incidence) in these panels are default labels.
+`rows.columns.panel`. The figure below contrasts the CIFs of diabetic
+retinopathy for the quartiles `fruitq` and a binary exposure `fruitq1`,
+low (Q1) and high (Q2 to 4) intake of fruit, generated by `cifplot()`.
+The `add.conf=TRUE` argument adds CIs to the plot. This helps visualize
+the statistical uncertainty of estimated probabilities across exposure
+levels. When using numeric variables for stratification, discretize them
+beforehand with `cut()` or `factor()`. The labels of x-axis (Time) and
+y-axis (Cumulative incidence) in these panels are default labels.
 
 ``` r
 data(diabetes.complications)
@@ -424,10 +423,10 @@ frequency of censoring, allowing a clearer understanding of
 loss-to-censoring patterns over follow-up. Here the workflow differs
 slightly from the previous code. First, we compute a survfit-compatible
 object `output1` using `cifcurve()` with `outcome.type="competing-risk"`
-by calculating Aalen–Johansen estimator stratified by `fruitq1`. Then,
-`cifplot()` is used to generate the figure. The `label.y`, `label.x` and
-`limit.x` arguments are also used to customize the axis labels and
-limits.
+by calculating the Aalen–Johansen estimator stratified by `fruitq1`.
+Then, `cifplot()` is used to generate the figure. The `label.y`,
+`label.x` and `limit.x` arguments are also used to customize the axis
+labels and limits.
 
 ``` r
 output1 <- cifcurve(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
@@ -478,7 +477,7 @@ Cumulative incidence curves with competing risk marks
 
 </div>
 
-`label.strata` is another argument for customizing labels, but when
+The `label.strata` is another argument for customizing labels, but when
 inputting a survfit object, it becomes invalid because it does not
 contain stratum information. Therefore, the following code inputs the
 formula and data. `label.strata` is used by combining `level.strata` and
@@ -486,7 +485,7 @@ formula and data. `label.strata` is used by combining `level.strata` and
 stratification variable corresponding to each label in `label.strata`.
 The levels specified in `level.strata` are then displayed in the figure
 in the order defined by `order.strata`. A figure enclosed in a square
-was generated, which is due to `style="FRAMED"` specification.
+was generated, which is due to `style="framed"` specification.
 
 ``` r
 cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
@@ -495,7 +494,7 @@ cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications,
         competing.risk.time=output2, label.y="CIF of diabetic retinopathy", 
         label.x="Years from registration", limits.x=c(0,8),
         label.strata=c("High intake","Low intake"), level.strata=c("Q2 to Q4","Q1"), 
-        order.strata=c("Q1", "Q2 to Q4"), style="FRAMED")
+        order.strata=c("Q1", "Q2 to Q4"), style="framed")
 ```
 
 <div class="figure">
@@ -509,16 +508,15 @@ Cumulative incidence curves with strata labels and FRAMED style
 </div>
 
 By specifying `add.estimate.table=TRUE`, the risks of diabetic
-retinopathy (estimates for CIFs) along with their confidence interval
-are shown in the table at the bottom of the figure The risk ratios at a
-specific time point (e.g. 8 years) for competing events can be jointly
-and coherently estimated using `polyreg()` with
-`outcome.type="competing-risk"`. In the code of `polyreg()` below, no
-covariates are included in the nuisance model (`~1` specifies intercept
-only). The effect of low fruit intake `fruitq1` is estimated as an
-unadjusted risk ratio (`effect.measure1="RR"`) for diabetic retinopathy
-(event 1) and macrovascular complications (event 2) at 8 years
-(`time.point=8`).
+retinopathy (estimates for CIFs) along with their CIs are shown in the
+table at the bottom of the figure The risk ratios at a specific time
+point (e.g. 8 years) for competing events can be jointly and coherently
+estimated using `polyreg()` with `outcome.type="competing-risk"`. In the
+code of `polyreg()` below, no covariates are included in the nuisance
+model (`~1` specifies intercept only). The effect of low fruit intake
+`fruitq1` is estimated as an unadjusted risk ratio
+(`effect.measure1="RR"`) for diabetic retinopathy (event 1) and
+macrovascular complications (event 2) at 8 years (`time.point=8`).
 
 ``` r
 output3 <- polyreg(nuisance.model=Event(t,epsilon)~1, exposure="fruitq1", 
@@ -545,7 +543,7 @@ are included in summary by setting `report.nuisance.parameter = TRUE`.
 Model summaries can also be exponentiated to display risk ratios, odds
 ratios, or subdistribution hazard ratios using `exponentiate` option.
 The summaries can be displayed in the Viewer with customized statistics
-such as p-values or confidence intervals.
+such as p-values or CIs.
 
 ## Example 2. Survival analysis
 
