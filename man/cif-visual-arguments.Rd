@@ -67,8 +67,8 @@ times per stratum. Default \code{FALSE}.}
 the layout of the panel returned by the panel modes. If \code{NULL}, an automatic
 layout is determined from the number of subplots.}
 
-\item{style}{Character choosing the base plot style: \code{"classsic"}, \code{"bold"},
-\code{"framed"}, \code{"grid"}, \code{"gray"} or \code{"ggsurvfit"} (default \code{"classsic"}).
+\item{style}{Character choosing the base plot style: \code{"classic"}, \code{"bold"},
+\code{"framed"}, \code{"grid"}, \code{"gray"} or \code{"ggsurvfit"} (default \code{"classic"}).
 Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also accepted.}
 
 \item{palette}{Optional character vector specifying the color palette to use across strata.}
@@ -81,6 +81,10 @@ Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also
 \code{"mono"} (default \code{"sans"}).}
 
 \item{font.size}{Integer specifying the base font size (default \code{12}).}
+
+\item{print.panel}{Logical. When \code{TRUE}, panel displays created internally are
+printed automatically in interactive sessions; otherwise they are returned
+invisibly for further modification (default \code{FALSE}).}
 
 \item{filename.ggsave}{Character; if non-\code{NULL}, save the plot to this file.}
 

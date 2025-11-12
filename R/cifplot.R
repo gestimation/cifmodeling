@@ -24,7 +24,7 @@
 #' **Plot customization**
 #' -   `type.y` chooses y-axis. (`"surv"` for survival curves and `"risk"` for CIFs)
 #' -   `limits.x`, `limits.y`, `breaks.x`, `breaks.y` numeric vectors for axis control
-#' -   `style` specifies the appearance of plot (`"classsic"`, `"bold"`, `"framed"`, `"grid"`, `"gray"` or `"ggsurvfit"`)
+#' -   `style` specifies the appearance of plot (`"classic"`, `"bold"`, `"framed"`, `"grid"`, `"gray"` or `"ggsurvfit"`)
 #'
 #' **Panel display**
 #' -   `panel.per.variable` produces multiple survival/CIF curves per stratification variable specified in the formula
@@ -80,9 +80,6 @@
 #'   \code{panel.per.event = TRUE}; (iii) otherwise, if \code{outcome.type == "survival"}, it
 #'   behaves like \code{panel.censoring = TRUE}. If a panel mode is explicitly specified,
 #'   \code{panel.mode} is ignored.
-#' @param print.panel Logical. When \code{TRUE}, panel displays created internally are
-#'   printed automatically in interactive sessions; otherwise they are returned
-#'   invisibly for further modification.
 #'
 #' @details
 #' This function calls an internal helper \code{call_ggsurvfit()} which adds confidence intervals,
@@ -170,7 +167,7 @@
 #' - Event coding can be controlled via `code.event1`, `code.event2`, `code.censoring`.
 #'   For ADaM-style data, use `code.event1 = 0`, `code.censoring = 1`.
 #' - Per-stratum time lists should have names identical to plotted strata labels.
-
+#'
 #' @return Returns a \code{"cifplot"} object (list) with elements
 #'   \code{plot}, \code{patchwork} (always \code{NULL}), \code{survfit.info},
 #'   \code{axis.info}, \code{visual.info}, \code{panel.info}, \code{style.info},
@@ -191,7 +188,9 @@
 #'         label.x='Years from registration')
 #'
 #' @importFrom ggsurvfit ggsurvfit add_confidence_interval add_risktable add_risktable_strata_symbol add_censor_mark add_quantile
-#' @importFrom ggplot2 theme_classic theme_bw element_text labs lims geom_point aes ggsave guides scale_color_discrete scale_fill_discrete element_text element_rect element_blank scale_color_manual scale_fill_manual scale_linetype_manual scale_shape_manual scale_linetype_discrete scale_shape_discrete
+#' @importFrom ggplot2 theme_classic theme_bw element_text  element_rect element_blank labs lims geom_point aes
+#' ggsave guides scale_color_discrete scale_fill_discrete scale_color_manual
+#' scale_fill_manual scale_linetype_manual scale_linetype_discrete scale_shape_discrete scale_shape_manual
 #' @importFrom grDevices gray
 #' @importFrom patchwork wrap_plots
 #'
@@ -249,14 +248,14 @@ cifplot <- function(
     panel.per.variable            = FALSE,
     panel.mode                    = "auto",
     rows.columns.panel            = NULL,
-    print.panel                   = FALSE,
-    style                         = "classsic",
+    style                         = "classic",
     palette                       = NULL,
     linewidth                     = 0.8,
     linetype                      = FALSE,
     font.family                   = "sans",
     font.size                     = 12,
     legend.position               = "top",
+    print.panel                   = FALSE,
     filename.ggsave               = NULL,
     width.ggsave                  = 6,
     height.ggsave                 = 6,
@@ -357,6 +356,8 @@ cifplot <- function(
   panel.info   <- infos$panel.info
   style.info   <- infos$style.info
   ggsave.info  <- infos$ggsave.info
+  inset.info   <- inset.info %||% list()
+  print.info   <- print.info %||% list()
 
   style.info$font.family <- style.info$font.family %||% "sans"
   style.info$font.size   <- style.info$font.size   %||% 12
@@ -865,8 +866,6 @@ cifplot_single <- function(
   visual.info  <- visual.info  %||% list()
   panel.info   <- panel.info   %||% list()
   style.info   <- style.info   %||% list()
-  inset.info   <- inset.info   %||% list()
-  print.info   <- print.info   %||% list()
   ggsave.info  <- ggsave.info  %||% list()
 
   if (!is.list(survfit.info)) survfit.info <- list(value = survfit.info)
@@ -874,8 +873,6 @@ cifplot_single <- function(
   if (!is.list(visual.info))  visual.info  <- list(value = visual.info)
   if (!is.list(panel.info))   panel.info   <- list(value = panel.info)
   if (!is.list(style.info))   style.info   <- list(style = style.info)
-  if (!is.list(inset.info))   inset.info   <- list(value = inset.info)
-  if (!is.list(print.info))   print.info   <- list(value = print.info)
   if (!is.list(ggsave.info))  ggsave.info  <- list(value = ggsave.info)
 
   if (!is.null(dots$style)) {
@@ -956,7 +953,7 @@ cifplot_single <- function(
   ), panel.info)
 
   style.info <- panel_modify_list(list(
-    style           = "classsic",
+    style           = "classic",
     palette         = NULL,
     linewidth       = 0.8,
     linetype        = FALSE,
@@ -1072,7 +1069,7 @@ cifplot_single <- function(
   }
 
   p <- call_ggsurvfit(
-    survfit_object = if (inherits(formula_or_fit, "survfit")) formula_or_fit else stop("..."),
+    survfit_object = formula_or_fit,
     out_readSurv   = NULL,
     survfit.info   = survfit.info,
     axis.info      = axis.info,
@@ -1119,7 +1116,7 @@ cifplot_single <- function(
 #' @param breaks.y Numeric vectors for axis breaks (default \code{NULL}).
 #' @param use.coord.cartesian Logical specify use of coord_cartesian() (default \code{FALSE}).
 
-#' @param style Character plot theme controls (default \code{"classsic"}).
+#' @param style Character plot theme controls (default \code{"classic"}).
 #' @param font.family Character plot theme controls (default \code{"sans"}).
 #' @param font.size Integer plot theme controls (default \code{14}).
 #' @param legend.position Character specify position of legend: \code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, or \code{"none"} (default \code{"top"}).
@@ -1197,12 +1194,29 @@ call_ggsurvfit <- function(
   dpi.ggsave         <- ggsave.info$dpi.ggsave
   ggsave.units       <- ggsave.info$units %||% "in"
 
-  if (!identical(style.info$legend.position, "none")) {
-    label.strata.map   <- plot_make_label.strata.map(
-      survfit_object   = survfit_object,
-      label.strata     = label.strata,
-      level.strata     = level.strata
+  if (!identical(legend.position, "none")) {
+    label.strata.map <- plot_make_label.strata.map(
+      survfit_object = survfit_object,
+      label.strata   = label.strata,
+      level.strata   = level.strata
     )
+    res <- plot_reconcile_order_and_labels(
+      survfit_object   = survfit_object,
+      label.strata.map = label.strata.map,
+      level.strata     = level.strata,
+      order.strata     = order.strata
+    )
+    limits_arg          <- res$limits_arg
+    label.strata.map    <- res$label.strata.map
+    strata_levels_final <- res$strata_levels_final
+    strata_labels_final <- res$strata_labels_final
+    n_strata_effective  <- length(limits_arg)
+  } else {
+    limits_arg          <- NULL
+    label.strata.map    <- NULL
+    strata_levels_final <- NULL
+    strata_labels_final <- NULL
+    n_strata_effective  <- NULL
   }
 
   out_cg <- check_ggsurvfit(
@@ -1213,28 +1227,6 @@ call_ggsurvfit <- function(
     style.info       = style.info,
     out_readSurv     = out_readSurv
   )
-
-  if (!identical(legend.position, "none")) {
-    res <- plot_reconcile_order_and_labels(
-      survfit_object   = survfit_object,
-      label.strata.map = label.strata.map,
-      level.strata     = level.strata,
-      order.strata     = order.strata
-    )
-
-    limits_arg                 <- res$limits_arg
-    label.strata.map           <- res$label.strata.map
-    strata_levels_final        <- res$strata_levels_final
-    strata_labels_final        <- res$strata_labels_final
-    n_strata_effective         <- length(limits_arg)
-  } else {
-    limits_arg                 <- NULL
-    label.strata.map           <- NULL
-    strata_levels_final        <- NULL
-    strata_labels_final        <- NULL
-    n_strata_effective         <- NULL
-  }
-
 
   p <- out_cg$out_survfit_object +
     ggplot2::labs(
@@ -1382,10 +1374,7 @@ check_ggsurvfit <- function(
   visual.info  <- visual.info  %||% list()
   style.info   <- style.info   %||% list()
 
-  conf.type <- survfit.info$conf.type
-  # error     <- survfit.info$error
-  # conf.int  <- survfit.info$conf.int
-
+  conf.type           <- survfit.info$conf.type
   type.y              <- axis.info$type.y
   label.y             <- axis.info$label.y
   limits.x            <- axis.info$limits.x
@@ -1394,10 +1383,10 @@ check_ggsurvfit <- function(
   breaks.y            <- axis.info$breaks.y
   use.coord.cartesian <- isTRUE(axis.info$use.coord.cartesian)
 
-  add.conf         <- visual.info$add.conf
-  add.censor.mark                 <- visual.info$add.censor.mark
-  add.competing.risk.mark          <- visual.info$add.competing.risk.mark
-  add.intercurrent.event.mark      <- visual.info$add.intercurrent.event.mark
+  add.conf                      <- visual.info$add.conf
+  add.censor.mark               <- visual.info$add.censor.mark
+  add.competing.risk.mark       <- visual.info$add.competing.risk.mark
+  add.intercurrent.event.mark   <- visual.info$add.intercurrent.event.mark
   shape.censor.mark             <- visual.info$shape.censor.mark
   shape.competing.risk.mark     <- visual.info$shape.competing.risk.mark
   shape.intercurrent.event.mark <- visual.info$shape.intercurrent.event.mark
@@ -1515,7 +1504,6 @@ check_ggsurvfit <- function(
   )
   type.y <- if (identical(target_type, "risk")) "risk" else "surv"
 
-  old_opt <- getOption("ggsurvfit.switch-color-linetype", FALSE)
   out_plot <- ggsurvfit(
     survfit_object,
     type         = target_type,

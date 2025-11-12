@@ -126,7 +126,7 @@ This function produces the **Kaplan–Meier survival** or **Aalen–Johansen cum
 -   **Plot customization**
     -   `type.y` chooses y-axis (`"surv"` for survival and `"risk"` for 1-survival/CIF)
     -   `limits.x`, `limits.y`, `breaks.x`, `breaks.y` numeric vectors for axis control
-    -   `style` specifies the appearance of plot (`"classsic"`, `"bold"`, `"framed"`, `"grid"`, `"gray"` or `"ggsurvfit"`)
+    -   `style` specifies the appearance of plot (`"classic"`, `"bold"`, `"framed"`, `"grid"`, `"gray"` or `"ggsurvfit"`)
     -   `palette` specifies color of each curve (e.g. `palette=c("blue1", "cyan3", "navy", "deepskyblue3"))`)
 
 -   **Panel display**
@@ -185,8 +185,8 @@ output1 <- cifplot(Event(t,epsilon) ~ fruitq,
                    outcome.type="competing-risk",
                    code.event1=2,
                    code.event2=1,
-                   addConfidenceInterval = FALSE,
-                   addRiskTable = FALSE,
+                   add.conf=FALSE,
+                   add.risktable = FALSE,
                    label.y="CIF of macrovascular complications",
                    label.x="Years from registration")
 output2 <- cifplot(Event(t,epsilon) ~ fruitq,
@@ -194,12 +194,12 @@ output2 <- cifplot(Event(t,epsilon) ~ fruitq,
                    outcome.type="competing-risk",
                    code.event1=2,
                    code.event2=1,
-                   addConfidenceInterval = FALSE,
-                   addRiskTable = FALSE,
+                   add.conf = FALSE,
+                   add.risktable = FALSE,
                    label.y="",
                    label.x="",
                    limits.y=c(0,0.15))
-output3 <- list(a=output1, b=output2)
+output3 <- list(a = output1$plot, b = output2$plot)
 cifpanel(plots = output3,
          title.plot=c("Fruit intake and macrovascular complications", "Zoomed-in view"),
          inset.panel=TRUE,
@@ -292,12 +292,7 @@ cifplot(output1, add.conf=FALSE, add.risktable=FALSE,
         limits.x=c(0,8))
 ```
 
-<<<<<<< HEAD
-`label.strata` is another argument for customizing labels, but when inputting a survfit object, it becomes invalid because it does not contain stratum information.
-Therefore, the following code inputs the formula and data. `label.strata` is used by combining `level.strata` and `order.strata`. `level.strata` specifies the levels of the stratification variable corresponding to each label in `label.strata`. The levels specified in `level.strata` are then displayed in the figure in the order defined by `order.strata`. A figure enclosed in a square was generated, which is due to `style="framed"` specification.
-=======
 The `label.strata` is another argument for customizing labels, but when inputting a survfit object, it becomes invalid because it does not contain stratum information. Therefore, the following code inputs the formula and data. `label.strata` is used by combining `level.strata` and `order.strata`. `level.strata` specifies the levels of the stratification variable corresponding to each label in `label.strata`. The levels specified in `level.strata` are then displayed in the figure in the order defined by `order.strata`. A figure enclosed in a square was generated, which is due to `style="framed"` specification.
->>>>>>> 5459d5253c6439e8a444f9884fb61a9dca74fca4
 
 ```{r example04-1-4, fig.cap="Cumulative incidence curves with strata labels and FRAMED style", warning=FALSE, message=FALSE}
 cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications, 

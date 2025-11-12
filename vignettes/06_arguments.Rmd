@@ -75,13 +75,14 @@ vignette: >
 -   `panel.per.variable` Logical. Explicit panel mode. If `TRUE` and the right-hand side of the formula has multiple covariates (e.g. `~ a + b + c`), the function produces a panel where each variable in RHS is used once as the stratification factor.
 -   `panel.mode` Character specifying Automatic panel mode. If `"auto"` and none of `panel.per.variable`, `panel.per.event`, `panel.censoring` has been set to `TRUE`, the function chooses a suitable panel mode automatically: (i) if the formula RHS has 2+ variables, it behaves like `panel.per.variable = TRUE`; (ii) otherwise, if `outcome.type == "competing-risk"`, it behaves like `panel.per.event = TRUE`; (iii) otherwise, if `outcome.type == "survival"`, it behaves like `panel.censoring = TRUE`. If a panel mode is explicitly specified, `panel.mode` is ignored.
 -   `rows.columns.panel` Optional integer vector `c(nrow, ncol)` controlling the panel layout. If `NULL`, an automatic layout is used.
--   `style` Character plot theme controls (default `"classsic"`).
+-   `style` Character plot theme controls (default `"classic"`).
 -   `palette` Optional character vector specify color palette, e.g. `palette=c("blue", "cyan", "navy", "green")` (default `NULL`).
 -   `linewidth` Optional numeric specifying the line width of curve (default `0.8`).
 -   `linetype` Optional logical using different line types of curve (default `\code{`FALSE`).
 -   `font.family` Character plot theme controls (e.g. `"sans"`, `"serif"`, and `"mono"`. default `"sans"`).
 -   `font.size` Integer plot theme controls (default `12`).
 -   `legend.position` Character specify position of legend: `"top"`, `"right"`, `"bottom"`, `"left"`, or `"none"` (default `"top"`).
+-   `print.panel` Logical. When `TRUE`, panel displays created internally are printed automatically in interactive sessions; otherwise they are returned invisibly for further modification (default `FALSE`).
 -   `filename.ggsave` Character save the `ggsurvfit` plot with the path and name specified.
 -   `width.ggsave` Numeric specify width of the `ggsurvfit` plot.
 -   `height.ggsave` Numeric specify height of the `ggsurvfit` plot.
@@ -124,9 +125,8 @@ vignette: >
 -   `width.ggsave` Numeric specify width of the composed panel.
 -   `height.ggsave` Numeric specify height of the composed panel.
 -   `dpi.ggsave` Numeric specify dpi of the composed panel.
--   `print.panel` Logical. When `TRUE`, the composed patchwork object is printed automatically in interactive sessions; otherwise the object is returned invisibly so it can be assigned, modified, or saved. Kept for backward compatibility.
+-   `print.panel` Logical. When `TRUE`, panel displays created internally are printed automatically in interactive sessions; otherwise they are returned invisibly for further modification (default `FALSE`).
 -   `engine` Character scalar selecting the internal plotting engine. Currently only `"cifplot"` is supported and used to construct each panel `cifplot_single()`. This argument is reserved for future extensions.
-
 -   `...` Additional arguments forwarded to `cifplot` (e.g., `style`, `font.family`, `font.size`, etc.). Panel-wise overrides provided via explicit arguments take precedence over `...`.
 
 

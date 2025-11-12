@@ -53,14 +53,14 @@ cifplot(
   panel.per.variable = FALSE,
   panel.mode = "auto",
   rows.columns.panel = NULL,
-  print.panel = FALSE,
-  style = "classsic",
+  style = "classic",
   palette = NULL,
   linewidth = 0.8,
   linetype = FALSE,
   font.family = "sans",
   font.size = 12,
   legend.position = "top",
+  print.panel = FALSE,
   filename.ggsave = NULL,
   width.ggsave = 6,
   height.ggsave = 6,
@@ -224,12 +224,8 @@ behaves like \code{panel.censoring = TRUE}. If a panel mode is explicitly specif
 the layout of the panel returned by the panel modes. If \code{NULL}, an automatic
 layout is determined from the number of subplots.}
 
-\item{print.panel}{Logical. When \code{TRUE}, the composed panel returned by
-internal panel modes is printed automatically in interactive sessions; otherwise
-the object is returned invisibly for assignment or further modification.}
-
-\item{style}{Character choosing the base plot style: \code{"classsic"}, \code{"bold"},
-\code{"framed"}, \code{"grid"}, \code{"gray"} or \code{"ggsurvfit"} (default \code{"classsic"}).
+\item{style}{Character choosing the base plot style: \code{"classic"}, \code{"bold"},
+\code{"framed"}, \code{"grid"}, \code{"gray"} or \code{"ggsurvfit"} (default \code{"classic"}).
 Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also accepted.}
 
 \item{palette}{Optional character vector specifying the color palette to use across strata.}
@@ -246,6 +242,10 @@ Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also
 \item{legend.position}{Character specifying the legend position:
 \code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, or \code{"none"} (default \code{"top"}).}
 
+\item{print.panel}{Logical. When \code{TRUE}, panel displays created internally are
+printed automatically in interactive sessions; otherwise they are returned
+invisibly for further modification (default \code{FALSE}).}
+
 \item{filename.ggsave}{Character; if non-\code{NULL}, save the plot to this file.}
 
 \item{width.ggsave}{Numeric width passed to \code{ggplot2::ggsave()} (default \code{6}).}
@@ -257,10 +257,11 @@ Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also
 \item{survfit.info, axis.info, visual.info, panel.info, style.info, print.info, ggsave.info}{Internal lists used for programmatic control. Not intended for direct user input.}
 }
 \value{
-Returns a \code{"cifplot"} object (list) with elements \code{plot},
-\code{patchwork} (always \code{NULL}), \code{survfit.info}, \code{axis.info},
-\code{visual.info}, \code{panel.info}, \code{style.info}, \code{inset.info},
-\code{print.info}, \code{ggsave.info}, \code{version}, and \code{call}.
+Returns a \code{"cifplot"} object (list) with elements
+\code{plot}, \code{patchwork} (always \code{NULL}), \code{survfit.info},
+\code{axis.info}, \code{visual.info}, \code{panel.info}, \code{style.info},
+\code{inset.info}, \code{print.info}, \code{ggsave.info}, \code{version},
+and \code{call}.
 }
 \description{
 This function produces the Kaplan–Meier survival or Aalen–Johansen cumulative
@@ -269,8 +270,7 @@ the left-hand side, and a stratification variable on the right-hand side if nece
 You may also pass a survfit-compatible object directly.
 Options for risk and estimate+CI tables, censoring/competing-risk/intercurrent-event marks,
 and simple panel display internally using \code{cifpanel()} are available.
-The returned \code{"cifplot"} object stores the single \code{ggplot} in
-\code{$plot} along with plotting metadata.
+This function returns a regular \code{ggplot} object (compatible with \code{+} and \code{\%+\%}).
 
 \strong{Outcome type and estimator}
 \itemize{
@@ -291,7 +291,7 @@ The returned \code{"cifplot"} object stores the single \code{ggplot} in
 \itemize{
 \item \code{type.y} chooses y-axis. (\code{"surv"} for survival curves and \code{"risk"} for CIFs)
 \item \code{limits.x}, \code{limits.y}, \code{breaks.x}, \code{breaks.y} numeric vectors for axis control
-\item \code{style} specifies the appearance of plot (\code{"classsic"}, \code{"bold"}, \code{"framed"}, \code{"grid"}, \code{"gray"} or \code{"ggsurvfit"})
+\item \code{style} specifies the appearance of plot (\code{"classic"}, \code{"bold"}, \code{"framed"}, \code{"grid"}, \code{"gray"} or \code{"ggsurvfit"})
 }
 
 \strong{Panel display}

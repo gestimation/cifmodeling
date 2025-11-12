@@ -187,7 +187,7 @@ You may also pass a survfit-compatible object directly.
     1-survival/CIF)
   - `limits.x`, `limits.y`, `breaks.x`, `breaks.y` numeric vectors for
     axis control
-  - `style` specifies the appearance of plot (`"classsic"`, `"bold"`,
+  - `style` specifies the appearance of plot (`"classic"`, `"bold"`,
     `"framed"`, `"grid"`, `"gray"` or `"ggsurvfit"`)
   - `palette` specifies color of each curve
     (e.g. `palette=c("blue1", "cyan3", "navy", "deepskyblue3"))`)
@@ -274,8 +274,8 @@ output1 <- cifplot(Event(t,epsilon) ~ fruitq,
                    outcome.type="competing-risk",
                    code.event1=2,
                    code.event2=1,
-                   addConfidenceInterval = FALSE,
-                   addRiskTable = FALSE,
+                   add.conf=FALSE,
+                   add.risktable = FALSE,
                    label.y="CIF of macrovascular complications",
                    label.x="Years from registration")
 output2 <- cifplot(Event(t,epsilon) ~ fruitq,
@@ -283,12 +283,12 @@ output2 <- cifplot(Event(t,epsilon) ~ fruitq,
                    outcome.type="competing-risk",
                    code.event1=2,
                    code.event2=1,
-                   addConfidenceInterval = FALSE,
-                   addRiskTable = FALSE,
+                   add.conf = FALSE,
+                   add.risktable = FALSE,
                    label.y="",
                    label.x="",
                    limits.y=c(0,0.15))
-output3 <- list(a=output1, b=output2)
+output3 <- list(a = output1$plot, b = output2$plot)
 cifpanel(plots = output3,
          title.plot=c("Fruit intake and macrovascular complications", "Zoomed-in view"),
          inset.panel=TRUE,
@@ -297,16 +297,6 @@ cifpanel(plots = output3,
          inset.legend.position="none",
          legend.position="bottom")
 ```
-
-<div class="figure">
-
-<img src="man/figures/README-example02-1-1.png" alt="Zoomed-in-view panel using cifplot() and cifpanel()" width="70%" />
-<p class="caption">
-
-Zoomed-in-view panel using cifplot() and cifpanel()
-</p>
-
-</div>
 
 The code below, in which a formula and data is given directly, produces
 the same output as above.

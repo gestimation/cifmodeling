@@ -79,10 +79,6 @@
 #' @param title.plot Character vector of titles for **each panel** in the order they
 #'   are drawn. Length-1 values are recycled to all panels. In inset mode, the first
 #'   element refers to the main plot and the second (if present) to the inset.
-#' @param print.panel Logical. If \code{TRUE}, the composed patchwork object is
-#'   printed immediately (for interactive use). If \code{FALSE}, the object is
-#'   returned invisibly so that it can be assigned, modified, or saved. Kept for
-#'   backward compatibility.
 #'
 #' @param ... Additional arguments forwarded to the internal \code{cifplot_single()}
 #'   calls that build each panel. Use this to pass low-level options such as
@@ -316,7 +312,7 @@ cifpanel <- function(
     caption.panel                 = NULL,
     tag.panel                     = NULL,
     title.plot                    = NULL,
-    style                         = "classsic",
+    style                         = "classic",
     palette                       = NULL,
     linewidth                     = 0.8,
     linetype                      = FALSE,
@@ -330,7 +326,7 @@ cifpanel <- function(
     inset.top                     = 0.45,
     inset.align.to                = c("panel","plot","full"),
     inset.legend.position         = NULL,
-    print.panel                   = TRUE,
+    print.panel                   = FALSE,
     filename.ggsave               = NULL,
     width.ggsave                  = NULL,
     height.ggsave                 = NULL,
@@ -436,7 +432,7 @@ cifpanel <- function(
   style.info$legend.collect  <- style.info$legend.collect  %||% legend.collect
 
   style.info <- panel_modify_list(list(
-    style           = "classsic",
+    style           = "classic",
     palette         = NULL,
     linewidth       = NULL,
     linetype        = NULL,
@@ -744,8 +740,8 @@ cifpanel <- function(
   if (!is.null(limsx.list))       kill_names <- c(kill_names, "limits.x")
   if (!is.null(labelstrata.list)) kill_names <- c(kill_names, "label.strata")
   if (!is.null(orderstrata.list)) kill_names <- c(kill_names, "order.strata")
-  if (!is.null(breakx.list))      kill_names <- c(kill_names, "breaks.x","breaks.x")
-  if (!is.null(breaky.list))      kill_names <- c(kill_names, "breaks.y","breaks.y")
+  if (!is.null(breakx.list))      kill_names <- c(kill_names, "breaks.x")
+  if (!is.null(breaky.list))      kill_names <- c(kill_names, "breaks.y")
   if (!is.null(addCI.list))       kill_names <- c(kill_names, "add.conf")
   if (!is.null(addCen.list))      kill_names <- c(kill_names, "add.censor.mark")
   if (!is.null(addCR.list))       kill_names <- c(kill_names, "add.competing.risk.mark")

@@ -1,7 +1,23 @@
 get_plot_from_cifplot <- function(...) {
   res <- cifplot(...)
   testthat::expect_s3_class(res, "cifplot")
+  testthat::expect_true(inherits(res$plot, "ggplot"))
   res$plot
+}
+
+get_panel_from_cifpanel <- function(...) {
+  res <- cifpanel(...)
+  testthat::expect_s3_class(res, "cifpanel")
+  testthat::expect_true(is.list(res$list.plot))
+  testthat::expect_true(all(vapply(res$list.plot, inherits, logical(1), what = "ggplot")))
+  testthat::expect_true(inherits(res$patchwork, "patchwork"))
+  res
+}
+
+expect_no_print <- function(expr) {
+  out <- capture.output(res <- force(expr))
+  testthat::expect_equal(length(out), 0L)
+  invisible(res)
 }
 
 test_that("label.strata only adjusts labels and suppresses fill legend", {
@@ -16,7 +32,8 @@ test_that("label.strata only adjusts labels and suppresses fill legend", {
     code.events  = c(1, 2, 0),
     label.strata = label,
     level.strata = level,
-    add.risktable = FALSE
+    add.risktable = FALSE,
+    print.panel = FALSE  # ← 明示
   )
 
   sc_col   <- p$scales$get_scales("colour")
@@ -26,7 +43,6 @@ test_that("label.strata only adjusts labels and suppresses fill legend", {
 
   expect_setequal(sc_col$get_labels(), unname(label))
   expect_setequal(sc_lin$get_labels(), unname(label))
-
   expect_identical(sc_fill$guide, "none")
   expect_identical(sc_shape$guide, "none")
 })
@@ -40,7 +56,8 @@ test_that("label.strata is reflected in color legend NEW", {
     code.events  = c(1, 2, 0),
     label.strata = c("Low intake", "High intake"),
     level.strata = c(0, 1),
-    add.risktable = FALSE
+    add.risktable = FALSE,
+    print.panel = FALSE
   )
 
   sc_col <- p$scales$get_scales("colour")
@@ -61,7 +78,6 @@ test_that("label.strata is reflected in color legend NEW", {
   expect_equal(unname(lbl), c("Low intake", "High intake"))
 })
 
-
 test_that("label.strata overrides palette labels", {
   skip()
   data(diabetes.complications)
@@ -74,91 +90,17 @@ test_that("label.strata overrides palette labels", {
     code.events  = c(1, 2, 0),
     palette = pal,
     label.strata = lbls,
-    add.risktable = FALSE
+    add.risktable = FALSE,
+    print.panel = FALSE
   )
 
   sc_col  <- p$scales$get_scales("colour")
   sc_fill <- p$scales$get_scales("fill")
 
-  # ラベルの中身が上書きされていることだけを確認（順番は許容）
   expect_setequal(sc_col$get_labels(), unname(lbls))
-
-  # パレットは指定どおり使われてること
   expect_equal(sc_col$palette(seq_along(pal)), pal)
-
-  # fill は表示しない
   expect_identical(sc_fill$guide, "none")
 })
-
-
-test_that("order is applied first; missing levels are appended", {
-  skip()
-  cur_full  <- c("grp=A","grp=B","grp=C")
-  cur_short <- c("A","B","C")
-
-  lbl <- c("Alpha","Bravo","Charlie")
-  names(lbl) <- cur_full
-
-  # 1) 正しい order はそのまま使われる
-  ord <- c("grp=B","grp=C","grp=A")
-  out <- plot_reconcile_order_and_labels(
-    cur_lvls_full    = cur_full,
-    cur_lvls_short   = cur_short,
-    level.strata     = cur_full,
-    order.strata     = ord,
-    label.strata.map = lbl
-  )
-  expect_true(out$used_order)
-  expect_identical(out$limits_arg, ord)
-  expect_identical(out$strata_labels_final, unname(lbl[ord]))
-
-  # 2) order に一部しか書いてなくても、残りが後ろに付く
-  ord_bad <- c("grp=A","grp=B")   # ← C がない
-  out2 <- plot_reconcile_order_and_labels(
-    cur_lvls_full    = cur_full,
-    cur_lvls_short   = cur_short,
-    level.strata     = cur_full,
-    order.strata     = ord_bad,
-    label.strata.map = lbl
-  )
-  expect_true(out2$used_order)
-  # A, B が先に来て、残りの C が後ろに付く
-  expect_identical(out2$limits_arg, c("grp=A","grp=B","grp=C"))
-  # ラベルも同じ順で並ぶ（ここは names いらないので unname する）
-  expect_identical(
-    out2$strata_labels_final,
-    unname(lbl[c("grp=A","grp=B","grp=C")])
-  )
-
-  # 3) order がまったくかすらないときだけ warning & 無視
-  ord_none <- c("grp=X","grp=Y")
-  expect_warning(
-    out3 <- plot_reconcile_order_and_labels(
-      cur_lvls_full    = cur_full,
-      cur_lvls_short   = cur_short,
-      level.strata     = cur_full,
-      order.strata     = ord_none,
-      label.strata.map = NULL
-    ),
-    "`order.strata` has no overlap"
-  )
-  expect_null(out3$limits_arg)
-  expect_true(out3$forbid_limits_due_to_order)
-
-  # 4) order がなくて label だけなら label の順
-  out4 <- plot_reconcile_order_and_labels(
-    cur_lvls_full    = cur_full,
-    cur_lvls_short   = cur_short,
-    level.strata     = cur_full,
-    order.strata     = NULL,
-    label.strata.map = lbl
-  )
-  expect_identical(out4$limits_arg, names(lbl))
-  expect_identical(out4$strata_labels_final, unname(lbl))
-})
-
-
-
 
 test_that("palette only uses manual color scale", {
   data(diabetes.complications)
@@ -169,7 +111,8 @@ test_that("palette only uses manual color scale", {
     outcome.type = "competing-risk",
     code.events  = c(1, 2, 0),
     palette = pal,
-    add.risktable = FALSE
+    add.risktable = FALSE,
+    print.panel = FALSE
   )
 
   sc_col <- p$scales$get_scales("colour")
@@ -180,8 +123,6 @@ test_that("palette only uses manual color scale", {
   sc_fill <- p$scales$get_scales("fill")
   expect_identical(sc_fill$guide, "none")
 })
-
-
 
 test_that("numeric vectors with <9 unique values are converted to factor", {
   x <- c(1, 2, 2, 3, NA_real_)
@@ -214,4 +155,49 @@ test_that("formula normalization converts numeric RHS strata", {
   expect_identical(levels(out$data$z),
                    c(cifmodeling:::plot_default_labels$strata$below_median,
                      cifmodeling:::plot_default_labels$strata$above_median))
+})
+
+
+test_that("cifplot does not print by default", {
+  data(diabetes.complications)
+  expect_no_print(
+    cifplot(Event(t, epsilon) ~ fruitq1,
+            data = diabetes.complications,
+            outcome.type = "competing-risk",
+            code.events = c(1,2,0))
+  )
+})
+
+
+
+test_that("cifpanel returns list.plot and patchwork (no out_patchwork)", {
+  data(diabetes.complications)
+  res <- get_panel_from_cifpanel(
+    formulas = list(
+      Event(t, epsilon) ~ fruitq1,
+      Event(t, epsilon) ~ 1
+    ),
+    data = diabetes.complications,
+    code.events = list(c(1,2,0), c(1,2,0)),
+    rows.columns.panel = c(1,2),
+    print.panel = FALSE
+  )
+  expect_true(is.null(res$plot))
+  expect_true(is.list(res$list.plot))
+  expect_true(inherits(res$patchwork, "patchwork"))
+  expect_false("out_patchwork" %in% names(res))
+})
+
+
+test_that("survfit.info includes meta fields and data.name", {
+  data(diabetes.complications)
+  res <- cifplot(Event(t, epsilon) ~ fruitq1,
+                 data = diabetes.complications,
+                 outcome.type = "competing-risk",
+                 code.events = c(1,2,0))
+  s <- res$survfit.info
+  expect_true(is.list(s))
+  expect_true(all(c("formula_or_fit","outcome.type","code.event1",
+                    "code.event2","code.censoring","code.events","data.name") %in% names(s)))
+  expect_type(s$data.name, "character")
 })

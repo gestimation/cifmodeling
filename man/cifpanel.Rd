@@ -52,7 +52,7 @@ cifpanel(
   caption.panel = NULL,
   tag.panel = NULL,
   title.plot = NULL,
-  style = "classsic",
+  style = "classic",
   palette = NULL,
   linewidth = 0.8,
   linetype = FALSE,
@@ -66,7 +66,7 @@ cifpanel(
   inset.top = 0.45,
   inset.align.to = c("panel", "plot", "full"),
   inset.legend.position = NULL,
-  print.panel = TRUE,
+  print.panel = FALSE,
   filename.ggsave = NULL,
   width.ggsave = NULL,
   height.ggsave = NULL,
@@ -203,8 +203,8 @@ individual panels (e.g. \code{"A"}, \code{"B"}, \code{"C"}). Typical values are
 are drawn. Length-1 values are recycled to all panels. In inset mode, the first
 element refers to the main plot and the second (if present) to the inset.}
 
-\item{style}{Character choosing the base plot style: \code{"classsic"}, \code{"bold"},
-\code{"framed"}, \code{"grid"}, \code{"gray"} or \code{"ggsurvfit"} (default \code{"classsic"}).
+\item{style}{Character choosing the base plot style: \code{"classic"}, \code{"bold"},
+\code{"framed"}, \code{"grid"}, \code{"gray"} or \code{"ggsurvfit"} (default \code{"classic"}).
 Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also accepted.}
 
 \item{palette}{Optional character vector specifying the color palette to use across strata.}
@@ -246,10 +246,9 @@ defined for it (often this means a legend will also be inset).
 Set, for example, \code{"none"} to hide the legend inside the inset,
 while still showing the main plot's legend.}
 
-\item{print.panel}{Logical. When \code{TRUE}, the composed patchwork object is
-printed automatically in interactive sessions. Otherwise, the object is
-returned invisibly so that it can be assigned, modified, or saved. Kept for
-backward compatibility.}
+\item{print.panel}{Logical. When \code{TRUE}, panel displays created internally are
+printed automatically in interactive sessions; otherwise they are returned
+invisibly for further modification (default \code{FALSE}).}
 
 \item{filename.ggsave}{Character; if non-\code{NULL}, save the plot to this file.}
 
@@ -266,17 +265,17 @@ calls that build each panel. Use this to pass low-level options such as
 \code{competing.risk.time}, \code{intercurrent.event.time}, or styling overrides.}
 }
 \value{
-Returns a \code{"cifpanel"} object (list) with elements \code{plot} (\code{NULL}),
-\code{list.plot} (list of \code{ggplot} objects), \code{patchwork}, and the same
-metadata fields as \code{\link{cifplot}}. Printing occurs only in interactive
-sessions when \code{print.panel = TRUE}.
+Returns a \code{"cifpanel"} object (list) with elements \code{plot}
+(\code{NULL}), \code{list.plot} (list of \code{ggplot} objects),
+\code{patchwork}, and the same metadata fields as \code{\link[=cifplot]{cifplot()}}. The object is
+returned invisibly; printing occurs only when \code{interactive()} and
+\code{print.panel = TRUE}.
 }
 \description{
 \code{cifpanel()} is the panel-building counterpart of \code{cifplot()}.
 It takes one or more model formulas (or, alternatively, one formula and several
-event-coding specifications) and returns a \code{"cifpanel"} object that stores
-both the composed \pkg{patchwork} layout and the per-panel \code{ggplot}
-objects. Most display options (axis labels, marks, style, ggsave options)
+event-coding specifications) and returns a multi-panel figure, typically as a
+\pkg{patchwork} object. Most display options (axis labels, marks, style, ggsave options)
 are shared with \code{cifplot()}, but per-panel legends and risk tables are
 suppressed to avoid duplicated display.
 
@@ -388,9 +387,10 @@ Otherwise, the function returns objects without saving.
 
 \subsection{Value}{
 
-Returns \strong{invisibly} a \code{"cifpanel"} object with
-\code{plot = NULL}, \code{list.plot} (list of \code{ggplot} objects), and
-\code{patchwork}. When \code{interactive()} and \code{print.panel = TRUE}, the
+Returns invisibly a \code{"cifpanel"} object (list) with elements
+\code{plot} (always \code{NULL}), \code{list.plot} (list of \code{ggplot}
+objects), \code{patchwork}, and the same metadata fields as
+\code{\link[=cifplot]{cifplot()}}. When \code{interactive()} and \code{print.panel = TRUE}, the
 patchwork is printed automatically.
 }
 
