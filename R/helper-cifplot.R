@@ -133,6 +133,7 @@ plot_apply_style <- function(
     strata_labels_final = NULL
 ) {
   if (style=="g") style <- "grid"
+  style <- tolower(style)
   style <- match.arg(style)
   style_theme <- switch(
     style,

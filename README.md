@@ -178,10 +178,8 @@ You may also pass a survfit-compatible object directly.
     symbols to describe competing risks or intercurrent events in
     addition to conventional censoring marks with `add.censor.mark`
   - `add.risktable` adds numbers at risk
-  - `add.estimate.table` adds estimated survival probabilities or CIFs
-    and CIs at each point in time
-  - `add.quantile` adds a line that represents the median or a selected
-    quantile level
+  - `add.estimate.table` adds time-by-time estimates and CIs
+  - `add.quantile` add a reference line at a chosen quantile level
 - **Plot customization**
   - `type.y` chooses y-axis (`"surv"` for survival and `"risk"` for
     1-survival/CIF)
@@ -202,7 +200,9 @@ You may also pass a survfit-compatible object directly.
 
 **Return**
 
-- A **ggplot** object.
+- A **cifplot** object (list) with at least:
+  - `plot` the **ggplot** object
+  - Additional metadata used by `cifpanel()` and helper functions
 
 **Under the hood: cifcurve()**
 
@@ -222,11 +222,10 @@ by passing them to `cifplot()` and `cifpanel`.
 
 ### cifpanel()
 
-`cifpanel()` arranges multiple `cifplot()/cifcurve()` results into a
-unified grid layout with consistent scales, shared legend, and
-synchronized themes. It is ideal for visual comparison across outcomes,
-time scales, or strata. The inset feature also allows you to display
-another plot within a plot.
+`cifpanel()` arranges multiple `cifplot()`/ggplot (or `cifcurve()`
+results rendered via `cifplot()`) into a unified layout with consistent
+scales, shared legend, and synchronized themes. The inset feature allows
+you to display one plot inside another.
 
 **Typical use cases** - Compare CIF (event 1) vs CIF (event 2) in a 1×2
 layout.
@@ -234,8 +233,7 @@ layout.
 - Compare survival/CIF curves across strata with a shared legend and
   matched axes.
 
-- Display a plot with an enlarged y-axis within a plot scaled from 0 to
-  100%.
+- Display a plot with an enlarged y-axis inside a full-scale plot.
 
 **Key arguments**
 
@@ -253,8 +251,10 @@ layout.
 
 **Return**
 
-- A List that in contains **patchwork** object (still
-  ggplot-compatible).
+- A **cifpanel** object (list) with at least:
+  - `patchwork` the **patchwork** object (still ggplot-compatible)
+  - `plots` a list of **ggplot** objects in the `patchwork`
+  - Additional metadata
 
 **An example of usage**
 
@@ -270,7 +270,7 @@ position and size of the zoomed-in-view panel is specified by
 
 ``` r
 output1 <- cifplot(Event(t,epsilon) ~ fruitq,
-                   data = diabetes.complications,
+                   data=diabetes.complications,
                    outcome.type="competing-risk",
                    code.event1=2,
                    code.event2=1,
@@ -279,7 +279,7 @@ output1 <- cifplot(Event(t,epsilon) ~ fruitq,
                    label.y="CIF of macrovascular complications",
                    label.x="Years from registration")
 output2 <- cifplot(Event(t,epsilon) ~ fruitq,
-                   data = diabetes.complications,
+                   data=diabetes.complications,
                    outcome.type="competing-risk",
                    code.event1=2,
                    code.event2=1,
@@ -289,14 +289,25 @@ output2 <- cifplot(Event(t,epsilon) ~ fruitq,
                    label.x="",
                    limits.y=c(0,0.15))
 output3 <- list(a = output1$plot, b = output2$plot)
-cifpanel(plots = output3,
+output4 <- cifpanel(plots=output3,
          title.plot=c("Fruit intake and macrovascular complications", "Zoomed-in view"),
          inset.panel=TRUE,
          inset.left=0.40, inset.bottom=0.45,
          inset.right=1.00, inset.top=0.95,
          inset.legend.position="none",
          legend.position="bottom")
+print(output4)
 ```
+
+<div class="figure">
+
+<img src="man/figures/README-example02-1-1.png" alt="Zoomed-in-view panel using cifplot() and cifpanel()" width="70%" />
+<p class="caption">
+
+Zoomed-in-view panel using cifplot() and cifpanel()
+</p>
+
+</div>
 
 The code below, in which a formula and data is given directly, produces
 the same output as above.
@@ -320,7 +331,7 @@ cifpanel(
 )
 ```
 
-### polyreg()
+## polyreg()
 
 This function implements **log odds product modeling** of CIFs at
 user-specified time points, focusing on multiplicative effects of a
@@ -331,15 +342,15 @@ ensuring that the probabilities across competing events sum to one. This
 is achieved through **reparameterization using polytomous log odds
 products**, which fits so-called effect-measure models and nuisance
 models on multiple competing events simultaneously. Additionally,
-`polyreg()` supports direct binomial regression for survival outcomes
-and the Richardson model for binomial outcomes, both of which use log
+`polyreg()` supports direct binomial regression for a survival outcome
+and the Richardson model for a binomial outcome, both of which use log
 odds products.
 
 The function follows the familiar **formula + data** syntax with
 `Event()` or `Surv()` and outputs tidy results, including point
-estimates, standard errors, confidence intervals, and p-values. Its
-results can be easily summarized with `summary()` or combined with tools
-such as **modelsummary** or **broom** for reporting.
+estimates, SEs, CIs, and p-values. Its results can be easily summarized
+with `summary()` or combined with tools such as **modelsummary** or
+**broom** for reporting.
 
 **Key arguments**
 
@@ -354,8 +365,8 @@ such as **modelsummary** or **broom** for reporting.
   `"proportional-competing-risk"`).
 - `time.point` — specifies time points at which the exposure effect is
   evaluated. Required for `"competing-risk"` and `"survival"` outcomes.
-- `strata` — specifies the stratification variable used to adjust for
-  dependent censoring.
+- `strata` — specifies the stratification variable used for the IPCW
+  adjustment for dependent censoring.
 
 **Return**
 
@@ -367,6 +378,14 @@ such as **modelsummary** or **broom** for reporting.
   weights, influence functions, and predicted potential outcomes
 
 - `summary` — a summary of estimated exposure effects
+
+### An example of usage
+
+``` r
+output <- polyreg(nuisance.model=Event(t,epsilon)~1, exposure="fruitq", 
+          data=diabetes.complications, effect.measure1="RR", 
+          effect.measure2="RR", time.point=8, outcome.type="competing-risk")
+```
 
 ## Example 1. Unadjusted competing risks analysis
 

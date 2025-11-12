@@ -151,13 +151,14 @@ output2 <- cifplot(Event(t,epsilon) ~ fruitq,
                    label.x="",
                    limits.y=c(0,0.15))
 output3 <- list(a = output1$plot, b = output2$plot)
-cifpanel(plots=output3,
+output4 <- cifpanel(plots=output3,
          title.plot=c("Fruit intake and macrovascular complications", "Zoomed-in view"),
          inset.panel=TRUE,
          inset.left=0.40, inset.bottom=0.45,
          inset.right=1.00, inset.top=0.95,
          inset.legend.position="none",
          legend.position="bottom")
+print(output4)
 ```
 
 The code below, in which a formula and data is given directly, produces the same output as above. 
@@ -213,5 +214,3 @@ output <- polyreg(nuisance.model=Event(t,epsilon)~1, exposure="fruitq",
           data=diabetes.complications, effect.measure1="RR", 
           effect.measure2="RR", time.point=8, outcome.type="competing-risk")
 ```
-
-If you only need the core functionality of `cifcurve()` and `polyreg()`, installing `Rcpp` and `nleqslv` are enough; the other packages are optional but recommended to reproduce the examples below.
