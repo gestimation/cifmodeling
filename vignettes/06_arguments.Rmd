@@ -124,7 +124,7 @@ vignette: >
 -   `width.ggsave` Numeric specify width of the composed panel.
 -   `height.ggsave` Numeric specify height of the composed panel.
 -   `dpi.ggsave` Numeric specify dpi of the composed panel.
--   `print.panel` Logical. If `TRUE`, the composed patchwork object is printed immediately (for interactive use). If `FALSE`, the object is returned invisibly so that it can be assigned, modified, or saved. Kept for backward compatibility.
+-   `print.panel` Logical. When `TRUE`, the composed patchwork object is printed automatically in interactive sessions; otherwise the object is returned invisibly so it can be assigned, modified, or saved. Kept for backward compatibility.
 -   `engine` Character scalar selecting the internal plotting engine. Currently only `"cifplot"` is supported and used to construct each panel `cifplot_single()`. This argument is reserved for future extensions.
 
 -   `...` Additional arguments forwarded to `cifplot` (e.g., `style`, `font.family`, `font.size`, etc.). Panel-wise overrides provided via explicit arguments take precedence over `...`.

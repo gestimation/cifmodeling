@@ -14,8 +14,8 @@ test_that("cifpanel() accepts pre-built plots (grid mode)", {
   )
 
   expect_true(is.list(out))
-  expect_true(any(c("plots", "out_patchwork") %in% names(out)))
-  expect_equal(length(out$plots), 2L)
+  expect_true(all(c("list.plot", "patchwork") %in% names(out)))
+  expect_equal(length(out$list.plot), 2L)
 })
 
 test_that("cifpanel() accepts pre-built plots (inset mode)", {
@@ -33,7 +33,7 @@ test_that("cifpanel() accepts pre-built plots (inset mode)", {
   )
 
   expect_true(is.list(out))
-  expect_true(any(c("plots", "out_patchwork") %in% names(out)))
+  expect_true(all(c("list.plot", "patchwork") %in% names(out)))
 })
 
 
@@ -122,7 +122,7 @@ test_that("cifpanel() produces expected outputs with competing risks data (no pl
     print.panel      = FALSE
   )
   expect_true(is.list(out))
-  expect_true(any(c("plots", "out_patchwork") %in% names(out)))
+  expect_true(all(c("list.plot", "patchwork") %in% names(out)))
 })
 
 test_that("panel_prepare() returns curves and plot arguments", {
@@ -193,9 +193,9 @@ test_that("cifpanel() with two formulas shows per-plot titles", {
   )
 
   expect_type(res, "list")
-  expect_length(res$plots, 2)
-  expect_equal(res$plots[[1]]$labels$title, "Plot-x1")
-  expect_equal(res$plots[[2]]$labels$title, "Plot-x2")
+  expect_length(res$list.plot, 2)
+  expect_equal(res$list.plot[[1]]$labels$title, "Plot-x1")
+  expect_equal(res$list.plot[[2]]$labels$title, "Plot-x2")
 })
 
 test_that("panel flags work", {
@@ -221,7 +221,7 @@ test_that("panel flags work", {
 
   expect_true(is.list(res))
   expect_true(
-    inherits(res$out_patchwork, "patchwork") || inherits(res$out_patchwork, "gg")
+    inherits(res$patchwork, "patchwork") || inherits(res$patchwork, "gg")
   )
 })
 
@@ -245,7 +245,7 @@ test_that("cifpanel() applies panel-level tag_levels", {
     print.panel  = FALSE
   )
 
-  ann <- res$out_patchwork$patches$annotation
+  ann <- res$patchwork$patches$annotation
   expect_false(is.null(ann))
   expect_equal(ann$tag_levels, "A")
 })
@@ -271,12 +271,12 @@ test_that("cifplot(panel.per.event=TRUE) creates 2-event panel", {
     print.panel      = FALSE
   )
 
-  expect_s3_class(p, "patchwork")
-  plots <- attr(p, "plots")
-  expect_equal(length(plots), 2)
+  expect_s3_class(p, "cifpanel")
+  expect_true(inherits(p$patchwork, "patchwork"))
+  expect_equal(length(p$list.plot), 2)
 
-  expect_equal(plots[[1]]$labels$y, "Cumulative incidence of interest")
-  expect_equal(plots[[2]]$labels$y, "Cumulative incidence of competing risk")
+  expect_equal(p$list.plot[[1]]$labels$y, "Cumulative incidence of interest")
+  expect_equal(p$list.plot[[2]]$labels$y, "Cumulative incidence of competing risk")
 })
 
 test_that("cifpanel() can take per-panel label.x/label.y", {
@@ -300,6 +300,6 @@ test_that("cifpanel() can take per-panel label.x/label.y", {
     print.panel  = FALSE
   )
 
-  expect_equal(res$plots[[1]]$labels$y, "CIF by group")
-  expect_equal(res$plots[[2]]$labels$y, "Overall CIF")
+  expect_equal(res$list.plot[[1]]$labels$y, "CIF by group")
+  expect_equal(res$list.plot[[2]]$labels$y, "Overall CIF")
 })

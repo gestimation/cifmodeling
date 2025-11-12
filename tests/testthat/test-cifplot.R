@@ -1,9 +1,15 @@
+get_plot_from_cifplot <- function(...) {
+  res <- cifplot(...)
+  testthat::expect_s3_class(res, "cifplot")
+  res$plot
+}
+
 test_that("label.strata only adjusts labels and suppresses fill legend", {
   skip()
   data(diabetes.complications)
   label <- c("Low intake", "High intake")
   level <- c(0, 1)
-  p <- cifplot(
+  p <- get_plot_from_cifplot(
     Event(t, epsilon) ~ fruitq1,
     data = diabetes.complications,
     outcome.type = "competing-risk",
@@ -13,7 +19,6 @@ test_that("label.strata only adjusts labels and suppresses fill legend", {
     add.risktable = FALSE
   )
 
-  expect_s3_class(p, "ggplot")
   sc_col   <- p$scales$get_scales("colour")
   sc_lin   <- p$scales$get_scales("linetype")
   sc_fill  <- p$scales$get_scales("fill")
@@ -28,7 +33,7 @@ test_that("label.strata only adjusts labels and suppresses fill legend", {
 
 test_that("label.strata is reflected in color legend NEW", {
   data(diabetes.complications)
-  p <- cifplot(
+  p <- get_plot_from_cifplot(
     Event(t, epsilon) ~ fruitq1,
     data = diabetes.complications,
     outcome.type = "competing-risk",
@@ -62,7 +67,7 @@ test_that("label.strata overrides palette labels", {
   data(diabetes.complications)
   pal  <- c("#FF0000", "#0000FF")
   lbls <- c("0" = "Group A", "1" = "Group B")
-  p <- cifplot(
+  p <- get_plot_from_cifplot(
     Event(t, epsilon) ~ fruitq1,
     data = diabetes.complications,
     outcome.type = "competing-risk",
@@ -158,7 +163,7 @@ test_that("order is applied first; missing levels are appended", {
 test_that("palette only uses manual color scale", {
   data(diabetes.complications)
   pal <- c("#FF0000", "#0000FF")
-  p <- cifplot(
+  p <- get_plot_from_cifplot(
     Event(t, epsilon) ~ fruitq1,
     data = diabetes.complications,
     outcome.type = "competing-risk",

@@ -80,6 +80,9 @@
 #'   \code{panel.per.event = TRUE}; (iii) otherwise, if \code{outcome.type == "survival"}, it
 #'   behaves like \code{panel.censoring = TRUE}. If a panel mode is explicitly specified,
 #'   \code{panel.mode} is ignored.
+#' @param print.panel Logical. When \code{TRUE}, panel displays created internally are
+#'   printed automatically in interactive sessions; otherwise they are returned
+#'   invisibly for further modification.
 #'
 #' @details
 #' This function calls an internal helper \code{call_ggsurvfit()} which adds confidence intervals,
@@ -168,9 +171,11 @@
 #'   For ADaM-style data, use `code.event1 = 0`, `code.censoring = 1`.
 #' - Per-stratum time lists should have names identical to plotted strata labels.
 
-#' @return A \code{ggplot} object. When \code{panel.per.variable = TRUE}, a \pkg{patchwork}
-#'   object is returned with an attribute \code{attr(x, "plots")} containing the
-#'   individual \code{ggplot} panels.
+#' @return Returns a \code{"cifplot"} object (list) with elements
+#'   \code{plot}, \code{patchwork} (always \code{NULL}), \code{survfit.info},
+#'   \code{axis.info}, \code{visual.info}, \code{panel.info}, \code{style.info},
+#'   \code{inset.info}, \code{print.info}, \code{ggsave.info}, \code{version},
+#'   and \code{call}.
 #'
 #' @keywords internal
 #' @param survfit.info,axis.info,visual.info,panel.info,style.info,print.info,ggsave.info
@@ -244,6 +249,7 @@ cifplot <- function(
     panel.per.variable            = FALSE,
     panel.mode                    = "auto",
     rows.columns.panel            = NULL,
+    print.panel                   = FALSE,
     style                         = "classsic",
     palette                       = NULL,
     linewidth                     = 0.8,
@@ -266,6 +272,7 @@ cifplot <- function(
     ...
 ) {
   dots <- list(...)
+  dots$print.panel <- dots$print.panel %||% print.panel
 
   print_panel <- isTRUE(panel.per.variable) || isTRUE(panel.per.event) || isTRUE(panel.censoring)
   if (print_panel) {
@@ -520,8 +527,46 @@ cifplot <- function(
   )
 
   out_plot <- do.call(cifplot_single, args_single)
-  out_plot <- apply_strata_to_plots(list(out_plot),order_data = axis.info$order.strata,label_map  = axis.info$label.strata)[[1]]
-  out_plot
+  out_plot <- apply_strata_to_plots(
+    list(out_plot),
+    order_data = axis.info$order.strata,
+    label_map  = axis.info$label.strata
+  )[[1]]
+
+  survfit.info$formula_or_fit <- survfit.info$formula_or_fit %||% formula_or_fit
+  survfit.info$outcome.type   <- survfit.info$outcome.type   %||% outcome.type
+  survfit.info$code.event1    <- survfit.info$code.event1    %||% code.event1
+  survfit.info$code.event2    <- survfit.info$code.event2    %||% code.event2
+  survfit.info$code.censoring <- survfit.info$code.censoring %||% code.censoring
+  survfit.info$code.events    <- survfit.info$code.events    %||% code.events
+  survfit.info$data.name      <- survfit.info$data.name      %||% deparse(substitute(data))
+
+  print.info <- print.info %||% list()
+  print.info$print.panel <- isTRUE(print.panel)
+  print.info$engine      <- print.info$engine %||% "cifplot_single"
+
+  ret <- list(
+    plot         = out_plot,
+    patchwork    = NULL,
+    survfit.info = survfit.info,
+    axis.info    = axis.info,
+    visual.info  = visual.info,
+    panel.info   = panel.info,
+    style.info   = style.info,
+    inset.info   = inset.info %||% list(),
+    print.info   = print.info,
+    ggsave.info  = ggsave.info,
+    version      = utils::packageVersion("cifmodeling"),
+    call         = match.call()
+  )
+  class(ret) <- c("cifplot", class(ret))
+
+  if (interactive() && isTRUE(ret$print.info$print.panel)) {
+    print(ret$plot)
+    invisible(ret)
+  } else {
+    ret
+  }
 }
 
 plot_panel.per.variable <- function(
@@ -614,9 +659,8 @@ plot_panel.per.variable <- function(
     ), dots)
   )
 
-  if (is.list(res) && !is.null(res$out_patchwork)) {
-    attr(res$out_patchwork, "plots") <- res$plots
-    return(res$out_patchwork)
+  if (is.list(res) && !is.null(res$patchwork)) {
+    return(res)
   }
   res
 }
@@ -714,9 +758,8 @@ plot_panel.per.event <- function(
 
   panel_out <- do.call(cifpanel, c(panel_args, dots))
 
-  if (is.list(panel_out) && !is.null(panel_out$out_patchwork)) {
-    attr(panel_out$out_patchwork, "plots") <- panel_out$plots
-    return(panel_out$out_patchwork)
+  if (is.list(panel_out) && !is.null(panel_out$patchwork)) {
+    return(panel_out)
   }
   panel_out
 }
@@ -784,9 +827,8 @@ plot_panel.censoring <- function(
 
   panel_out <- do.call(cifpanel, c(panel_args, dots))
 
-  if (is.list(panel_out) && !is.null(panel_out$out_patchwork)) {
-    attr(panel_out$out_patchwork, "plots") <- panel_out$plots
-    return(panel_out$out_patchwork)
+  if (is.list(panel_out) && !is.null(panel_out$patchwork)) {
+    return(panel_out)
   }
   panel_out
 }
@@ -823,6 +865,8 @@ cifplot_single <- function(
   visual.info  <- visual.info  %||% list()
   panel.info   <- panel.info   %||% list()
   style.info   <- style.info   %||% list()
+  inset.info   <- inset.info   %||% list()
+  print.info   <- print.info   %||% list()
   ggsave.info  <- ggsave.info  %||% list()
 
   if (!is.list(survfit.info)) survfit.info <- list(value = survfit.info)
@@ -830,6 +874,8 @@ cifplot_single <- function(
   if (!is.list(visual.info))  visual.info  <- list(value = visual.info)
   if (!is.list(panel.info))   panel.info   <- list(value = panel.info)
   if (!is.list(style.info))   style.info   <- list(style = style.info)
+  if (!is.list(inset.info))   inset.info   <- list(value = inset.info)
+  if (!is.list(print.info))   print.info   <- list(value = print.info)
   if (!is.list(ggsave.info))  ggsave.info  <- list(value = ggsave.info)
 
   if (!is.null(dots$style)) {

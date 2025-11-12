@@ -166,10 +166,11 @@
 #'
 #' ### Value
 #'
-#' Returns **invisibly**:
-#' `list(plots = <list of ggplot objects>, out_patchwork = <patchwork object>)`.
-#' Print the latter to display the composed panel. If `print.panel = TRUE`,
-#' printing is done automatically.
+#' Returns invisibly a \code{"cifpanel"} object (list) with elements
+#' \code{plot} (always \code{NULL}), \code{list.plot} (list of \code{ggplot}
+#' objects), \code{patchwork}, and the same metadata fields as
+#' [cifplot()]. When \code{interactive()} and \code{print.panel = TRUE}, the
+#' patchwork is printed automatically.
 #'
 #' ### Notes & tips
 #'
@@ -181,12 +182,14 @@
 #' - ADaM-style coding can be expressed via `code.events` (e.g., `c(0,1)` for KM:
 #'   `event1=0`, `censor=1`).
 #' - Additional graphical options (e.g., theme) can be added post-hoc to each
-#'   element of `plots` or to the composed `out_patchwork`.
+#'   element of `list.plot` or to the composed `patchwork`.
 
 #' @importFrom patchwork wrap_plots plot_layout inset_element plot_annotation
-#' @return An invisible list: \code{list(plots = <list of ggplot objects>, out_patchwork = <patchwork object>)}.
-#' Print the returned object to display the panel, or access individual panels via
-#' `out_patchwork$plots[[1]]`, `out_patchwork$plots[[2]]`, ...
+#' @return Returns a \code{"cifpanel"} object (list) with elements \code{plot}
+#'   (\code{NULL}), \code{list.plot} (list of \code{ggplot} objects),
+#'   \code{patchwork}, and the same metadata fields as [cifplot()]. The object is
+#'   returned invisibly; printing occurs only when \code{interactive()} and
+#'   \code{print.panel = TRUE}.
 #'
 #' @keywords internal
 #' @param survfit.info,axis.info,visual.info,panel.info,style.info,print.info,ggsave.info,inset.info
@@ -355,6 +358,9 @@ cifpanel <- function(
   inset.align.to <- match.arg(inset.align.to)
 
   dots <- list(...)
+  call <- match.call()
+  plots_out <- NULL
+  engine.list <- panel_to_list(engine)
 
   survfit.info.user <- survfit.info
   axis.info.user    <- axis.info
@@ -606,7 +612,7 @@ cifpanel <- function(
       theme      = theme.panel.unified
     )
 
-    if (isTRUE(print.panel)) print(out_patchwork)
+    if (interactive() && isTRUE(print.panel)) print(out_patchwork)
     if (!is.null(filename.ggsave)) {
       if (is.null(width.ggsave))  width.ggsave  <- if (isTRUE(inset.panel)) 6 else max(6, 5 * rows.columns.panel[2])
       if (is.null(height.ggsave)) height.ggsave <- if (isTRUE(inset.panel)) 6 else max(6, 5 * rows.columns.panel[1])
@@ -615,18 +621,33 @@ cifpanel <- function(
                       dpi = dpi.ggsave, units = ggsave.units)
     }
 
-    return(invisible(list(
-      plots        = plots_out,
-      out_patchwork= out_patchwork,
-      axis.info    = axis.info,
+    survfit.info$formula_or_fit <- survfit.info$formula_or_fit %||% list(
+      formula  = formula,
+      formulas = formulas
+    )
+    survfit.info$outcome.type   <- survfit.info$outcome.type   %||% outcome.type
+    survfit.info$code.events    <- survfit.info$code.events    %||% code.events
+    survfit.info$data.name      <- survfit.info$data.name      %||% deparse(substitute(data))
+
+    print.info$engine <- print.info$engine %||% engine.list
+
+    res <- list(
+      plot         = NULL,
+      list.plot    = plots_out %||% plots,
+      patchwork    = out_patchwork,
       survfit.info = survfit.info,
+      axis.info    = axis.info,
       visual.info  = visual.info,
       panel.info   = panel.info,
       style.info   = style.info,
       inset.info   = inset.info,
       print.info   = print.info,
-      ggsave.info  = ggsave.info
-    )))
+      ggsave.info  = ggsave.info,
+      version      = utils::packageVersion("cifmodeling"),
+      call         = call
+    )
+    class(res) <- c("cifpanel", class(res))
+    return(invisible(res))
   }
 
   rows.columns.panel <- panel.info$rows.columns.panel
@@ -733,8 +754,9 @@ cifpanel <- function(
 
   dots <- panel_strip_overrides_from_dots(dots, unique(kill_names))
 
-  engine.list <- panel_to_list(engine)
-  engine.list <- panel_recycle_to(engine.list, K)
+  if (!is.null(engine.list)) {
+    engine.list <- panel_recycle_to(engine.list, K)
+  }
 
   prep <- panel_prepare(
     K               = K,
@@ -942,7 +964,7 @@ cifpanel <- function(
     theme      = theme.panel.unified
   )
 
-  if (isTRUE(print.panel)) print(out_patchwork)
+  if (interactive() && isTRUE(print.panel)) print(out_patchwork)
   if (!is.null(filename.ggsave)) {
     if (is.null(width.ggsave))  width.ggsave  <- if (isTRUE(inset.panel)) 6 else max(6, 5 * rows.columns.panel[2])
     if (is.null(height.ggsave)) height.ggsave <- if (isTRUE(inset.panel)) 6 else max(6, 5 * rows.columns.panel[1])
@@ -951,9 +973,20 @@ cifpanel <- function(
                     dpi = dpi.ggsave, units = ggsave.units)
   }
 
-  invisible(list(
-    plots        = plots,
-    out_patchwork= out_patchwork,
+  survfit.info$formula_or_fit <- survfit.info$formula_or_fit %||% list(
+    formula  = formula,
+    formulas = formulas
+  )
+  survfit.info$outcome.type   <- survfit.info$outcome.type   %||% outcome.type
+  survfit.info$code.events    <- survfit.info$code.events    %||% code.events
+  survfit.info$data.name      <- survfit.info$data.name      %||% deparse(substitute(data))
+
+  print.info$engine <- print.info$engine %||% engine.list
+
+  res <- list(
+    plot         = NULL,
+    list.plot    = plots_out %||% plots,
+    patchwork    = out_patchwork,
     survfit.info = survfit.info,
     axis.info    = axis.info,
     visual.info  = visual.info,
@@ -961,8 +994,12 @@ cifpanel <- function(
     style.info   = style.info,
     inset.info   = inset.info,
     print.info   = print.info,
-    ggsave.info  = ggsave.info
-  ))
+    ggsave.info  = ggsave.info,
+    version      = utils::packageVersion("cifmodeling"),
+    call         = call
+  )
+  class(res) <- c("cifpanel", class(res))
+  invisible(res)
 }
 
 panel_force_apply <- function(

@@ -246,8 +246,8 @@ defined for it (often this means a legend will also be inset).
 Set, for example, \code{"none"} to hide the legend inside the inset,
 while still showing the main plot's legend.}
 
-\item{print.panel}{Logical. If \code{TRUE}, the composed patchwork object is
-printed immediately (for interactive use). If \code{FALSE}, the object is
+\item{print.panel}{Logical. When \code{TRUE}, the composed patchwork object is
+printed automatically in interactive sessions. Otherwise, the object is
 returned invisibly so that it can be assigned, modified, or saved. Kept for
 backward compatibility.}
 
@@ -266,15 +266,17 @@ calls that build each panel. Use this to pass low-level options such as
 \code{competing.risk.time}, \code{intercurrent.event.time}, or styling overrides.}
 }
 \value{
-An invisible list: \code{list(plots = <list of ggplot objects>, out_patchwork = <patchwork object>)}.
-Print the returned object to display the panel, or access individual panels via
-\code{out_patchwork$plots[[1]]}, \code{out_patchwork$plots[[2]]}, ...
+Returns a \code{"cifpanel"} object (list) with elements \code{plot} (\code{NULL}),
+\code{list.plot} (list of \code{ggplot} objects), \code{patchwork}, and the same
+metadata fields as \code{\link{cifplot}}. Printing occurs only in interactive
+sessions when \code{print.panel = TRUE}.
 }
 \description{
 \code{cifpanel()} is the panel-building counterpart of \code{cifplot()}.
 It takes one or more model formulas (or, alternatively, one formula and several
-event-coding specifications) and returns a multi-panel figure, typically as a
-\pkg{patchwork} object. Most display options (axis labels, marks, style, ggsave options)
+event-coding specifications) and returns a \code{"cifpanel"} object that stores
+both the composed \pkg{patchwork} layout and the per-panel \code{ggplot}
+objects. Most display options (axis labels, marks, style, ggsave options)
 are shared with \code{cifplot()}, but per-panel legends and risk tables are
 suppressed to avoid duplicated display.
 
@@ -386,10 +388,10 @@ Otherwise, the function returns objects without saving.
 
 \subsection{Value}{
 
-Returns \strong{invisibly}:
-\verb{list(plots = <list of ggplot objects>, out_patchwork = <patchwork object>)}.
-Print the latter to display the composed panel. If \code{print.panel = TRUE},
-printing is done automatically.
+Returns \strong{invisibly} a \code{"cifpanel"} object with
+\code{plot = NULL}, \code{list.plot} (list of \code{ggplot} objects), and
+\code{patchwork}. When \code{interactive()} and \code{print.panel = TRUE}, the
+patchwork is printed automatically.
 }
 
 \subsection{Notes & tips}{
@@ -402,7 +404,7 @@ of panels; length-1 inputs are recycled; otherwise an error is thrown.
 \item ADaM-style coding can be expressed via \code{code.events} (e.g., \code{c(0,1)} for KM:
 \code{event1=0}, \code{censor=1}).
 \item Additional graphical options (e.g., theme) can be added post-hoc to each
-element of \code{plots} or to the composed \code{out_patchwork}.
+element of \code{list.plot} or to the composed \code{patchwork}.
 }
 }
 }
