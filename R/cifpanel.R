@@ -193,7 +193,7 @@
 #'
 #' @examples
 #' data(diabetes.complications)
-#' cifpanel(
+#' output1 <- cifpanel(
 #'   title.panel = "A comparison of cumulative incidence of competing events",
 #'   rows.columns.panel = c(1,2),
 #'   formula = Event(t, epsilon) ~ fruitq,
@@ -208,34 +208,8 @@
 #'   legend.position = "bottom",
 #'   legend.collect=TRUE
 #' )
+#' print(output1)
 #'
-#' cifpanel(
-#'   title.plot = c("Associations between fruit intake and macrovascular complications", "Details"),
-#'   inset.panel = TRUE,
-#'   formula = Event(t, epsilon) ~ fruitq,
-#'   data = diabetes.complications,
-#'   outcome.type = "competing-risk",
-#'   code.events = list(c(2,1,0), c(2,1,0)),
-#'   label.y = c("CIF of macrovascular complications", ""),
-#'   label.x = c("Years from registration", ""),
-#'   limits.y     = list(c(0,1), c(0,0.15)),
-#'   inset.left   = 0.40, inset.bottom = 0.45,
-#'   inset.right  = 1.00, inset.top    = 0.95,
-#'   inset.align.to = "plot",
-#'   inset.legend.position = "none",
-#'   legend.position = "bottom",
-#'   add.conf = FALSE
-#' )
-#'
-#' output1 <- cifplot(Event(t,epsilon) ~ fruitq,
-#'                    data = diabetes.complications,
-#'                    outcome.type="competing-risk",
-#'                    code.event1=2,
-#'                    code.event2=1,
-#'                    add.conf = FALSE,
-#'                    add.risktable = FALSE,
-#'                    label.y='CIF of macrovascular complications',
-#'                    label.x='Years from registration')
 #' output2 <- cifplot(Event(t,epsilon) ~ fruitq,
 #'                    data = diabetes.complications,
 #'                    outcome.type="competing-risk",
@@ -243,17 +217,27 @@
 #'                    code.event2=1,
 #'                    add.conf = FALSE,
 #'                    add.risktable = FALSE,
-#'                    label.y='CIF of macrovascular complications',
-#'                    label.x='Years from registration',
+#'                    label.y="CIF of macrovascular complications",
+#'                    label.x="Years from registration")
+#' output3 <- cifplot(Event(t,epsilon) ~ fruitq,
+#'                    data = diabetes.complications,
+#'                    outcome.type="competing-risk",
+#'                    code.event1=2,
+#'                    code.event2=1,
+#'                    add.conf = FALSE,
+#'                    add.risktable = FALSE,
+#'                    label.y="",
+#'                    label.x="",
 #'                    limits.y=c(0,0.15))
-#' output3 <- list(a=output1, b=output2)
-#' cifpanel(plots = output3,
+#' output4 <- list(a = output2$plot, b = output3$plot)
+#' output5 <- cifpanel(plots = output3,
 #'          inset.panel = TRUE,
 #'          inset.left = 0.40, inset.bottom = 0.45,
 #'          inset.right = 1.00, inset.top = 0.95,
 #'          inset.align.to = "plot",
 #'          inset.legend.position = "none",
 #'          legend.position = "bottom")
+#' print(output5)
 #'
 #' @importFrom ggplot2 ggplot theme_void ggsave theme element_text labs
 #' @importFrom patchwork wrap_plots plot_layout inset_element plot_annotation
@@ -777,7 +761,8 @@ cifpanel <- function(
     survfit.info    = survfit.info,
     style.info      = style.info,
     dots            = dots,
-    fonts           = fonts
+    fonts           = fonts,
+    na.action       = na.action
   )
 
   plots <- lapply(seq_len(prep$K), function(i) {

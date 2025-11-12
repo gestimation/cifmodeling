@@ -29,34 +29,17 @@
 #' @keywords internal
 #' @noRd
 panel_prepare <- function(
-    K,
-    formulas,
-    data,
-    code.events,
-    outcome.flags,
+    K, formulas, data, code.events, outcome.flags,
     outcome.list = NULL,
-    typey.list = NULL,
-    labely.list = NULL,
-    labelx.list = NULL,
-    limsx.list = NULL,
-    limsy.list = NULL,
-    breakx.list = NULL,
-    breaky.list = NULL,
-    addCI.list = NULL,
-    addCen.list = NULL,
-    addCR.list = NULL,
-    addIC.list = NULL,
-    addQ.list = NULL,
-    strata.list = NULL,
-    legend.position = NULL,
-    survfit.info = list(),
-    style.info = list(),
-    dots = list(),
-    fonts = NULL
-) {
-  if (is.null(fonts)) {
-    fonts <- panel_extract_fonts(dots)
-  }
+    typey.list = NULL, labely.list = NULL, labelx.list = NULL,
+    limsx.list = NULL, limsy.list = NULL,
+    breakx.list = NULL, breaky.list = NULL,
+    addCI.list = NULL, addCen.list = NULL, addCR.list = NULL, addIC.list = NULL, addQ.list = NULL,
+    strata.list = NULL, legend.position = NULL,
+    survfit.info = list(), style.info = list(), dots = list(), fonts = NULL,
+    na.action = stats::na.omit                 # ★ 追加（既定は stats::na.omit）
+){
+  if (is.null(fonts)) fonts <- panel_extract_fonts(dots)
 
   curves    <- vector("list", length = K)
   plot_args <- vector("list", length = K)
@@ -64,88 +47,72 @@ panel_prepare <- function(
   for (i in seq_len(K)) {
     pair <- code.events[[i]]
 
-    if (outcome.flags[i] == "S") {
-      ce1 <- pair[1]
-      ce2 <- NULL
-      cc  <- pair[2]
+    # ★ flags は小文字化して判定
+    flag <- tolower(outcome.flags[i])
+    if (flag == "s") {
+      ce1 <- pair[1]; ce2 <- NULL; cc <- pair[2]
     } else {
-      ce1 <- pair[1]
-      ce2 <- pair[2]
-      cc  <- pair[3]
+      ce1 <- pair[1]; ce2 <- pair[2]; cc <- pair[3]
     }
 
     norm_inputs <- plot_normalize_formula_data(formulas[[i]], data)
-    data_i <- norm_inputs$data
+    cur_formula <- norm_inputs$formula %||% formulas[[i]]   # ★ ここで cur_formula を定義
+    data_i      <- norm_inputs$data
 
     args_est <- panel_drop_nulls(c(
       list(
-        formula        = formulas[[i]],
+        formula        = cur_formula,            # ★ 正規化済み formula を使用
         data           = data_i,
         outcome.type   = if (!is.null(outcome.list)) outcome.list[[i]] else NULL,
         code.event1    = ce1,
         code.event2    = ce2,
-        code.censoring = cc
+        code.censoring = cc,
+        na.action      = na.action               # ★ cifcurve にも渡す
       ),
       survfit.info
     ))
 
-    ot <- args_est$outcome.type %||% NULL
-    ce <- args_est$code.events   %||% code.events %||% NULL
-
+    ot <- args_est$outcome.type
+    # ★ 正規化判定にはこのパネルの pair をそのまま渡す
     args_est$outcome.type <- panel_normalize_outcome_type(
       outcome.type = ot,
-      code.events  = ce,
+      code.events  = pair,
       formula      = cur_formula,
-      data         = data,
-      na.action    = args_est$na.action %||% na.action
+      data         = data_i,
+      na.action    = na.action
     )
 
     fit_i <- do.call(cifcurve, args_est)
     curves[[i]] <- fit_i
 
     args_plot <- list(
-      formula_or_fit           = fit_i,
-      type.y                   = if (!is.null(typey.list))   typey.list[[i]]   else NULL,
-      label.y                  = if (!is.null(labely.list))  labely.list[[i]]  else NULL,
-      label.x                  = if (!is.null(labelx.list))  labelx.list[[i]]  else NULL,
-      limits.y                 = if (!is.null(limsy.list))   limsy.list[[i]]   else NULL,
-      limits.x                 = if (!is.null(limsx.list))   limsx.list[[i]]   else NULL,
-      breaks.x                 = if (!is.null(breakx.list))  breakx.list[[i]]  else NULL,
-      breaks.y                 = if (!is.null(breaky.list))  breaky.list[[i]]  else NULL,
-      add.conf    = if (!is.null(addCI.list))   addCI.list[[i]]   else TRUE,
+      formula_or_fit             = fit_i,
+      type.y                     = if (!is.null(typey.list))   typey.list[[i]]   else NULL,
+      label.y                    = if (!is.null(labely.list))  labely.list[[i]]  else NULL,
+      label.x                    = if (!is.null(labelx.list))  labelx.list[[i]]  else NULL,
+      limits.y                   = if (!is.null(limsy.list))   limsy.list[[i]]   else NULL,
+      limits.x                   = if (!is.null(limsx.list))   limsx.list[[i]]   else NULL,
+      breaks.x                   = if (!is.null(breakx.list))  breakx.list[[i]]  else NULL,
+      breaks.y                   = if (!is.null(breaky.list))  breaky.list[[i]]  else NULL,
+      add.conf                   = if (!is.null(addCI.list))   addCI.list[[i]]   else TRUE,
       add.censor.mark            = if (!is.null(addCen.list))  addCen.list[[i]]  else TRUE,
-      add.competing.risk.mark     = if (!is.null(addCR.list))   addCR.list[[i]]   else FALSE,
-      add.intercurrent.event.mark = if (!is.null(addIC.list))   addIC.list[[i]]   else FALSE,
-      add.quantile          = if (!is.null(addQ.list))    addQ.list[[i]]    else FALSE,
-      label.strata             = if (!is.null(strata.list))  strata.list[[i]]  else NULL,
-      font.family              = fonts$family,
-      font.size                = fonts$size
+      add.competing.risk.mark    = if (!is.null(addCR.list))   addCR.list[[i]]   else FALSE,
+      add.intercurrent.event.mark= if (!is.null(addIC.list))   addIC.list[[i]]   else FALSE,
+      add.quantile               = if (!is.null(addQ.list))    addQ.list[[i]]    else FALSE,
+      label.strata               = if (!is.null(strata.list))  strata.list[[i]]  else NULL,
+      font.family                = fonts$family,
+      font.size                  = fonts$size
     )
-
-    if (!is.null(dots$style)) {
-      args_plot$style <- dots$style
-    }
-    if (!is.null(dots$palette)) {
-      args_plot$palette <- dots$palette
-    }
-    if (!is.null(dots$linewidth)) {
-      args_plot$linewidth <- dots$linewidth
-    }
-    if (!is.null(dots$linetype)) {
-      args_plot$linetype <- dots$linetype
-    }
-    if (!is.null(legend.position)) {
-      args_plot$legend.position <- legend.position
-    }
+    if (!is.null(dots$style))     args_plot$style     <- dots$style
+    if (!is.null(dots$palette))   args_plot$palette   <- dots$palette
+    if (!is.null(dots$linewidth)) args_plot$linewidth <- dots$linewidth
+    if (!is.null(dots$linetype))  args_plot$linetype  <- dots$linetype
+    if (!is.null(legend.position)) args_plot$legend.position <- legend.position
 
     plot_args[[i]] <- panel_drop_nulls(args_plot)
   }
 
-  list(
-    curves    = curves,
-    plot_args = plot_args,
-    K         = K
-  )
+  list(curves = curves, plot_args = plot_args, K = K)
 }
 
 panel_as_formula_global <- function(f) {
