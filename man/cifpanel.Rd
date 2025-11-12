@@ -52,7 +52,7 @@ cifpanel(
   caption.panel = NULL,
   tag.panel = NULL,
   title.plot = NULL,
-  style = "classsic",
+  style = "classic",
   palette = NULL,
   linewidth = 0.8,
   linetype = FALSE,
@@ -66,7 +66,7 @@ cifpanel(
   inset.top = 0.45,
   inset.align.to = c("panel", "plot", "full"),
   inset.legend.position = NULL,
-  print.panel = TRUE,
+  print.panel = FALSE,
   filename.ggsave = NULL,
   width.ggsave = NULL,
   height.ggsave = NULL,
@@ -203,8 +203,8 @@ individual panels (e.g. \code{"A"}, \code{"B"}, \code{"C"}). Typical values are
 are drawn. Length-1 values are recycled to all panels. In inset mode, the first
 element refers to the main plot and the second (if present) to the inset.}
 
-\item{style}{Character choosing the base plot style: \code{"classsic"}, \code{"bold"},
-\code{"framed"}, \code{"grid"}, \code{"gray"} or \code{"ggsurvfit"} (default \code{"classsic"}).
+\item{style}{Character choosing the base plot style: \code{"classic"}, \code{"bold"},
+\code{"framed"}, \code{"grid"}, \code{"gray"} or \code{"ggsurvfit"} (default \code{"classic"}).
 Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also accepted.}
 
 \item{palette}{Optional character vector specifying the color palette to use across strata.}
@@ -246,10 +246,9 @@ defined for it (often this means a legend will also be inset).
 Set, for example, \code{"none"} to hide the legend inside the inset,
 while still showing the main plot's legend.}
 
-\item{print.panel}{Logical. If \code{TRUE}, the composed patchwork object is
-printed immediately (for interactive use). If \code{FALSE}, the object is
-returned invisibly so that it can be assigned, modified, or saved. Kept for
-backward compatibility.}
+\item{print.panel}{Logical. When \code{TRUE}, panel displays created internally are
+printed automatically in interactive sessions; otherwise they are returned
+invisibly for further modification (default \code{FALSE}).}
 
 \item{filename.ggsave}{Character; if non-\code{NULL}, save the plot to this file.}
 
@@ -266,9 +265,11 @@ calls that build each panel. Use this to pass low-level options such as
 \code{competing.risk.time}, \code{intercurrent.event.time}, or styling overrides.}
 }
 \value{
-An invisible list: \code{list(plots = <list of ggplot objects>, out_patchwork = <patchwork object>)}.
-Print the returned object to display the panel, or access individual panels via
-\code{out_patchwork$plots[[1]]}, \code{out_patchwork$plots[[2]]}, ...
+Returns a \code{"cifpanel"} object (list) with elements \code{plot}
+(\code{NULL}), \code{list.plot} (list of \code{ggplot} objects),
+\code{patchwork}, and the same metadata fields as \code{\link[=cifplot]{cifplot()}}. The object is
+returned invisibly; printing occurs only when \code{interactive()} and
+\code{print.panel = TRUE}.
 }
 \description{
 \code{cifpanel()} is the panel-building counterpart of \code{cifplot()}.
@@ -386,10 +387,11 @@ Otherwise, the function returns objects without saving.
 
 \subsection{Value}{
 
-Returns \strong{invisibly}:
-\verb{list(plots = <list of ggplot objects>, out_patchwork = <patchwork object>)}.
-Print the latter to display the composed panel. If \code{print.panel = TRUE},
-printing is done automatically.
+Returns invisibly a \code{"cifpanel"} object (list) with elements
+\code{plot} (always \code{NULL}), \code{list.plot} (list of \code{ggplot}
+objects), \code{patchwork}, and the same metadata fields as
+\code{\link[=cifplot]{cifplot()}}. When \code{interactive()} and \code{print.panel = TRUE}, the
+patchwork is printed automatically.
 }
 
 \subsection{Notes & tips}{
@@ -402,7 +404,7 @@ of panels; length-1 inputs are recycled; otherwise an error is thrown.
 \item ADaM-style coding can be expressed via \code{code.events} (e.g., \code{c(0,1)} for KM:
 \code{event1=0}, \code{censor=1}).
 \item Additional graphical options (e.g., theme) can be added post-hoc to each
-element of \code{plots} or to the composed \code{out_patchwork}.
+element of \code{list.plot} or to the composed \code{patchwork}.
 }
 }
 }

@@ -1,5 +1,11 @@
 # cifmodeling (development version)
 
+* Breaking change: `cifplot()` and `cifpanel()` now return structured objects
+  with explicit `plot`/`list.plot` and `patchwork` elements, metadata, and
+  printing handled via new S3 methods. Automatic printing is limited to
+  interactive sessions, and panel outputs store engine metadata in
+  `print.info$engine`.
+
 * Standardized outcome.type canonical values to lowercase; legacy uppercase and short aliases remain accepted. Internals now use tolower().
 
 # cifmodeling 0.7.0

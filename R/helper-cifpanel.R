@@ -88,6 +88,18 @@ panel_prepare <- function(
       ),
       survfit.info
     ))
+
+    ot <- args_est$outcome.type %||% NULL
+    ce <- args_est$code.events   %||% code.events %||% NULL
+
+    args_est$outcome.type <- panel_normalize_outcome_type(
+      outcome.type = ot,
+      code.events  = ce,
+      formula      = cur_formula,
+      data         = data,
+      na.action    = args_est$na.action %||% na.action
+    )
+
     fit_i <- do.call(cifcurve, args_est)
     curves[[i]] <- fit_i
 
@@ -259,7 +271,19 @@ panel_modify_list <- function(x, y, keep.null = FALSE) {
   for (nm in names(y)) {
     val <- y[[nm]]
     if (is.null(val) && !keep.null) x[[nm]] <- NULL else x[[nm]] <- val
-  }
+
+      }
   x
 }
 
+panel_normalize_outcome_type <- function(outcome.type, code.events, formula, data, na.action = na.omit) {
+  if (!is.null(outcome.type)) {
+    return(match.arg(outcome.type, c("competing-risk", "survival")))
+  }
+  if (!is.null(code.events)) {
+    le <- if (is.list(code.events)) lengths(code.events) else length(code.events)
+    if (any(le == 3L)) return("competing-risk")
+    if (all(le == 2L)) return("survival")
+  }
+  util_check_outcome_type(formula = formula, data = data, na.action = na.action, auto_message = FALSE)
+}

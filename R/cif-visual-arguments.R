@@ -50,8 +50,8 @@
 #'   the layout of the panel returned by the panel modes. If \code{NULL}, an automatic
 #'   layout is determined from the number of subplots.
 #'
-#' @param style Character choosing the base plot style: \code{"classsic"}, \code{"bold"},
-#' \code{"framed"}, \code{"grid"}, \code{"gray"} or \code{"ggsurvfit"} (default \code{"classsic"}).
+#' @param style Character choosing the base plot style: \code{"classic"}, \code{"bold"},
+#' \code{"framed"}, \code{"grid"}, \code{"gray"} or \code{"ggsurvfit"} (default \code{"classic"}).
 #'   Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also accepted.
 #' @param palette Optional character vector specifying the color palette to use across strata.
 #' @param linewidth Optional numeric specifying the line width of curve (default \code{0.8}).
@@ -59,7 +59,9 @@
 #' @param font.family Character specifying the font family: \code{"sans"},  \code{"serif"}, or
 #' \code{"mono"} (default \code{"sans"}).
 #' @param font.size Integer specifying the base font size (default \code{12}).
-#'
+#' @param print.panel Logical. When \code{TRUE}, panel displays created internally are
+#'   printed automatically in interactive sessions; otherwise they are returned
+#'   invisibly for further modification (default \code{FALSE}).
 #' @param filename.ggsave Character; if non-\code{NULL}, save the plot to this file.
 #' @param width.ggsave Numeric width passed to \code{ggplot2::ggsave()} (default \code{6}).
 #' @param height.ggsave Numeric height passed to \code{ggplot2::ggsave()} (default \code{6}).

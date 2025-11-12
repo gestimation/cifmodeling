@@ -24,7 +24,7 @@
 #' **Plot customization**
 #' -   `type.y` chooses y-axis. (`"surv"` for survival curves and `"risk"` for CIFs)
 #' -   `limits.x`, `limits.y`, `breaks.x`, `breaks.y` numeric vectors for axis control
-#' -   `style` specifies the appearance of plot (`"classsic"`, `"bold"`, `"framed"`, `"grid"`, `"gray"` or `"ggsurvfit"`)
+#' -   `style` specifies the appearance of plot (`"classic"`, `"bold"`, `"framed"`, `"grid"`, `"gray"` or `"ggsurvfit"`)
 #'
 #' **Panel display**
 #' -   `panel.per.variable` produces multiple survival/CIF curves per stratification variable specified in the formula
@@ -167,10 +167,12 @@
 #' - Event coding can be controlled via `code.event1`, `code.event2`, `code.censoring`.
 #'   For ADaM-style data, use `code.event1 = 0`, `code.censoring = 1`.
 #' - Per-stratum time lists should have names identical to plotted strata labels.
-
-#' @return A \code{ggplot} object. When \code{panel.per.variable = TRUE}, a \pkg{patchwork}
-#'   object is returned with an attribute \code{attr(x, "plots")} containing the
-#'   individual \code{ggplot} panels.
+#'
+#' @return Returns a \code{"cifplot"} object (list) with elements
+#'   \code{plot}, \code{patchwork} (always \code{NULL}), \code{survfit.info},
+#'   \code{axis.info}, \code{visual.info}, \code{panel.info}, \code{style.info},
+#'   \code{inset.info}, \code{print.info}, \code{ggsave.info}, \code{version},
+#'   and \code{call}.
 #'
 #' @keywords internal
 #' @param survfit.info,axis.info,visual.info,panel.info,style.info,print.info,ggsave.info
@@ -186,7 +188,9 @@
 #'         label.x='Years from registration')
 #'
 #' @importFrom ggsurvfit ggsurvfit add_confidence_interval add_risktable add_risktable_strata_symbol add_censor_mark add_quantile
-#' @importFrom ggplot2 theme_classic theme_bw element_text labs lims geom_point aes ggsave guides scale_color_discrete scale_fill_discrete element_text element_rect element_blank scale_color_manual scale_fill_manual scale_linetype_manual scale_shape_manual scale_linetype_discrete scale_shape_discrete
+#' @importFrom ggplot2 theme_classic theme_bw element_text  element_rect element_blank labs lims geom_point aes
+#' ggsave guides scale_color_discrete scale_fill_discrete scale_color_manual
+#' scale_fill_manual scale_linetype_manual scale_linetype_discrete scale_shape_discrete scale_shape_manual
 #' @importFrom grDevices gray
 #' @importFrom patchwork wrap_plots
 #'
@@ -244,13 +248,14 @@ cifplot <- function(
     panel.per.variable            = FALSE,
     panel.mode                    = "auto",
     rows.columns.panel            = NULL,
-    style                         = "classsic",
+    style                         = "classic",
     palette                       = NULL,
     linewidth                     = 0.8,
     linetype                      = FALSE,
     font.family                   = "sans",
     font.size                     = 12,
     legend.position               = "top",
+    print.panel                   = FALSE,
     filename.ggsave               = NULL,
     width.ggsave                  = 6,
     height.ggsave                 = 6,
@@ -266,6 +271,7 @@ cifplot <- function(
     ...
 ) {
   dots <- list(...)
+  dots$print.panel <- dots$print.panel %||% print.panel
 
   print_panel <- isTRUE(panel.per.variable) || isTRUE(panel.per.event) || isTRUE(panel.censoring)
   if (print_panel) {
@@ -350,6 +356,8 @@ cifplot <- function(
   panel.info   <- infos$panel.info
   style.info   <- infos$style.info
   ggsave.info  <- infos$ggsave.info
+  inset.info   <- inset.info %||% list()
+  print.info   <- print.info %||% list()
 
   style.info$font.family <- style.info$font.family %||% "sans"
   style.info$font.size   <- style.info$font.size   %||% 12
@@ -520,8 +528,46 @@ cifplot <- function(
   )
 
   out_plot <- do.call(cifplot_single, args_single)
-  out_plot <- apply_strata_to_plots(list(out_plot),order_data = axis.info$order.strata,label_map  = axis.info$label.strata)[[1]]
-  out_plot
+  out_plot <- apply_strata_to_plots(
+    list(out_plot),
+    order_data = axis.info$order.strata,
+    label_map  = axis.info$label.strata
+  )[[1]]
+
+  survfit.info$formula_or_fit <- survfit.info$formula_or_fit %||% formula_or_fit
+  survfit.info$outcome.type   <- survfit.info$outcome.type   %||% outcome.type
+  survfit.info$code.event1    <- survfit.info$code.event1    %||% code.event1
+  survfit.info$code.event2    <- survfit.info$code.event2    %||% code.event2
+  survfit.info$code.censoring <- survfit.info$code.censoring %||% code.censoring
+  survfit.info$code.events    <- survfit.info$code.events    %||% code.events
+  survfit.info$data.name      <- survfit.info$data.name      %||% deparse(substitute(data))
+
+  print.info <- print.info %||% list()
+  print.info$print.panel <- isTRUE(print.panel)
+  print.info$engine      <- print.info$engine %||% "cifplot_single"
+
+  ret <- list(
+    plot         = out_plot,
+    patchwork    = NULL,
+    survfit.info = survfit.info,
+    axis.info    = axis.info,
+    visual.info  = visual.info,
+    panel.info   = panel.info,
+    style.info   = style.info,
+    inset.info   = inset.info %||% list(),
+    print.info   = print.info,
+    ggsave.info  = ggsave.info,
+    version      = utils::packageVersion("cifmodeling"),
+    call         = match.call()
+  )
+  class(ret) <- c("cifplot", class(ret))
+
+  if (interactive() && isTRUE(ret$print.info$print.panel)) {
+    print(ret$plot)
+    invisible(ret)
+  } else {
+    ret
+  }
 }
 
 plot_panel.per.variable <- function(
@@ -614,9 +660,8 @@ plot_panel.per.variable <- function(
     ), dots)
   )
 
-  if (is.list(res) && !is.null(res$out_patchwork)) {
-    attr(res$out_patchwork, "plots") <- res$plots
-    return(res$out_patchwork)
+  if (is.list(res) && !is.null(res$patchwork)) {
+    return(res)
   }
   res
 }
@@ -714,9 +759,8 @@ plot_panel.per.event <- function(
 
   panel_out <- do.call(cifpanel, c(panel_args, dots))
 
-  if (is.list(panel_out) && !is.null(panel_out$out_patchwork)) {
-    attr(panel_out$out_patchwork, "plots") <- panel_out$plots
-    return(panel_out$out_patchwork)
+  if (is.list(panel_out) && !is.null(panel_out$patchwork)) {
+    return(panel_out)
   }
   panel_out
 }
@@ -784,9 +828,8 @@ plot_panel.censoring <- function(
 
   panel_out <- do.call(cifpanel, c(panel_args, dots))
 
-  if (is.list(panel_out) && !is.null(panel_out$out_patchwork)) {
-    attr(panel_out$out_patchwork, "plots") <- panel_out$plots
-    return(panel_out$out_patchwork)
+  if (is.list(panel_out) && !is.null(panel_out$patchwork)) {
+    return(panel_out)
   }
   panel_out
 }
@@ -910,7 +953,7 @@ cifplot_single <- function(
   ), panel.info)
 
   style.info <- panel_modify_list(list(
-    style           = "classsic",
+    style           = "classic",
     palette         = NULL,
     linewidth       = 0.8,
     linetype        = FALSE,
@@ -1026,7 +1069,7 @@ cifplot_single <- function(
   }
 
   p <- call_ggsurvfit(
-    survfit_object = if (inherits(formula_or_fit, "survfit")) formula_or_fit else stop("..."),
+    survfit_object = formula_or_fit,
     out_readSurv   = NULL,
     survfit.info   = survfit.info,
     axis.info      = axis.info,
@@ -1073,7 +1116,7 @@ cifplot_single <- function(
 #' @param breaks.y Numeric vectors for axis breaks (default \code{NULL}).
 #' @param use.coord.cartesian Logical specify use of coord_cartesian() (default \code{FALSE}).
 
-#' @param style Character plot theme controls (default \code{"classsic"}).
+#' @param style Character plot theme controls (default \code{"classic"}).
 #' @param font.family Character plot theme controls (default \code{"sans"}).
 #' @param font.size Integer plot theme controls (default \code{14}).
 #' @param legend.position Character specify position of legend: \code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, or \code{"none"} (default \code{"top"}).
@@ -1151,12 +1194,29 @@ call_ggsurvfit <- function(
   dpi.ggsave         <- ggsave.info$dpi.ggsave
   ggsave.units       <- ggsave.info$units %||% "in"
 
-  if (!identical(style.info$legend.position, "none")) {
-    label.strata.map   <- plot_make_label.strata.map(
-      survfit_object   = survfit_object,
-      label.strata     = label.strata,
-      level.strata     = level.strata
+  if (!identical(legend.position, "none")) {
+    label.strata.map <- plot_make_label.strata.map(
+      survfit_object = survfit_object,
+      label.strata   = label.strata,
+      level.strata   = level.strata
     )
+    res <- plot_reconcile_order_and_labels(
+      survfit_object   = survfit_object,
+      label.strata.map = label.strata.map,
+      level.strata     = level.strata,
+      order.strata     = order.strata
+    )
+    limits_arg          <- res$limits_arg
+    label.strata.map    <- res$label.strata.map
+    strata_levels_final <- res$strata_levels_final
+    strata_labels_final <- res$strata_labels_final
+    n_strata_effective  <- length(limits_arg)
+  } else {
+    limits_arg          <- NULL
+    label.strata.map    <- NULL
+    strata_levels_final <- NULL
+    strata_labels_final <- NULL
+    n_strata_effective  <- NULL
   }
 
   out_cg <- check_ggsurvfit(
@@ -1167,28 +1227,6 @@ call_ggsurvfit <- function(
     style.info       = style.info,
     out_readSurv     = out_readSurv
   )
-
-  if (!identical(legend.position, "none")) {
-    res <- plot_reconcile_order_and_labels(
-      survfit_object   = survfit_object,
-      label.strata.map = label.strata.map,
-      level.strata     = level.strata,
-      order.strata     = order.strata
-    )
-
-    limits_arg                 <- res$limits_arg
-    label.strata.map           <- res$label.strata.map
-    strata_levels_final        <- res$strata_levels_final
-    strata_labels_final        <- res$strata_labels_final
-    n_strata_effective         <- length(limits_arg)
-  } else {
-    limits_arg                 <- NULL
-    label.strata.map           <- NULL
-    strata_levels_final        <- NULL
-    strata_labels_final        <- NULL
-    n_strata_effective         <- NULL
-  }
-
 
   p <- out_cg$out_survfit_object +
     ggplot2::labs(
@@ -1336,10 +1374,7 @@ check_ggsurvfit <- function(
   visual.info  <- visual.info  %||% list()
   style.info   <- style.info   %||% list()
 
-  conf.type <- survfit.info$conf.type
-  # error     <- survfit.info$error
-  # conf.int  <- survfit.info$conf.int
-
+  conf.type           <- survfit.info$conf.type
   type.y              <- axis.info$type.y
   label.y             <- axis.info$label.y
   limits.x            <- axis.info$limits.x
@@ -1348,10 +1383,10 @@ check_ggsurvfit <- function(
   breaks.y            <- axis.info$breaks.y
   use.coord.cartesian <- isTRUE(axis.info$use.coord.cartesian)
 
-  add.conf         <- visual.info$add.conf
-  add.censor.mark                 <- visual.info$add.censor.mark
-  add.competing.risk.mark          <- visual.info$add.competing.risk.mark
-  add.intercurrent.event.mark      <- visual.info$add.intercurrent.event.mark
+  add.conf                      <- visual.info$add.conf
+  add.censor.mark               <- visual.info$add.censor.mark
+  add.competing.risk.mark       <- visual.info$add.competing.risk.mark
+  add.intercurrent.event.mark   <- visual.info$add.intercurrent.event.mark
   shape.censor.mark             <- visual.info$shape.censor.mark
   shape.competing.risk.mark     <- visual.info$shape.competing.risk.mark
   shape.intercurrent.event.mark <- visual.info$shape.intercurrent.event.mark
@@ -1469,7 +1504,6 @@ check_ggsurvfit <- function(
   )
   type.y <- if (identical(target_type, "risk")) "risk" else "surv"
 
-  old_opt <- getOption("ggsurvfit.switch-color-linetype", FALSE)
   out_plot <- ggsurvfit(
     survfit_object,
     type         = target_type,
