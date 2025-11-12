@@ -4,20 +4,27 @@
 \name{cifmodeling-package}
 \alias{cifmodeling}
 \alias{cifmodeling-package}
-\title{cifmodeling: Visualize Cumulative Incidence Functions and Fit Coherent Regression Models Based on Polytomous Log Odds Products}
+\title{cifmodeling: Visualize and Fit Direct Polytomous Regression Models to CIFs}
 \description{
-A compact and unified toolkit for survival and competing risks analysis in R. cifcurve() estimates and visualizes Kaplan-Meier survival or Aalen-Johansen cumulative incidence curves with a familiar survival::survfit object. polyreg() performs regression modeling of cumulative incidence functions based on polytomous log odds products to estimate risk ratios, odds ratios, or subdistribution hazard ratios of a categorical exposure. Both functions adopt a formula + data syntax, return tidy, publication-ready outputs, and integrate seamlessly with ggsurvfit and modelsummary for visualization. Key numerical routines are implemented in C++ via 'Rcpp'.
+A compact and unified toolkit for survival and competing risks analysis. 'cifcurve()' estimates and visualizes Kaplan-Meier survival or Aalen-Johansen cumulative incidence functions (CIFs) with a familiar 'survival::survfit'-like object. 'polyreg()' performs regression modeling of CIFs based on polytomous log odds products to estimate risk ratios, odds ratios, or subdistribution hazard ratios of a categorical exposure. Both functions adopt a formula + data syntax, return tidy, publication-ready outputs, and integrate seamlessly with 'ggsurvfit' and 'modelsummary' for visualization. Key numerical routines are implemented in C++ via 'Rcpp'.
 }
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://gestimation.github.io/cifmodeling/}
   \item \url{https://github.com/gestimation/cifmodeling}
   \item Report bugs at \url{https://github.com/gestimation/cifmodeling/issues}
 }
 
 }
 \author{
-\strong{Maintainer}: Shiro Tanaka \email{gestimation@gmail.com} [copyright holder]
+\strong{Maintainer}: Shiro Tanaka \email{gestimation@gmail.com} (\href{https://orcid.org/0000-0001-6817-5235}{ORCID}) [copyright holder]
+
+Other contributors:
+\itemize{
+  \item Shigetaka Kobari [contributor]
+  \item Chisato Honda [contributor]
+}
 
 }
 \keyword{internal}

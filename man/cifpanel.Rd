@@ -27,24 +27,24 @@ cifpanel(
   limits.y = NULL,
   breaks.x = NULL,
   breaks.y = NULL,
-  addConfidenceInterval = NULL,
-  addRiskTable = NULL,
-  addEstimateTable = NULL,
-  symbol.risktable = NULL,
-  font.size.risktable = NULL,
-  addCensorMark = NULL,
+  add.conf = NULL,
+  add.risktable = NULL,
+  add.estimate.table = NULL,
+  symbol.risk.table = NULL,
+  font.size.risk.table = NULL,
+  add.censor.mark = NULL,
   shape.censor.mark = NULL,
   size.censor.mark = NULL,
-  addCompetingRiskMark = NULL,
+  add.competing.risk.mark = NULL,
   competing.risk.time = NULL,
   shape.competing.risk.mark = NULL,
   size.competing.risk.mark = NULL,
-  addIntercurrentEventMark = NULL,
+  add.intercurrent.event.mark = NULL,
   intercurrent.event.time = NULL,
   shape.intercurrent.event.mark = NULL,
   size.intercurrent.event.mark = NULL,
-  addQuantileLine = NULL,
-  quantile = NULL,
+  add.quantile = NULL,
+  level.quantile = NULL,
   rows.columns.panel = c(1, 1),
   inset.panel = FALSE,
   title.panel = NULL,
@@ -52,9 +52,10 @@ cifpanel(
   caption.panel = NULL,
   tag.panel = NULL,
   title.plot = NULL,
-  style = "CLASSIC",
+  style = "classic",
   palette = NULL,
-  linewidth = 1,
+  linewidth = 0.8,
+  linetype = FALSE,
   font.family = "sans",
   font.size = 8,
   legend.position = "top",
@@ -65,7 +66,7 @@ cifpanel(
   inset.top = 0.45,
   inset.align.to = c("panel", "plot", "full"),
   inset.legend.position = NULL,
-  print.panel = TRUE,
+  print.panel = FALSE,
   filename.ggsave = NULL,
   width.ggsave = NULL,
   height.ggsave = NULL,
@@ -106,15 +107,15 @@ subset of \code{data} to analyze (default \code{NULL}).}
 \item{na.action}{A function specifying the action to take on missing values (default \code{na.omit}).}
 
 \item{outcome.type}{Character string specifying the type of time-to-event outcome.
-One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
+One of \code{"survival"} (Kaplan–Meier type) or \code{"competing-risk"} (Aalen–Johansen type).
 If \code{NULL} (default), the function automatically infers the outcome type from the data:
-if the event variable has more than two unique levels, \code{"COMPETING-RISK"} is assumed;
-otherwise, \code{"SURVIVAL"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
+if the event variable has more than two unique levels, \code{"competing-risk"} is assumed;
+otherwise, \code{"survival"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
 Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detection based on the event coding.}
 
 \item{code.events}{Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
 When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
-(primarily used when \code{cifpanel()} is called or when \code{printEachEvent = TRUE}).}
+(primarily used when \code{cifpanel()} is called or when \code{panel.per.event = TRUE}).}
 
 \item{error}{Character specifying the method for variance and standard error used internally.}
 
@@ -139,17 +140,17 @@ set to \code{c(0, 1)} for probability-type outcomes.}
 
 \item{breaks.y}{Numeric vector of y-axis breaks (default \code{NULL}).}
 
-\item{addConfidenceInterval}{Logical; if \code{TRUE}, adds a confidence-interval ribbon
+\item{add.conf}{Logical; if \code{TRUE}, adds a confidence-interval ribbon
 (via \code{ggsurvfit::add_confidence_interval()}). Default \code{TRUE}.}
 
-\item{addCensorMark}{Logical; if \code{TRUE}, draws censoring marks on each curve
+\item{add.censor.mark}{Logical; if \code{TRUE}, draws censoring marks on each curve
 (via \code{ggsurvfit::add_censor_mark()}). Default \code{TRUE}.}
 
 \item{shape.censor.mark}{Integer point shape used for censoring marks (default \code{3}).}
 
 \item{size.censor.mark}{Numeric point size used for censoring marks (default \code{2}).}
 
-\item{addCompetingRiskMark}{Logical; if \code{TRUE}, draws time marks for the competing event
+\item{add.competing.risk.mark}{Logical; if \code{TRUE}, draws time marks for the competing event
 (event 2). If no times are supplied via \code{competing.risk.time}, the function tries to
 extract them automatically from the data. Default \code{FALSE}.}
 
@@ -161,7 +162,7 @@ in that stratum. Typically left as \code{list()} and filled internally.}
 
 \item{size.competing.risk.mark}{Numeric point size for competing-risk marks (default \code{2}).}
 
-\item{addIntercurrentEventMark}{Logical; if \code{TRUE}, overlays user-specified intercurrent-event
+\item{add.intercurrent.event.mark}{Logical; if \code{TRUE}, overlays user-specified intercurrent-event
 times per stratum. Default \code{FALSE}.}
 
 \item{intercurrent.event.time}{A \strong{named list} of numeric vectors for intercurrent events
@@ -173,10 +174,10 @@ times per stratum. Default \code{FALSE}.}
 \item{size.intercurrent.event.mark}{Numeric point size for intercurrent-event marks
 (default \code{2}).}
 
-\item{addQuantileLine}{Logical; if \code{TRUE}, adds a quantile line (via
+\item{add.quantile}{Logical; if \code{TRUE}, adds a quantile reference line (via
 \code{ggsurvfit::add_quantile()}). Default \code{FALSE}.}
 
-\item{quantile}{Numeric quantile to be shown (default \code{0.5} for median).}
+\item{level.quantile}{Numeric quantile level to be shown (default \code{0.5} for the median).}
 
 \item{rows.columns.panel}{Optional integer vector \code{c(nrow, ncol)} controlling
 the layout of the panel returned by the panel modes. If \code{NULL}, an automatic
@@ -202,13 +203,15 @@ individual panels (e.g. \code{"A"}, \code{"B"}, \code{"C"}). Typical values are
 are drawn. Length-1 values are recycled to all panels. In inset mode, the first
 element refers to the main plot and the second (if present) to the inset.}
 
-\item{style}{Character choosing the base plot style: \code{"CLASSIC"}, \code{"BOLD"},
-\code{"FRAMED"}, \code{"GRID"}, \code{"GRAY"} or \code{"GGSURVFIT"} (default \code{"CLASSIC"}).
+\item{style}{Character choosing the base plot style: \code{"classic"}, \code{"bold"},
+\code{"framed"}, \code{"grid"}, \code{"gray"} or \code{"ggsurvfit"} (default \code{"classic"}).
 Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also accepted.}
 
 \item{palette}{Optional character vector specifying the color palette to use across strata.}
 
-\item{linewidth}{Optional numeric specifying the line width of curves.}
+\item{linewidth}{Optional numeric specifying the line width of curve (default \code{0.8}).}
+
+\item{linetype}{Optional logical using different line types of curve (default \code{FALSE}).}
 
 \item{font.family}{Character specifying the font family: \code{"sans"},  \code{"serif"}, or
 \code{"mono"} (default \code{"sans"}).}
@@ -243,10 +246,9 @@ defined for it (often this means a legend will also be inset).
 Set, for example, \code{"none"} to hide the legend inside the inset,
 while still showing the main plot's legend.}
 
-\item{print.panel}{Logical. If \code{TRUE}, the composed patchwork object is
-printed immediately (for interactive use). If \code{FALSE}, the object is
-returned invisibly so that it can be assigned, modified, or saved. Kept for
-backward compatibility.}
+\item{print.panel}{Logical. When \code{TRUE}, panel displays created internally are
+printed automatically in interactive sessions; otherwise they are returned
+invisibly for further modification (default \code{FALSE}).}
 
 \item{filename.ggsave}{Character; if non-\code{NULL}, save the plot to this file.}
 
@@ -263,9 +265,11 @@ calls that build each panel. Use this to pass low-level options such as
 \code{competing.risk.time}, \code{intercurrent.event.time}, or styling overrides.}
 }
 \value{
-An invisible list: \code{list(plots = <list of ggplot objects>, out_patchwork = <patchwork object>)}.
-Print the returned object to display the panel, or access individual panels via
-\code{out_patchwork$plots[[1]]}, \code{out_patchwork$plots[[2]]}, ...
+Returns a \code{"cifpanel"} object (list) with elements \code{plot}
+(\code{NULL}), \code{list.plot} (list of \code{ggplot} objects),
+\code{patchwork}, and the same metadata fields as \code{\link[=cifplot]{cifplot()}}. The object is
+returned invisibly; printing occurs only when \code{interactive()} and
+\code{print.panel = TRUE}.
 }
 \description{
 \code{cifpanel()} is the panel-building counterpart of \code{cifplot()}.
@@ -302,7 +306,7 @@ list in \code{formulas} (one per panel). When both are provided, \code{formulas}
 
 \subsection{Outcome type & event coding}{
 \itemize{
-\item Use \code{outcome.type} to set per-panel estimator (\code{"SURVIVAL"}=KM, \code{"COMPETING-RISK"}=AJ).
+\item Use \code{outcome.type} to set per-panel estimator (\code{"survival"}=KM, \code{"competing-risk"}=AJ).
 \item Alternatively, pass \code{code.events} per panel to infer the type:
 \itemize{
 \item length 2 = SURVIVAL: \code{c(event1, censor)}
@@ -350,11 +354,11 @@ or \strong{shared} control by supplying scalars. They are forwarded to \code{cif
 
 \subsection{Plot layers (toggles)}{\tabular{lll}{
    Argument \tab Effect \tab Default \cr
-   \code{addConfidenceInterval} \tab CI ribbon. \tab \code{TRUE} \cr
-   \code{addCensorMark} \tab Censor marks. \tab \code{TRUE} \cr
-   \code{addCompetingRiskMark} \tab Marks for event2 at supplied times. \tab \code{FALSE} \cr
-   \code{addIntercurrentEventMark} \tab User-specified intercurrent marks. \tab \code{FALSE} \cr
-   \code{addQuantileLine} \tab Quantile line(s). \tab \code{FALSE} \cr
+   \code{add.conf} \tab CI ribbon. \tab \code{TRUE} \cr
+   \code{add.censor.mark} \tab Censor marks. \tab \code{TRUE} \cr
+   \code{add.competing.risk.mark} \tab Marks for event2 at supplied times. \tab \code{FALSE} \cr
+   \code{add.intercurrent.event.mark} \tab User-specified intercurrent marks. \tab \code{FALSE} \cr
+   \code{add.quantile} \tab Quantile reference line(s). \tab \code{FALSE} \cr
 }
 
 
@@ -383,10 +387,11 @@ Otherwise, the function returns objects without saving.
 
 \subsection{Value}{
 
-Returns \strong{invisibly}:
-\verb{list(plots = <list of ggplot objects>, out_patchwork = <patchwork object>)}.
-Print the latter to display the composed panel. If \code{print.panel = TRUE},
-printing is done automatically.
+Returns invisibly a \code{"cifpanel"} object (list) with elements
+\code{plot} (always \code{NULL}), \code{list.plot} (list of \code{ggplot}
+objects), \code{patchwork}, and the same metadata fields as
+\code{\link[=cifplot]{cifplot()}}. When \code{interactive()} and \code{print.panel = TRUE}, the
+patchwork is printed automatically.
 }
 
 \subsection{Notes & tips}{
@@ -399,7 +404,7 @@ of panels; length-1 inputs are recycled; otherwise an error is thrown.
 \item ADaM-style coding can be expressed via \code{code.events} (e.g., \code{c(0,1)} for KM:
 \code{event1=0}, \code{censor=1}).
 \item Additional graphical options (e.g., theme) can be added post-hoc to each
-element of \code{plots} or to the composed \code{out_patchwork}.
+element of \code{list.plot} or to the composed \code{patchwork}.
 }
 }
 }
@@ -410,12 +415,12 @@ element of \code{plots} or to the composed \code{out_patchwork}.
 
 \examples{
 data(diabetes.complications)
-cifpanel(
+output1 <- cifpanel(
   title.panel = "A comparison of cumulative incidence of competing events",
   rows.columns.panel = c(1,2),
   formula = Event(t, epsilon) ~ fruitq,
   data = diabetes.complications,
-  outcome.type = "COMPETING-RISK",
+  outcome.type = "competing-risk",
   code.events = list(c(1,2,0), c(2,1,0)),
   label.y = c("Diabetic retinopathy", "Macrovascular complications"),
   label.x = "Years from registration",
@@ -425,52 +430,36 @@ cifpanel(
   legend.position = "bottom",
   legend.collect=TRUE
 )
+print(output1)
 
-cifpanel(
-  title.plot = c("Associations between fruit intake and macrovascular complications", "Details"),
-  inset.panel = TRUE,
-  formula = Event(t, epsilon) ~ fruitq,
-  data = diabetes.complications,
-  outcome.type = "COMPETING-RISK",
-  code.events = list(c(2,1,0), c(2,1,0)),
-  label.y = c("CIF of macrovascular complications", ""),
-  label.x = c("Years from registration", ""),
-  limits.y     = list(c(0,1), c(0,0.15)),
-  inset.left   = 0.40, inset.bottom = 0.45,
-  inset.right  = 1.00, inset.top    = 0.95,
-  inset.align.to = "plot",
-  inset.legend.position = "none",
-  legend.position = "bottom",
-  addConfidenceInterval = FALSE
-)
-
-output1 <- cifplot(Event(t,epsilon) ~ fruitq,
-                   data = diabetes.complications,
-                   outcome.type="COMPETING-RISK",
-                   code.event1=2,
-                   code.event2=1,
-                   addConfidenceInterval = FALSE,
-                   addRiskTable = FALSE,
-                   label.y='CIF of macrovascular complications',
-                   label.x='Years from registration')
 output2 <- cifplot(Event(t,epsilon) ~ fruitq,
                    data = diabetes.complications,
-                   outcome.type="COMPETING-RISK",
+                   outcome.type="competing-risk",
                    code.event1=2,
                    code.event2=1,
-                   addConfidenceInterval = FALSE,
-                   addRiskTable = FALSE,
-                   label.y='CIF of macrovascular complications',
-                   label.x='Years from registration',
+                   add.conf = FALSE,
+                   add.risktable = FALSE,
+                   label.y="CIF of macrovascular complications",
+                   label.x="Years from registration")
+output3 <- cifplot(Event(t,epsilon) ~ fruitq,
+                   data = diabetes.complications,
+                   outcome.type="competing-risk",
+                   code.event1=2,
+                   code.event2=1,
+                   add.conf = FALSE,
+                   add.risktable = FALSE,
+                   label.y="",
+                   label.x="",
                    limits.y=c(0,0.15))
-output3 <- list(a=output1, b=output2)
-cifpanel(plots = output3,
+output4 <- list(a = output2$plot, b = output3$plot)
+output5 <- cifpanel(plots = output4,
          inset.panel = TRUE,
          inset.left = 0.40, inset.bottom = 0.45,
          inset.right = 1.00, inset.top = 0.95,
          inset.align.to = "plot",
          inset.legend.position = "none",
          legend.position = "bottom")
+print(output5)
 
 }
 \seealso{

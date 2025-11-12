@@ -78,11 +78,11 @@ reg_normalize_covariate <- function(formula, data, normalize.covariate,
 
   block <- c(1, as.numeric(scales_in_mm_order), rep(1, k_ex))
 
-  if (outcome.type %in% c("PROPORTIONAL-SURVIVAL","PROPORTIONAL-COMPETING-RISK")) {
+  if (outcome.type %in% c("proportional-survival","proportional-competing-risk")) {
     range_for_params <- NULL
-  } else if (outcome.type %in% c("SURVIVAL","BINOMIAL")) {
+  } else if (outcome.type %in% c("survival","binomial")) {
     range_for_params <- block
-  } else if (outcome.type == "COMPETING-RISK") {
+  } else if (outcome.type == "competing-risk") {
     range_for_params <- c(block, block)
   } else {
     stop("Unknown outcome.type: ", outcome.type)
@@ -177,16 +177,16 @@ reg_check_input <- function(data, formula, exposure, code.event1, code.event2, c
   mf <- eval(mf, parent.frame())
 
   Y <- model.extract(mf, "response")
-  if (outcome.type %in% c("COMPETING-RISK","SURVIVAL","PROPORTIONAL-SURVIVAL","PROPORTIONAL-COMPETING-RISK")) {
+  if (outcome.type %in% c("competing-risk","survival","proportional-survival","proportional-competing-risk")) {
     if (!inherits(Y, c("Event","Surv"))) .err("surv_expected")
     t <- as.numeric(Y[,1]); epsilon <- as.numeric(Y[,2])
     if (any(t < 0, na.rm = TRUE)) .err("time_nonneg", arg = "time")
-    if (outcome.type == "SURVIVAL") {
+    if (outcome.type == "survival") {
       ok <- all(epsilon %in% c(code.event1, code.censoring), na.rm = TRUE)
       if (!ok) .err("codes_required_surv",
                     censoring = code.censoring, event1 = code.event1,
                     found = paste(sort(unique(na.omit(epsilon))), collapse = ", "))
-    } else if (outcome.type == "COMPETING-RISK") {
+    } else if (outcome.type == "competing-risk") {
       ok <- all(epsilon %in% c(code.event1, code.event2, code.censoring), na.rm = TRUE)
       if (!ok) .err("codes_required_cr",
                     censoring = code.censoring, event1 = code.event1, event2 = code.event2,
@@ -200,7 +200,7 @@ reg_check_input <- function(data, formula, exposure, code.event1, code.event2, c
 
   if (!is.numeric(conf.level) || length(conf.level) != 1 || conf.level <= 0 || conf.level >= 1) .err("conf_level")
 
-  if (outcome.type == "PROPORTIONAL-SURVIVAL" | outcome.type == "PROPORTIONAL-COMPETING-RISK") {
+  if (outcome.type == "proportional-survival" | outcome.type == "proportional-competing-risk") {
     normalize.covariate.corrected <- FALSE
     report.sandwich.conf.corrected <- FALSE
     if (is.null(report.boot.conf)) {
@@ -260,15 +260,15 @@ reg_read_exposure_design <- function(data, exposure, code.exposure.ref = NULL, p
 }
 
 reg_read_time.point <- function(formula, data, x_a, outcome.type, code.censoring, terminate.time.point, time.point) {
-  if (outcome.type %in% c("COMPETING-RISK","SURVIVAL")) {
+  if (outcome.type %in% c("competing-risk","survival")) {
     if (is.null(time.point) || !length(time.point)) .err("timepoint_required")
     tp <- suppressWarnings(max(time.point, na.rm = TRUE))
     if (!is.finite(tp) || tp < 0) .err("timepoint_nonneg_finite")
     return(tp)
-  } else if (outcome.type == "BINOMIAL") {
+  } else if (outcome.type == "binomial") {
     tp <- Inf
     return(tp)
-  } else if (outcome.type %in% c("PROPORTIONAL-SURVIVAL","PROPORTIONAL-COMPETING-RISK") & is.null(time.point)) {
+  } else if (outcome.type %in% c("proportional-survival","proportional-competing-risk") & is.null(time.point)) {
     cl <- match.call()
     mf <- match.call(expand.dots = TRUE)[1:3]
     special <- c("strata", "cluster", "offset")

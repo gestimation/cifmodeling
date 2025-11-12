@@ -38,7 +38,7 @@
 #'   panels.
 #' @param code.events Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
 #'   When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
-#'   (primarily used when \code{cifpanel()} is called or when \code{printEachEvent = TRUE}).
+#'   (primarily used when \code{cifpanel()} is called or when \code{panel.per.event = TRUE}).
 #' @param legend.collect Logical; if \code{TRUE}, try to collect a single legend
 #'   for all panels (passed to \pkg{patchwork}). Default \code{TRUE}.
 #' @param inset.panel Logical. If \code{FALSE} (default), all panels are arranged
@@ -79,10 +79,6 @@
 #' @param title.plot Character vector of titles for **each panel** in the order they
 #'   are drawn. Length-1 values are recycled to all panels. In inset mode, the first
 #'   element refers to the main plot and the second (if present) to the inset.
-#' @param print.panel Logical. If \code{TRUE}, the composed patchwork object is
-#'   printed immediately (for interactive use). If \code{FALSE}, the object is
-#'   returned invisibly so that it can be assigned, modified, or saved. Kept for
-#'   backward compatibility.
 #'
 #' @param ... Additional arguments forwarded to the internal \code{cifplot_single()}
 #'   calls that build each panel. Use this to pass low-level options such as
@@ -98,7 +94,7 @@
 #'
 #' ### Outcome type & event coding
 #'
-#' - Use `outcome.type` to set per-panel estimator (`"SURVIVAL"`=KM, `"COMPETING-RISK"`=AJ).
+#' - Use `outcome.type` to set per-panel estimator (`"survival"`=KM, `"competing-risk"`=AJ).
 #' - Alternatively, pass `code.events` per panel to infer the type:
 #'   - length 2 = SURVIVAL: `c(event1, censor)`
 #'   - length 3 = COMPETING-RISK: `c(event1, event2, censor)`
@@ -141,11 +137,11 @@
 #'
 #' | Argument | Effect | Default |
 #' |---|---|---|
-#' | `addConfidenceInterval` | CI ribbon. | `TRUE` |
-#' | `addCensorMark` | Censor marks. | `TRUE` |
-#' | `addCompetingRiskMark` | Marks for event2 at supplied times. | `FALSE` |
-#' | `addIntercurrentEventMark` | User-specified intercurrent marks. | `FALSE` |
-#' | `addQuantileLine` | Quantile line(s). | `FALSE` |
+#' | `add.conf` | CI ribbon. | `TRUE` |
+#' | `add.censor.mark` | Censor marks. | `TRUE` |
+#' | `add.competing.risk.mark` | Marks for event2 at supplied times. | `FALSE` |
+#' | `add.intercurrent.event.mark` | User-specified intercurrent marks. | `FALSE` |
+#' | `add.quantile` | Quantile reference line(s). | `FALSE` |
 #'
 #' *(Time marks inputs such as `competing.risk.time` / `intercurrent.event.time`
 #' can be given via `...` if needed; names must match strata labels.)*
@@ -166,10 +162,11 @@
 #'
 #' ### Value
 #'
-#' Returns **invisibly**:
-#' `list(plots = <list of ggplot objects>, out_patchwork = <patchwork object>)`.
-#' Print the latter to display the composed panel. If `print.panel = TRUE`,
-#' printing is done automatically.
+#' Returns invisibly a \code{"cifpanel"} object (list) with elements
+#' \code{plot} (always \code{NULL}), \code{list.plot} (list of \code{ggplot}
+#' objects), \code{patchwork}, and the same metadata fields as
+#' [cifplot()]. When \code{interactive()} and \code{print.panel = TRUE}, the
+#' patchwork is printed automatically.
 #'
 #' ### Notes & tips
 #'
@@ -181,12 +178,14 @@
 #' - ADaM-style coding can be expressed via `code.events` (e.g., `c(0,1)` for KM:
 #'   `event1=0`, `censor=1`).
 #' - Additional graphical options (e.g., theme) can be added post-hoc to each
-#'   element of `plots` or to the composed `out_patchwork`.
+#'   element of `list.plot` or to the composed `patchwork`.
 
 #' @importFrom patchwork wrap_plots plot_layout inset_element plot_annotation
-#' @return An invisible list: \code{list(plots = <list of ggplot objects>, out_patchwork = <patchwork object>)}.
-#' Print the returned object to display the panel, or access individual panels via
-#' `out_patchwork$plots[[1]]`, `out_patchwork$plots[[2]]`, ...
+#' @return Returns a \code{"cifpanel"} object (list) with elements \code{plot}
+#'   (\code{NULL}), \code{list.plot} (list of \code{ggplot} objects),
+#'   \code{patchwork}, and the same metadata fields as [cifplot()]. The object is
+#'   returned invisibly; printing occurs only when \code{interactive()} and
+#'   \code{print.panel = TRUE}.
 #'
 #' @keywords internal
 #' @param survfit.info,axis.info,visual.info,panel.info,style.info,print.info,ggsave.info,inset.info
@@ -194,12 +193,12 @@
 #'
 #' @examples
 #' data(diabetes.complications)
-#' cifpanel(
+#' output1 <- cifpanel(
 #'   title.panel = "A comparison of cumulative incidence of competing events",
 #'   rows.columns.panel = c(1,2),
 #'   formula = Event(t, epsilon) ~ fruitq,
 #'   data = diabetes.complications,
-#'   outcome.type = "COMPETING-RISK",
+#'   outcome.type = "competing-risk",
 #'   code.events = list(c(1,2,0), c(2,1,0)),
 #'   label.y = c("Diabetic retinopathy", "Macrovascular complications"),
 #'   label.x = "Years from registration",
@@ -209,52 +208,36 @@
 #'   legend.position = "bottom",
 #'   legend.collect=TRUE
 #' )
+#' print(output1)
 #'
-#' cifpanel(
-#'   title.plot = c("Associations between fruit intake and macrovascular complications", "Details"),
-#'   inset.panel = TRUE,
-#'   formula = Event(t, epsilon) ~ fruitq,
-#'   data = diabetes.complications,
-#'   outcome.type = "COMPETING-RISK",
-#'   code.events = list(c(2,1,0), c(2,1,0)),
-#'   label.y = c("CIF of macrovascular complications", ""),
-#'   label.x = c("Years from registration", ""),
-#'   limits.y     = list(c(0,1), c(0,0.15)),
-#'   inset.left   = 0.40, inset.bottom = 0.45,
-#'   inset.right  = 1.00, inset.top    = 0.95,
-#'   inset.align.to = "plot",
-#'   inset.legend.position = "none",
-#'   legend.position = "bottom",
-#'   addConfidenceInterval = FALSE
-#' )
-#'
-#' output1 <- cifplot(Event(t,epsilon) ~ fruitq,
-#'                    data = diabetes.complications,
-#'                    outcome.type="COMPETING-RISK",
-#'                    code.event1=2,
-#'                    code.event2=1,
-#'                    addConfidenceInterval = FALSE,
-#'                    addRiskTable = FALSE,
-#'                    label.y='CIF of macrovascular complications',
-#'                    label.x='Years from registration')
 #' output2 <- cifplot(Event(t,epsilon) ~ fruitq,
 #'                    data = diabetes.complications,
-#'                    outcome.type="COMPETING-RISK",
+#'                    outcome.type="competing-risk",
 #'                    code.event1=2,
 #'                    code.event2=1,
-#'                    addConfidenceInterval = FALSE,
-#'                    addRiskTable = FALSE,
-#'                    label.y='CIF of macrovascular complications',
-#'                    label.x='Years from registration',
+#'                    add.conf = FALSE,
+#'                    add.risktable = FALSE,
+#'                    label.y="CIF of macrovascular complications",
+#'                    label.x="Years from registration")
+#' output3 <- cifplot(Event(t,epsilon) ~ fruitq,
+#'                    data = diabetes.complications,
+#'                    outcome.type="competing-risk",
+#'                    code.event1=2,
+#'                    code.event2=1,
+#'                    add.conf = FALSE,
+#'                    add.risktable = FALSE,
+#'                    label.y="",
+#'                    label.x="",
 #'                    limits.y=c(0,0.15))
-#' output3 <- list(a=output1, b=output2)
-#' cifpanel(plots = output3,
+#' output4 <- list(a = output2$plot, b = output3$plot)
+#' output5 <- cifpanel(plots = output4,
 #'          inset.panel = TRUE,
 #'          inset.left = 0.40, inset.bottom = 0.45,
 #'          inset.right = 1.00, inset.top = 0.95,
 #'          inset.align.to = "plot",
 #'          inset.legend.position = "none",
 #'          legend.position = "bottom")
+#' print(output5)
 #'
 #' @importFrom ggplot2 ggplot theme_void ggsave theme element_text labs
 #' @importFrom patchwork wrap_plots plot_layout inset_element plot_annotation
@@ -288,24 +271,24 @@ cifpanel <- function(
     limits.y                      = NULL,
     breaks.x                      = NULL,
     breaks.y                      = NULL,
-    addConfidenceInterval         = NULL,
-    addRiskTable                  = NULL,
-    addEstimateTable              = NULL,
-    symbol.risktable              = NULL,
-    font.size.risktable           = NULL,
-    addCensorMark                 = NULL,
+    add.conf                      = NULL,
+    add.risktable                 = NULL,
+    add.estimate.table            = NULL,
+    symbol.risk.table             = NULL,
+    font.size.risk.table          = NULL,
+    add.censor.mark               = NULL,
     shape.censor.mark             = NULL,
     size.censor.mark              = NULL,
-    addCompetingRiskMark          = NULL,
+    add.competing.risk.mark       = NULL,
     competing.risk.time           = NULL,
     shape.competing.risk.mark     = NULL,
     size.competing.risk.mark      = NULL,
-    addIntercurrentEventMark      = NULL,
+    add.intercurrent.event.mark   = NULL,
     intercurrent.event.time       = NULL,
     shape.intercurrent.event.mark = NULL,
     size.intercurrent.event.mark  = NULL,
-    addQuantileLine               = NULL,
-    quantile                      = NULL,
+    add.quantile                  = NULL,
+    level.quantile                = NULL,
     rows.columns.panel            = c(1, 1),
     inset.panel                   = FALSE,
     title.panel                   = NULL,
@@ -313,9 +296,10 @@ cifpanel <- function(
     caption.panel                 = NULL,
     tag.panel                     = NULL,
     title.plot                    = NULL,
-    style                         = "CLASSIC",
+    style                         = "classic",
     palette                       = NULL,
-    linewidth                     = 1,
+    linewidth                     = 0.8,
+    linetype                      = FALSE,
     font.family                   = "sans",
     font.size                     = 8,
     legend.position               = "top",
@@ -326,7 +310,7 @@ cifpanel <- function(
     inset.top                     = 0.45,
     inset.align.to                = c("panel","plot","full"),
     inset.legend.position         = NULL,
-    print.panel                   = TRUE,
+    print.panel                   = FALSE,
     filename.ggsave               = NULL,
     width.ggsave                  = NULL,
     height.ggsave                 = NULL,
@@ -345,15 +329,18 @@ cifpanel <- function(
 #  if (!is.null(label.strata)) {
 #    .warn("panel_disables_labelstrata")
 #  }
-#  if (isTRUE(addRiskTable) || isTRUE(addEstimateTable)) {
+#  if (isTRUE(add.risktable) || isTRUE(add.estimate.table)) {
 #    .warn("panel_disables_tables")
 #  }
   legend.position  <- "none"
-  addRiskTable     <- FALSE
-  addEstimateTable <- FALSE
+  add.risktable     <- FALSE
+  add.estimate.table <- FALSE
   inset.align.to <- match.arg(inset.align.to)
 
   dots <- list(...)
+  call <- match.call()
+  plots_out <- NULL
+  engine.list <- panel_to_list(engine)
 
   survfit.info.user <- survfit.info
   axis.info.user    <- axis.info
@@ -381,35 +368,35 @@ cifpanel <- function(
     limits.y          = limits.y,
     breaks.x          = breaks.x,
     breaks.y          = breaks.y,
-    use_coord_cartesian = get0("use_coord_cartesian", ifnotfound = NULL)
+    use.coord.cartesian = get0("use.coord.cartesian", ifnotfound = NULL)
   ), axis.info %||% list())
 
   visual.info <- panel_modify_list(list(
-    addConfidenceInterval    = addConfidenceInterval,
+    add.conf    = add.conf,
     ci.alpha                 = 0.25,
-    addRiskTable             = FALSE,
-    addEstimateTable         = FALSE,
-    addCensorMark            = addCensorMark,
+    add.risktable             = FALSE,
+    add.estimate.table         = FALSE,
+    add.censor.mark            = add.censor.mark,
     shape.censor.mark        = 3,
     size.censor.mark         = 2,
-    addCompetingRiskMark     = addCompetingRiskMark,
+    add.competing.risk.mark     = add.competing.risk.mark,
     competing.risk.time      = list(),
     shape.competing.risk.mark= 16,
     size.competing.risk.mark = 2,
-    addIntercurrentEventMark = addIntercurrentEventMark,
+    add.intercurrent.event.mark = add.intercurrent.event.mark,
     intercurrent.event.time  = list(),
     shape.intercurrent.event.mark = 1,
     size.intercurrent.event.mark  = 2,
-    addQuantileLine          = addQuantileLine,
-    quantile                 = 0.5,
+    add.quantile          = add.quantile,
+    level.quantile                 = 0.5,
     line.size                = 0.9,
-    symbol.risktable         = NULL,
-    font.size.risktable      = NULL
+    symbol.risk.table         = NULL,
+    font.size.risk.table      = NULL
   ), visual.info %||% list())
 
   panel.info <- panel_modify_list(list(
-    printEachEvent     = FALSE,
-    printEachVar       = FALSE,
+    panel.per.event     = FALSE,
+    panel.per.variable       = FALSE,
     rows.columns.panel = rows.columns.panel,
     title.panel        = title.panel,
     subtitle.panel     = subtitle.panel,
@@ -422,15 +409,17 @@ cifpanel <- function(
   style.info$style           <- style.info$style           %||% style
   style.info$palette         <- style.info$palette         %||% palette
   style.info$linewidth       <- style.info$linewidth       %||% linewidth
+  style.info$linetype        <- style.info$linetype        %||% linetype
   style.info$font.family     <- style.info$font.family     %||% font.family
   style.info$font.size       <- style.info$font.size       %||% font.size
   style.info$legend.position <- style.info$legend.position %||% legend.position
   style.info$legend.collect  <- style.info$legend.collect  %||% legend.collect
 
   style.info <- panel_modify_list(list(
-    style           = "CLASSIC",
+    style           = "classic",
     palette         = NULL,
     linewidth       = NULL,
+    linetype        = NULL,
     font.family     = "sans",
     font.size       = 12,
     legend.position = "top",
@@ -528,17 +517,14 @@ cifpanel <- function(
   limits.y            <- axis.info$limits.y
   breaks.x            <- axis.info$breaks.x
   breaks.y            <- axis.info$breaks.y
-  use_coord_cartesian <- axis.info$use_coord_cartesian
+  use.coord.cartesian <- axis.info$use.coord.cartesian
 
-  addConfidenceInterval    <- visual.info$addConfidenceInterval
-  addCensorMark            <- visual.info$addCensorMark
-  addCompetingRiskMark     <- visual.info$addCompetingRiskMark
-  addIntercurrentEventMark <- visual.info$addIntercurrentEventMark
-  addQuantileLine          <- visual.info$addQuantileLine
+  add.conf    <- visual.info$add.conf
+  add.censor.mark            <- visual.info$add.censor.mark
+  add.competing.risk.mark     <- visual.info$add.competing.risk.mark
+  add.intercurrent.event.mark <- visual.info$add.intercurrent.event.mark
+  add.quantile          <- visual.info$add.quantile
 
-  # ------------------------------------------------------------
-  # 1) plots が指定されているときは「並べるだけ」モード
-  # ------------------------------------------------------------
   if (!is.null(plots)) {
     if (!is.list(plots)) {
       stop("`plots` must be a list of ggplot objects.")
@@ -547,7 +533,6 @@ cifpanel <- function(
       stop("All elements of `plots` must inherit from 'ggplot'.")
     }
 
-    # ここは ggsurvfit の warning を避けるために touch_colour = FALSE にしてもよい
     plots <- apply_strata_to_plots(
       plots,
       order_data   = axis.info$order.strata,
@@ -607,7 +592,7 @@ cifpanel <- function(
       theme      = theme.panel.unified
     )
 
-    if (isTRUE(print.panel)) print(out_patchwork)
+    if (interactive() && isTRUE(print.panel)) print(out_patchwork)
     if (!is.null(filename.ggsave)) {
       if (is.null(width.ggsave))  width.ggsave  <- if (isTRUE(inset.panel)) 6 else max(6, 5 * rows.columns.panel[2])
       if (is.null(height.ggsave)) height.ggsave <- if (isTRUE(inset.panel)) 6 else max(6, 5 * rows.columns.panel[1])
@@ -616,18 +601,33 @@ cifpanel <- function(
                       dpi = dpi.ggsave, units = ggsave.units)
     }
 
-    return(invisible(list(
-      plots        = plots_out,
-      out_patchwork= out_patchwork,
-      axis.info    = axis.info,
+    survfit.info$formula_or_fit <- survfit.info$formula_or_fit %||% list(
+      formula  = formula,
+      formulas = formulas
+    )
+    survfit.info$outcome.type   <- survfit.info$outcome.type   %||% outcome.type
+    survfit.info$code.events    <- survfit.info$code.events    %||% code.events
+    survfit.info$data.name      <- survfit.info$data.name      %||% deparse(substitute(data))
+
+    print.info$engine <- print.info$engine %||% engine.list
+
+    res <- list(
+      plot         = NULL,
+      list.plot    = plots_out %||% plots,
+      patchwork    = out_patchwork,
       survfit.info = survfit.info,
+      axis.info    = axis.info,
       visual.info  = visual.info,
       panel.info   = panel.info,
       style.info   = style.info,
       inset.info   = inset.info,
       print.info   = print.info,
-      ggsave.info  = ggsave.info
-    )))
+      ggsave.info  = ggsave.info,
+      version      = utils::packageVersion("cifmodeling"),
+      call         = call
+    )
+    class(res) <- c("cifpanel", class(res))
+    return(invisible(res))
   }
 
   rows.columns.panel <- panel.info$rows.columns.panel
@@ -635,9 +635,6 @@ cifpanel <- function(
   ncol   <- as.integer(rows.columns.panel[2])
   n_slots <- nrow * ncol
 
-  # ------------------------------------------------------------
-  # 2) ここから「推定して描く」通常モード
-  # ------------------------------------------------------------
   if (is.null(data)) stop("data must be provided.")
   if (is.null(code.events) || !is.list(code.events) || length(code.events) == 0)
     .err("need_code_events")
@@ -683,7 +680,6 @@ cifpanel <- function(
   labelstrata.list  <- make_panel_list_preserve_vector(label.strata,  K)
   orderstrata.list  <- make_panel_list_preserve_vector(order.strata,  K)
 
-  # limits/breaksをパネルごとにしておく
   limsx.list <- NULL
   if (!is.null(limits.x)) {
     limsx.list <- if (is.list(limits.x)) limits.x else list(limits.x)
@@ -698,19 +694,18 @@ cifpanel <- function(
   breakx.list <- toL(breaks.x); if (!is.null(breakx.list)) breakx.list <- rec(breakx.list, K)
   breaky.list <- toL(breaks.y); if (!is.null(breaky.list)) breaky.list <- rec(breaky.list, K)
 
-  addCI.list   <- toL(addConfidenceInterval);    if (!is.null(addCI.list))   addCI.list   <- rec(addCI.list, K)
-  addCen.list  <- toL(addCensorMark);            if (!is.null(addCen.list))  addCen.list  <- rec(addCen.list, K)
-  addCR.list   <- toL(addCompetingRiskMark);     if (!is.null(addCR.list))   addCR.list   <- rec(addCR.list, K)
-  addIC.list   <- toL(addIntercurrentEventMark); if (!is.null(addIC.list))   addIC.list   <- rec(addIC.list, K)
-  addQ.list    <- toL(addQuantileLine);          if (!is.null(addQ.list))    addQ.list    <- rec(addQ.list, K)
+  addCI.list   <- toL(add.conf);    if (!is.null(addCI.list))   addCI.list   <- rec(addCI.list, K)
+  addCen.list  <- toL(add.censor.mark);            if (!is.null(addCen.list))  addCen.list  <- rec(addCen.list, K)
+  addCR.list   <- toL(add.competing.risk.mark);     if (!is.null(addCR.list))   addCR.list   <- rec(addCR.list, K)
+  addIC.list   <- toL(add.intercurrent.event.mark); if (!is.null(addIC.list))   addIC.list   <- rec(addIC.list, K)
+  addQ.list    <- toL(add.quantile);          if (!is.null(addQ.list))    addQ.list    <- rec(addQ.list, K)
 
-  if (!is.null(addCI.list))   visual.info$addConfidenceInterval    <- NULL
-  if (!is.null(addCen.list))  visual.info$addCensorMark            <- NULL
-  if (!is.null(addCR.list))   visual.info$addCompetingRiskMark     <- NULL
-  if (!is.null(addIC.list))   visual.info$addIntercurrentEventMark <- NULL
-  if (!is.null(addQ.list))    visual.info$addQuantileLine          <- NULL
+  if (!is.null(addCI.list))   visual.info$add.conf    <- NULL
+  if (!is.null(addCen.list))  visual.info$add.censor.mark            <- NULL
+  if (!is.null(addCR.list))   visual.info$add.competing.risk.mark     <- NULL
+  if (!is.null(addIC.list))   visual.info$add.intercurrent.event.mark <- NULL
+  if (!is.null(addQ.list))    visual.info$add.quantile          <- NULL
 
-  # outcome.flag 判定
   infer_flag_by_codes <- function(v) if (length(v) == 2L) "S" else if (length(v) == 3L) "C" else NA_character_
   if (!is.null(outcome.list)) {
     outcome.flags <- vapply(outcome.list, panel_norm_outcome, character(1))
@@ -718,9 +713,7 @@ cifpanel <- function(
     outcome.flags <- vapply(code.events, infer_flag_by_codes, character(1))
     if (anyNA(outcome.flags)) .err("infer_outcome_fail")
   }
-  panel_validate_code_events(code.events, outcome.flags)
 
-  # dots の中にある「パネルで決めた値と衝突するやつ」を抜く
   kill_names <- c()
   if (!is.null(outcome.list))     kill_names <- c(kill_names, "outcome.type")
   if (!is.null(typey.list))       kill_names <- c(kill_names, "type.y")
@@ -730,21 +723,20 @@ cifpanel <- function(
   if (!is.null(limsx.list))       kill_names <- c(kill_names, "limits.x")
   if (!is.null(labelstrata.list)) kill_names <- c(kill_names, "label.strata")
   if (!is.null(orderstrata.list)) kill_names <- c(kill_names, "order.strata")
-  if (!is.null(breakx.list))      kill_names <- c(kill_names, "breaks.x","breaks.x")
-  if (!is.null(breaky.list))      kill_names <- c(kill_names, "breaks.y","breaks.y")
-  if (!is.null(addCI.list))       kill_names <- c(kill_names, "addConfidenceInterval")
-  if (!is.null(addCen.list))      kill_names <- c(kill_names, "addCensorMark")
-  if (!is.null(addCR.list))       kill_names <- c(kill_names, "addCompetingRiskMark")
-  if (!is.null(addIC.list))       kill_names <- c(kill_names, "addIntercurrentEventMark")
-  if (!is.null(addQ.list))        kill_names <- c(kill_names, "addQuantileLine")
+  if (!is.null(breakx.list))      kill_names <- c(kill_names, "breaks.x")
+  if (!is.null(breaky.list))      kill_names <- c(kill_names, "breaks.y")
+  if (!is.null(addCI.list))       kill_names <- c(kill_names, "add.conf")
+  if (!is.null(addCen.list))      kill_names <- c(kill_names, "add.censor.mark")
+  if (!is.null(addCR.list))       kill_names <- c(kill_names, "add.competing.risk.mark")
+  if (!is.null(addIC.list))       kill_names <- c(kill_names, "add.intercurrent.event.mark")
+  if (!is.null(addQ.list))        kill_names <- c(kill_names, "add.quantile")
 
   dots <- panel_strip_overrides_from_dots(dots, unique(kill_names))
 
-  # engine をパネル数にそろえる（★ここが今回の肝）
-  engine.list <- panel_to_list(engine)
-  engine.list <- panel_recycle_to(engine.list, K)
+  if (!is.null(engine.list)) {
+    engine.list <- panel_recycle_to(engine.list, K)
+  }
 
-  # パネル内部は panel_prepare でまとめて生成させる（いままで通り）
   prep <- panel_prepare(
     K               = K,
     formulas        = formulas,
@@ -769,7 +761,8 @@ cifpanel <- function(
     survfit.info    = survfit.info,
     style.info      = style.info,
     dots            = dots,
-    fonts           = fonts
+    fonts           = fonts,
+    na.action       = na.action
   )
 
   plots <- lapply(seq_len(prep$K), function(i) {
@@ -796,7 +789,7 @@ cifpanel <- function(
       addQ.list   = addQ.list
     )
 
-    if (isTRUE(pa$addCompetingRiskMark)) {
+    if (isTRUE(pa$add.competing.risk.mark)) {
       ce <- code.events[[i]]
       has_event2 <- !is.null(ce) && length(ce) >= 3L && !is.na(ce[2])
       has_time   <- !is.null(pa$competing.risk.time) && length(pa$competing.risk.time) > 0
@@ -829,31 +822,31 @@ cifpanel <- function(
         limits.y          = pa$limits.y,
         breaks.x          = pa$breaks.x,
         breaks.y          = pa$breaks.y,
-        use_coord_cartesian = pa$use_coord_cartesian
+        use.coord.cartesian = pa$use.coord.cartesian
       )
 
       visual_i <- panel_modify_list(visual.info, list(
-        addConfidenceInterval    = pa$addConfidenceInterval,
-        addRiskTable             = pa$addRiskTable,
-        addEstimateTable         = pa$addEstimateTable,
-        addCensorMark            = pa$addCensorMark,
+        add.conf    = pa$add.conf,
+        add.risktable             = pa$add.risktable,
+        add.estimate.table         = pa$add.estimate.table,
+        add.censor.mark            = pa$add.censor.mark,
         shape.censor.mark        = pa$shape.censor.mark,
         size.censor.mark         = pa$size.censor.mark,
-        addCompetingRiskMark     = pa$addCompetingRiskMark,
+        add.competing.risk.mark     = pa$add.competing.risk.mark,
         competing.risk.time      = pa$competing.risk.time,
         shape.competing.risk.mark= pa$shape.competing.risk.mark,
         size.competing.risk.mark = pa$size.competing.risk.mark,
-        addIntercurrentEventMark = pa$addIntercurrentEventMark,
+        add.intercurrent.event.mark = pa$add.intercurrent.event.mark,
         intercurrent.event.time  = pa$intercurrent.event.time,
         shape.intercurrent.event.mark = pa$shape.intercurrent.event.mark,
         size.intercurrent.event.mark  = pa$size.intercurrent.event.mark,
-        addQuantileLine          = pa$addQuantileLine,
-        quantile                 = pa$quantile
+        add.quantile          = pa$add.quantile,
+        level.quantile                 = pa$level.quantile
       ))
 
       panel_i <- list(
-        printEachEvent     = FALSE,
-        printEachVar       = FALSE,
+        panel.per.event     = FALSE,
+        panel.per.variable       = FALSE,
         rows.columns.panel = NULL
       )
 
@@ -951,7 +944,7 @@ cifpanel <- function(
     theme      = theme.panel.unified
   )
 
-  if (isTRUE(print.panel)) print(out_patchwork)
+  if (interactive() && isTRUE(print.panel)) print(out_patchwork)
   if (!is.null(filename.ggsave)) {
     if (is.null(width.ggsave))  width.ggsave  <- if (isTRUE(inset.panel)) 6 else max(6, 5 * rows.columns.panel[2])
     if (is.null(height.ggsave)) height.ggsave <- if (isTRUE(inset.panel)) 6 else max(6, 5 * rows.columns.panel[1])
@@ -960,18 +953,33 @@ cifpanel <- function(
                     dpi = dpi.ggsave, units = ggsave.units)
   }
 
-  invisible(list(
-    plots        = plots,
-    out_patchwork= out_patchwork,
-    axis.info    = axis.info,
+  survfit.info$formula_or_fit <- survfit.info$formula_or_fit %||% list(
+    formula  = formula,
+    formulas = formulas
+  )
+  survfit.info$outcome.type   <- survfit.info$outcome.type   %||% outcome.type
+  survfit.info$code.events    <- survfit.info$code.events    %||% code.events
+  survfit.info$data.name      <- survfit.info$data.name      %||% deparse(substitute(data))
+
+  print.info$engine <- print.info$engine %||% engine.list
+
+  res <- list(
+    plot         = NULL,
+    list.plot    = plots_out %||% plots,
+    patchwork    = out_patchwork,
     survfit.info = survfit.info,
+    axis.info    = axis.info,
     visual.info  = visual.info,
     panel.info   = panel.info,
     style.info   = style.info,
     inset.info   = inset.info,
     print.info   = print.info,
-    ggsave.info  = ggsave.info
-  ))
+    ggsave.info  = ggsave.info,
+    version      = utils::packageVersion("cifmodeling"),
+    call         = call
+  )
+  class(res) <- c("cifpanel", class(res))
+  invisible(res)
 }
 
 panel_force_apply <- function(
@@ -1017,28 +1025,28 @@ panel_force_apply <- function(
 
   if (!is.null(addCI.list)) {
     v <- isTRUE(addCI.list[[i]])
-    pa$addConfidenceInterval <- v
-    pa$visual.info$addConfidenceInterval <- v
+    pa$add.conf <- v
+    pa$visual.info$add.conf <- v
   }
   if (!is.null(addCen.list)) {
     v <- isTRUE(addCen.list[[i]])
-    pa$addCensorMark <- v
-    pa$visual.info$addCensorMark <- v
+    pa$add.censor.mark <- v
+    pa$visual.info$add.censor.mark <- v
   }
   if (!is.null(addCR.list)) {
     v <- isTRUE(addCR.list[[i]])
-    pa$addCompetingRiskMark <- v
-    pa$visual.info$addCompetingRiskMark <- v
+    pa$add.competing.risk.mark <- v
+    pa$visual.info$add.competing.risk.mark <- v
   }
   if (!is.null(addIC.list)) {
     v <- isTRUE(addIC.list[[i]])
-    pa$addIntercurrentEventMark <- v
-    pa$visual.info$addIntercurrentEventMark <- v
+    pa$add.intercurrent.event.mark <- v
+    pa$visual.info$add.intercurrent.event.mark <- v
   }
   if (!is.null(addQ.list)) {
     v <- isTRUE(addQ.list[[i]])
-    pa$addQuantileLine <- v
-    pa$visual.info$addQuantileLine <- v
+    pa$add.quantile <- v
+    pa$visual.info$add.quantile <- v
   }
 
   pa

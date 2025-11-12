@@ -19,7 +19,7 @@ polyreg(
   effect.measure1 = "RR",
   effect.measure2 = "RR",
   time.point = NULL,
-  outcome.type = "COMPETING-RISK",
+  outcome.type = "competing-risk",
   conf.level = 0.95,
   report.nuisance.parameter = FALSE,
   report.optim.convergence = FALSE,
@@ -89,12 +89,12 @@ competing event. Supported values are \code{"RR"}, \code{"OR"} and
 evaluated. Required for survival and competing risk analyses.}
 
 \item{outcome.type}{Character string selecting the outcome type. Valid values
-are \code{"COMPETING-RISK"}, \code{"SURVIVAL"}, \code{"BINOMIAL"},
-\code{"PROPORTIONAL-SURVIVAL"} and \code{"PROPORTIONAL-COMPETING-RISK"}.
-Defaults to \code{"COMPETING-RISK"}.
+are \code{"competing-risk"}, \code{"survival"}, \code{"binomial"},
+\code{"proportional-survival"} and \code{"proportional-competing-risk"}.
+Defaults to \code{"competing-risk"}.
 If \code{NULL} (default), the function automatically infers the outcome type
 from the data: if the event variable has more than two unique levels,
-\code{"COMPETING-RISK"} is assumed; otherwise, \code{"SURVIVAL"} is used.
+\code{"competing-risk"} is assumed; otherwise, \code{"survival"} is used.
 You can also use abbreviations such as \code{"S"} or \code{"C"}.
 Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic
 detection based on the event coding in \code{data}.}
@@ -107,13 +107,18 @@ includes estimates of the nuisance model parameters (default \code{FALSE}).}
 \item{report.optim.convergence}{Logical; if \code{TRUE}, optimization
 convergence summaries are returned (default \code{FALSE}).}
 
-\item{report.sandwich.conf}{Logical or \code{NULL}. When \code{TRUE}, confidence
-intervals based on sandwich variance are computed. When \code{FALSE}, they are
-omitted (default \code{TRUE}).}
+\item{report.sandwich.conf}{Logical or \code{NULL}. When \code{TRUE},
+confidence intervals based on sandwich variance are computed.
+When \code{FALSE}, they are omitted (default \code{TRUE}).
+This confidence interval is default for time-point models
+(\code{"outcome.type=competing-risk"}, \code{"survival"} or \code{"binomial"}) and
+is not available otherwise.}
 
 \item{report.boot.conf}{Logical or \code{NULL}. When \code{TRUE}, bootstrap
-confidence intervals are computed. When \code{FALSE}, they are omitted. If
-\code{NULL}, the function chooses based on \code{outcome.type}.}
+confidence intervals are computed. When \code{FALSE}, they are omitted.
+If \code{NULL}, the function chooses based on \code{outcome.type} (default \code{NULL}).
+This confidence interval is default for proportional models
+(\code{outcome.type="PROPORTIONAL-COMPETING-RISK"} or \code{"PROPORTIONAL-SURVIVAL"}).}
 
 \item{boot.bca}{Logical indicating the bootstrap confidence interval method.
 Use \code{TRUE} for bias-corrected and accelerated intervals or \code{FALSE}
@@ -224,10 +229,10 @@ excluding the exposure of interest.
 \item \code{exposure} — specifies the categorical exposure variable
 \item \code{effect.measure1} and \code{effect.measure2} — specifies the effect measures
 for event1 and event2 (\code{"RR"}, \code{"OR"} or \code{"SHR"}).
-\item \code{outcome.type} selects the outcome type (\code{"COMPETING-RISK"}, \code{"SURVIVAL"},
-\code{"BINOMIAL"}, \code{"PROPORTIONAL-SURVIVAL"} or \code{"PROPORTIONAL-COMPETING-RISK"}).
+\item \code{outcome.type} selects the outcome type (\code{"competing-risk"}, \code{"survival"},
+\code{"binomial"}, \code{"proportional-survival"} or \code{"proportional-competing-risk"}).
 \item \code{time.point} — specifies time point at which the exposure effect is evaluated.
-Required for \code{"COMPETING-RISK"} and \code{"SURVIVAL"} outcomes.
+Required for \code{"competing-risk"} and \code{"survival"} outcomes.
 \item \code{strata} — specifies a stratification variable used for IPCW adjustment for dependent censoring.
 }
 }
@@ -236,11 +241,11 @@ Required for \code{"COMPETING-RISK"} and \code{"SURVIVAL"} outcomes.
 
 The \code{outcome.type} argument must be set to:
 \itemize{
-\item Effects on cumulative incidence probabilities at a specific time: \code{"COMPETING-RISK"}
-\item Effects on a risk at a specific time: \code{"SURVIVAL"}
-\item Common effects on cumulative incidence probabilities over time: \code{"PROPORTIONAL-COMPETING-RISK"}
-\item Common effects on a risk over time: \code{"PROPORTIONAL-SURVIVAL"}
-\item Effects on a risk of a binomial outcome: \code{"BINOMIAL"}
+\item Effects on cumulative incidence probabilities at a specific time: \code{"competing-risk"}
+\item Effects on a risk at a specific time: \code{"survival"}
+\item Common effects on cumulative incidence probabilities over time: \code{"proportional-competing-risk"}
+\item Common effects on a risk over time: \code{"proportional-survival"}
+\item Effects on a risk of a binomial outcome: \code{"binomial"}
 }\tabular{lll}{
    Setting \tab Codes \tab Meaning \cr
    COMPETING-RISK \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censoring \cr
@@ -276,7 +281,7 @@ Choose the effect scale for event 1 and (optionally) event 2:\tabular{llll}{
    Argument \tab Meaning \tab Default \cr
    \code{conf.level} \tab Wald-type CI level \tab \code{0.95} \cr
    \code{report.sandwich.conf} \tab Sandwich variance CIs \tab \code{TRUE} \cr
-   \code{report.boot.conf} \tab Bootstrap CIs (use if \code{"PROPORTIONAL-SURVIVAL"} or \code{"PROPORTIONAL-COMPETING-RISK"}) \tab \code{NULL} \cr
+   \code{report.boot.conf} \tab Bootstrap CIs (use if \code{"proportional-survival"} or \code{"proportional-competing-risk"}) \tab \code{NULL} \cr
    \code{boot.bca} \tab Use BCa intervals (else normal approximation) \tab \code{FALSE} \cr
    \code{boot.multiplier} \tab Method for wild bootstrap (\code{"rademacher"}, \code{"mammen"}, or \code{"gaussian"}) \tab \code{rademacher} \cr
    \code{boot.replications} \tab Bootstrap reps \tab \code{200} \cr
@@ -359,7 +364,7 @@ output <- polyreg(
   effect.measure1 = "RR",
   effect.measure2 = "RR",
   time.point = 8,
-  outcome.type = "COMPETING-RISK"
+  outcome.type = "competing-risk"
 )
 if (requireNamespace("modelsummary", quietly = TRUE)) {
 modelsummary::msummary(output$summary, statistic = c("conf.int", "p.value"), exponentiate = TRUE)

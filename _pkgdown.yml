@@ -1,0 +1,79 @@
+template:
+  bootstrap: 5
+
+url: https://gestimation.github.io/cifmodeling/
+
+development:
+  mode: auto
+
+home:
+  title: cifmodeling
+  description: A compact and unified toolkit for Kaplan–Meier/Aalen–Johansen curves, visualization, and direct polytomous regression for survival and competing risks data.
+
+navbar:
+  structure:
+    left:  [reference, articles, news]
+    right: [search, github]
+  components:
+    reference:
+      text: Reference
+      href: reference/index.html
+    articles:
+      text: Articles
+      menu:
+        - text: Overview
+          href: articles/01_overview.html
+        - text: Main functions
+          href: articles/02_functions.html
+        - text: Direct polytomous regression
+          href: articles/03_polyreg.html
+        - text: Examples
+          href: articles/04_examples.html
+        - text: Additional information
+          href: articles/05_information.html
+        - text: Full lists of arguments
+          href: articles/06_arguments.html
+    github:
+      icon: fa-github
+      aria-label: GitHub repository
+      href: https://github.com/gestimation/cifmodeling
+
+articles:
+  - title: Overview
+    contents:
+      - 01_overview
+  - title: Main functions
+    contents:
+      - 02_functions
+  - title: Direct polytomous regression
+    contents:
+      - 03_polyreg
+  - title: Examples
+    contents:
+      - 04_examples
+  - title: Additional information
+    contents:
+      - 05_information
+  - title: Full lists of arguments
+    contents:
+      - 06_arguments
+
+reference:
+  - title: Estimation & visualization
+    contents:
+      - cifcurve
+      - cifplot
+      - cifpanel
+      - cif-stat-arguments
+      - cif-visual-arguments
+  - title: Direct polytomous regression
+    contents:
+      - polyreg
+  - title: Data
+    contents:
+      - diabetes.complications
+      - prostate
+  - title: Helpers
+    contents:
+      - extract_time_to_event
+      - Event

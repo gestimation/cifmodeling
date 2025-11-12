@@ -21,20 +21,20 @@ set to \code{c(0, 1)} for probability-type outcomes.}
 
 \item{breaks.y}{Numeric vector of y-axis breaks (default \code{NULL}).}
 
-\item{use_coord_cartesian}{Logical; if \code{TRUE}, uses \code{coord_cartesian()} for zooming
+\item{use.coord.cartesian}{Logical; if \code{TRUE}, uses \code{coord_cartesian()} for zooming
 instead of changing the scale limits (default \code{FALSE}).}
 
-\item{addConfidenceInterval}{Logical; if \code{TRUE}, adds a confidence-interval ribbon
+\item{add.conf}{Logical; if \code{TRUE}, adds a confidence-interval ribbon
 (via \code{ggsurvfit::add_confidence_interval()}). Default \code{TRUE}.}
 
-\item{addCensorMark}{Logical; if \code{TRUE}, draws censoring marks on each curve
+\item{add.censor.mark}{Logical; if \code{TRUE}, draws censoring marks on each curve
 (via \code{ggsurvfit::add_censor_mark()}). Default \code{TRUE}.}
 
 \item{shape.censor.mark}{Integer point shape used for censoring marks (default \code{3}).}
 
 \item{size.censor.mark}{Numeric point size used for censoring marks (default \code{2}).}
 
-\item{addCompetingRiskMark}{Logical; if \code{TRUE}, draws time marks for the competing event
+\item{add.competing.risk.mark}{Logical; if \code{TRUE}, draws time marks for the competing event
 (event 2). If no times are supplied via \code{competing.risk.time}, the function tries to
 extract them automatically from the data. Default \code{FALSE}.}
 
@@ -46,7 +46,7 @@ in that stratum. Typically left as \code{list()} and filled internally.}
 
 \item{size.competing.risk.mark}{Numeric point size for competing-risk marks (default \code{2}).}
 
-\item{addIntercurrentEventMark}{Logical; if \code{TRUE}, overlays user-specified intercurrent-event
+\item{add.intercurrent.event.mark}{Logical; if \code{TRUE}, overlays user-specified intercurrent-event
 times per stratum. Default \code{FALSE}.}
 
 \item{intercurrent.event.time}{A \strong{named list} of numeric vectors for intercurrent events
@@ -58,27 +58,33 @@ times per stratum. Default \code{FALSE}.}
 \item{size.intercurrent.event.mark}{Numeric point size for intercurrent-event marks
 (default \code{2}).}
 
-\item{addQuantileLine}{Logical; if \code{TRUE}, adds a quantile line (via
+\item{add.quantile}{Logical; if \code{TRUE}, adds a quantile reference line (via
 \code{ggsurvfit::add_quantile()}). Default \code{FALSE}.}
 
-\item{quantile}{Numeric quantile to be shown (default \code{0.5} for median).}
+\item{level.quantile}{Numeric quantile level to be shown (default \code{0.5} for the median).}
 
 \item{rows.columns.panel}{Optional integer vector \code{c(nrow, ncol)} controlling
 the layout of the panel returned by the panel modes. If \code{NULL}, an automatic
 layout is determined from the number of subplots.}
 
-\item{style}{Character choosing the base plot style: \code{"CLASSIC"}, \code{"BOLD"},
-\code{"FRAMED"}, \code{"GRID"}, \code{"GRAY"} or \code{"GGSURVFIT"} (default \code{"CLASSIC"}).
+\item{style}{Character choosing the base plot style: \code{"classic"}, \code{"bold"},
+\code{"framed"}, \code{"grid"}, \code{"gray"} or \code{"ggsurvfit"} (default \code{"classic"}).
 Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also accepted.}
 
 \item{palette}{Optional character vector specifying the color palette to use across strata.}
 
-\item{linewidth}{Optional numeric specifying the line width of curves.}
+\item{linewidth}{Optional numeric specifying the line width of curve (default \code{0.8}).}
+
+\item{linetype}{Optional logical using different line types of curve (default \code{FALSE}).}
 
 \item{font.family}{Character specifying the font family: \code{"sans"},  \code{"serif"}, or
 \code{"mono"} (default \code{"sans"}).}
 
 \item{font.size}{Integer specifying the base font size (default \code{12}).}
+
+\item{print.panel}{Logical. When \code{TRUE}, panel displays created internally are
+printed automatically in interactive sessions; otherwise they are returned
+invisibly for further modification (default \code{FALSE}).}
 
 \item{filename.ggsave}{Character; if non-\code{NULL}, save the plot to this file.}
 
@@ -92,3 +98,4 @@ Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also
 These arguments are shared by \code{cifplot()}, \code{cifpanel()}, and
 \code{cifcurve()}.
 }
+\keyword{internal}
