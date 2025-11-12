@@ -148,7 +148,6 @@ panel_prepare <- function(
   )
 }
 
-
 panel_as_formula_global <- function(f) {
   if (is.character(f))   return(stats::as.formula(f, env = .GlobalEnv))
   if (inherits(f, "formula")) return(stats::as.formula(f, env = .GlobalEnv))
@@ -183,21 +182,6 @@ panel_norm_outcome <- function(x) {
   stop("Unknown outcome.type: ", x, " (use 's'/'survival' or 'c'/'competing-risk').")
 }
 
-panel_validate_code_events <- function(code_events_list, outcome_flags) {
-  stopifnot(length(code_events_list) == length(outcome_flags))
-  for (i in seq_along(code_events_list)) {
-    pair <- code_events_list[[i]]
-    if (outcome_flags[i] == "S") {
-      if (!(is.numeric(pair) && length(pair) == 2L))
-        .err("code_events_len_surv", i = i)
-    } else {
-      if (!(is.numeric(pair) && length(pair) == 3L))
-        .err("code_events_len_cr", i = i)
-    }
-  }
-  invisible(TRUE)
-}
-
 panel_extract_fonts <- function(dots) {
   list(
     family = dots$font.family %||% "sans",
@@ -205,22 +189,16 @@ panel_extract_fonts <- function(dots) {
   )
 }
 
-#------------------------------------------------------------
-# パネル数 K と rows.columns.panel を自動決定する関数
-#------------------------------------------------------------
 panel_update_rows.columns.panel <- function(
     formulas = NULL,
     code.events = NULL,
     panel.info = list(rows.columns.panel = c(1, 1)),
     n_slots = 1
 ) {
-  # formulas の長さ
   len_formulas <- if (!is.null(formulas)) length(formulas) else 0L
 
-  # K を決定
   K <- max(n_slots, length(code.events), len_formulas)
 
-  # rows.columns.panel がデフォルト (1,1) で K>1 のとき自動レイアウト
   rc <- panel.info$rows.columns.panel
   if (length(rc) == 2L && all(is.finite(rc)) && all(rc == 1) && K > 1L) {
     if (K %% 2L == 0L) {
@@ -230,12 +208,10 @@ panel_update_rows.columns.panel <- function(
     }
   }
 
-  # nrow, ncol, n_slots を再計算
   nrow <- as.integer(rc[1])
   ncol <- as.integer(rc[2])
   n_slots <- nrow * ncol
 
-  # 更新したものを返す
   list(
     K = K,
     code.events = panel_recycle_to(code.events, K),

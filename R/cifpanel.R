@@ -729,7 +729,6 @@ cifpanel <- function(
     outcome.flags <- vapply(code.events, infer_flag_by_codes, character(1))
     if (anyNA(outcome.flags)) .err("infer_outcome_fail")
   }
-  panel_validate_code_events(code.events, outcome.flags)
 
   kill_names <- c()
   if (!is.null(outcome.list))     kill_names <- c(kill_names, "outcome.type")
