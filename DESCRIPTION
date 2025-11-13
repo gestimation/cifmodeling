@@ -10,11 +10,13 @@ RoxygenNote: 7.3.3
 RdMacros: lifecycle
 Config/Needs/website: lifecycle
 Depends: R (>= 4.1.0)
-Suggests: 
+Suggests:
     survival,
     mets,
     modelsummary,
     gtsummary,
+    ggsurvfit,
+    patchwork,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),

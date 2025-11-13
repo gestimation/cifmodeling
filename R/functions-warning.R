@@ -205,10 +205,15 @@ util_check_type_y <- function(x = NULL) {
 
   if (!is.null(x)) {
     buckets <- list(
-      surv = c("surv", "s", "survival", "km", "kaplan-meier", "kaplanmeier",
-               "survival-probability", "survivalprobability"),
-      risk = c("risk", "r", "cif", "ci", "cumulative-incidence", "cumulativeincidence",
-               "cuminc", "failure", "incidence")
+      surv    = c("surv", "s", "survival", "km", "kaplan-meier", "kaplanmeier",
+                  "survival-probability", "survivalprobability"),
+      risk    = c("risk", "r", "cif", "ci", "cumulative-incidence", "cumulativeincidence",
+                  "cuminc", "failure", "incidence"),
+      stacked = c("stack", "stacked", "stacking", "stackedrisk"),
+      cumhaz  = c("cumhaz", "hazard", "cumulativehazard", "cumulative-hazard",
+                  "hazardcum", "h"),
+      cloglog = c("cloglog", "cll", "cloglogsurv", "complementaryloglog",
+                  "loglog", "log-log")
     )
 
     ali_norm <- lapply(buckets, .norm)

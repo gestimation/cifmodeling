@@ -22,7 +22,9 @@
 #' -   `add.quantile` adds a line that represents the median or a selected quantile level
 #'
 #' **Plot customization**
-#' -   `type.y` chooses y-axis. (`"surv"` for survival curves and `"risk"` for CIFs)
+#' -   `type.y` chooses y-axis (`"surv"` for survival curves, `"risk"` for CIFs,
+#'     `"stacked"` for stacked cumulative incidence bands, `"cumhaz"` for cumulative hazard,
+#'     or `"cloglog"` for the complementary log-log of survival).
 #' -   `limits.x`, `limits.y`, `breaks.x`, `breaks.y` numeric vectors for axis control
 #' -   `style` specifies the appearance of plot (`"classic"`, `"bold"`, `"framed"`, `"grid"`, `"gray"` or `"ggsurvfit"`)
 #'
@@ -164,6 +166,9 @@
 #'
 #' **Notes.**
 #' - For CIF displays, set `type.y = "risk"`. For survival scale, use `type.y = NULL` or `= "surv"`.
+#'   Additional options include `"stacked"` for stacked cumulative incidence bands,
+#'   `"cumhaz"` for cumulative hazards, and `"cloglog"` for the complementary log-log
+#'   transformation of survival.
 #' - Event coding can be controlled via `code.event1`, `code.event2`, `code.censoring`.
 #'   For ADaM-style data, use `code.event1 = 0`, `code.censoring = 1`.
 #' - Per-stratum time lists should have names identical to plotted strata labels.
@@ -215,6 +220,7 @@ cifplot <- function(
     conf.type                     = "arcsine-square root",
     conf.int                      = 0.95,
     type.y                        = NULL,
+    engine                        = c("ggsurvfit", "ggplot"),
     label.x                       = "Time",
     label.y                       = NULL,
     label.strata                  = NULL,
@@ -272,6 +278,7 @@ cifplot <- function(
 ) {
   dots <- list(...)
   dots$print.panel <- dots$print.panel %||% print.panel
+  engine <- match.arg(engine)
 
   print_panel <- isTRUE(panel.per.variable) || isTRUE(panel.per.event) || isTRUE(panel.censoring)
   if (print_panel) {
@@ -522,7 +529,8 @@ cifplot <- function(
       visual.info      = visual.info,
       panel.info       = panel.info,
       style.info       = style.info,
-      ggsave.info      = ggsave.info
+      ggsave.info      = ggsave.info,
+      engine           = engine
     ),
     dots_clean
   )
@@ -852,6 +860,7 @@ cifplot_single <- function(
     panel.info       = NULL,
     style.info       = NULL,
     ggsave.info      = NULL,
+    engine           = c("ggsurvfit", "ggplot"),
     ...
 ) {
   n_panel_flags <- sum(isTRUE(panel.info$panel.per.variable), isTRUE(panel.info$panel.per.event), isTRUE(panel.info$panel.censoring))
@@ -860,6 +869,11 @@ cifplot_single <- function(
           which = "panel.per.variable, panel.per.event, panel.censoring")
 
   dots         <- list(...)
+  engine       <- match.arg(engine)
+  if (!is.null(dots$engine)) {
+    engine <- match.arg(as.character(dots$engine), c("ggsurvfit", "ggplot"))
+    dots$engine <- NULL
+  }
 
   survfit.info <- survfit.info %||% list()
   axis.info    <- axis.info    %||% list()
@@ -1076,7 +1090,8 @@ cifplot_single <- function(
     visual.info    = visual.info,
     panel.info     = panel.info,
     style.info     = style.info,
-    ggsave.info    = ggsave.info
+    ggsave.info    = ggsave.info,
+    engine         = engine
   )
   if (!is.null(filename.ggsave)) ggplot2::ggsave(filename.ggsave, plot = p, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave, units = ggsave.units)
   return(p)
@@ -1105,7 +1120,13 @@ cifplot_single <- function(
 #' @param add.quantile Logical add \code{add_quantile()} to plot. It calls geom_segment() (default \code{TRUE}).
 #' @param level.quantile Numeric quantile level passed to \code{add_quantile()} (default \code{0.5}).
 
-#' @param type.y \code{NULL} (survival) or \code{"risk"} (display \code{1 - survival} i.e. CIF).
+#' @param type.y \code{NULL} (survival), \code{"risk"} (display \code{1 - survival} i.e. CIF),
+#'   \code{"stacked"} for stacked cumulative incidence ribbons,
+#'   \code{"cumhaz"} for cumulative hazard, or \code{"cloglog"} for the complementary
+#'   log-log of survival.
+#' @param engine Character string selecting the plotting backend: \code{"ggsurvfit"}
+#'   (default) uses \pkg{ggsurvfit} extensions, while \code{"ggplot"} provides a
+#'   lightweight fallback that draws step curves directly with \pkg{ggplot2}.
 #' @param label.x Character x-axis labels (default \code{"Time"}).
 #' @param label.y Character y-axis labels (default internally set to \code{"Survival"} or \code{"Cumulative incidence"}).
 #' @param label.strata Character vector of labels for strata.
@@ -1132,7 +1153,8 @@ call_ggsurvfit <- function(
     visual.info  = NULL,
     panel.info   = NULL,
     style.info   = NULL,
-    ggsave.info  = NULL
+    ggsave.info  = NULL,
+    engine       = c("ggsurvfit", "ggplot")
 ){
   survfit.info        <- survfit.info %||% list()
   axis.info           <- axis.info    %||% list()
@@ -1140,6 +1162,7 @@ call_ggsurvfit <- function(
   panel.info          <- panel.info   %||% list()
   style.info          <- style.info   %||% list()
   ggsave.info         <- ggsave.info  %||% list()
+  engine              <- match.arg(engine)
 
   error               <- survfit.info$error
   conf.type           <- survfit.info$conf.type
@@ -1225,7 +1248,8 @@ call_ggsurvfit <- function(
     axis.info        = axis.info,
     visual.info      = visual.info,
     style.info       = style.info,
-    out_readSurv     = out_readSurv
+    out_readSurv     = out_readSurv,
+    engine           = engine
   )
 
   p <- out_cg$out_survfit_object +
@@ -1233,14 +1257,15 @@ call_ggsurvfit <- function(
       x = label.x.user %||% "Time",
       y = label.y.user %||% out_cg$label.y
     )
+  layerable <- isTRUE(out_cg$can_layer)
 
-  if (isTRUE(add.conf)) {
+  if (layerable && isTRUE(add.conf)) {
     p <- p + add_confidence_interval()
   }
-  if (isTRUE(add.censor.mark)) {
+  if (layerable && isTRUE(add.censor.mark)) {
     p <- p + add_censor_mark(shape = shape.censor.mark, size = size.censor.mark)
   }
-  if (isTRUE(add.quantile)) {
+  if (layerable && isTRUE(add.quantile)) {
     p <- p + add_quantile(y_value = level.quantile)
   }
 
@@ -1255,7 +1280,7 @@ call_ggsurvfit <- function(
     p
   }
 
-  if (isTRUE(add.estimate.table) && isTRUE(add.risktable)) {
+  if (layerable && isTRUE(add.estimate.table) && isTRUE(add.risktable)) {
     p <- p + add_risktable(
       risktable_stats = c("n.risk", "{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"),
       stats_label     = c("No. at risk", "Estimate (95% CI)"),
@@ -1264,7 +1289,7 @@ call_ggsurvfit <- function(
       size            = font.size.risk.table
     )
     p <- apply_add_risktable_strata_symbol(p, symbol.risk.table)
-  } else if (isTRUE(add.estimate.table)) {
+  } else if (layerable && isTRUE(add.estimate.table)) {
     p <- p + add_risktable(
       risktable_stats = c("{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"),
       stats_label     = c("Estimate (95% CI)"),
@@ -1272,7 +1297,7 @@ call_ggsurvfit <- function(
       size            = font.size.risk.table
     )
     p <- apply_add_risktable_strata_symbol(p, symbol.risk.table)
-  } else if (isTRUE(add.risktable)) {
+  } else if (layerable && isTRUE(add.risktable)) {
     p <- p + add_risktable(
       risktable_stats = c("n.risk"),
       stats_label     = c("No. at risk"),
@@ -1282,7 +1307,7 @@ call_ggsurvfit <- function(
     p <- apply_add_risktable_strata_symbol(p, symbol.risk.table)
   }
 
-  if (isTRUE(add.competing.risk.mark) && length(competing.risk.time)>0) {
+  if (layerable && isTRUE(add.competing.risk.mark) && length(competing.risk.time)>0) {
     p <- plot_draw_marks(
       p, survfit_object,
       competing.risk.time, out_cg$type.y,
@@ -1290,7 +1315,7 @@ call_ggsurvfit <- function(
       size  = size.competing.risk.mark
     )
   }
-  if (isTRUE(add.intercurrent.event.mark) && length(intercurrent.event.time)>0) {
+  if (layerable && isTRUE(add.intercurrent.event.mark) && length(intercurrent.event.time)>0) {
     p <- plot_draw_marks(
       p, survfit_object,
       intercurrent.event.time, out_cg$type.y,
@@ -1353,8 +1378,12 @@ call_ggsurvfit <- function(
     limits_arg          = limits_arg
   )
 
-  p <- p + ggplot2::guides(fill = "none", alpha = "none", shape = "none") +
-    ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(fill = NA)))
+  if (!identical(out_cg$type.y, "stacked")) {
+    p <- p + ggplot2::guides(fill = "none", alpha = "none", shape = "none") +
+      ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(fill = NA)))
+  } else {
+    p <- p + ggplot2::guides(alpha = "none", shape = "none")
+  }
 
   p <- plot_fix_palette_vector_arg(p)
   return(p)
@@ -1367,15 +1396,17 @@ check_ggsurvfit <- function(
     axis.info    = NULL,
     visual.info  = NULL,
     style.info   = NULL,
-    out_readSurv = NULL
+    out_readSurv = NULL,
+    engine       = c("ggsurvfit", "ggplot")
 ){
   survfit.info <- survfit.info %||% list()
   axis.info    <- axis.info    %||% list()
   visual.info  <- visual.info  %||% list()
   style.info   <- style.info   %||% list()
+  engine       <- match.arg(engine)
 
   conf.type           <- survfit.info$conf.type
-  type.y              <- axis.info$type.y
+  type_input          <- axis.info$type.y
   label.y             <- axis.info$label.y
   limits.x            <- axis.info$limits.x
   limits.y            <- axis.info$limits.y
@@ -1395,6 +1426,18 @@ check_ggsurvfit <- function(
   palette   <- style.info$palette
   linewidth <- style.info$linewidth
   linetype  <- style.info$linetype
+
+  fit_type <- tolower(as.character(survfit_object$type %||% ""))
+  type_norm <- util_check_type_y(type_input)
+  default_norm <- if (identical(fit_type, "aalen-johansen")) "risk" else "surv"
+  type_norm <- type_norm %||% default_norm
+  type.y <- switch(type_norm,
+                   surv = "survival",
+                   risk = "risk",
+                   stacked = "stacked",
+                   cumhaz = "cumhaz",
+                   cloglog = "cloglog",
+                   type_norm)
 
   if (isTRUE(add.censor.mark) && isTRUE(add.intercurrent.event.mark) &&
       identical(shape.censor.mark, shape.intercurrent.event.mark)) {
@@ -1430,7 +1473,21 @@ check_ggsurvfit <- function(
     if (!is.finite(tmax) || tmax <= 0) .warn("ors_tmax_bad")
   }
 
-  if (!is.null(limits.y)) {
+  transform_for_type <- function(values, ty) {
+    eps <- 1e-12
+    if (ty == "risk") {
+      return(1 - values)
+    }
+    if (ty == "cumhaz") {
+      return(-log(pmax(values, eps)))
+    }
+    if (ty == "cloglog") {
+      return(log(-log(pmax(values, eps))))
+    }
+    values
+  }
+
+  if (!identical(type.y, "stacked") && !is.null(limits.y)) {
     if (!(is.numeric(limits.y) && length(limits.y) == 2L && all(is.finite(limits.y)))) {
       .warn("limits_len2", arg = "limits.y")
     } else if (!all(diff(limits.y) > 0)) {
@@ -1441,11 +1498,9 @@ check_ggsurvfit <- function(
     upper <- survfit_object$upper
     lower <- survfit_object$lower
 
-    if (identical(type.y, "risk")) {
-      surv  <- 1 - surv
-      if (!is.null(upper)) upper <- 1 - upper
-      if (!is.null(lower)) lower <- 1 - lower
-    }
+    surv  <- transform_for_type(surv, type.y)
+    if (!is.null(upper)) upper <- transform_for_type(upper, type.y)
+    if (!is.null(lower)) lower <- transform_for_type(lower, type.y)
 
     if (any(surv < limits.y[1] | surv > limits.y[2], na.rm = TRUE))
       .warn("est_outside_limits_y", arg = "limits.y", a = limits.y[1], b = limits.y[2])
@@ -1494,27 +1549,76 @@ check_ggsurvfit <- function(
   survfit_object <- coerce_conf(survfit_object, conf.type)
 
 
-  type.y <- util_check_type_y(type.y)
-#  type.y <- plot_normalize_type_y(type.y)
-  target_type <- switch(
-    survfit_object$type,
-    "kaplan-meier"   = if (identical(type.y, "risk")) "risk" else "surv",
-    "aalen-johansen" = if (identical(type.y, "surv")) "surv" else "risk",
-    if (identical(type.y, "risk")) "risk" else "surv"
-  )
-  type.y <- if (identical(target_type, "risk")) "risk" else "surv"
+  if (identical(type.y, "stacked")) {
+    stack_res <- cifplot_survfit_to_stacked_survfits(survfit_object, add_t0 = TRUE)
+    stack_plot <- if (length(stack_res$survfits) == 1L) {
+      cifplot_draw_stacked_from_survfit(stack_res$survfits[[1]], engine = engine)
+    } else {
+      cifplot_draw_stacked_from_survfit_list(stack_res$survfits, engine = engine)
+    }
+    return(list(
+      out_survfit_object = stack_plot,
+      label.y            = label.y,
+      type.y             = "stacked",
+      can_layer          = FALSE
+    ))
+  }
 
-  out_plot <- ggsurvfit(
-    survfit_object,
-    type         = target_type,
-    linewidth    = linewidth,
-    linetype_aes = linetype
-  )
+  build_fallback_plot <- function(sf, ty) {
+    sm <- summary(sf)
+    surv_vals <- sm$surv
+    surv_vals <- surv_vals[seq_along(sm$time)]
+    value <- transform_for_type(surv_vals, ty)
+    value[!is.finite(value)] <- NA_real_
+    if (is.null(sm$strata)) {
+      df <- data.frame(time = sm$time, value = value)
+      mapping <- ggplot2::aes(x = time, y = value)
+      p <- ggplot2::ggplot(df, mapping) + ggplot2::geom_step(linewidth = linewidth)
+    } else {
+      strata <- factor(sm$strata, levels = unique(sm$strata))
+      df <- data.frame(time = sm$time, strata = strata, value = value)
+      mapping <- ggplot2::aes(x = time, y = value, colour = strata, group = strata)
+      p <- ggplot2::ggplot(df, mapping) + ggplot2::geom_step(linewidth = linewidth)
+    }
+    ylab <- switch(ty,
+                   risk     = "Cumulative incidence",
+                   survival = "Survival probability",
+                   cumhaz   = "Cumulative hazard",
+                   cloglog  = "cloglog(Survival)",
+                   "")
+    p + ggplot2::labs(y = ylab)
+  }
+
+  ggsurvfit_available <- requireNamespace("ggsurvfit", quietly = TRUE)
+  use_ggsurvfit <- identical(engine, "ggsurvfit") && ggsurvfit_available
+
+  if (use_ggsurvfit) {
+    target_type <- switch(type.y,
+                          risk     = "risk",
+                          survival = "surv",
+                          cumhaz   = "cumhaz",
+                          cloglog  = "cloglog",
+                          "surv")
+    out_plot <- ggsurvfit::ggsurvfit(
+      survfit_object,
+      type         = target_type,
+      linewidth    = linewidth,
+      linetype_aes = linetype
+    )
+    layer_ok <- TRUE
+  } else {
+    if (identical(engine, "ggsurvfit") && !ggsurvfit_available) {
+      warning("ggsurvfit not available; falling back to base ggplot rendering.", call. = FALSE)
+    }
+    out_plot <- build_fallback_plot(survfit_object, type.y)
+    layer_ok <- FALSE
+  }
 
   list(
     out_survfit_object = out_plot,
     label.y            = label.y,
-    type.y             = type.y
+    type.y             = type.y,
+    can_layer          = layer_ok
   )
 }
 
