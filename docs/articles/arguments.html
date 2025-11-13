@@ -98,11 +98,11 @@ subset <code>data</code> before analysis.</li>
 missing values. The default is <code>na.omit</code>.</li>
 <li>
 <code>outcome.type</code> Character string specifying the type of
-time-to-event outcome. One of <code>"survival"</code> (Kaplan–Meier
-type) or <code>"competing-risk"</code> (Aalen–Johansen type). If
-<code>NULL</code> (default), the function automatically infers the
-outcome type from the data: if the event variable has more than two
-unique levels, <code>"competing-risk"</code> is assumed; otherwise,
+time-to-event outcome. One of <code>"survival"</code> (Kaplan–Meier) or
+<code>"competing-risk"</code> (Aalen–Johansen). If <code>NULL</code>
+(default), the function automatically infers the outcome type from the
+data: if the event variable has more than two unique levels,
+<code>"competing-risk"</code> is assumed; otherwise,
 <code>"survival"</code> is used. You can also use abbreviations such as
 <code>"S"</code> or <code>"C"</code>. Mixed or ambiguous inputs (e.g.,
 <code>c("S", "C")</code>) trigger automatic detection based on the event
@@ -117,14 +117,16 @@ coding in <code>data</code>.</li>
 <code>code.censoring</code> Integer code of censoring (default
 <code>0</code>).</li>
 <li>
-<code>error</code> Character specifying the method for variance and
-standard error used internally. For <code>"survival"</code> typically
-<code>"greenwood"</code>. For <code>"competing-risk"</code> pass options
-supported by <code>calculateAalenDeltaSE()</code> (<code>"aalen"</code>,
-<code>"delta"</code>, <code>"none"</code>).</li>
+<code>error</code> Character specifying the method for standard
+error and confidence intervals used internally. <code>"greenwood"</code>
+(default), <code>"tsiatis"</code> or <code>"if"</code> for
+<code>"survival"</code>, and <code>"delta"</code> (default),
+<code>"aalen"</code> or <code>"if"</code> for
+<code>"competing-risk"</code>).</li>
 <li>
-<code>conf.type</code> Character transformation for CI on the
-probability scale (default <code>"arcsine-square root"</code>).</li>
+<code>conf.type</code> Character specifying the method of
+transformation for confidence intervals used internally (default
+<code>"arcsine-square root"</code>).</li>
 <li>
 <code>conf.int</code> numeric two-sided confidence level (default
 <code>0.95</code>).</li>

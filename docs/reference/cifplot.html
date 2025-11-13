@@ -233,7 +233,7 @@ subset of <code>data</code> to analyze (default <code>NULL</code>).</p></dd>
 
 <dt id="arg-outcome-type">outcome.type<a class="anchor" aria-label="anchor" href="#arg-outcome-type"></a></dt>
 <dd><p>Character string specifying the type of time-to-event outcome.
-One of <code>"survival"</code> (Kaplan–Meier type) or <code>"competing-risk"</code> (Aalen–Johansen type).
+One of <code>"survival"</code> (Kaplan–Meier) or <code>"competing-risk"</code> (Aalen–Johansen).
 If <code>NULL</code> (default), the function automatically infers the outcome type from the data:
 if the event variable has more than two unique levels, <code>"competing-risk"</code> is assumed;
 otherwise, <code>"survival"</code> is used. You can also use abbreviations such as <code>"S"</code> or <code>"C"</code>.
@@ -259,11 +259,14 @@ When supplied, it overrides <code>code.event1</code>, <code>code.event2</code>, 
 
 
 <dt id="arg-error">error<a class="anchor" aria-label="anchor" href="#arg-error"></a></dt>
-<dd><p>Character specifying the method for variance and standard error used internally.</p></dd>
+<dd><p>Character specifying the method for standard error and confidence intervals used internally
+(<code>greenwood</code> (default), <code>tsiatis</code> or <code>if</code> for <code>"survival"</code>,
+and <code>delta</code> (default),  <code>aalen</code> or  <code>if</code> for <code>"competing-risk"</code>).</p></dd>
 
 
 <dt id="arg-conf-type">conf.type<a class="anchor" aria-label="anchor" href="#arg-conf-type"></a></dt>
-<dd><p>Character specifying the method of transformation for confidence intervals used internally.</p></dd>
+<dd><p>Character specifying the method of transformation for confidence intervals
+used internally (default <code>arcsine-square root</code>).</p></dd>
 
 
 <dt id="arg-conf-int">conf.int<a class="anchor" aria-label="anchor" href="#arg-conf-int"></a></dt>

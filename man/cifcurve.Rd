@@ -88,14 +88,11 @@ you will plot it yourself (for example with \code{ggsurvfit} or \code{\link{cifp
 \itemize{
 \item \code{outcome.type = "survival"} → Kaplan–Meier estimator
 \item \code{outcome.type = "competing-risk"} → Aalen–Johansen estimator
-}
-
 \strong{Confidence intervals}
-\itemize{
 \item \code{conf.int} sets the two-sided level (default 0.95)
-\item \code{conf.type} chooses the transformation (\code{"arcsin"}, \code{"plain"}, \code{"log"}, \code{"log-log"}, \code{"logit"}, or \code{"none"})
-\item \code{error} chooses the estimator for standard error (\code{"greenwood"} or \code{"tsiatis"}
-for survival curves and \code{"delta"} or \code{"aalen"} for CIFs)
+\item \code{conf.type} chooses the transformation (\code{"arcsine-square root"}, \code{"plain"}, \code{"log"}, \code{"log-log"}, \code{"logit"}, or \code{"none"})
+\item \code{error} chooses the estimator for SE (\code{"greenwood"}, \code{"tsiatis"} or \code{"if"}
+for survival curves and \code{"delta"}, \code{"aalen"} or \code{"if"} for CIFs)
 }
 }
 \details{

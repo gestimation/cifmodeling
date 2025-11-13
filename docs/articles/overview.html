@@ -148,7 +148,7 @@ package and these companion packages with:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"ggsurvfit"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"patchwork"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"modelsummary"</span><span class="op">)</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"gestimation/cifmodeling"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/remotes/man/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"gestimation/cifmodeling"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="interoperability">Interoperability<a class="anchor" aria-label="anchor" href="#interoperability"></a>
@@ -171,14 +171,15 @@ fall back to the <code>ggplot</code> ecosystem when you want full
 artistic control.</p>
 <p>For interval estimation with unweighted survival data,
 <code><a href="../reference/cifcurve.html">cifcurve()</a></code> mirrors the CI options of
-<code><a href="https://rdrr.io/pkg/survival/man/survfit.html" class="external-link">survival::survfit()</a></code> (<code>error="greenwood"</code> and
-<code>"tsiatis"</code>). For weighted survival data,
-<code><a href="../reference/cifcurve.html">cifcurve()</a></code> adds valid CIs and SEs of Xie and Liu (2005),
-and for competing risk data, <code>error="delta"</code> and
-<code>"aalen"</code> options. The defaults in <code>cifmodeling</code>
-are chosen from external and internal simulation evidence; they should
-be sensible for most applications, while still allowing experts to
-override them when needed.</p>
+<code><a href="https://rdrr.io/pkg/survival/man/survfit.html" class="external-link">survival::survfit()</a></code> and the CI based on influence functions
+additionally (<code>error="greenwood"</code>, <code>"tsiatis"</code> and
+<code>"if"</code>). For weighted survival data, <code><a href="../reference/cifcurve.html">cifcurve()</a></code>
+adds valid CIs and SEs of Xie and Liu (2005), and for competing risk
+data, <code>error="delta"</code>, <code>"aalen"</code> and
+<code>"if"</code> options. The defaults in <code>cifmodeling</code> are
+chosen from external and internal simulation evidence; they should be
+sensible for most applications, while still allowing experts to override
+them when needed.</p>
 <p>The <code>mets</code> package is a more specialized toolkit that
 provides advanced statistical methods for competing risk analysis.
 <code><a href="../reference/polyreg.html">cifmodeling::polyreg()</a></code> focuses on coherent modeling of all

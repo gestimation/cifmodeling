@@ -7,13 +7,11 @@ you will plot it yourself (for example with ggsurvfit or cifplot).
 Outcome type and estimator
 outcome.type = "survival" → Kaplan–Meier estimator
 outcome.type = "competing-risk" → Aalen–Johansen estimator
-
-
 Confidence intervals
 conf.int sets the two-sided level (default 0.95)
-conf.type chooses the transformation ("arcsin", "plain", "log", "log-log", "logit", or "none")
-error chooses the estimator for standard error ("greenwood" or "tsiatis"
-for survival curves and "delta" or "aalen" for CIFs)
+conf.type chooses the transformation ("arcsine-square root", "plain", "log", "log-log", "logit", or "none")
+error chooses the estimator for SE ("greenwood", "tsiatis" or "if"
+for survival curves and "delta", "aalen" or "if" for CIFs)
 
 '><meta property="og:description" content='Core estimation routine that computes a survfit-compatible object
 from a formula + data interface (Event() or survival::Surv() on
@@ -23,13 +21,11 @@ you will plot it yourself (for example with ggsurvfit or cifplot).
 Outcome type and estimator
 outcome.type = "survival" → Kaplan–Meier estimator
 outcome.type = "competing-risk" → Aalen–Johansen estimator
-
-
 Confidence intervals
 conf.int sets the two-sided level (default 0.95)
-conf.type chooses the transformation ("arcsin", "plain", "log", "log-log", "logit", or "none")
-error chooses the estimator for standard error ("greenwood" or "tsiatis"
-for survival curves and "delta" or "aalen" for CIFs)
+conf.type chooses the transformation ("arcsine-square root", "plain", "log", "log-log", "logit", or "none")
+error chooses the estimator for SE ("greenwood", "tsiatis" or "if"
+for survival curves and "delta", "aalen" or "if" for CIFs)
 
 '></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -81,11 +77,12 @@ the left-hand side, and a stratification variable on the right-hand side if nece
 Use this when you want <strong>numbers only</strong> (KM / CIF + SE + CI) and
 you will plot it yourself (for example with <code>ggsurvfit</code> or <code><a href="cifplot.html">cifplot</a></code>).</p>
 <p><strong>Outcome type and estimator</strong></p><ul><li><p><code>outcome.type = "survival"</code> → Kaplan–Meier estimator</p></li>
-<li><p><code>outcome.type = "competing-risk"</code> → Aalen–Johansen estimator</p></li>
-</ul><p><strong>Confidence intervals</strong></p><ul><li><p><code>conf.int</code> sets the two-sided level (default 0.95)</p></li>
-<li><p><code>conf.type</code> chooses the transformation (<code>"arcsin"</code>, <code>"plain"</code>, <code>"log"</code>, <code>"log-log"</code>, <code>"logit"</code>, or <code>"none"</code>)</p></li>
-<li><p><code>error</code> chooses the estimator for standard error (<code>"greenwood"</code> or <code>"tsiatis"</code>
-for survival curves and <code>"delta"</code> or <code>"aalen"</code> for CIFs)</p></li>
+<li><p><code>outcome.type = "competing-risk"</code> → Aalen–Johansen estimator
+<strong>Confidence intervals</strong></p></li>
+<li><p><code>conf.int</code> sets the two-sided level (default 0.95)</p></li>
+<li><p><code>conf.type</code> chooses the transformation (<code>"arcsine-square root"</code>, <code>"plain"</code>, <code>"log"</code>, <code>"log-log"</code>, <code>"logit"</code>, or <code>"none"</code>)</p></li>
+<li><p><code>error</code> chooses the estimator for SE (<code>"greenwood"</code>, <code>"tsiatis"</code> or <code>"if"</code>
+for survival curves and <code>"delta"</code>, <code>"aalen"</code> or <code>"if"</code> for CIFs)</p></li>
 </ul></div>
 
     <div class="section level2">
@@ -141,7 +138,7 @@ subset of <code>data</code> to analyze (default <code>NULL</code>).</p></dd>
 
 <dt id="arg-outcome-type">outcome.type<a class="anchor" aria-label="anchor" href="#arg-outcome-type"></a></dt>
 <dd><p>Character string specifying the type of time-to-event outcome.
-One of <code>"survival"</code> (Kaplan–Meier type) or <code>"competing-risk"</code> (Aalen–Johansen type).
+One of <code>"survival"</code> (Kaplan–Meier) or <code>"competing-risk"</code> (Aalen–Johansen).
 If <code>NULL</code> (default), the function automatically infers the outcome type from the data:
 if the event variable has more than two unique levels, <code>"competing-risk"</code> is assumed;
 otherwise, <code>"survival"</code> is used. You can also use abbreviations such as <code>"S"</code> or <code>"C"</code>.
@@ -161,11 +158,14 @@ Mixed or ambiguous inputs (e.g., <code>"c("S", "C")"</code> trigger automatic de
 
 
 <dt id="arg-error">error<a class="anchor" aria-label="anchor" href="#arg-error"></a></dt>
-<dd><p>Character specifying the method for variance and standard error used internally.</p></dd>
+<dd><p>Character specifying the method for standard error and confidence intervals used internally
+(<code>greenwood</code> (default), <code>tsiatis</code> or <code>if</code> for <code>"survival"</code>,
+and <code>delta</code> (default),  <code>aalen</code> or  <code>if</code> for <code>"competing-risk"</code>).</p></dd>
 
 
 <dt id="arg-conf-type">conf.type<a class="anchor" aria-label="anchor" href="#arg-conf-type"></a></dt>
-<dd><p>Character specifying the method of transformation for confidence intervals used internally.</p></dd>
+<dd><p>Character specifying the method of transformation for confidence intervals
+used internally (default <code>arcsine-square root</code>).</p></dd>
 
 
 <dt id="arg-conf-int">conf.int<a class="anchor" aria-label="anchor" href="#arg-conf-int"></a></dt>

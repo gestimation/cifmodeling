@@ -168,8 +168,9 @@ You may also pass a survfit-compatible object directly.
   - `conf.int` sets the two-sided level (default 0.95)  
   - `conf.type` chooses the transformation (`"arcsine-square root"`,
     `"plain"`, `"log"`, `"log-log"`, `"logit"`, or `"none"`)
-  - `error` chooses the estimator for SE (`"greenwood"` or `"tsiatis"`
-    for survival curves and `"delta"` or `"aalen"` for CIFs)
+  - `error` chooses the estimator for SE (`"greenwood"`, `"tsiatis"` or
+    `"if"` for survival curves and `"delta"`, `"aalen"` or `"if"` for
+    CIFs)
 
 **Key arguments for cifplot()**
 
