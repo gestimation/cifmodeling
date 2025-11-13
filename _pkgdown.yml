@@ -22,17 +22,17 @@ navbar:
       text: Articles
       menu:
         - text: Overview
-          href: articles/01_overview.html
+          href: articles/overview.html
         - text: Main functions
-          href: articles/02_functions.html
+          href: articles/functions.html
         - text: Direct polytomous regression
-          href: articles/03_polyreg.html
+          href: articles/polyreg.html
         - text: Examples
-          href: articles/04_examples.html
+          href: articles/examples.html
         - text: Additional information
-          href: articles/05_information.html
+          href: articles/information.html
         - text: Full lists of arguments
-          href: articles/06_arguments.html
+          href: articles/arguments.html
     github:
       icon: fa-github
       aria-label: GitHub repository
@@ -41,22 +41,22 @@ navbar:
 articles:
   - title: Overview
     contents:
-      - 01_overview
+      - overview
   - title: Main functions
     contents:
-      - 02_functions
+      - functions
   - title: Direct polytomous regression
     contents:
-      - 03_polyreg
+      - polyreg
   - title: Examples
     contents:
-      - 04_examples
+      - examples
   - title: Additional information
     contents:
-      - 05_information
+      - information
   - title: Full lists of arguments
     contents:
-      - 06_arguments
+      - arguments
 
 reference:
   - title: Estimation & visualization
