@@ -8,6 +8,7 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 RdMacros: lifecycle
+Config/Needs/website: lifecycle
 Depends: R (>= 4.1.0)
 Suggests: 
     survival,
@@ -17,7 +18,8 @@ Suggests:
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),
-    pkgdown
+    pkgdown,
+    lifecycle
 Config/testthat/edition: 3
 LinkingTo: 
     Rcpp
@@ -28,8 +30,7 @@ Imports:
     ggsurvfit,
     ggplot2,
     patchwork,
-    scales,
-    lifecycle
+    scales
 VignetteBuilder: knitr
 URL: https://gestimation.github.io/cifmodeling/, https://github.com/gestimation/cifmodeling
 BugReports: https://github.com/gestimation/cifmodeling/issues
