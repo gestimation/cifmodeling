@@ -143,7 +143,7 @@ This function accepts both shared and panel-specific arguments. When a single fo
 The example below creates a 1×2 panel (`rows.columns.panel = c(1,2)`) comparing the cumulative incidence of two competing events in the same cohort, namely CIF of diabetic retinopathy in the left panel and CIF of macrovascular complications in the right panel. Both panels are stratified by `fruitq1`, and the legend is shared at the bottom. The pairs of `code.events` as a list instructs `cifpanel()` to display event 1 in the first panel and event 2 in the second panel, with event code 0 representing censoring.
 
 ```{r example04-4, fig.cap="Cumulative incidence curves for event 1 vs event 2 using cifpanel()", warning=FALSE, message=FALSE}
-cifpanel(
+output6 <- cifpanel(
  rows.columns.panel = c(1,2),
  formula            = Event(t, epsilon) ~ fruitq1,
  data               = diabetes.complications,
@@ -156,6 +156,7 @@ cifpanel(
  legend.position    = "bottom",
  legend.collect     = TRUE
 )
+print(output6)
 ```
 
 Arguments specified as scalars (for example, `label.x = "Years from registration"`) are applied uniformly to all panels. Character vectors of the same length as the number of panels (for example, `label.y = c("Diabetic retinopathy", "Macrovascular complications")`) assign a different label to each panel in order. Lists provide the most flexibility, allowing each panel to have distinct settings that mirror the arguments of `cifcurve()`.
