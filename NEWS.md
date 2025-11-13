@@ -1,4 +1,4 @@
-# cifmodeling (development version)
+# cifmodeling 0.8.0
 
 * Breaking change: `cifplot()` and `cifpanel()` now return structured objects
   with explicit `plot`/`list.plot` and `patchwork` elements, metadata, and

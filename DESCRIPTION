@@ -1,6 +1,6 @@
 Package: cifmodeling
 Title: Visualize and Fit Direct Polytomous Regression Models to CIFs
-Version: 0.7.0
+Version: 0.8.0
 Authors@R: c(person("Shiro", "Tanaka", , "gestimation@gmail.com", role = c("aut", "cre", "cph"), comment = c(ORCID = "0000-0001-6817-5235")), person("Shigetaka", "Kobari", role = "ctb"), person("Chisato", "Honda", role = "ctb"))
 Description: A compact and unified toolkit for survival and competing risks analysis. 'cifcurve()' estimates and visualizes Kaplan-Meier survival or Aalen-Johansen cumulative incidence functions (CIFs) with a familiar 'survival::survfit'-like object. 'polyreg()' performs regression modeling of CIFs based on polytomous log odds products to estimate risk ratios, odds ratios, or subdistribution hazard ratios of a categorical exposure. Both functions adopt a formula + data syntax, return tidy, publication-ready outputs, and integrate seamlessly with 'ggsurvfit' and 'modelsummary' for visualization. Key numerical routines are implemented in C++ via 'Rcpp'. 
 License: MIT + file LICENSE
