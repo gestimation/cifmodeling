@@ -305,8 +305,8 @@ calculateAJ <- function(data) {
 curve_check_error <- function(x, outcome.type) {
   ot <- util_check_outcome_type(x = outcome.type, auto_message = FALSE)
   choices <- switch(ot,
-                    "survival"          = c("greenwood", "tsiatis", "jackknife"),
-                    "competing-risk"    = c("aalen", "delta", "jackknife"),
+                    "survival"          = c("greenwood", "tsiatis", "jackknife", "if"),
+                    "competing-risk"    = c("aalen", "delta", "jackknife", "if"),
                     stop(sprintf("Invalid outcome.type: %s", outcome.type), call. = FALSE)
   )
   fallback <- if (ot == "survival") "greenwood" else "delta"

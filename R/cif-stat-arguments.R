@@ -9,11 +9,7 @@
 #'   subset of \code{data} to analyze (default \code{NULL}).
 #' @param na.action A function specifying the action to take on missing values (default \code{na.omit}).
 #' @param outcome.type Character string specifying the type of time-to-event outcome.
-#'   One of \code{"survival"} (Kaplan–Meier) or \code{"competing-risk"} (Aalen–Johansen).
-#'   Abbreviations such as \code{"S"} or \code{"C"} are also accepted.
-#'
-#' @param outcome.type Character string specifying the type of time-to-event outcome.
-#' One of \code{"survival"} (Kaplan–Meier type) or \code{"competing-risk"} (Aalen–Johansen type).
+#' One of \code{"survival"} (Kaplan–Meier) or \code{"competing-risk"} (Aalen–Johansen).
 #' If \code{NULL} (default), the function automatically infers the outcome type from the data:
 #' if the event variable has more than two unique levels, \code{"competing-risk"} is assumed;
 #' otherwise, \code{"survival"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
@@ -21,8 +17,11 @@
 #' @param code.event1 Integer code of the event of interest (default \code{1}).
 #' @param code.event2 Integer code of the competing event (default \code{2}).
 #' @param code.censoring Integer code of censoring (default \code{0}).
-#' @param error Character specifying the method for variance and standard error used internally.
-#' @param conf.type Character specifying the method of transformation for confidence intervals used internally.
+#' @param error Character specifying the method for standard error and confidence intervals used internally
+#' (\code{greenwood} (default), \code{tsiatis} or \code{if} for \code{"survival"},
+#' and \code{delta} (default),  \code{aalen} or  \code{if} for \code{"competing-risk"}).
+#' @param conf.type Character specifying the method of transformation for confidence intervals
+#' used internally (default \code{arcsine-square root}).
 #' @param conf.int Numeric two-sided confidence level (default \code{0.95}).
 #'
 #' @name cif-stat-arguments

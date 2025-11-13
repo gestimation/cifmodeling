@@ -227,3 +227,73 @@ test_that("Greenwood standard error of cifcurve() yields the same outputs as sep
   tested <- t$std.err
   expect_equal(expected, tested)
 })
+
+test_that("AJ influence function roughly matches jackknife influence", {
+  skip_on_cran()
+
+  set.seed(123)
+  n  <- 40L
+  t  <- rexp(n, rate = 0.1)
+  epsilon <- sample(c(0L, 1L, 2L), n, replace = TRUE,
+                    prob = c(0.3, 0.4, 0.3))
+
+  fit <- calculateAJ_Rcpp(
+    t        = t,
+    epsilon  = epsilon,
+    error    = "if",
+    conf_type= "none",
+    return_if= TRUE
+  )
+
+  time0 <- fit$time
+  theta0 <- fit$aj
+  IF_cpp <- fit$influence.function[[1L]]
+
+  skip_if(
+    is.null(IF_cpp) || length(IF_cpp) == 0L || ncol(IF_cpp) == 0L,
+    "Influence function matrix is empty (return_if=FALSE or error_if=FALSE)."
+  )
+
+  expect_true(is.matrix(IF_cpp))
+  expect_equal(dim(IF_cpp)[1L], n)
+  K <- length(time0)
+  expect_equal(dim(IF_cpp)[2L], K)
+
+  ## ---- jackknife 部分はそのまま ----
+  theta_minus <- matrix(NA_real_, nrow = n, ncol = K)
+
+  for (i in seq_len(n)) {
+    fit_i <- calculateAJ_Rcpp(
+      t        = t[-i],
+      epsilon  = epsilon[-i],
+      error    = "if",
+      conf_type= "none",
+      return_if= FALSE   # ここは不要なので FALSE でも OK
+    )
+    f_step <- stats::stepfun(fit_i$time, c(0, fit_i$aj))
+    theta_minus[i, ] <- f_step(time0)
+  }
+
+  theta_mat <- matrix(theta0, nrow = n, ncol = K, byrow = TRUE)
+  pseudo <- n * theta_mat - (n - 1) * theta_minus
+  IF_jk  <- pseudo - theta_mat
+  IF_jk  <- sweep(IF_jk, 2, colMeans(IF_jk), "-")
+
+  mid <- which(theta0 > 0.05 & theta0 < 0.95)
+  skip_if(length(mid) < 3L, "Too few interior time points for correlation check.")
+
+  cors <- vapply(mid, function(j) {
+    cor(IF_cpp[, j], IF_jk[, j])
+  }, numeric(1))
+
+  expect_true(all(cors > 0.9),
+              info = paste("column-wise correlations:",
+                           paste(round(cors, 2), collapse = ", ")))
+
+  se_cpp <- fit$std.err.aj
+  se_jk  <- sqrt(colSums(IF_jk^2) / (n * n))
+
+  rel_diff <- abs(se_cpp[mid] - se_jk[mid]) / pmax(se_cpp[mid], 1e-8)
+  expect_lt(max(rel_diff), 0.2)
+})
+

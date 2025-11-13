@@ -4,8 +4,9 @@
 #include <cmath>
 #include <limits>
 #include <vector>
+#include <R_ext/Print.h>
 using namespace Rcpp;
-#include <R_ext/Print.h>  // ファイル先頭付近に一度だけ
+
 namespace {
 inline bool feq(double a, double b, double eps=1e-12){
   double s = std::max({1.0, std::fabs(a), std::fabs(b)});
@@ -32,12 +33,12 @@ inline std::string to_lower(std::string s){
 
 struct RecW {
   double t;
-  int    eps;   // 0=censor, 1=cause1, 2+=competing
-  int    g;     // stratum label (>=1)
-  int    id;    // original index
-  double w;     // frequency weight (>=0)
+  int    eps;
+  int    g;
+  int    id;
+  double w;
 };
-} // namespace
+}
 
 // [[Rcpp::export]]
 Rcpp::List calculateAJ_Rcpp(
@@ -95,7 +96,6 @@ Rcpp::List calculateAJ_Rcpp(
 
   std::vector<double> combined_aj;  combined_aj.reserve(N);
 
-  // strata
   IntegerVector G(N, 1);
   Rcpp::CharacterVector levs;
   if (!strata.isNull()){
@@ -311,20 +311,13 @@ Rcpp::List calculateAJ_Rcpp(
       S_any[m]     = Sprev * fac;
 
       if (dj > 0.0 && Yj > 0.0) {
-        // Yj  : 加重リスク数 = Y_i^w
-        // dj  : 加重イベント数 = d_i^w
-        // Yn  : 未加重リスク人数 = Y_i
         double Yn   = Nrisk_all[j];
         double Mi   = Mi_all[j];
         double invM = (Mi > 0.0 ? 1.0 / Mi : 1.0);
 
         if (error_tsiatis) {
-          // Tsiatis (指定式):
-          // Var = S^2 * Σ [ d_i^w * Y_i / ( M_i * (Y_i^w)^2 ) ]
           accKM += dj * Yn * invM / (Yj * Yj);
         } else {
-          // Greenwood (指定式):
-          // Var = S^2 * Σ [ d_i^w * Y_i / ( M_i * Y_i^w * (Y_i^w - d_i^w) ) ]
           if (Yj > dj) {
             accKM += dj * Yn * invM / (Yj * (Yj - dj));
           } else {
@@ -372,7 +365,6 @@ Rcpp::List calculateAJ_Rcpp(
     NumericMatrix IF_AJ_all;
     if (error_if) {
       NumericMatrix IF_AJ_any(n_g, M_any);
-      NumericMatrix IF_AJ_all;
       if (return_if) IF_AJ_all = NumericMatrix(n_g, Uall);
       for (int r=0; r<n_g; ++r){
         int i = ids[r];
@@ -415,7 +407,10 @@ Rcpp::List calculateAJ_Rcpp(
         }
       }
       for (int j=0; j<Uall; ++j)
-        se_cif_if[j] = std::sqrt((double)(ss[j] / ((long double)denom * denom)));
+        se_cif_if[j] = std::sqrt((double)ss[j]);
+
+//      for (int j=0; j<Uall; ++j)
+//        se_cif_if[j] = std::sqrt((double)(ss[j] / ((long double)denom * denom)));
     }
     IF_AJ_output[kg] = (error_if && return_if) ? IF_AJ_all : Rcpp::NumericMatrix(0,0);
 

@@ -107,13 +107,14 @@ quick high-quality figures, and fall back to the `ggplot` ecosystem when
 you want full artistic control.
 
 For interval estimation with unweighted survival data, `cifcurve()`
-mirrors the CI options of `survival::survfit()` (`error="greenwood"` and
-`"tsiatis"`). For weighted survival data, `cifcurve()` adds valid CIs
-and SEs of Xie and Liu (2005), and for competing risk data,
-`error="delta"` and `"aalen"` options. The defaults in `cifmodeling` are
-chosen from external and internal simulation evidence; they should be
-sensible for most applications, while still allowing experts to override
-them when needed.
+mirrors the CI options of `survival::survfit()` and the CI based on
+influence functions additionally (`error="greenwood"`, `"tsiatis"` and
+`"if"`). For weighted survival data, `cifcurve()` adds valid CIs and SEs
+of Xie and Liu (2005), and for competing risk data, `error="delta"`,
+`"aalen"` and `"if"` options. The defaults in `cifmodeling` are chosen
+from external and internal simulation evidence; they should be sensible
+for most applications, while still allowing experts to override them
+when needed.
 
 The `mets` package is a more specialized toolkit that provides advanced
 statistical methods for competing risk analysis.
