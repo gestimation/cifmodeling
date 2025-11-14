@@ -150,13 +150,13 @@ test_that("engine routing works and schemas align", {
   out_km <- cifcurve(f, data = diabetes.complications,
                      outcome.type = "survival", engine = "calculateKM", error = "greenwood")
   out_rc <- cifcurve(f, data = diabetes.complications,
-                     outcome.type = "survival", engine = "calculateAJ_Rcpp", error = "greenwood", return_if = FALSE)
+                     outcome.type = "survival", engine = "calculateAJ_Rcpp", error = "greenwood", report.influence.function = FALSE)
   #expect_equal(out_km$surv, out_rc$surv, tolerance = 1e-8)
 
   out_ajR <- cifcurve(f, data = diabetes.complications,
                       outcome.type = "competing-risk", engine = "calculateAJ", error = "aalen")
   out_ajC <- cifcurve(f, data = diabetes.complications,
-                      outcome.type = "competing-risk", engine = "calculateAJ_Rcpp", error = "aalen", return_if = FALSE)
+                      outcome.type = "competing-risk", engine = "calculateAJ_Rcpp", error = "aalen", report.influence.function = FALSE)
   #expect_equal(out_ajR$`std.err.cif`, out_ajC$`std.err.cif`, tolerance = 1e-5)
 
   out_aalen <- out_ajC

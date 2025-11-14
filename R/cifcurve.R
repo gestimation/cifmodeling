@@ -17,12 +17,12 @@
 #'
 #' @inheritParams cif-stat-arguments
 #'
-#' @param formula A model formula specifying the time-to-event outcome on the
-#'   left-hand side (typically \code{Event(time, status)} or \code{survival::Surv(time, status)})
-#'   and, optionally, a stratification variable on the right-hand side.
+#' @param formula A model formula specifying the time-to-event outcome on the LHS
+#'   (typically \code{Event(time, status)} or \code{survival::Surv(time, status)})
+#'   and, optionally, a stratification variable on the RHS.
 #'   Unlike \code{\link{cifplot}}, this function does not accept a fitted
 #'   \code{survfit} object.
-#' @param return_if Logical. When \code{TRUE} and \code{engine = "calculateAJ_Rcpp"},
+#' @param report.influence.function Logical. When \code{TRUE} and \code{engine = "calculateAJ_Rcpp"},
 #' the influence function is also computed and returned (default \code{FALSE}).
 #' @param report.survfit.std.err Logical. If \code{TRUE}, report SE on the log-survival
 #' scale (survfit's convention). Otherwise SE is on the probability scale.
@@ -42,7 +42,7 @@
 #'
 #' | Argument | Description | Default |
 #' |---|---|---|
-#' | `error` | Standard error for KM: `"greenwood"`, `"tsiatis"`. For CIF: `"aalen"`, `"delta"`, `"none"`. | `"greenwood"` or `"delta"` |
+#' | `error` | Standard error for KM: `"greenwood"`, `"tsiatis"`, `"if"`. For CIF: `"aalen"`, `"delta"`, `"if"`. | `"greenwood"` or `"delta"` |
 #' | `conf.type` | Transformation for confidence intervals: `"plain"`, `"log"`, `"log-log"`, `"arcsin"`, `"logit"`, or `"none"`. | `"arcsin"` |
 #' | `conf.int` | Two-sided confidence interval level. | `0.95` |
 #'
@@ -86,7 +86,7 @@ cifcurve <- function(
     error = NULL,
     conf.type = "arcsine-square root",
     conf.int = 0.95,
-    return_if = FALSE,
+    report.influence.function = FALSE,
     report.survfit.std.err = FALSE,
     engine = "calculateAJ_Rcpp",
     prob.bound = 1e-7
@@ -202,7 +202,7 @@ cifcurve <- function(
     error = error,
     conf.type = conf.type,
     conf.int = conf.int,
-    return_if = return_if,
+    report.influence.function = report.influence.function,
     prob.bound = prob.bound
   )
   if (length(strata_fullnames) && length(out_cpp$strata)) {
@@ -323,7 +323,7 @@ call_calculateAJ_Rcpp <- function(t, epsilon, w = NULL, strata = NULL,
                                    error = "greenwood",
                                    conf.type = "arcsin",
                                    conf.int = 0.95,
-                                   return_if = FALSE,
+                                   report.influence.function = FALSE,
                                    prob.bound = 1e-5) {
   calculateAJ_Rcpp(
     t = t,
@@ -333,7 +333,7 @@ call_calculateAJ_Rcpp <- function(t, epsilon, w = NULL, strata = NULL,
     error = error,
     conf_type = conf.type,
     conf_int = conf.int,
-    return_if = isTRUE(return_if),
+    return_if = isTRUE(report.influence.function),
     prob_bound = prob.bound
   )
 }
