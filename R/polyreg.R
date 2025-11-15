@@ -143,16 +143,16 @@
 #'
 #' | Setting | Codes | Meaning |
 #' |---|---|---|
-#' | COMPETING-RISK | `code.event1`, `code.event2`, `code.censoring` | event of interest / competing event / censoring |
-#' | COMPETING-RISK (default)| `code.event1=1`, `code.event2=2`, `code.censoring=0` | event of interest / competing event / censoring |
-#' | SURVIVAL | `code.event1`, `code.censoring`                   | event / censoring |
-#' | SURVIVAL  (default)| `code.event1=1`, `code.censoring=0`     | event / censoring |
-#' | SURVIVAL (ADaM-ADTTE) | `code.event1=0`, `code.censoring=1` | set to match ADaM convention |
-#' | PROPORTIONAL-SURVIVAL | `code.event1`, `code.censoring`                   | event / censoring |
-#' | PROPORTIONAL-SURVIVAL  (default)| `code.event1=1`, `code.censoring=0`     | event / censoring |
-#' | PROPORTIONAL-SURVIVAL (ADaM-ADTTE) | `code.event1=0`, `code.censoring=1` | set to match ADaM convention |
-#' | PROPORTIONAL-COMPETING-RISK | `code.event1`, `code.event2`, `code.censoring` | event of interest / competing event / censoring |
-#' | PROPORTIONAL-COMPETING-RISK (default)| `code.event1=1`, `code.event2=2`, `code.censoring=0` | event of interest / competing event / censoring |
+#' | competing-risk | `code.event1`, `code.event2`, `code.censoring` | event of interest / competing event / censoring |
+#' | competing-risk (default)| `code.event1=1`, `code.event2=2`, `code.censoring=0` | event of interest / competing event / censoring |
+#' | survival | `code.event1`, `code.censoring`                   | event / censoring |
+#' | survival  (default)| `code.event1=1`, `code.censoring=0`     | event / censoring |
+#' | survival (ADaM-ADTTE) | `code.event1=0`, `code.censoring=1` | set to match ADaM convention |
+#' | proportional-survival | `code.event1`, `code.censoring`                   | event / censoring |
+#' | proportional-survival  (default)| `code.event1=1`, `code.censoring=0`     | event / censoring |
+#' | proportional-survival (ADaM-ADTTE) | `code.event1=0`, `code.censoring=1` | set to match ADaM convention |
+#' | proportional-competing-risk | `code.event1`, `code.event2`, `code.censoring` | event of interest / competing event / censoring |
+#' | proportional-competing-risk (default)| `code.event1=1`, `code.event2=2`, `code.censoring=0` | event of interest / competing event / censoring |
 #'
 #' ### Effect measures for categorical exposure
 #'
@@ -206,15 +206,15 @@
 #' ### Returned object and downstream use
 #'
 #' This function returns a list object that includes:
-#' -   `coefficient` — regression coefficients
-#' -   `cov` — variance-covariance matrix for regression coefficients
+#' -   `coef` — regression coefficients
+#' -   `vcov` — variance-covariance matrix for regression coefficients
 #' -   `diagnostic.statistics` — a data frame containing inverse probability weights,
 #' influence functions, and predicted potential outcomes
 #' -   `summary` — a summary of estimated exposure effects
 #'
 #' Use `summary` output with `msummary()` to display formatted results. The regression
-#' coefficients and their variance-covariance matrix are provided as `coefficient`
-#' and `cov`, respectively, with the first element corresponding to the intercept term,
+#' coefficients and their variance-covariance matrix are provided as `coef`
+#' and `vcov`, respectively, with the first element corresponding to the intercept term,
 #' subsequent elements to the covariates in `nuisance.model`, and the last element
 #' to the variable specified by `exposure=`. Finally, `diagnostic.statistics` is
 #' a data frame containing inverse probability weights, influence functions, and
@@ -333,15 +333,15 @@ polyreg <- function(
   index.vector <- reg_index_for_parameter(NA, ci$x_l, ci$x_a, length(tp))
 
   estimand <- list(
-    effect.measure1=ce$effect.measure1,
-    effect.measure2=ce$effect.measure2,
-    time.point=tp,
-    code.event1=code.event1,
-    code.event2=code.event2,
-    code.censoring=code.censoring,
-    code.exposure.ref=code.exposure.ref,
-    exposure.levels=ci$out_readExposureDesign$exposure.levels,
-    index.vector=index.vector
+    effect.measure1      = ce$effect.measure1,
+    effect.measure2      = ce$effect.measure2,
+    time.point           = tp,
+    code.event1          = code.event1,
+    code.event2          = code.event2,
+    code.censoring       = code.censoring,
+    code.exposure.ref    = code.exposure.ref,
+    exposure.levels      = ci$out_readExposureDesign$exposure.levels,
+    index.vector         = index.vector
   )
 
   boot.method <- list(
@@ -354,16 +354,16 @@ polyreg <- function(
   )
 
   optim.method <- list(
-    nleqslv.method = nleqslv.method,
-    optim.parameter1 = optim.parameter1,
-    optim.parameter2 = optim.parameter2,
-    optim.parameter3 = optim.parameter3,
-    optim.parameter4 = optim.parameter4,
-    optim.parameter5 = optim.parameter5,
-    optim.parameter6 = optim.parameter6,
-    optim.parameter7 = optim.parameter7,
-    optim.parameter8 = optim.parameter8,
-    optim.parameter9 = optim.parameter9,
+    nleqslv.method    = nleqslv.method,
+    optim.parameter1  = optim.parameter1,
+    optim.parameter2  = optim.parameter2,
+    optim.parameter3  = optim.parameter3,
+    optim.parameter4  = optim.parameter4,
+    optim.parameter5  = optim.parameter5,
+    optim.parameter6  = optim.parameter6,
+    optim.parameter7  = optim.parameter7,
+    optim.parameter8  = optim.parameter8,
+    optim.parameter9  = optim.parameter9,
     optim.parameter10 = optim.parameter10,
     optim.parameter11 = optim.parameter11,
     optim.parameter12 = optim.parameter12,
@@ -633,6 +633,23 @@ polyreg <- function(
     data$potential.CIFs <- out_getResults$potential.CIFs
   }
   out_data <- data
-  out <- list(summary=out_summary, coefficient=alpha_beta_estimated, cov=cov_estimated, cov_bootstrap=cov_bootstrap, bootstrap=out_bootstrap, diagnostic.statistics=out_data, optimization.info=trace_df)
+
+  out <- list(
+    coef               = alpha_beta_estimated,
+    vcov               = cov_estimated,
+    vcov_bootstrap     = cov_bootstrap,
+    bootstrap          = out_bootstrap,
+    summary            = out_summary,
+    diagnostics        = out_data,
+    outcome.type       = outcome.type,
+    exposure           = exposure,
+    conf.level         = conf.level,
+    estimand           = estimand,
+    boot.method        = boot.method,
+    optim.method       = optim.method,
+    optim.inofo        = trace_df,
+    call               = match.call()
+  )
+  class(out) <- "polyreg"
   return(out)
 }

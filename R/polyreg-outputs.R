@@ -26,7 +26,11 @@ reportEffects <- function(outcome.type,
   terms_text <- out_getCoefTerm$terms_text
 
   median_followup <- paste(round(median(out_getResults$t), 2))
-  range_followup <- paste("[",round(min(out_getResults$t), 2), ",",round(max(out_getResults$t), 2), "]")
+  range_followup <- sprintf("[%.*f, %.*f]",
+                        2, min(out_getResults$t),
+                        2, max(out_getResults$t))
+  #  range_followup <- paste("[",round(min(out_getResults$t), 2), ",",round(max(out_getResults$t), 2), "]")
+
 
   tg_event1_tidy <- tidy_df(coef1, terms_text)
   if (outcome.type == "competing-risk" | outcome.type == "survival" | outcome.type == "binomial") {
