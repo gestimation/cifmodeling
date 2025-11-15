@@ -2,7 +2,8 @@
 % Please edit documentation in R/cif-visual-arguments.R
 \name{cif-visual-arguments}
 \alias{cif-visual-arguments}
-\title{Common visual arguments for CIF functions}
+\title{These arguments are shared by \code{cifplot()}, \code{cifpanel()}, and
+\code{cifcurve()}.}
 \arguments{
 \item{type.y}{Optional vector/list per panel: \code{"surv"} or \code{"risk"} (display 1 - survival i.e. CIF).}
 

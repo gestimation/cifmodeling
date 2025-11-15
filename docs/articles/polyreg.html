@@ -34,7 +34,6 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/overview.html">Overview</a></li>
-    <li><a class="dropdown-item" href="../articles/functions.html">Main functions</a></li>
     <li><a class="dropdown-item" href="../articles/polyreg.html">Direct polytomous regression</a></li>
     <li><a class="dropdown-item" href="../articles/examples.html">Examples</a></li>
     <li><a class="dropdown-item" href="../articles/information.html">Additional information</a></li>
@@ -185,27 +184,34 @@ flags.</p>
 <div class="section level2">
 <h2 id="return">Return<a class="anchor" aria-label="anchor" href="#return"></a>
 </h2>
-<p>This function returns a list object that includes:</p>
+<p>This function returns an object of class <code>"polyreg"</code> with
+the following main components:</p>
 <ul>
-<li><p><code>coefficient</code> — regression coefficients</p></li>
-<li><p><code>cov</code> — variance-covariance matrix for regression
-coefficients</p></li>
+<li><p><code>coef</code> — regression coefficients on the chosen
+effect-measure scale.</p></li>
+<li><p><code>vcov</code> — variance–covariance matrix for the regression
+coefficients.</p></li>
 <li><p><code>diagnostic.statistics</code> — a data frame containing
 inverse probability weights, influence functions, and predicted
-potential outcomes</p></li>
-<li><p><code>summary</code> — a summary of estimated exposure
-effects</p></li>
+potential outcomes for individual observations.</p></li>
+<li><p><code>summary</code> — a list of event-wise <em>tidy</em> and
+<em>glance</em> tables summarising the estimated exposure
+effects.</p></li>
 </ul>
-<p>Use <code>summary</code> output with <code>msummary()</code> to
-display formatted results. The regression coefficients and their
-variance-covariance matrix are provided as <code>coefficient</code> and
-<code>cov</code>, respectively, with the first element corresponding to
-the intercept term, subsequent elements to the covariates in
-<code>nuisance.model</code>, and the last element to the variable
-specified by <code>exposure=</code>. Finally,
-<code>diagnostic.statistics</code> is a data frame containing inverse
-probability weights, influence functions, and predicted values of the
-potential outcomes of individual observations.</p>
+<p>In practice, users are expected to work with the usual S3
+methods:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>         <span class="co"># regression coefficients</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>         <span class="co"># variance–covariance matrix</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/nobs.html" class="external-link">nobs</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>         <span class="co"># number of observations used in the fit</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>      <span class="co"># formatted, event-wise table printed to the console</span></span></code></pre></div>
+<p>Calling <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> on a “polyreg” object prints a
+modelsummary-like table of point estimates, CIs, and p-values for each
+event, and returns the underlying summary list invisibly. The summary
+component can be passed to external tools such as
+<code>modelsummary</code> or <code>broom</code> for additional
+formatting if desired, but no external packages are required to inspect
+the model fit.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

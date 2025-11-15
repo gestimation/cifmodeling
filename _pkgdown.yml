@@ -23,8 +23,6 @@ navbar:
       menu:
         - text: Overview
           href: articles/overview.html
-        - text: Main functions
-          href: articles/functions.html
         - text: Direct polytomous regression
           href: articles/polyreg.html
         - text: Examples
@@ -42,9 +40,6 @@ articles:
   - title: Overview
     contents:
       - overview
-  - title: Main functions
-    contents:
-      - functions
   - title: Direct polytomous regression
     contents:
       - polyreg
@@ -59,16 +54,15 @@ articles:
       - arguments
 
 reference:
-  - title: Estimation & visualization
+  - title: visualization
     contents:
       - cifcurve
       - cifplot
       - cifpanel
-      - cif-stat-arguments
-      - cif-visual-arguments
   - title: Direct polytomous regression
     contents:
       - polyreg
+      - polyreg-methods
   - title: Data
     contents:
       - diabetes.complications

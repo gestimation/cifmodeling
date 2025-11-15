@@ -74,42 +74,42 @@ scale (survfit's convention). Otherwise SE is on the probability scale.}
 \value{
 A \code{survfit} object. For \code{outcome.type="survival"}, \code{$surv} is the survival function.
 For \code{outcome.type="competing-risk"}, \code{$surv} equals \code{1 - CIF} for \code{code.event1}.
-Standard error and CIs are provided per \code{conf.type}. Note that some methods
-for \code{survfit} (e.g., \code{residuals.survfit}) may not be supported.
+SE and CIs are provided per  \code{error}, \code{conf.type} and \code{conf.int}.
+This enables an independent use of standard methods for \code{survfit} such as:
+\itemize{
+\item \code{summary()} — time-by-time estimates with SEs and CIs
+\item \code{plot()} — base R stepwise survival/CIF curves
+\item \code{mean()} — restricted mean survival estimates with CIs
+\item \code{quantile()} — quantile estimates with CIs
+}
+
+Note that some methods (e.g., \code{residuals.survfit}) may not be supported.
 }
 \description{
 Core estimation routine that computes a \code{survfit}-compatible object
 from a formula + data interface (\code{Event()} or \code{survival::Surv()} on
-the left-hand side, and a stratification variable on the right-hand side if necessary).
+the LHS, and a stratification variable on the RHS if necessary).
 Use this when you want \strong{numbers only} (KM / CIF + SE + CI) and
 you will plot it yourself (for example with \code{ggsurvfit} or \code{\link{cifplot}}).
-
-\strong{Outcome type and estimator}
-\itemize{
-\item \code{outcome.type = "survival"} → Kaplan–Meier estimator
-\item \code{outcome.type = "competing-risk"} → Aalen–Johansen estimator
-\strong{Confidence intervals}
-\item \code{conf.int} sets the two-sided level (default 0.95)
-\item \code{conf.type} chooses the transformation (\code{"arcsine-square root"}, \code{"plain"}, \code{"log"}, \code{"log-log"}, \code{"logit"}, or \code{"none"})
-\item \code{error} chooses the estimator for SE (\code{"greenwood"}, \code{"tsiatis"} or \code{"if"}
-for survival curves and \code{"delta"}, \code{"aalen"} or \code{"if"} for CIFs)
-}
 }
 \details{
+\subsection{Typical use cases}{
 \itemize{
-\item When \code{outcome.type = "survival"}, this is a thin wrapper around KM with the
-chosen variance / CI transformation.
-\item When \code{outcome.type = "competing-risk"}, this computes the Aalen–Johansen
-cumulative incidence for \code{code.event1}. The returned \code{$surv} is
+\item When \code{outcome.type = "survival"}, this is a thin wrapper around
+the KM estimator with the chosen variance / CI transformation.
+\item When \code{outcome.type = "competing-risk"}, this computes the AJ
+estimator of CIF for \code{code.event1}. The returned \code{$surv} is
 \code{1 - CIF}, i.e. in the format that \pkg{ggsurvfit} expects.
 \item Use \code{\link{cifplot}} if you want to go straight to a figure; use
 \code{cifcurve()} if you only want the numbers.
 }
+}
+
 \subsection{Standard error and confidence intervals}{\tabular{lll}{
    Argument \tab Description \tab Default \cr
-   \code{error} \tab Standard error for KM: \code{"greenwood"}, \code{"tsiatis"}, \code{"if"}. For CIF: \code{"aalen"}, \code{"delta"}, \code{"if"}. \tab \code{"greenwood"} or \code{"delta"} \cr
-   \code{conf.type} \tab Transformation for confidence intervals: \code{"plain"}, \code{"log"}, \code{"log-log"}, \code{"arcsin"}, \code{"logit"}, or \code{"none"}. \tab \code{"arcsin"} \cr
-   \code{conf.int} \tab Two-sided confidence interval level. \tab \code{0.95} \cr
+   \code{error} \tab SE for KM: \code{"greenwood"}, \code{"tsiatis"}, \code{"if"}. For CIF: \code{"aalen"}, \code{"delta"}, \code{"if"}. \tab \code{"greenwood"} or \code{"delta"} \cr
+   \code{conf.type} \tab Transformation for CIs: \code{"plain"}, \code{"log"}, \code{"log-log"}, \code{"arcsin"}, \code{"logit"}, or \code{"none"}. \tab \code{"arcsin"} \cr
+   \code{conf.int} \tab Two-sided CI level. \tab \code{0.95} \cr
 }
 
 }

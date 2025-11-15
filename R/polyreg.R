@@ -1,8 +1,13 @@
-#' @title Fits regression models of cumulative incidence functions based on polytomous
-#' log odds products and stratified IPCW estimator
+#' @title Fits regression models of CIFs based on polytomous
+#' log odds products and the stratified IPCW estimator
 #' @description The direct polytomous regression enables coherent modeling and
 #' estimation of a variety of multiplicative effects of a categorical exposure under
 #' several outcome types, including competing risks, survival and binomial outcomes.
+#' The function follows the familiar **formula + data** syntax and outputs tidy results,
+#' including point estimates, SEs, CIs, and p-values.
+#' Its results can be easily summarized with `summary()` or combined with external
+#' functions such as `modelsummary()` for reporting.
+#'
 #' @param nuisance.model A \code{formula} describing the outcome and
 #'   nuisance covariates, excluding the exposure of interest.
 #'   The left-hand side must be \code{Event(time, status)} or \code{survival::Surv(time, status)}.
@@ -115,14 +120,9 @@
 #' for survival outcomes and the Richardson model for binomial outcomes,
 #' both of which use log odds products.
 #'
-#' The function follows the familiar **formula + data** syntax with `Event()` or
-#' `Surv()` and outputs tidy results, including point estimates, standard errors,
-#' confidence intervals, and p-values. Its results can be easily summarized with
-#' `summary()` or combined with tools such as **modelsummary** or **broom** for reporting.
-#'
 #' ### Key arguments
-#' -   `nuisance.model` — a formula describing the outcome and nuisance covariates,
-#' excluding the exposure of interest.
+#' -   `nuisance.model` — a formula with `Event()` or `survivai::Surv()`
+#' describing the outcome and nuisance covariates, excluding the exposure of interest.
 #' -   `exposure` — specifies the categorical exposure variable
 #' -   `effect.measure1` and `effect.measure2` — specifies the effect measures
 #' for event1 and event2 (`"RR"`, `"OR"` or `"SHR"`).
@@ -206,32 +206,25 @@
 #' | `prob.bound`         | Truncate probabilities away from 0/1 (numerical guard) | `1e-5`      |
 #' | `data.initial.values`| Optional starting values data frame                | `NULL`           |
 #'
-#' ### Returned object and downstream use
+#' ### Downstream use
 #'
-#' `polyreg()` returns an object of class \code{"polyreg"}. The most important
-#' components are:
-#'
-#' - `coef` — regression coefficients on the chosen effect-measure scale.
-#' - `vcov` — variance-covariance matrix of the regression coefficients.
-#' - `diagnostic.statistics` — data frame containing inverse probability weights,
-#'   influence functions, and predicted potential outcomes for individual observations.
-#' - `summary` — a list of event-wise \emph{tidy} and \emph{glance} tables.
-#'
+#' `polyreg()` returns an object of class \code{"polyreg"} that contains
+#' regression coefficients (`coef`), variance-covariance matrix (`vcov`)
+#' and a list of event-wise \emph{tidy} and \emph{glance} tables (`summary`).
 #' Users should typically access results via the S3 methods:
 #'
-#' - `coef(fit)` — extract regression coefficients.
-#' - `vcov(fit, type = "default")` — extract the variance–covariance matrix
+#' - `coef()` — extract regression coefficients.
+#' - `vcov()` — extract the variance–covariance matrix
 #'   (sandwich or bootstrap, depending on \code{outcome.type} and the
 #'   \code{report.*} arguments).
-#' - `nobs(fit)` — number of observations used in the fit.
-#' - `summary(fit)` — print an event-wise, modelsummary-like table of estimates,
-#'   confidence intervals and p-values, and return the underlying list of
-#'   \code{tidy} / \code{glance} tables invisibly.
+#' - `nobs()` — number of observations used in the fit.
+#' - `summary()` — print an event-wise, modelsummary-like table of estimates,
+#'   CIs and p-values, and return the underlying list of tidy/glance tables invisibly.
 #'
 #' For backward compatibility, components named \code{coefficient} and \code{cov}
 #' may also be present and mirror \code{coef} and \code{vcov}, respectively.
-#' The \code{summary} component can be passed to tools such as
-#' \pkg{modelsummary} or \pkg{broom} for further formatting, if desired.
+#' The \code{summary} component can be passed to external functions such as
+#' `modelsummary()` for further formatting, if desired.
 #'
 #' ### Reproducibility and conventions
 #'
@@ -259,19 +252,18 @@
 #' @return
 #' A list of class \code{"polyreg"} containing fitted exposure effects and
 #' supporting results. Key components and methods include:
-#' \describe{
-#'   \item{\code{coef}, \code{coef()}}{Regression coefficients on the chosen
-#'     effect-measure scale.}
-#'   \item{\code{vcov}, \code{vcov()}}{Variance–covariance matrix of the
-#'     regression coefficients; the default behavior of \code{vcov()} mirrors
-#'     the confidence-interval choice implied by \code{outcome.type},
-#'     \code{report.sandwich.conf} and \code{report.boot.conf}.}
-#'   \item{\code{diagnostic.statistics}}{A data frame with inverse probability
-#'     weights, influence functions and predicted potential outcomes.}
-#'   \item{\code{summary}, \code{summary()}}{Event-wise tidy/glance summaries.
+#'
+#' - \code{coef}, \code{coef()} Regression coefficients on the chosen
+#'     effect-measure scale.
+#' - \code{vcov}, \code{vcov()} Variance–covariance matrix of the
+#'     regression coefficients. The default behavior of \code{vcov()} mirrors
+#'     the CI option implied by \code{outcome.type},
+#'     \code{report.sandwich.conf} and \code{report.boot.conf}.
+#' - \code{diagnostic.statistics} A data frame with inverse probability
+#'     weights, influence functions and predicted potential outcomes.
+#' - \code{summary}, \code{summary()} Event-wise tidy/glance summaries.
 #'     \code{summary()} prints a modelsummary-like table to the console and
-#'     returns these summaries invisibly.}
-#' }
+#'     returns these summaries invisibly.
 #'
 #' @examples
 #' data(diabetes.complications)

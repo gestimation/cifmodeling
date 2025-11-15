@@ -1,43 +1,21 @@
-#' @title Generate a survival or cumulative incidence curve with marks that represent
+#' @title Generate a survival or CIF curve with marks that represent
 #' censoring, competing risks and intermediate events
 #'
 #' @description
-#' This function produces the Kaplan–Meier survival or Aalen–Johansen cumulative
-#' incidence curve from a unified formula + data interface (\code{Event()} or \code{Surv()} on
-#' the left-hand side, and a stratification variable on the right-hand side if necessary).
-#' You may also pass a survfit-compatible object directly.
+#' This function generates a survival or CIF curve from a unified formula +
+#' data interface (\code{Event()} or \code{Surv()} on the LHS, and a stratification
+#' variable on the RHS if necessary). You may also pass a survfit-compatible object directly.
 #' Options for risk and estimate+CI tables, censoring/competing-risk/intercurrent-event marks,
 #' and simple panel display internally using \code{cifpanel()} are available.
-#' This function returns a regular \code{ggplot} object (compatible with \code{+} and \code{%+%}).
-#'
-#' **Outcome type and estimator**
-#' -   `outcome.type = "survival"` → Kaplan–Meier estimator
-#' -   `outcome.type = "competing-risk"` → Aalen–Johansen estimator
-#'
-#' **Data visualization**
-#' -   `add.conf` adds confidence intervals on the ggplot2-based plot
-#' -   `add.competing.risk.mark` and `add.intercurrent.event.mark` add symbols to describe competing risks or intercurrent events in addition to conventional censoring marks with `add.censor.mark`
-#' -   `add.risktable` adds numbers at risk
-#' -   `add.estimate.table` adds estimates and 95% confidence interval
-#' -   `add.quantile` adds a line that represents the median or a selected quantile level
-#'
-#' **Plot customization**
-#' -   `type.y` chooses y-axis. (`"surv"` for survival curves and `"risk"` for CIFs)
-#' -   `limits.x`, `limits.y`, `breaks.x`, `breaks.y` numeric vectors for axis control
-#' -   `style` specifies the appearance of plot (`"classic"`, `"bold"`, `"framed"`, `"grid"`, `"gray"` or `"ggsurvfit"`)
-#'
-#' **Panel display**
-#' -   `panel.per.variable` produces multiple survival/CIF curves per stratification variable specified in the formula
-#' -   `panel.per.event` produces CIF curves for each event type
-#' -   `panel.censoring` produces KM-type curves for (event, censor) and (censor, event) so that censoring patterns can be inspected
-#' -   `panel.mode` uses automatic panel mode
+#' This function returns a list including \code{plot}, a regular \code{ggplot} object
+#' (compatible with \code{+} and \code{%+%}).
 #'
 #' @inheritParams cif-stat-arguments
 #' @inheritParams cif-visual-arguments
 #'
 #' @param formula_or_fit A model formula or a \code{survfit} object. **Note:** When a formula is supplied,
-#'   the left-hand side must be \code{Event(time, status)} or \code{Surv(time, status)}.
-#'   The right-hand side specifies the stratification variable.
+#'   the LHS must be \code{Event(time, status)} or \code{Surv(time, status)}.
+#'   The RHS specifies the stratification variable.
 #' @param code.events Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
 #'   When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
 #'   (primarily used when \code{cifpanel()} is called or when \code{panel.per.event = TRUE}).
@@ -67,11 +45,11 @@
 #'   reversed \code{code.events}. Ignored for non-competing-risk outcomes.
 #' @param panel.censoring Logical. **Explicit panel mode.** If \code{TRUE} and
 #'   \code{outcome.type == "survival"}, \code{cifplot()} internally calls \code{cifpanel()}
-#'   to display KM-type curves for \code{(event, censor)} and \code{(censor, event)} so that
+#'   to display KM curves for \code{(event, censor)} and \code{(censor, event)} so that
 #'   censoring patterns can be inspected.
-#' @param panel.per.variable Logical. **Explicit panel mode.** If \code{TRUE} and the right-hand side
+#' @param panel.per.variable Logical. **Explicit panel mode.** If \code{TRUE} and the RHS
 #'   of the formula has multiple covariates (e.g. \code{~ a + b + c}), the function produces
-#'   a panel where each variable in RHS is used once as the stratification factor.
+#'   a panel where each variable in the RHS is used once as the stratification factor.
 #' @param panel.mode Character specifying **Automatic panel mode.** If \code{"auto"} and none of
 #'   \code{panel.per.variable}, \code{panel.per.event}, \code{panel.censoring} has been set to \code{TRUE},
 #'   the function chooses a suitable panel mode automatically:
@@ -82,8 +60,42 @@
 #'   \code{panel.mode} is ignored.
 #'
 #' @details
-#' This function calls an internal helper \code{call_ggsurvfit()} which adds confidence intervals,
-#' risk table, censoring marks, and optional competing-risk and intercurrent-event marks.
+#'
+#' ### Typical use cases
+#' -   Draw one survival/CIF curve set by exposure groups (e.g., treatment vs control).
+#' -   Call `cifpanel()` with a simplified code to create a panel displaying plots of multiple stratified survival/CIF curves or CIF curves for each event type.
+#' -   Add CIs and censor/competing-risk/intercurrent-event marks.
+#' -   Add a risk table to display the number at risk or the estimated survival probabilities or CIFs and CIs at each point in time.
+#'
+#' ### Key arguments shared with cifcurve()
+#' -   **Outcome type and estimator**
+#'       -   `outcome.type = "survival"` → Kaplan–Meier estimator
+#'       -   `outcome.type = "competing-risk"` → Aalen–Johansen estimator
+#'
+#' -   **Confidence intervals**
+#'       -   `conf.int` sets the two-sided level (default 0.95)
+#'       -   `conf.type` chooses the transformation (`"arcsine-square root"`, `"plain"`, `"log"`, `"log-log"`, `"logit"`, or `"none"`)
+#'       -   `error` chooses the estimator for SE (`"greenwood"`, `"tsiatis"` or `"if"` for survival curves and `"delta"`, `"aalen"` or `"if"` for CIFs)
+#'
+#' ### Key arguments for cifplot()
+#' -   **Data visualization**
+#'       -   `add.conf` adds CIs on the ggplot2-based plot
+#'       -   `add.competing.risk.mark` and `add.intercurrent.event.mark` add symbols to describe competing risks or intercurrent events in addition to conventional censoring marks with `add.censor.mark`
+#'       -   `add.risktable` adds numbers at risk
+#'       -   `add.estimate.table` adds time-by-time estimates and CIs
+#'       -   `add.quantile` add a reference line at a chosen quantile level
+#'
+#' -   **Plot customization**
+#'       -   `type.y` chooses y-axis (`"surv"` for survival and `"risk"` for 1-survival/CIF)
+#'       -   `limits.x`, `limits.y`, `breaks.x`, `breaks.y` numeric vectors for axis control
+#'       -   `style` specifies the appearance of plot (`"classic"`, `"bold"`, `"framed"`, `"grid"`, `"gray"` or `"ggsurvfit"`)
+#'       -   `palette` specifies color of each curve (e.g. `palette=c("blue1", "cyan3", "navy", "deepskyblue3"))`)
+#'
+#' -   **Panel display**
+#'       -   `panel.per.variable` produces multiple survival/CIF curves per stratification variable specified in the formula
+#'       -   `panel.per.event` produces CIF curves for each event type
+#'       -   `panel.censoring` produces the Kaplan–Meier curves for (event, censor) and (censor, event) so that censoring patterns can be inspected
+#'       -   `panel.mode` uses automatic panel mode
 #'
 #' When \code{panel.per.event = TRUE}, two panels are created with
 #' \code{code.events = list(c(e1, e2, c), c(e2, e1, c))}, where
@@ -138,7 +150,7 @@
 #' | Argument | Description |
 #' |---|---|
 #' | `panel.per.variable` | One panel per stratification variable |
-#' | `panel.per.event` | For competing risks, show CIFs of event 1 and event 2 |
+#' | `panel.per.event` | For `"competing-risk"`, show CIFs of event 1 and event 2 |
 #' | `panel.censoring` | For survival, show (event, censor) vs (censor, event) |
 #' | `panel.mode` with 2+ stratification variables | Behave like `panel.per.variable` |
 #' | `panel.mode` with outcome.type = "competing-risk" | Behave like `panel.per.event` |
@@ -162,7 +174,7 @@
 #' | `height.ggsave` | Size passed to `ggsave()` | `6`|
 #' | `dpi.ggsave` | DPI passed to `ggsave()` | `300` |
 #'
-#' **Notes.**
+#' **Notes**
 #' - For CIF displays, set `type.y = "risk"`. For survival scale, use `type.y = NULL` or `= "surv"`.
 #' - Event coding can be controlled via `code.event1`, `code.event2`, `code.censoring`.
 #'   For ADaM-style data, use `code.event1 = 0`, `code.censoring = 1`.

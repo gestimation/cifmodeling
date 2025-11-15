@@ -19,7 +19,6 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/overview.html">Overview</a></li>
-    <li><a class="dropdown-item" href="../articles/functions.html">Main functions</a></li>
     <li><a class="dropdown-item" href="../articles/polyreg.html">Direct polytomous regression</a></li>
     <li><a class="dropdown-item" href="../articles/examples.html">Examples</a></li>
     <li><a class="dropdown-item" href="../articles/information.html">Additional information</a></li>
@@ -41,7 +40,7 @@
     </div>
 
     <div class="section level2">
-      <h2 id="estimation-visualization">Estimation &amp; visualization<a class="anchor" aria-label="anchor" href="#estimation-visualization"></a></h2>
+      <h2 id="visualization">visualization<a class="anchor" aria-label="anchor" href="#visualization"></a></h2>
 
 
 
@@ -62,25 +61,13 @@
           <code><a href="cifplot.html">cifplot()</a></code>
 
         </dt>
-        <dd>Generate a survival or cumulative incidence curve with marks that represent censoring, competing risks and intermediate events</dd>
+        <dd>Generate a survival or CIF curve with marks that represent censoring, competing risks and intermediate events</dd>
       </dl><dl><dt>
 
           <code><a href="cifpanel.html">cifpanel()</a></code>
 
         </dt>
-        <dd>Arrange multiple survival / CIF plots in a panel display</dd>
-      </dl><dl><dt>
-
-          <code><a href="cif-stat-arguments.html">cif-stat-arguments</a></code>
-
-        </dt>
-        <dd>Common data / outcome arguments for CIF functions</dd>
-      </dl><dl><dt>
-
-          <code><a href="cif-visual-arguments.html">cif-visual-arguments</a></code>
-
-        </dt>
-        <dd>Common visual arguments for CIF functions</dd>
+        <dd>Arrange multiple survival/CIF plots in a panel display</dd>
       </dl></div><div class="section level2">
       <h2 id="direct-polytomous-regression">Direct polytomous regression<a class="anchor" aria-label="anchor" href="#direct-polytomous-regression"></a></h2>
 
@@ -97,7 +84,13 @@
           <code><a href="polyreg.html">polyreg()</a></code>
 
         </dt>
-        <dd>Fits regression models of cumulative incidence functions based on polytomous log odds products and stratified IPCW estimator</dd>
+        <dd>Fits regression models of CIFs based on polytomous log odds products and the stratified IPCW estimator</dd>
+      </dl><dl><dt>
+
+          <code><a href="polyreg-methods.html">coef(<i>&lt;polyreg&gt;</i>)</a></code> <code><a href="polyreg-methods.html">vcov(<i>&lt;polyreg&gt;</i>)</a></code> <code><a href="polyreg-methods.html">nobs(<i>&lt;polyreg&gt;</i>)</a></code> <code><a href="polyreg-methods.html">summary(<i>&lt;polyreg&gt;</i>)</a></code> <code><a href="polyreg-methods.html">print(<i>&lt;summary.polyreg&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Methods for <code>polyreg</code> objects</dd>
       </dl></div><div class="section level2">
       <h2 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a></h2>
 
@@ -114,13 +107,13 @@
           <code><a href="diabetes.complications.html">diabetes.complications</a></code>
 
         </dt>
-        <dd>Data of patients with type 2 diabetes</dd>
+        <dd>Data from a cohort study of patients with type 2 diabetes</dd>
       </dl><dl><dt>
 
           <code><a href="prostate.html">prostate</a></code>
 
         </dt>
-        <dd>Prostate cancer trial data from Byer &amp; Green (1980)</dd>
+        <dd>Data from a prostate cancer trial in Byer &amp; Green (1980)</dd>
       </dl></div><div class="section level2">
       <h2 id="helpers">Helpers<a class="anchor" aria-label="anchor" href="#helpers"></a></h2>
 
