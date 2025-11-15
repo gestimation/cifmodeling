@@ -159,10 +159,13 @@ print.summary.polyreg <- function(summary,
         ci_row[j]  <- ""
         p_row[j]   <- ""
       } else {
-        est_row[j] <- sprintf("%.*f", digits, td$estimate[1])
+        a <- exp(td$estimate[1])
+        l <- exp(td$conf.low[1])
+        h <- exp(td$conf.high[1])
+        est_row[j] <- sprintf("%.*f", digits, a)
         ci_row[j]  <- sprintf("[%.*f, %.*f]",
-                              digits, td$conf.low[1],
-                              digits, td$conf.high[1])
+                              digits, l,
+                              digits, h)
         p_row[j]   <- sprintf("(p=%0.3f)", td$p.value[1])
       }
     }
