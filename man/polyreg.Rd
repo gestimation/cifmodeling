@@ -248,16 +248,16 @@ The \code{outcome.type} argument must be set to:
 \item Effects on a risk of a binomial outcome: \code{"binomial"}
 }\tabular{lll}{
    Setting \tab Codes \tab Meaning \cr
-   COMPETING-RISK \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censoring \cr
-   COMPETING-RISK (default) \tab \code{code.event1=1}, \code{code.event2=2}, \code{code.censoring=0} \tab event of interest / competing event / censoring \cr
-   SURVIVAL \tab \code{code.event1}, \code{code.censoring} \tab event / censoring \cr
-   SURVIVAL  (default) \tab \code{code.event1=1}, \code{code.censoring=0} \tab event / censoring \cr
-   SURVIVAL (ADaM-ADTTE) \tab \code{code.event1=0}, \code{code.censoring=1} \tab set to match ADaM convention \cr
-   PROPORTIONAL-SURVIVAL \tab \code{code.event1}, \code{code.censoring} \tab event / censoring \cr
-   PROPORTIONAL-SURVIVAL  (default) \tab \code{code.event1=1}, \code{code.censoring=0} \tab event / censoring \cr
-   PROPORTIONAL-SURVIVAL (ADaM-ADTTE) \tab \code{code.event1=0}, \code{code.censoring=1} \tab set to match ADaM convention \cr
-   PROPORTIONAL-COMPETING-RISK \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censoring \cr
-   PROPORTIONAL-COMPETING-RISK (default) \tab \code{code.event1=1}, \code{code.event2=2}, \code{code.censoring=0} \tab event of interest / competing event / censoring \cr
+   competing-risk \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censoring \cr
+   competing-risk (default) \tab \code{code.event1=1}, \code{code.event2=2}, \code{code.censoring=0} \tab event of interest / competing event / censoring \cr
+   survival \tab \code{code.event1}, \code{code.censoring} \tab event / censoring \cr
+   survival  (default) \tab \code{code.event1=1}, \code{code.censoring=0} \tab event / censoring \cr
+   survival (ADaM-ADTTE) \tab \code{code.event1=0}, \code{code.censoring=1} \tab set to match ADaM convention \cr
+   proportional-survival \tab \code{code.event1}, \code{code.censoring} \tab event / censoring \cr
+   proportional-survival  (default) \tab \code{code.event1=1}, \code{code.censoring=0} \tab event / censoring \cr
+   proportional-survival (ADaM-ADTTE) \tab \code{code.event1=0}, \code{code.censoring=1} \tab set to match ADaM convention \cr
+   proportional-competing-risk \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censoring \cr
+   proportional-competing-risk (default) \tab \code{code.event1=1}, \code{code.event2=2}, \code{code.censoring=0} \tab event of interest / competing event / censoring \cr
 }
 
 }
@@ -320,16 +320,16 @@ Choose the effect scale for event 1 and (optionally) event 2:\tabular{llll}{
 
 This function returns a list object that includes:
 \itemize{
-\item \code{coefficient} — regression coefficients
-\item \code{cov} — variance-covariance matrix for regression coefficients
+\item \code{coef} — regression coefficients
+\item \code{vcov} — variance-covariance matrix for regression coefficients
 \item \code{diagnostic.statistics} — a data frame containing inverse probability weights,
 influence functions, and predicted potential outcomes
 \item \code{summary} — a summary of estimated exposure effects
 }
 
 Use \code{summary} output with \code{msummary()} to display formatted results. The regression
-coefficients and their variance-covariance matrix are provided as \code{coefficient}
-and \code{cov}, respectively, with the first element corresponding to the intercept term,
+coefficients and their variance-covariance matrix are provided as \code{coef}
+and \code{vcov}, respectively, with the first element corresponding to the intercept term,
 subsequent elements to the covariates in \code{nuisance.model}, and the last element
 to the variable specified by \verb{exposure=}. Finally, \code{diagnostic.statistics} is
 a data frame containing inverse probability weights, influence functions, and

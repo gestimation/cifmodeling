@@ -17,16 +17,16 @@ cifcurve(
   error = NULL,
   conf.type = "arcsine-square root",
   conf.int = 0.95,
-  return_if = FALSE,
+  report.influence.function = FALSE,
   report.survfit.std.err = FALSE,
   engine = "calculateAJ_Rcpp",
   prob.bound = 1e-07
 )
 }
 \arguments{
-\item{formula}{A model formula specifying the time-to-event outcome on the
-left-hand side (typically \code{Event(time, status)} or \code{survival::Surv(time, status)})
-and, optionally, a stratification variable on the right-hand side.
+\item{formula}{A model formula specifying the time-to-event outcome on the LHS
+(typically \code{Event(time, status)} or \code{survival::Surv(time, status)})
+and, optionally, a stratification variable on the RHS.
 Unlike \code{\link{cifplot}}, this function does not accept a fitted
 \code{survfit} object.}
 
@@ -61,7 +61,7 @@ used internally (default \code{arcsine-square root}).}
 
 \item{conf.int}{Numeric two-sided confidence level (default \code{0.95}).}
 
-\item{return_if}{Logical. When \code{TRUE} and \code{engine = "calculateAJ_Rcpp"},
+\item{report.influence.function}{Logical. When \code{TRUE} and \code{engine = "calculateAJ_Rcpp"},
 the influence function is also computed and returned (default \code{FALSE}).}
 
 \item{report.survfit.std.err}{Logical. If \code{TRUE}, report SE on the log-survival
@@ -107,7 +107,7 @@ cumulative incidence for \code{code.event1}. The returned \code{$surv} is
 }
 \subsection{Standard error and confidence intervals}{\tabular{lll}{
    Argument \tab Description \tab Default \cr
-   \code{error} \tab Standard error for KM: \code{"greenwood"}, \code{"tsiatis"}. For CIF: \code{"aalen"}, \code{"delta"}, \code{"none"}. \tab \code{"greenwood"} or \code{"delta"} \cr
+   \code{error} \tab Standard error for KM: \code{"greenwood"}, \code{"tsiatis"}, \code{"if"}. For CIF: \code{"aalen"}, \code{"delta"}, \code{"if"}. \tab \code{"greenwood"} or \code{"delta"} \cr
    \code{conf.type} \tab Transformation for confidence intervals: \code{"plain"}, \code{"log"}, \code{"log-log"}, \code{"arcsin"}, \code{"logit"}, or \code{"none"}. \tab \code{"arcsin"} \cr
    \code{conf.int} \tab Two-sided confidence interval level. \tab \code{0.95} \cr
 }
