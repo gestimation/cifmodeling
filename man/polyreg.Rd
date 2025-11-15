@@ -195,12 +195,14 @@ supporting results. Key components and methods include:
 effect-measure scale.}
 \item{\code{vcov}, \code{vcov()}}{Variance–covariance matrix of the
 regression coefficients; the default behavior of \code{vcov()} mirrors
-the CI choice implied by \code{outcome.type},
+the confidence-interval choice implied by \code{outcome.type},
 \code{report.sandwich.conf} and \code{report.boot.conf}.}
 \item{\code{diagnostic.statistics}}{A data frame with inverse probability
 weights, influence functions and predicted potential outcomes.}
 \item{\code{summary}, \code{summary()}}{Event-wise tidy/glance summaries.
 \code{summary()} prints a modelsummary-like table to the console and
+returns these summaries invisibly.}
+}
 }
 \description{
 The direct polytomous regression enables coherent modeling and

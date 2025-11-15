@@ -88,7 +88,8 @@ cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications,
         order.strata=c("Q1", "Q2 to Q4"), style="FRAMED")
 ```
 
-By specifying `add.estimate.table=TRUE`, the risks of diabetic retinopathy (estimates for CIFs) along with their confidence interval are shown in the table at the bottom of the figure The risk ratios at a specific time point (e.g. 8 years) for competing events can be jointly and coherently estimated using `polyreg()` with `outcome.type="competing-risk"`. In the code of `polyreg()` below, no covariates are included in the nuisance model (`~1` specifies intercept only). The effect of low fruit intake `fruitq1` is estimated as an unadjusted risk ratio (`effect.measure1="RR"`) for diabetic retinopathy (event 1) and macrovascular complications (event 2) at 8 years (`time.point=8`). 
+By specifying `add.estimate.table = TRUE`, the risks of diabetic retinopathy
+(estimates for CIFs) along with their CIs are shown in the table at the bottom of the figure. The risk ratios at a specific time point (e.g. 8 years) for competing events can be jointly and coherently estimated using `polyreg()` with `outcome.type = "competing-risk"`. In the code of `polyreg()` below, no covariates are included in the nuisance model (`~1` specifies intercept only). The effect of low fruit intake `fruitq1` is estimated as an unadjusted risk ratio (`effect.measure1="RR"`) for diabetic retinopathy (event 1) and macrovascular complications (event 2) at 8 years (`time.point=8`). 
 
 ```{r example04-1-5, fig.cap="Joint estimation of unadjusted risk ratios at 8 years using polyreg()", warning=FALSE, message=FALSE}
 output3 <- polyreg(nuisance.model=Event(t,epsilon)~1, exposure="fruitq1", 
@@ -100,7 +101,7 @@ vcov(output3)
 summary(output3)
 ```
 
-The summaries of analysis results in the list of outputs (e.g. `output3$summary` below) are compatible with the `modelsummary` ecosystem, which makes it easy to create publication-ready tables in a variety of formats. A typical workflow is to pass the `summary` element of a `polyreg()` fit (or a list of such fits) to `modelsummary::msummary()`. In this case, all regression coefficients are included in summary by setting `report.nuisance.parameter = TRUE`. Model summaries can also be exponentiated to display risk ratios, odds ratios, or subdistribution hazard ratios using `exponentiate` option. The summaries can be displayed in the Viewer with customized statistics such as p-values or confidence intervals.
+The `summary()` method prints an event-wise table of point estimates, CIs, and p-values. Internally, this table is stored in a `summary` component of the `"polyreg"` object, which is compatible with the `modelsummary` ecosystem. If you want more elaborate tables, you can optionally pass this object to `modelsummary::msummary()`. In this case, all regression coefficients are included in the summary by setting `report.nuisance.parameter = TRUE`. Model summaries can also be exponentiated to display risk ratios, odds ratios, or subdistribution hazard ratios using the `exponentiate` option.
 
 ## Example 2. Survival analysis
 
