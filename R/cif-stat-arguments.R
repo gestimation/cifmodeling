@@ -1,7 +1,8 @@
-#' Common data / outcome arguments for CIF functions
-#'
 #' These arguments are shared by \code{cifplot()}, \code{cifpanel()}, and
 #' \code{cifcurve()}.
+#'
+#' @name cif-stat-arguments
+#' @keywords internal
 #'
 #' @param data A data frame containing variables in the formula.
 #' @param weights Optional name of the weight variable in \code{data}. Weights must be nonnegative.
@@ -24,6 +25,4 @@
 #' used internally (default \code{arcsine-square root}).
 #' @param conf.int Numeric two-sided confidence level (default \code{0.95}).
 #'
-#' @name cif-stat-arguments
-#' @keywords internal
 NULL

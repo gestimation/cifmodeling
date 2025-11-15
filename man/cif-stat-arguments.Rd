@@ -2,7 +2,8 @@
 % Please edit documentation in R/cif-stat-arguments.R
 \name{cif-stat-arguments}
 \alias{cif-stat-arguments}
-\title{Common data / outcome arguments for CIF functions}
+\title{These arguments are shared by \code{cifplot()}, \code{cifpanel()}, and
+\code{cifcurve()}.}
 \arguments{
 \item{data}{A data frame containing variables in the formula.}
 

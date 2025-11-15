@@ -43,7 +43,9 @@ A user-specified model formula in `Event()` or `Surv()` is first parsed by `util
 
 Let $t_1 < t_2 < \cdots < t_D$ represent the distinct event times. For each event time $i=1,\ldots,D$, let $Y_i$ be the size of the risk set (the number of surviving observations) just prior to $t_i$.
 
-Survival data is expected when `outcome.type = "SURVIVAL"`. Let $d_i$ be the number of failures at $t_i$. The Kaplan–Meier estimator of the survival function $S(t_i)$ is
+Survival data is expected when `outcome.type = "survival"`. Let $d_i$ be the number of failures at $t_i$. The Kaplan–Meier estimator of the survival function $S(t_i)$ is as below. 
+
+**Kaplan–Meier estimator**
 
 $$
 \hat{S}(t) = \prod_{t_i \le t} \left( 1 - \frac{d_i}{Y_i} \right)
@@ -71,7 +73,7 @@ $$
 $$
 Xie and Liu (2005) proposed the Greenwood-type variance for the weighted Kaplan–Meier estimator. 
 
-**Greenwood variance**
+**Greenwood variance for weighted Kaplan–Meier**
 $$
 \textrm{Var}\!\left\{\hat{S}(t)\right \}
 = \hat{S}(t)^2\sum_{t_i \le t} \frac{d_i^w Y_i}{M_i Y_i^w(Y_i^w - d_i^w)}, 
@@ -82,14 +84,17 @@ M_i = \frac{\left(\sum_{t_j \geq t_i} w_j \right)^2}{\sum_{t_j \geq t_i} w_j^2}.
 $$
 The Tsiatis-type variance is calculated as follows in the same spirits. 
 
-**Tsiatis variance**
+**Tsiatis variance for weighted Kaplan–Meier**
 $$
 \textrm{Var}\!\left\{\hat{S}(t)\right \}
 = \hat{S}(t)^2\sum_{t_i \le t} \frac{d_i^w Y_i}{M_i (Y_i^w)^2}
 $$
 Competing risks (`outcome.type = "competing-risk"`) arise in studies in which individuals are exposed to two or more mutually exclusive failure events. When a failure occurs, we observe the time to event $T$ and the cause of failure $\epsilon$. Suppose that $\epsilon=1$ and $\epsilon=2$ represent the event of interest and the competing risk, respectively. Let $d_{ij}$ be the number of failures of cause $j$ at time $t_i$, and now the total number of failures at $t_i$ is $d_i = d_{i1} + d_{i2}$. 
 
-The Aalen–Johansen estimator of CIF for cause $\epsilon=j$ is
+The Aalen–Johansen estimator of CIF for cause $\epsilon=j$ is as below. 
+
+**Aalen–Johansen estimator**
+
 $$
 \hat{F}_j(t)
 = \sum_{t_i \le t} \frac{d_{ij}}{Y_i}\,\hat{S}(t_{i-1}).

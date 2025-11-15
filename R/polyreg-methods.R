@@ -1,4 +1,3 @@
-# ここはそのままでOK
 #' @export
 print.cifplot <- function(x, ...) {
   p <- x$plot %||% x$patchwork
@@ -13,7 +12,7 @@ print.cifpanel <- function(x, ...) {
   invisible(x)
 }
 
-#' Methods for \code{polyreg} model objects
+#' Methods for \code{polyreg} objects
 #'
 #' S3 methods to extract coefficients, variance–covariance matrices,
 #' sample size, and formatted summaries from objects returned by

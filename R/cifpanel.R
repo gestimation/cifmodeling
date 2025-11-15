@@ -1,27 +1,16 @@
-#' @title Arrange multiple survival / CIF plots in a panel display
+#' @title Arrange multiple survival/CIF plots in a panel display
 #'
 #' @description
 #' \code{cifpanel()} is the panel-building counterpart of \code{cifplot()}.
 #' It takes one or more model formulas (or, alternatively, one formula and several
 #' event-coding specifications) and returns a multi-panel figure, typically as a
-#' \pkg{patchwork} object. Most display options (axis labels, marks, style, ggsave options)
+#' patchwork-compatible object. Most display options (axis labels, marks, style, ggsave options)
 #' are shared with \code{cifplot()}, but per-panel legends and risk tables are
-#' suppressed to avoid duplicated display.
+#' suppressed to avoid duplicated display. Typical use cases are:
 #'
-#' Panel layout is specified by length-2 vector \code{rows.columns.panel}.
-#' This function can also automatically determine the panel count in the following order:
-#' (1) if \code{plots} is supplied, its length defines the number of plots,
-#' (2) else if \code{formulas} is supplied, its length defines the number of plots,
-#' (3) else if \code{code.events} is supplied, its length defines the number of plots
-#' together with formula, and (4) otherwise \code{rows.columns.panel=c(1,1)}.
-#'
-#' -   `formula` or `formulas` — one formula or a list of formulas; each entry creates a panel.
-#' -   `data`, `outcome.type`, `code.events`, `type.y` — recycled across panels unless a list is supplied for per-panel control.
-#' -   `rows.columns.panel` — selects grid layout by c(rows, cols).
-#' -   `inset.panel` — selects inset layout.
-#' -   `title.panel`, `subtitle.panel`, `caption.panel`, `title.plot` — overall titles and captions.
-#' -   `tag.panel` — panel tag style (e.g., "A", "a", "1").
-#' -   `label.x`, `label.y`, `limits.x`, `limits.y`, `breaks.x`, `breaks.y` — shared axis control unless a list is supplied for per-panel control.
+#'-   Compare CIF (event 1) vs CIF (event 2) in a 1×2 layout.
+#'-   Compare survival/CIF curves across strata with a shared legend and matched axes.
+#'-   Display a plot with an enlarged y-axis inside a full-scale plot.
 #'
 #' @inheritParams cif-stat-arguments
 #' @inheritParams cif-visual-arguments
@@ -96,12 +85,20 @@
 #'
 #' - Use `outcome.type` to set per-panel estimator (`"survival"`=KM, `"competing-risk"`=AJ).
 #' - Alternatively, pass `code.events` per panel to infer the type:
-#'   - length 2 = SURVIVAL: `c(event1, censor)`
-#'   - length 3 = COMPETING-RISK: `c(event1, event2, censor)`
+#'   - length 2 = survival: `c(event1, censor)`
+#'   - length 3 = competing-risk: `c(event1, event2, censor)`
 #' - If `outcome.type` is `NULL`, the function infers each panel from its
 #'   `code.events[[i]]` length. When both are given, `outcome.type` takes precedence.
 #'
+#'
 #' ### Panel-wise vs shared arguments
+#'
+#' Panel layout is specified by length-2 vector \code{rows.columns.panel}.
+#' This function can also automatically determine the panel count in the following order:
+#' (1) if \code{plots} is supplied, its length defines the number of plots,
+#' (2) else if \code{formulas} is supplied, its length defines the number of plots,
+#' (3) else if \code{code.events} is supplied, its length defines the number of plots
+#' together with formula, and (4) otherwise \code{rows.columns.panel=c(1,1)}.
 #'
 #' Many arguments accept a **scalar** (recycled to all panels) or a **list/vector**
 #' (one entry per panel). Precedence: **panel-wise explicit values** >
@@ -123,6 +120,15 @@
 #' The following arguments allow **per-panel** control by supplying vectors/lists,
 #' or **shared** control by supplying scalars. They are forwarded to `cifplot()`.
 #'
+#' -   `formula` or `formulas` — one formula or a list of formulas; each entry creates a panel.
+#' -   `data`, `outcome.type`, `code.events`, `type.y` — recycled across panels unless a list is supplied for per-panel control.
+#' -   `rows.columns.panel` — selects grid layout by c(rows, cols).
+#' -   `inset.panel` — selects inset layout.
+#' -   `title.panel`, `subtitle.panel`, `caption.panel`, `title.plot` — overall titles and captions.
+#' -   `tag.panel` — panel tag style (e.g., "A", "a", "1").
+#' -   `label.x`, `label.y`, `limits.x`, `limits.y`, `breaks.x`, `breaks.y` — shared axis control unless a list is supplied for per-panel control.
+
+
 #' #### Scale & labels
 #'
 #' | Argument | Meaning | Default |
@@ -160,32 +166,22 @@
 #' `ggsave()` using `width.ggsave`, `height.ggsave`, and `dpi.ggsave`.
 #' Otherwise, the function returns objects without saving.
 #'
-#' ### Value
-#'
-#' Returns invisibly a \code{"cifpanel"} object (list) with elements
-#' \code{plot} (always \code{NULL}), \code{list.plot} (list of \code{ggplot}
-#' objects), \code{patchwork}, and the same metadata fields as
-#' [cifplot()]. When \code{interactive()} and \code{print.panel = TRUE}, the
-#' patchwork is printed automatically.
-#'
-#' ### Notes & tips
-#'
+#' **Notes**
 #' - Mixed panel types are supported (e.g., AJ in panel 1; KM in panel 2).
 #' - If `formulas` is shorter than the grid capacity, empty slots are ignored.
 #' - When supplying vectors/lists per panel, their lengths must match the number
 #'   of panels; length-1 inputs are recycled; otherwise an error is thrown.
-#' - For CIF displays, set `type.y = "risk"` in the relevant panels.
-#' - ADaM-style coding can be expressed via `code.events` (e.g., `c(0,1)` for KM:
-#'   `event1=0`, `censor=1`).
+#' - For CIF displays, set `type.y = "risk"`. For survival scale, use `type.y = NULL` or `= "surv"`.
+#'   For ADaM-style data, use `code.events=c(0,1)` or
+#'   `code.event1 = 0`, `code.censoring = 1`.
 #' - Additional graphical options (e.g., theme) can be added post-hoc to each
 #'   element of `list.plot` or to the composed `patchwork`.
-
+#'
 #' @importFrom patchwork wrap_plots plot_layout inset_element plot_annotation
 #' @return Returns a \code{"cifpanel"} object (list) with elements \code{plot}
-#'   (\code{NULL}), \code{list.plot} (list of \code{ggplot} objects),
+#'   (always \code{NULL}), \code{list.plot} (list of \code{ggplot} objects),
 #'   \code{patchwork}, and the same metadata fields as [cifplot()]. The object is
-#'   returned invisibly; printing occurs only when \code{interactive()} and
-#'   \code{print.panel = TRUE}.
+#'   returned invisibly; printing occurs only when \code{print.panel = TRUE}.
 #'
 #' @keywords internal
 #' @param survfit.info,axis.info,visual.info,panel.info,style.info,print.info,ggsave.info,inset.info

@@ -1,7 +1,9 @@
-#' Common visual arguments for CIF functions
-#'
 #' These arguments are shared by \code{cifplot()}, \code{cifpanel()}, and
 #' \code{cifcurve()}.
+#'
+#' @name cif-visual-arguments
+#' @keywords internal
+#'
 #' @param type.y Optional vector/list per panel: \code{"surv"} or \code{"risk"} (display 1 - survival i.e. CIF).
 #' @param label.x Character x-axis label (default \code{"Time"}).
 #' @param label.y Character y-axis label (default is chosen automatically from \code{outcome.type}
@@ -67,6 +69,4 @@
 #' @param height.ggsave Numeric height passed to \code{ggplot2::ggsave()} (default \code{6}).
 #' @param dpi.ggsave Numeric DPI passed to \code{ggplot2::ggsave()} (default \code{300}).
 #'
-#' @name cif-visual-arguments
-#' @keywords internal
 NULL
