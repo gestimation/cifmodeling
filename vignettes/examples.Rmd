@@ -95,8 +95,9 @@ output3 <- polyreg(nuisance.model=Event(t,epsilon)~1, exposure="fruitq1",
           data=diabetes.complications, effect.measure1="RR", effect.measure2="RR", 
           time.point=8, outcome.type="competing-risk", 
           report.nuisance.parameter=TRUE)
-print(output3$coefficient)
-print(output3$cov)
+coef(output3)
+vcov(output3)
+summary(output3)
 ```
 
 The summaries of analysis results in the list of outputs (e.g. `output3$summary` below) are compatible with the `modelsummary` ecosystem, which makes it easy to create publication-ready tables in a variety of formats. A typical workflow is to pass the `summary` element of a `polyreg()` fit (or a list of such fits) to `modelsummary::msummary()`. In this case, all regression coefficients are included in summary by setting `report.nuisance.parameter = TRUE`. Model summaries can also be exponentiated to display risk ratios, odds ratios, or subdistribution hazard ratios using `exponentiate` option. The summaries can be displayed in the Viewer with customized statistics such as p-values or confidence intervals.
@@ -120,6 +121,7 @@ The code below specifies the Richardson model on the risk of diabetic retinopath
 output4 <- polyreg(nuisance.model=Event(t,d)~1, 
           exposure="fruitq1", strata="strata", data=diabetes.complications,
           effect.measure1="RR", time.point=8, outcome.type="survival")
+summary(output4)
 ```
 
 ## Example 3. Adjusted competing risks analysis
@@ -132,6 +134,7 @@ output5 <- polyreg(nuisance.model=Event(t,epsilon)~age+sex+bmi+hba1c
           +current_smoker+alcohol_drinker+ltpa, 
           exposure="fruitq1", strata="strata", data=diabetes.complications,
           effect.measure1="RR", time.point=8, outcome.type="competing-risk")
+summary(output5)
 ```
 
 ## Example 4. Description of cumulative incidence of competing events

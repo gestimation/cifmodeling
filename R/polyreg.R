@@ -135,99 +135,113 @@
 #' ### Outcome type and event status coding
 #'
 #' The `outcome.type` argument must be set to:
-#' -   Effects on cumulative incidence probabilities at a specific time: `"competing-risk"`
-#' -   Effects on a risk at a specific time: `"survival"`
-#' -   Common effects on cumulative incidence probabilities over time: `"proportional-competing-risk"`
-#' -   Common effects on a risk over time: `"proportional-survival"`
-#' -   Effects on a risk of a binomial outcome: `"binomial"`
 #'
-#' | Setting | Codes | Meaning |
-#' |---|---|---|
-#' | competing-risk | `code.event1`, `code.event2`, `code.censoring` | event of interest / competing event / censoring |
-#' | competing-risk (default)| `code.event1=1`, `code.event2=2`, `code.censoring=0` | event of interest / competing event / censoring |
-#' | survival | `code.event1`, `code.censoring`                   | event / censoring |
-#' | survival  (default)| `code.event1=1`, `code.censoring=0`     | event / censoring |
-#' | survival (ADaM-ADTTE) | `code.event1=0`, `code.censoring=1` | set to match ADaM convention |
-#' | proportional-survival | `code.event1`, `code.censoring`                   | event / censoring |
-#' | proportional-survival  (default)| `code.event1=1`, `code.censoring=0`     | event / censoring |
-#' | proportional-survival (ADaM-ADTTE) | `code.event1=0`, `code.censoring=1` | set to match ADaM convention |
-#' | proportional-competing-risk | `code.event1`, `code.event2`, `code.censoring` | event of interest / competing event / censoring |
-#' | proportional-competing-risk (default)| `code.event1=1`, `code.event2=2`, `code.censoring=0` | event of interest / competing event / censoring |
+#' - Effects on cumulative incidence probabilities at a specific time:
+#'   `"competing-risk"`.
+#' - Effects on a risk at a specific time: `"survival"`.
+#' - Common effects on cumulative incidence probabilities over time:
+#'   `"proportional-competing-risk"`.
+#' - Common effects on a risk over time: `"proportional-survival"`.
+#' - Effects on a risk of a binomial outcome: `"binomial"`.
+#'
+#' | Setting                         | Codes                                        | Meaning                                       |
+#' |---------------------------------|----------------------------------------------|-----------------------------------------------|
+#' | competing-risk                  | `code.event1`, `code.event2`, `code.censoring` | event of interest / competing event / censoring |
+#' | competing-risk (default)        | `code.event1 = 1`, `code.event2 = 2`, `code.censoring = 0` | event of interest / competing event / censoring |
+#' | survival                        | `code.event1`, `code.censoring`             | event / censoring                             |
+#' | survival (default)             | `code.event1 = 1`, `code.censoring = 0`     | event / censoring                             |
+#' | survival (ADaM-ADTTE)           | `code.event1 = 0`, `code.censoring = 1`     | set to match ADaM convention                  |
+#' | proportional-survival           | `code.event1`, `code.censoring`             | event / censoring                             |
+#' | proportional-survival (default) | `code.event1 = 1`, `code.censoring = 0`     | event / censoring                             |
+#' | proportional-survival (ADaM)    | `code.event1 = 0`, `code.censoring = 1`     | set to match ADaM convention                  |
+#' | proportional-competing-risk     | `code.event1`, `code.event2`, `code.censoring` | event of interest / competing event / censoring |
+#' | proportional-competing-risk (default) | `code.event1 = 1`, `code.event2 = 2`, `code.censoring = 0` | event of interest / competing event / censoring |
 #'
 #' ### Effect measures for categorical exposure
 #'
 #' Choose the effect scale for event 1 and (optionally) event 2:
 #'
-#' | Argument | Applies to | Choices | Default |
-#' |---|---|---|---|
-#' | `effect.measure1` |event of interest | `"RR"`, `"OR"`, `"SHR"` | `"RR"` |
-#' | `effect.measure2` | competing event | `"RR"`, `"OR"`, `"SHR"` | `"RR"` |
+#' | Argument          | Applies to       | Choices              | Default |
+#' |-------------------|------------------|----------------------|---------|
+#' | `effect.measure1` | event of interest | `"RR"`, `"OR"`, `"SHR"` | `"RR"`  |
+#' | `effect.measure2` | competing event   | `"RR"`, `"OR"`, `"SHR"` | `"RR"`  |
 #'
 #' - `RR`: risk ratio at `time.point` or common over time.
 #' - `OR`: odds ratio at `time.point` or common over time.
-#' - `SHR`: subdistribution hazard ratio  or common over time.
+#' - `SHR`: subdistribution hazard ratio or common over time.
 #'
 #' ### Inference and intervals (advanced)
 #'
-#' | Argument | Meaning | Default |
-#' |---|---|---|
-#' | `conf.level` | Wald-type CI level | `0.95` |
-#' | `report.sandwich.conf` | Sandwich variance CIs | `TRUE` |
-#' | `report.boot.conf` | Bootstrap CIs (use if `"proportional-survival"` or `"proportional-competing-risk"`) | `NULL` |
-#' | `boot.bca` | Use BCa intervals (else normal approximation) | `FALSE` |
-#' | `boot.multiplier` | Method for wild bootstrap (`"rademacher"`, `"mammen"`, or `"gaussian"`) | `rademacher` |
-#' | `boot.replications` | Bootstrap reps | `200` |
-#' | `boot.seed` | Seed for resampling | `46` |
+#' | Argument             | Meaning                                         | Default      |
+#' |----------------------|-------------------------------------------------|--------------|
+#' | `conf.level`         | Wald-type CI level                              | `0.95`       |
+#' | `report.sandwich.conf` | Sandwich variance CIs                        | `TRUE`       |
+#' | `report.boot.conf`   | Bootstrap CIs (used by `"proportional-*"` types) | `NULL`       |
+#' | `boot.bca`           | Use BCa intervals (else normal approximation)   | `FALSE`      |
+#' | `boot.multiplier`    | Method for wild bootstrap                       | `"rademacher"` |
+#' | `boot.replications`  | Bootstrap replications                          | `200`        |
+#' | `boot.seed`          | Seed for resampling                             | `46`         |
 #'
 #' ### Optimization & solver controls (advanced)
 #'
 #' `polyreg()` solves estimating equations with optional inner routines.
 #'
-#' | Argument | Role | Default |
-#' |---|---|---|
-#' | `nleqslv.method` | Root solver | `"nleqslv"` |
-#' | `optim.parameter1` / `optim.parameter2` | Outer/inner convergence tolerances | `1e-6`, `1e-6` |
-#' | `optim.parameter3` | Parameter absolute bound | `100` |
-#' | `optim.parameter4` | Max outer iterations | `50` |
-#' | `optim.parameter5` | Max `nleqslv` iters per outer | `50` |
-#' | `optim.parameter6:13` | Levenberg–Marquardt controls (iters/tolerances/lambda) | see defaults |
+#' | Argument          | Role                            | Default   |
+#' |-------------------|---------------------------------|-----------|
+#' | `nleqslv.method`  | Root solver                     | `"Newton"` |
+#' | `optim.parameter1`, `optim.parameter2` | Outer / inner convergence tolerances | `1e-6`, `1e-6` |
+#' | `optim.parameter3`| Parameter absolute bound        | `100`     |
+#' | `optim.parameter4`| Max outer iterations            | `50`      |
+#' | `optim.parameter5`| Max \code{nleqslv} iterations per outer | `50` |
+#' | `optim.parameter6:13` | Levenberg–Marquardt controls (iterations, tolerances, lambda) | see defaults |
 #'
 #' ### Data handling and stability
 #'
-#' | Argument | Meaning | Default |
-#' |---|---|---|
-#' | `subset.condition` | An expression (as character) to subset `data` | `NULL` |
-#' | `na.action` | NA handling function | `stats::na.omit` |
-#' | `normalize.covariate` | Center/scale nuisance covariates | `TRUE` |
-#' | `terminate.time.point` | Truncate support by exposure-wise follow-up maxima | `TRUE` |
-#' | `prob.bound` | Truncate probabilities away from 0/1 (numerical guard) | `1e-5` |
-#' | `data.initial.values` | Optional starting values data frame | `NULL` |
+#' | Argument             | Meaning                                            | Default          |
+#' |----------------------|----------------------------------------------------|------------------|
+#' | `subset.condition`   | Expression (as character) to subset `data`         | `NULL`           |
+#' | `na.action`          | NA handling function                               | `stats::na.omit` |
+#' | `normalize.covariate`| Center/scale nuisance covariates                   | `TRUE`           |
+#' | `terminate.time.point` | Truncate support by exposure-wise follow-up maxima | `TRUE`        |
+#' | `prob.bound`         | Truncate probabilities away from 0/1 (numerical guard) | `1e-5`      |
+#' | `data.initial.values`| Optional starting values data frame                | `NULL`           |
 #'
 #' ### Returned object and downstream use
 #'
-#' This function returns a list object that includes:
-#' -   `coef` — regression coefficients
-#' -   `vcov` — variance-covariance matrix for regression coefficients
-#' -   `diagnostic.statistics` — a data frame containing inverse probability weights,
-#' influence functions, and predicted potential outcomes
-#' -   `summary` — a summary of estimated exposure effects
+#' `polyreg()` returns an object of class \code{"polyreg"}. The most important
+#' components are:
 #'
-#' Use `summary` output with `msummary()` to display formatted results. The regression
-#' coefficients and their variance-covariance matrix are provided as `coef`
-#' and `vcov`, respectively, with the first element corresponding to the intercept term,
-#' subsequent elements to the covariates in `nuisance.model`, and the last element
-#' to the variable specified by `exposure=`. Finally, `diagnostic.statistics` is
-#' a data frame containing inverse probability weights, influence functions, and
-#' predicted values of the potential outcomes of individual observations.
+#' - `coef` — regression coefficients on the chosen effect-measure scale.
+#' - `vcov` — variance-covariance matrix of the regression coefficients.
+#' - `diagnostic.statistics` — data frame containing inverse probability weights,
+#'   influence functions, and predicted potential outcomes for individual observations.
+#' - `summary` — a list of event-wise \emph{tidy} and \emph{glance} tables.
+#'
+#' Users should typically access results via the S3 methods:
+#'
+#' - `coef(fit)` — extract regression coefficients.
+#' - `vcov(fit, type = "default")` — extract the variance–covariance matrix
+#'   (sandwich or bootstrap, depending on \code{outcome.type} and the
+#'   \code{report.*} arguments).
+#' - `nobs(fit)` — number of observations used in the fit.
+#' - `summary(fit)` — print an event-wise, modelsummary-like table of estimates,
+#'   confidence intervals and p-values, and return the underlying list of
+#'   \code{tidy} / \code{glance} tables invisibly.
+#'
+#' For backward compatibility, components named \code{coefficient} and \code{cov}
+#' may also be present and mirror \code{coef} and \code{vcov}, respectively.
+#' The \code{summary} component can be passed to tools such as
+#' \pkg{modelsummary} or \pkg{broom} for further formatting, if desired.
 #'
 #' ### Reproducibility and conventions
 #'
 #' - If convergence warnings appear, relax/tighten tolerances or cap the parameter
-#'   bound (`optim.parameter1` to `3`) and inspect `report.optim.convergence = TRUE`.
-#' - If necessary, try modifying other `optim.parameter`, providing
-#'   use-specified initial values, or reducing the number of nuisance parameters
-#'   (e.g. provide `time.point` contributing to estimation when using
-#'   `“PROPORTIONAL-SURVIVAL”` and `“PROPORTIONAL-COMPETING-RISK”`).
+#'   bound (`optim.parameter1`–`3`) and inspect the output with
+#'   `report.optim.convergence = TRUE`.
+#' - If necessary, modify other \code{optim.parameter}, provide user-specified
+#'   initial values, or reduce the number of nuisance parameters (e.g., provide
+#'   a small set of time points contributing to estimation when using
+#'   `"proportional-survival"` or `"proportional-competing-risk"`).
 #' - Set `boot.seed` for reproducible bootstrap results.
 #' - Match CDISC ADaM conventions via `code.event1 = 0`, `code.censoring = 1`
 #'   (and, if applicable, `code.event2` for competing events).
@@ -242,13 +256,20 @@
 #'
 #' @useDynLib cifmodeling, .registration = TRUE
 #'
-#' @return A list containing fitted exposure effects and supporting results. The
-#'   main components include \code{coefficient} (estimated exposure and
-#'   covariate effects), \code{cov} (their variance-covariance matrix),
-#'   \code{summary} (a tidy summary table compatible with \pkg{modelsummary}) and
-#'   \code{diagnostic.statistics}
-#'   (inverse probability weights, influence functions and predicted potential
-#'   outcomes).
+#' @return
+#' A list of class \code{"polyreg"} containing fitted exposure effects and
+#' supporting results. Key components and methods include:
+#' \describe{
+#'   \item{\code{coef}, \code{coef()}}{Regression coefficients on the chosen
+#'     effect-measure scale.}
+#'   \item{\code{vcov}, \code{vcov()}}{Variance–covariance matrix of the
+#'     regression coefficients; the default behavior of \code{vcov()} mirrors
+#'     the CI choice implied by \code{outcome.type},
+#'     \code{report.sandwich.conf} and \code{report.boot.conf}.}
+#'   \item{\code{diagnostic.statistics}}{A data frame with inverse probability
+#'     weights, influence functions and predicted potential outcomes.}
+#'   \item{\code{summary}, \code{summary()}}{Event-wise tidy/glance summaries.
+#'     \code{summary()} prints a modelsummary-like table to the console and
 #'
 #' @examples
 #' data(diabetes.complications)
@@ -261,9 +282,11 @@
 #'   time.point = 8,
 #'   outcome.type = "competing-risk"
 #' )
-#' if (requireNamespace("modelsummary", quietly = TRUE)) {
-#' modelsummary::msummary(output$summary, statistic = c("conf.int", "p.value"), exponentiate = TRUE)
-#' }
+#'
+#' coef(fit)
+#' vcov(fit)
+#' nobs(fit)
+#' summary(fit)
 #'
 #' @name polyreg
 #' @section Lifecycle:

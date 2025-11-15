@@ -78,14 +78,32 @@ For time-point (non-proportional) models, the default is Wald CIs using a sandwi
 
 ## Return
 
-This function returns a list object that includes:
+This function returns an object of class `"polyreg"` with the following
+main components:
 
--   `coefficient` — regression coefficients
+- `coef` — regression coefficients on the chosen effect-measure scale.
 
--   `cov` — variance-covariance matrix for regression coefficients
+- `vcov` — variance–covariance matrix for the regression coefficients.
 
--   `diagnostic.statistics` — a data frame containing inverse probability weights, influence functions, and predicted potential outcomes
+- `diagnostic.statistics` — a data frame containing inverse probability
+  weights, influence functions, and predicted potential outcomes for
+  individual observations.
 
--   `summary` — a summary of estimated exposure effects
+- `summary` — a list of event-wise *tidy* and *glance* tables summarising
+  the estimated exposure effects.
 
-Use `summary` output with `msummary()` to display formatted results. The regression coefficients and their variance-covariance matrix are provided as `coefficient` and `cov`, respectively, with the first element corresponding to the intercept term, subsequent elements to the covariates in `nuisance.model`, and the last element to the variable specified by `exposure=`. Finally, `diagnostic.statistics` is a data frame containing inverse probability weights, influence functions, and predicted values of the potential outcomes of individual observations. 
+In practice, users are expected to work with the usual S3 methods:
+
+```r
+coef(fit)         # regression coefficients
+vcov(fit)         # variance–covariance matrix
+nobs(fit)         # number of observations used in the fit
+summary(fit)      # formatted, event-wise table printed to the console
+```
+
+Calling `summary()` on a "polyreg" object prints a modelsummary-like
+table of point estimates, CIs, and p-values for
+each event, and returns the underlying summary list invisibly.
+The summary component can be passed to external tools such as
+`modelsummary` or `broom` for additional formatting if desired, but
+no external packages are required to inspect the model fit.

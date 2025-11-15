@@ -188,13 +188,19 @@ of each exposure level (default \code{TRUE}).}
 from 0 and 1 (default \code{1e-5}).}
 }
 \value{
-A list containing fitted exposure effects and supporting results. The
-main components include \code{coefficient} (estimated exposure and
-covariate effects), \code{cov} (their variance-covariance matrix),
-\code{summary} (a tidy summary table compatible with \pkg{modelsummary}) and
-\code{diagnostic.statistics}
-(inverse probability weights, influence functions and predicted potential
-outcomes).
+A list of class \code{"polyreg"} containing fitted exposure effects and
+supporting results. Key components and methods include:
+\describe{
+\item{\code{coef}, \code{coef()}}{Regression coefficients on the chosen
+effect-measure scale.}
+\item{\code{vcov}, \code{vcov()}}{Variance–covariance matrix of the
+regression coefficients; the default behavior of \code{vcov()} mirrors
+the CI choice implied by \code{outcome.type},
+\code{report.sandwich.conf} and \code{report.boot.conf}.}
+\item{\code{diagnostic.statistics}}{A data frame with inverse probability
+weights, influence functions and predicted potential outcomes.}
+\item{\code{summary}, \code{summary()}}{Event-wise tidy/glance summaries.
+\code{summary()} prints a modelsummary-like table to the console and
 }
 \description{
 The direct polytomous regression enables coherent modeling and
@@ -241,23 +247,25 @@ Required for \code{"competing-risk"} and \code{"survival"} outcomes.
 
 The \code{outcome.type} argument must be set to:
 \itemize{
-\item Effects on cumulative incidence probabilities at a specific time: \code{"competing-risk"}
-\item Effects on a risk at a specific time: \code{"survival"}
-\item Common effects on cumulative incidence probabilities over time: \code{"proportional-competing-risk"}
-\item Common effects on a risk over time: \code{"proportional-survival"}
-\item Effects on a risk of a binomial outcome: \code{"binomial"}
+\item Effects on cumulative incidence probabilities at a specific time:
+\code{"competing-risk"}.
+\item Effects on a risk at a specific time: \code{"survival"}.
+\item Common effects on cumulative incidence probabilities over time:
+\code{"proportional-competing-risk"}.
+\item Common effects on a risk over time: \code{"proportional-survival"}.
+\item Effects on a risk of a binomial outcome: \code{"binomial"}.
 }\tabular{lll}{
    Setting \tab Codes \tab Meaning \cr
    competing-risk \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censoring \cr
-   competing-risk (default) \tab \code{code.event1=1}, \code{code.event2=2}, \code{code.censoring=0} \tab event of interest / competing event / censoring \cr
+   competing-risk (default) \tab \code{code.event1 = 1}, \code{code.event2 = 2}, \code{code.censoring = 0} \tab event of interest / competing event / censoring \cr
    survival \tab \code{code.event1}, \code{code.censoring} \tab event / censoring \cr
-   survival  (default) \tab \code{code.event1=1}, \code{code.censoring=0} \tab event / censoring \cr
-   survival (ADaM-ADTTE) \tab \code{code.event1=0}, \code{code.censoring=1} \tab set to match ADaM convention \cr
+   survival (default) \tab \code{code.event1 = 1}, \code{code.censoring = 0} \tab event / censoring \cr
+   survival (ADaM-ADTTE) \tab \code{code.event1 = 0}, \code{code.censoring = 1} \tab set to match ADaM convention \cr
    proportional-survival \tab \code{code.event1}, \code{code.censoring} \tab event / censoring \cr
-   proportional-survival  (default) \tab \code{code.event1=1}, \code{code.censoring=0} \tab event / censoring \cr
-   proportional-survival (ADaM-ADTTE) \tab \code{code.event1=0}, \code{code.censoring=1} \tab set to match ADaM convention \cr
+   proportional-survival (default) \tab \code{code.event1 = 1}, \code{code.censoring = 0} \tab event / censoring \cr
+   proportional-survival (ADaM) \tab \code{code.event1 = 0}, \code{code.censoring = 1} \tab set to match ADaM convention \cr
    proportional-competing-risk \tab \code{code.event1}, \code{code.event2}, \code{code.censoring} \tab event of interest / competing event / censoring \cr
-   proportional-competing-risk (default) \tab \code{code.event1=1}, \code{code.event2=2}, \code{code.censoring=0} \tab event of interest / competing event / censoring \cr
+   proportional-competing-risk (default) \tab \code{code.event1 = 1}, \code{code.event2 = 2}, \code{code.censoring = 0} \tab event of interest / competing event / censoring \cr
 }
 
 }
@@ -273,7 +281,7 @@ Choose the effect scale for event 1 and (optionally) event 2:\tabular{llll}{
 \itemize{
 \item \code{RR}: risk ratio at \code{time.point} or common over time.
 \item \code{OR}: odds ratio at \code{time.point} or common over time.
-\item \code{SHR}: subdistribution hazard ratio  or common over time.
+\item \code{SHR}: subdistribution hazard ratio or common over time.
 }
 }
 
@@ -281,10 +289,10 @@ Choose the effect scale for event 1 and (optionally) event 2:\tabular{llll}{
    Argument \tab Meaning \tab Default \cr
    \code{conf.level} \tab Wald-type CI level \tab \code{0.95} \cr
    \code{report.sandwich.conf} \tab Sandwich variance CIs \tab \code{TRUE} \cr
-   \code{report.boot.conf} \tab Bootstrap CIs (use if \code{"proportional-survival"} or \code{"proportional-competing-risk"}) \tab \code{NULL} \cr
+   \code{report.boot.conf} \tab Bootstrap CIs (used by \code{"proportional-*"} types) \tab \code{NULL} \cr
    \code{boot.bca} \tab Use BCa intervals (else normal approximation) \tab \code{FALSE} \cr
-   \code{boot.multiplier} \tab Method for wild bootstrap (\code{"rademacher"}, \code{"mammen"}, or \code{"gaussian"}) \tab \code{rademacher} \cr
-   \code{boot.replications} \tab Bootstrap reps \tab \code{200} \cr
+   \code{boot.multiplier} \tab Method for wild bootstrap \tab \code{"rademacher"} \cr
+   \code{boot.replications} \tab Bootstrap replications \tab \code{200} \cr
    \code{boot.seed} \tab Seed for resampling \tab \code{46} \cr
 }
 
@@ -294,19 +302,19 @@ Choose the effect scale for event 1 and (optionally) event 2:\tabular{llll}{
 
 \code{polyreg()} solves estimating equations with optional inner routines.\tabular{lll}{
    Argument \tab Role \tab Default \cr
-   \code{nleqslv.method} \tab Root solver \tab \code{"nleqslv"} \cr
-   \code{optim.parameter1} / \code{optim.parameter2} \tab Outer/inner convergence tolerances \tab \code{1e-6}, \code{1e-6} \cr
+   \code{nleqslv.method} \tab Root solver \tab \code{"Newton"} \cr
+   \code{optim.parameter1}, \code{optim.parameter2} \tab Outer / inner convergence tolerances \tab \code{1e-6}, \code{1e-6} \cr
    \code{optim.parameter3} \tab Parameter absolute bound \tab \code{100} \cr
    \code{optim.parameter4} \tab Max outer iterations \tab \code{50} \cr
-   \code{optim.parameter5} \tab Max \code{nleqslv} iters per outer \tab \code{50} \cr
-   \code{optim.parameter6:13} \tab Levenberg–Marquardt controls (iters/tolerances/lambda) \tab see defaults \cr
+   \code{optim.parameter5} \tab Max \code{nleqslv} iterations per outer \tab \code{50} \cr
+   \code{optim.parameter6:13} \tab Levenberg–Marquardt controls (iterations, tolerances, lambda) \tab see defaults \cr
 }
 
 }
 
 \subsection{Data handling and stability}{\tabular{lll}{
    Argument \tab Meaning \tab Default \cr
-   \code{subset.condition} \tab An expression (as character) to subset \code{data} \tab \code{NULL} \cr
+   \code{subset.condition} \tab Expression (as character) to subset \code{data} \tab \code{NULL} \cr
    \code{na.action} \tab NA handling function \tab \code{stats::na.omit} \cr
    \code{normalize.covariate} \tab Center/scale nuisance covariates \tab \code{TRUE} \cr
    \code{terminate.time.point} \tab Truncate support by exposure-wise follow-up maxima \tab \code{TRUE} \cr
@@ -318,32 +326,43 @@ Choose the effect scale for event 1 and (optionally) event 2:\tabular{llll}{
 
 \subsection{Returned object and downstream use}{
 
-This function returns a list object that includes:
+\code{polyreg()} returns an object of class \code{"polyreg"}. The most important
+components are:
 \itemize{
-\item \code{coef} — regression coefficients
-\item \code{vcov} — variance-covariance matrix for regression coefficients
-\item \code{diagnostic.statistics} — a data frame containing inverse probability weights,
-influence functions, and predicted potential outcomes
-\item \code{summary} — a summary of estimated exposure effects
+\item \code{coef} — regression coefficients on the chosen effect-measure scale.
+\item \code{vcov} — variance-covariance matrix of the regression coefficients.
+\item \code{diagnostic.statistics} — data frame containing inverse probability weights,
+influence functions, and predicted potential outcomes for individual observations.
+\item \code{summary} — a list of event-wise \emph{tidy} and \emph{glance} tables.
 }
 
-Use \code{summary} output with \code{msummary()} to display formatted results. The regression
-coefficients and their variance-covariance matrix are provided as \code{coef}
-and \code{vcov}, respectively, with the first element corresponding to the intercept term,
-subsequent elements to the covariates in \code{nuisance.model}, and the last element
-to the variable specified by \verb{exposure=}. Finally, \code{diagnostic.statistics} is
-a data frame containing inverse probability weights, influence functions, and
-predicted values of the potential outcomes of individual observations.
+Users should typically access results via the S3 methods:
+\itemize{
+\item \code{coef(fit)} — extract regression coefficients.
+\item \code{vcov(fit, type = "default")} — extract the variance–covariance matrix
+(sandwich or bootstrap, depending on \code{outcome.type} and the
+\code{report.*} arguments).
+\item \code{nobs(fit)} — number of observations used in the fit.
+\item \code{summary(fit)} — print an event-wise, modelsummary-like table of estimates,
+confidence intervals and p-values, and return the underlying list of
+\code{tidy} / \code{glance} tables invisibly.
+}
+
+For backward compatibility, components named \code{coefficient} and \code{cov}
+may also be present and mirror \code{coef} and \code{vcov}, respectively.
+The \code{summary} component can be passed to tools such as
+\pkg{modelsummary} or \pkg{broom} for further formatting, if desired.
 }
 
 \subsection{Reproducibility and conventions}{
 \itemize{
 \item If convergence warnings appear, relax/tighten tolerances or cap the parameter
-bound (\code{optim.parameter1} to \code{3}) and inspect \code{report.optim.convergence = TRUE}.
-\item If necessary, try modifying other \code{optim.parameter}, providing
-use-specified initial values, or reducing the number of nuisance parameters
-(e.g. provide \code{time.point} contributing to estimation when using
-\verb{“PROPORTIONAL-SURVIVAL”} and \verb{“PROPORTIONAL-COMPETING-RISK”}).
+bound (\code{optim.parameter1}–\code{3}) and inspect the output with
+\code{report.optim.convergence = TRUE}.
+\item If necessary, modify other \code{optim.parameter}, provide user-specified
+initial values, or reduce the number of nuisance parameters (e.g., provide
+a small set of time points contributing to estimation when using
+\code{"proportional-survival"} or \code{"proportional-competing-risk"}).
 \item Set \code{boot.seed} for reproducible bootstrap results.
 \item Match CDISC ADaM conventions via \code{code.event1 = 0}, \code{code.censoring = 1}
 (and, if applicable, \code{code.event2} for competing events).
@@ -366,9 +385,11 @@ output <- polyreg(
   time.point = 8,
   outcome.type = "competing-risk"
 )
-if (requireNamespace("modelsummary", quietly = TRUE)) {
-modelsummary::msummary(output$summary, statistic = c("conf.int", "p.value"), exponentiate = TRUE)
-}
+
+coef(fit)
+vcov(fit)
+nobs(fit)
+summary(fit)
 
 }
 \seealso{
