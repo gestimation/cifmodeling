@@ -263,12 +263,18 @@ plot_normalize_type_y <- function(type.y) {
   if (is.na(ty) || !nzchar(ty)) return(NULL)
   if (ty %in% c("risk", "r")) return("risk")
   if (ty %in% c("surv", "s")) return("surv")
+  if (ty %in% c("stack", "stacked", "stacking")) return("stacked")
+  if (ty %in% c("cumhaz", "hazard", "cumulativehazard", "cumulative-hazard", "h")) return("cumhaz")
+  if (ty %in% c("cloglog", "cll", "complementaryloglog", "loglog", "log-log")) return("cloglog")
   type.y
 }
 
 plot_default_y_label <- function(fit_type, type.y = NULL) {
   ft <- tolower(as.character(fit_type %||% ""))
   ty <- plot_normalize_type_y(type.y)
+  if (identical(ty, "stacked")) return("Cumulative incidence (stacked)")
+  if (identical(ty, "cumhaz")) return("Cumulative hazard")
+  if (identical(ty, "cloglog")) return("cloglog(Survival)")
   if (ft %in% c("kaplan-meier", "kaplan_meier", "km")) {
     if (identical(ty, "risk")) return(plot_default_labels$y_axis$survival_risk)
     return(plot_default_labels$y_axis$survival)
