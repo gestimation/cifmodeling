@@ -2,7 +2,7 @@
 % Please edit documentation in R/cifpanel.R
 \name{cifpanel}
 \alias{cifpanel}
-\title{Arrange multiple survival / CIF plots in a panel display}
+\title{Arrange multiple survival/CIF plots in a panel display}
 \usage{
 cifpanel(
   plots = NULL,
@@ -269,33 +269,21 @@ calls that build each panel. Use this to pass low-level options such as
 }
 \value{
 Returns a \code{"cifpanel"} object (list) with elements \code{plot}
-(\code{NULL}), \code{list.plot} (list of \code{ggplot} objects),
+(always \code{NULL}), \code{list.plot} (list of \code{ggplot} objects),
 \code{patchwork}, and the same metadata fields as \code{\link[=cifplot]{cifplot()}}. The object is
-returned invisibly; printing occurs only when \code{interactive()} and
-\code{print.panel = TRUE}.
+returned invisibly; printing occurs only when \code{print.panel = TRUE}.
 }
 \description{
 \code{cifpanel()} is the panel-building counterpart of \code{cifplot()}.
 It takes one or more model formulas (or, alternatively, one formula and several
 event-coding specifications) and returns a multi-panel figure, typically as a
-\pkg{patchwork} object. Most display options (axis labels, marks, style, ggsave options)
+patchwork-compatible object. Most display options (axis labels, marks, style, ggsave options)
 are shared with \code{cifplot()}, but per-panel legends and risk tables are
-suppressed to avoid duplicated display.
-
-Panel layout is specified by length-2 vector \code{rows.columns.panel}.
-This function can also automatically determine the panel count in the following order:
-(1) if \code{plots} is supplied, its length defines the number of plots,
-(2) else if \code{formulas} is supplied, its length defines the number of plots,
-(3) else if \code{code.events} is supplied, its length defines the number of plots
-together with formula, and (4) otherwise \code{rows.columns.panel=c(1,1)}.
+suppressed to avoid duplicated display. Typical use cases are:
 \itemize{
-\item \code{formula} or \code{formulas} — one formula or a list of formulas; each entry creates a panel.
-\item \code{data}, \code{outcome.type}, \code{code.events}, \code{type.y} — recycled across panels unless a list is supplied for per-panel control.
-\item \code{rows.columns.panel} — selects grid layout by c(rows, cols).
-\item \code{inset.panel} — selects inset layout.
-\item \code{title.panel}, \code{subtitle.panel}, \code{caption.panel}, \code{title.plot} — overall titles and captions.
-\item \code{tag.panel} — panel tag style (e.g., "A", "a", "1").
-\item \code{label.x}, \code{label.y}, \code{limits.x}, \code{limits.y}, \code{breaks.x}, \code{breaks.y} — shared axis control unless a list is supplied for per-panel control.
+\item Compare CIF (event 1) vs CIF (event 2) in a 1×2 layout.
+\item Compare survival/CIF curves across strata with a shared legend and matched axes.
+\item Display a plot with an enlarged y-axis inside a full-scale plot.
 }
 }
 \details{
@@ -312,8 +300,8 @@ list in \code{formulas} (one per panel). When both are provided, \code{formulas}
 \item Use \code{outcome.type} to set per-panel estimator (\code{"survival"}=KM, \code{"competing-risk"}=AJ).
 \item Alternatively, pass \code{code.events} per panel to infer the type:
 \itemize{
-\item length 2 = SURVIVAL: \code{c(event1, censor)}
-\item length 3 = COMPETING-RISK: \code{c(event1, event2, censor)}
+\item length 2 = survival: \code{c(event1, censor)}
+\item length 3 = competing-risk: \code{c(event1, event2, censor)}
 }
 \item If \code{outcome.type} is \code{NULL}, the function infers each panel from its
 \code{code.events[[i]]} length. When both are given, \code{outcome.type} takes precedence.
@@ -321,6 +309,13 @@ list in \code{formulas} (one per panel). When both are provided, \code{formulas}
 }
 
 \subsection{Panel-wise vs shared arguments}{
+
+Panel layout is specified by length-2 vector \code{rows.columns.panel}.
+This function can also automatically determine the panel count in the following order:
+(1) if \code{plots} is supplied, its length defines the number of plots,
+(2) else if \code{formulas} is supplied, its length defines the number of plots,
+(3) else if \code{code.events} is supplied, its length defines the number of plots
+together with formula, and (4) otherwise \code{rows.columns.panel=c(1,1)}.
 
 Many arguments accept a \strong{scalar} (recycled to all panels) or a \strong{list/vector}
 (one entry per panel). Precedence: \strong{panel-wise explicit values} >
@@ -344,6 +339,15 @@ reference frame via \code{inset.align.to} (\code{"panel"}, \code{"plot"}, or \co
 
 The following arguments allow \strong{per-panel} control by supplying vectors/lists,
 or \strong{shared} control by supplying scalars. They are forwarded to \code{cifplot()}.
+\itemize{
+\item \code{formula} or \code{formulas} — one formula or a list of formulas; each entry creates a panel.
+\item \code{data}, \code{outcome.type}, \code{code.events}, \code{type.y} — recycled across panels unless a list is supplied for per-panel control.
+\item \code{rows.columns.panel} — selects grid layout by c(rows, cols).
+\item \code{inset.panel} — selects inset layout.
+\item \code{title.panel}, \code{subtitle.panel}, \code{caption.panel}, \code{title.plot} — overall titles and captions.
+\item \code{tag.panel} — panel tag style (e.g., "A", "a", "1").
+\item \code{label.x}, \code{label.y}, \code{limits.x}, \code{limits.y}, \code{breaks.x}, \code{breaks.y} — shared axis control unless a list is supplied for per-panel control.
+}
 \subsection{Scale & labels}{\tabular{lll}{
    Argument \tab Meaning \tab Default \cr
    \code{type.y} \tab \code{"risk"} (CIF y-axis) or \code{NULL} (survival). \tab inferred \cr
@@ -386,26 +390,16 @@ can be given via \code{...} if needed; names must match strata labels.)}
 If \code{filename.ggsave} is non-\code{NULL}, the composed panel is saved with
 \code{ggsave()} using \code{width.ggsave}, \code{height.ggsave}, and \code{dpi.ggsave}.
 Otherwise, the function returns objects without saving.
-}
 
-\subsection{Value}{
-
-Returns invisibly a \code{"cifpanel"} object (list) with elements
-\code{plot} (always \code{NULL}), \code{list.plot} (list of \code{ggplot}
-objects), \code{patchwork}, and the same metadata fields as
-\code{\link[=cifplot]{cifplot()}}. When \code{interactive()} and \code{print.panel = TRUE}, the
-patchwork is printed automatically.
-}
-
-\subsection{Notes & tips}{
+\strong{Notes}
 \itemize{
 \item Mixed panel types are supported (e.g., AJ in panel 1; KM in panel 2).
 \item If \code{formulas} is shorter than the grid capacity, empty slots are ignored.
 \item When supplying vectors/lists per panel, their lengths must match the number
 of panels; length-1 inputs are recycled; otherwise an error is thrown.
-\item For CIF displays, set \code{type.y = "risk"} in the relevant panels.
-\item ADaM-style coding can be expressed via \code{code.events} (e.g., \code{c(0,1)} for KM:
-\code{event1=0}, \code{censor=1}).
+\item For CIF displays, set \code{type.y = "risk"}. For survival scale, use \code{type.y = NULL} or \verb{= "surv"}.
+For ADaM-style data, use \code{code.events=c(0,1)} or
+\code{code.event1 = 0}, \code{code.censoring = 1}.
 \item Additional graphical options (e.g., theme) can be added post-hoc to each
 element of \code{list.plot} or to the composed \code{patchwork}.
 }

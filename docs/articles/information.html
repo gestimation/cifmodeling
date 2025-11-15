@@ -34,7 +34,6 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/overview.html">Overview</a></li>
-    <li><a class="dropdown-item" href="../articles/functions.html">Main functions</a></li>
     <li><a class="dropdown-item" href="../articles/polyreg.html">Direct polytomous regression</a></li>
     <li><a class="dropdown-item" href="../articles/examples.html">Examples</a></li>
     <li><a class="dropdown-item" href="../articles/information.html">Additional information</a></li>
@@ -177,13 +176,14 @@ be the size of the risk set (the number of surviving observations) just
 prior to
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mi>i</mi></msub><annotation encoding="application/x-tex">t_i</annotation></semantics></math>.</p>
 <p>Survival data is expected when
-<code>outcome.type = "SURVIVAL"</code>. Let
+<code>outcome.type = "survival"</code>. Let
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>d</mi><mi>i</mi></msub><annotation encoding="application/x-tex">d_i</annotation></semantics></math>
 be the number of failures at
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mi>i</mi></msub><annotation encoding="application/x-tex">t_i</annotation></semantics></math>.
 The Kaplan–Meier estimator of the survival function
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>t</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">S(t_i)</annotation></semantics></math>
-is</p>
+is as below.</p>
+<p><strong>Kaplan–Meier estimator</strong></p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>S</mi><mo accent="true">̂</mo></mover><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><munder><mo>∏</mo><mrow><msub><mi>t</mi><mi>i</mi></msub><mo>≤</mo><mi>t</mi></mrow></munder><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mfrac><msub><mi>d</mi><mi>i</mi></msub><msub><mi>Y</mi><mi>i</mi></msub></mfrac><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
 \hat{S}(t) = \prod_{t_i \le t} \left( 1 - \frac{d_i}{Y_i} \right)
 </annotation></semantics></math> Note that the estimator is defined to
@@ -225,7 +225,7 @@ is</p>
 \hat{S}(t) = \prod_{t_i \le t} \left( 1 - \frac{d_i^w}{Y_i^w} \right). 
 </annotation></semantics></math> Xie and Liu (2005) proposed the
 Greenwood-type variance for the weighted Kaplan–Meier estimator.</p>
-<p><strong>Greenwood variance</strong>
+<p><strong>Greenwood variance for weighted Kaplan–Meier</strong>
 <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">Var</mtext><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">{</mo><mover><mi>S</mi><mo accent="true">̂</mo></mover><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">}</mo></mrow><mo>=</mo><mover><mi>S</mi><mo accent="true">̂</mo></mover><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><munder><mo>∑</mo><mrow><msub><mi>t</mi><mi>i</mi></msub><mo>≤</mo><mi>t</mi></mrow></munder><mfrac><mrow><msubsup><mi>d</mi><mi>i</mi><mi>w</mi></msubsup><msub><mi>Y</mi><mi>i</mi></msub></mrow><mrow><msub><mi>M</mi><mi>i</mi></msub><msubsup><mi>Y</mi><mi>i</mi><mi>w</mi></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>Y</mi><mi>i</mi><mi>w</mi></msubsup><mo>−</mo><msubsup><mi>d</mi><mi>i</mi><mi>w</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac><mo>,</mo></mrow><annotation encoding="application/x-tex">
 \textrm{Var}\!\left\{\hat{S}(t)\right \}
 = \hat{S}(t)^2\sum_{t_i \le t} \frac{d_i^w Y_i}{M_i Y_i^w(Y_i^w - d_i^w)}, 
@@ -236,7 +236,7 @@ is an adjustment factor defined as
 M_i = \frac{\left(\sum_{t_j \geq t_i} w_j \right)^2}{\sum_{t_j \geq t_i} w_j^2}. 
 </annotation></semantics></math> The Tsiatis-type variance is calculated
 as follows in the same spirits.</p>
-<p><strong>Tsiatis variance</strong>
+<p><strong>Tsiatis variance for weighted Kaplan–Meier</strong>
 <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">Var</mtext><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">{</mo><mover><mi>S</mi><mo accent="true">̂</mo></mover><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">}</mo></mrow><mo>=</mo><mover><mi>S</mi><mo accent="true">̂</mo></mover><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><munder><mo>∑</mo><mrow><msub><mi>t</mi><mi>i</mi></msub><mo>≤</mo><mi>t</mi></mrow></munder><mfrac><mrow><msubsup><mi>d</mi><mi>i</mi><mi>w</mi></msubsup><msub><mi>Y</mi><mi>i</mi></msub></mrow><mrow><msub><mi>M</mi><mi>i</mi></msub><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>Y</mi><mi>i</mi><mi>w</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup></mrow></mfrac></mrow><annotation encoding="application/x-tex">
 \textrm{Var}\!\left\{\hat{S}(t)\right \}
 = \hat{S}(t)^2\sum_{t_i \le t} \frac{d_i^w Y_i}{M_i (Y_i^w)^2}
@@ -264,8 +264,9 @@ is
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>d</mi><mi>i</mi></msub><mo>=</mo><msub><mi>d</mi><mrow><mi>i</mi><mn>1</mn></mrow></msub><mo>+</mo><msub><mi>d</mi><mrow><mi>i</mi><mn>2</mn></mrow></msub></mrow><annotation encoding="application/x-tex">d_i = d_{i1} + d_{i2}</annotation></semantics></math>.</p>
 <p>The Aalen–Johansen estimator of CIF for cause
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ϵ</mi><mo>=</mo><mi>j</mi></mrow><annotation encoding="application/x-tex">\epsilon=j</annotation></semantics></math>
-is
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>F</mi><mo accent="true">̂</mo></mover><mi>j</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><munder><mo>∑</mo><mrow><msub><mi>t</mi><mi>i</mi></msub><mo>≤</mo><mi>t</mi></mrow></munder><mfrac><msub><mi>d</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><msub><mi>Y</mi><mi>i</mi></msub></mfrac><mspace width="0.167em"></mspace><mover><mi>S</mi><mo accent="true">̂</mo></mover><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>t</mi><mrow><mi>i</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+is as below.</p>
+<p><strong>Aalen–Johansen estimator</strong></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>F</mi><mo accent="true">̂</mo></mover><mi>j</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><munder><mo>∑</mo><mrow><msub><mi>t</mi><mi>i</mi></msub><mo>≤</mo><mi>t</mi></mrow></munder><mfrac><msub><mi>d</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><msub><mi>Y</mi><mi>i</mi></msub></mfrac><mspace width="0.167em"></mspace><mover><mi>S</mi><mo accent="true">̂</mo></mover><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>t</mi><mrow><mi>i</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \hat{F}_j(t)
 = \sum_{t_i \le t} \frac{d_{ij}}{Y_i}\,\hat{S}(t_{i-1}).
 </annotation></semantics></math></p>

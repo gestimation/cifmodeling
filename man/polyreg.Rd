@@ -2,8 +2,8 @@
 % Please edit documentation in R/polyreg.R
 \name{polyreg}
 \alias{polyreg}
-\title{Fits regression models of cumulative incidence functions based on polytomous
-log odds products and stratified IPCW estimator}
+\title{Fits regression models of CIFs based on polytomous
+log odds products and the stratified IPCW estimator}
 \usage{
 polyreg(
   nuisance.model,
@@ -190,24 +190,28 @@ from 0 and 1 (default \code{1e-5}).}
 \value{
 A list of class \code{"polyreg"} containing fitted exposure effects and
 supporting results. Key components and methods include:
-\describe{
-\item{\code{coef}, \code{coef()}}{Regression coefficients on the chosen
-effect-measure scale.}
-\item{\code{vcov}, \code{vcov()}}{Variance–covariance matrix of the
-regression coefficients; the default behavior of \code{vcov()} mirrors
-the confidence-interval choice implied by \code{outcome.type},
-\code{report.sandwich.conf} and \code{report.boot.conf}.}
-\item{\code{diagnostic.statistics}}{A data frame with inverse probability
-weights, influence functions and predicted potential outcomes.}
-\item{\code{summary}, \code{summary()}}{Event-wise tidy/glance summaries.
+\itemize{
+\item \code{coef}, \code{coef()} Regression coefficients on the chosen
+effect-measure scale.
+\item \code{vcov}, \code{vcov()} Variance–covariance matrix of the
+regression coefficients. The default behavior of \code{vcov()} mirrors
+the CI option implied by \code{outcome.type},
+\code{report.sandwich.conf} and \code{report.boot.conf}.
+\item \code{diagnostic.statistics} A data frame with inverse probability
+weights, influence functions and predicted potential outcomes.
+\item \code{summary}, \code{summary()} Event-wise tidy/glance summaries.
 \code{summary()} prints a modelsummary-like table to the console and
-returns these summaries invisibly.}
+returns these summaries invisibly.
 }
 }
 \description{
 The direct polytomous regression enables coherent modeling and
 estimation of a variety of multiplicative effects of a categorical exposure under
 several outcome types, including competing risks, survival and binomial outcomes.
+The function follows the familiar \strong{formula + data} syntax and outputs tidy results,
+including point estimates, SEs, CIs, and p-values.
+Its results can be easily summarized with \code{summary()} or combined with external
+functions such as \code{modelsummary()} for reporting.
 }
 \details{
 \subsection{Overview}{
@@ -223,17 +227,12 @@ effect-measure models and nuisance models on multiple competing events
 simultaneously. Additionally, \code{polyreg()} supports direct binomial regression
 for survival outcomes and the Richardson model for binomial outcomes,
 both of which use log odds products.
-
-The function follows the familiar \strong{formula + data} syntax with \code{Event()} or
-\code{Surv()} and outputs tidy results, including point estimates, standard errors,
-confidence intervals, and p-values. Its results can be easily summarized with
-\code{summary()} or combined with tools such as \strong{modelsummary} or \strong{broom} for reporting.
 }
 
 \subsection{Key arguments}{
 \itemize{
-\item \code{nuisance.model} — a formula describing the outcome and nuisance covariates,
-excluding the exposure of interest.
+\item \code{nuisance.model} — a formula with \code{Event()} or \code{survivai::Surv()}
+describing the outcome and nuisance covariates, excluding the exposure of interest.
 \item \code{exposure} — specifies the categorical exposure variable
 \item \code{effect.measure1} and \code{effect.measure2} — specifies the effect measures
 for event1 and event2 (\code{"RR"}, \code{"OR"} or \code{"SHR"}).
@@ -326,34 +325,26 @@ Choose the effect scale for event 1 and (optionally) event 2:\tabular{llll}{
 
 }
 
-\subsection{Returned object and downstream use}{
+\subsection{Downstream use}{
 
-\code{polyreg()} returns an object of class \code{"polyreg"}. The most important
-components are:
-\itemize{
-\item \code{coef} — regression coefficients on the chosen effect-measure scale.
-\item \code{vcov} — variance-covariance matrix of the regression coefficients.
-\item \code{diagnostic.statistics} — data frame containing inverse probability weights,
-influence functions, and predicted potential outcomes for individual observations.
-\item \code{summary} — a list of event-wise \emph{tidy} and \emph{glance} tables.
-}
-
+\code{polyreg()} returns an object of class \code{"polyreg"} that contains
+regression coefficients (\code{coef}), variance-covariance matrix (\code{vcov})
+and a list of event-wise \emph{tidy} and \emph{glance} tables (\code{summary}).
 Users should typically access results via the S3 methods:
 \itemize{
-\item \code{coef(fit)} — extract regression coefficients.
-\item \code{vcov(fit, type = "default")} — extract the variance–covariance matrix
+\item \code{coef()} — extract regression coefficients.
+\item \code{vcov()} — extract the variance–covariance matrix
 (sandwich or bootstrap, depending on \code{outcome.type} and the
 \code{report.*} arguments).
-\item \code{nobs(fit)} — number of observations used in the fit.
-\item \code{summary(fit)} — print an event-wise, modelsummary-like table of estimates,
-confidence intervals and p-values, and return the underlying list of
-\code{tidy} / \code{glance} tables invisibly.
+\item \code{nobs()} — number of observations used in the fit.
+\item \code{summary()} — print an event-wise, modelsummary-like table of estimates,
+CIs and p-values, and return the underlying list of tidy/glance tables invisibly.
 }
 
 For backward compatibility, components named \code{coefficient} and \code{cov}
 may also be present and mirror \code{coef} and \code{vcov}, respectively.
-The \code{summary} component can be passed to tools such as
-\pkg{modelsummary} or \pkg{broom} for further formatting, if desired.
+The \code{summary} component can be passed to external functions such as
+\code{modelsummary()} for further formatting, if desired.
 }
 
 \subsection{Reproducibility and conventions}{
