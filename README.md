@@ -97,7 +97,7 @@ functions (`cifcurve`, `cifplot`, `cifpanel`, and `polyreg`). The
 package is continuously tested on GitHub Actions (Windows, macOS, Linux)
 to maintain reproducibility and CRAN-level compliance.
 
-## Example. Competing risks analysis
+## An example of Competing risks analysis
 
 For the initial illustration, unadjusted analysis focusing on cumulative
 incidence of diabetic retinopathy (event 1) and macrovascular
@@ -255,13 +255,13 @@ summary(output3)
 #>                       event1        event2      
 #> ---------------------------------------------- 
 #> Intercept            
-#>                       -1.383        -3.991      
-#>                       [-1.639, -1.127]  [-4.422, -3.561]
+#>                       0.251         0.018       
+#>                       [0.194, 0.324]  [0.012, 0.028]
 #>                       (p=0.000)     (p=0.000)   
 #> 
 #> fruitq1, Q2 to Q4 vs 0 
-#>                       -0.300        -0.076      
-#>                       [-0.522, -0.079]  [-0.540, 0.388]
+#>                       0.740         0.927       
+#>                       [0.593, 0.924]  [0.583, 1.474]
 #>                       (p=0.008)     (p=0.749)   
 #> 
 #> ---------------------------------------------- 
