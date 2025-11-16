@@ -2,7 +2,7 @@
 % Please edit documentation in R/cifpanel.R
 \name{cifpanel}
 \alias{cifpanel}
-\title{Arrange multiple survival/CIF plots in a panel display}
+\title{Arrange multiple survival and CIF plots in a panel display}
 \usage{
 cifpanel(
   plots = NULL,
@@ -84,8 +84,8 @@ cifpanel(
 )
 }
 \arguments{
-\item{plots}{Optional list of already-built \code{ggplot} objects to be arranged.
-If supplied, these are used as-is (no fitting is done).}
+\item{plots}{Optional list of existing ggplot objects to be arranged into a panel.
+When plots is supplied, no new models are fitted; the plots are used as-is.}
 
 \item{formula}{A model formula specifying the time-to-event outcome on the
 left-hand side (typically \code{Event(time, status)} or \code{Surv(time, status)})
@@ -101,8 +101,8 @@ panels.}
 
 \item{weights}{Optional name of the weight variable in \code{data}. Weights must be nonnegative.}
 
-\item{subset.condition}{Optional expression (as a character string) defining a
-subset of \code{data} to analyze (default \code{NULL}).}
+\item{subset.condition}{Optional character string giving a logical condition to subset
+\code{data} (default \code{NULL}).}
 
 \item{na.action}{A function specifying the action to take on missing values (default \code{na.omit}).}
 
@@ -117,16 +117,18 @@ Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detectio
 When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
 (primarily used when \code{cifpanel()} is called or when \code{panel.per.event = TRUE}).}
 
-\item{error}{Character specifying the method for standard error and confidence intervals used internally
-(\code{greenwood} (default), \code{tsiatis} or \code{if} for \code{"survival"},
-and \code{delta} (default),  \code{aalen} or  \code{if} for \code{"competing-risk"}).}
+\item{error}{Character string specifying the method for SEs and CIs used internally.
+For \code{"survival"}, choose one of \code{"greenwood"} (default), \code{"tsiatis"}, or \code{"if"}.
+For \code{"competing-risk"}, choose one of \code{"delta"} (default), \code{"aalen"}, or \code{"if"}.}
 
 \item{conf.type}{Character specifying the method of transformation for confidence intervals
 used internally (default \code{arcsine-square root}).}
 
 \item{conf.int}{Numeric two-sided confidence level (default \code{0.95}).}
 
-\item{type.y}{Optional vector/list per panel: \code{"surv"} or \code{"risk"} (display 1 - survival i.e. CIF).}
+\item{type.y}{Character string specifying the y-scale: \code{"surv"} for survival probabilities
+or \code{"risk"} for cumulative incidence (1 - survival in simple survival settings).
+If \code{NULL}, a default is chosen from \code{outcome.type}.}
 
 \item{label.x}{Character x-axis label (default \code{"Time"}).}
 
@@ -268,22 +270,35 @@ calls that build each panel. Use this to pass low-level options such as
 \code{competing.risk.time}, \code{intercurrent.event.time}, or styling overrides.}
 }
 \value{
-Returns a \code{"cifpanel"} object (list) with elements \code{plot}
-(always \code{NULL}), \code{list.plot} (list of \code{ggplot} objects),
-\code{patchwork}, and the same metadata fields as \code{\link[=cifplot]{cifplot()}}. The object is
-returned invisibly; printing occurs only when \code{print.panel = TRUE}.
+A \code{"cifpanel"} object (returned invisibly), which is a list
+with at least the following elements:
+\itemize{
+\item \code{list.plot} a list of \code{ggplot} objects, one per panel;
+\item \code{patchwork} a patchwork object representing the composed panel;
+\item \code{plot} reserved for backwards compatibility (always \code{NULL});
+\item metadata fields mirroring those in \code{cifplot()`} (such as information
+on the fitted curves and display settings).
+}
+
+When \code{print.panel=TRUE}, the patchwork object is printed in interactive
+sessions in addition to being returned.
 }
 \description{
-\code{cifpanel()} is the panel-building counterpart of \code{cifplot()}.
-It takes one or more model formulas (or, alternatively, one formula and several
-event-coding specifications) and returns a multi-panel figure, typically as a
-patchwork-compatible object. Most display options (axis labels, marks, style, ggsave options)
-are shared with \code{cifplot()}, but per-panel legends and risk tables are
-suppressed to avoid duplicated display. Typical use cases are:
+\code{cifpanel()} is the panel-building counterpart of \code{cifplot()}. It
+composes multiple survival and CIF curves into a single
+figure, typically returned as a patchwork-compatible object. You can
+either supply one or more model formulas (to be fitted internally) or a
+list of existing ggplot objects. Most graphical options (axis labels,
+marks, styles, and export settings) are shared with \code{cifplot()}, while
+per-panel legends and risk tables are suppressed to avoid duplicated
+display.
+
+Typical use cases include:
 \itemize{
-\item Compare CIF (event 1) vs CIF (event 2) in a 1×2 layout.
-\item Compare survival/CIF curves across strata with a shared legend and matched axes.
-\item Display a plot with an enlarged y-axis inside a full-scale plot.
+\item comparing CIFs for different event types in a 1 × 2 layout
+\item comparing survival or CIF curves across strata with a shared legend and
+harmonized axes
+\item adding an inset plot with a restricted y-axis range into a full-scale plot
 }
 }
 \details{

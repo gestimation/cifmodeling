@@ -2,20 +2,26 @@
 #' censoring, competing risks and intermediate events
 #'
 #' @description
-#' This function generates a survival or CIF curve from a unified formula +
-#' data interface (\code{Event()} or \code{Surv()} on the LHS, and a stratification
-#' variable on the RHS if necessary). You may also pass a survfit-compatible object directly.
-#' Options for risk and estimate+CI tables, censoring/competing-risk/intercurrent-event marks,
-#' and simple panel display internally using \code{cifpanel()} are available.
-#' This function returns a list including \code{plot}, a regular \code{ggplot} object
-#' (compatible with \code{+} and \code{%+%}).
+#' This function generatesa survival or CIF curve from a unified formula–data interface
+#' or from an existing survfit object. When a formula is supplied, the LHS is typically
+#' \code{Event()} or \code{survivai::Surv()}, and the RHS specifies an optional
+#' stratification variable. In addition to the curves themselves,
+#' \code{cifplot()} can add numbers-at-risk tables, tables of point estimates and
+#' confidence intervals, censoring marks, competing-risk marks, and
+#' intercurrent-event marks.
+#'
+#' For more complex multi-panel displays, \code{cifplot()} can internally call
+#' \code{cifpanel()} via several “panel modes” (per event, per covariate, or
+#' censoring-focused). The function returns an object whose \code{plot}
+#' component is a regular ggplot object that can be further modified with
+#' the usual `+` syntax.
 #'
 #' @inheritParams cif-stat-arguments
 #' @inheritParams cif-visual-arguments
 #'
-#' @param formula_or_fit A model formula or a \code{survfit} object. **Note:** When a formula is supplied,
-#'   the LHS must be \code{Event(time, status)} or \code{Surv(time, status)}.
-#'   The RHS specifies the stratification variable.
+#' @param formula_or_fit Either a model formula or a \code{survfit} object. When a formula is
+#'   supplied, the LHS must be \code{Event(time, status)} or \code{Surv(time, status)}.
+#'   The RHS specifies an optional stratification variable.
 #' @param code.events Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
 #'   When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
 #'   (primarily used when \code{cifpanel()} is called or when \code{panel.per.event = TRUE}).
@@ -185,6 +191,21 @@
 #'   \code{axis.info}, \code{visual.info}, \code{panel.info}, \code{style.info},
 #'   \code{inset.info}, \code{print.info}, \code{ggsave.info}, \code{version},
 #'   and \code{call}.
+
+#' @return
+#' A \code{"cifplot"} object (a list) with at least the following elements:
+#'
+#' - \code{plot} a ggplot object containing the main plot
+#' - \code{patchwork} reserved for compatibility with panel displays
+#'   (typically \code{NULL} for single-panel plots)
+#' - \code{survfit.info}, \code{axis.info}, \code{visual.info}, \code{panel.info},
+#'   \code{style.info}, \code{inset.info}, \code{print.info}, \code{ggsave.info}
+#'   internal lists storing the fitted curves and display settings
+#' - \code{version} a character string giving the cifmodeling version used
+#' - \code{call} the original function call
+#'
+#' The object is returned invisibly. When a panel mode is active and
+#' \code{print.panel=TRUE}, the panel is also printed in interactive sessions.
 #'
 #' @keywords internal
 #' @param survfit.info,axis.info,visual.info,panel.info,style.info,print.info,ggsave.info

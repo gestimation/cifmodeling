@@ -77,16 +77,16 @@ cifplot(
 )
 }
 \arguments{
-\item{formula_or_fit}{A model formula or a \code{survfit} object. \strong{Note:} When a formula is supplied,
-the LHS must be \code{Event(time, status)} or \code{Surv(time, status)}.
-The RHS specifies the stratification variable.}
+\item{formula_or_fit}{Either a model formula or a \code{survfit} object. When a formula is
+supplied, the LHS must be \code{Event(time, status)} or \code{Surv(time, status)}.
+The RHS specifies an optional stratification variable.}
 
 \item{data}{A data frame containing variables in the formula.}
 
 \item{weights}{Optional name of the weight variable in \code{data}. Weights must be nonnegative.}
 
-\item{subset.condition}{Optional expression (as a character string) defining a
-subset of \code{data} to analyze (default \code{NULL}).}
+\item{subset.condition}{Optional character string giving a logical condition to subset
+\code{data} (default \code{NULL}).}
 
 \item{na.action}{A function specifying the action to take on missing values (default \code{na.omit}).}
 
@@ -107,16 +107,18 @@ Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detectio
 When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
 (primarily used when \code{cifpanel()} is called or when \code{panel.per.event = TRUE}).}
 
-\item{error}{Character specifying the method for standard error and confidence intervals used internally
-(\code{greenwood} (default), \code{tsiatis} or \code{if} for \code{"survival"},
-and \code{delta} (default),  \code{aalen} or  \code{if} for \code{"competing-risk"}).}
+\item{error}{Character string specifying the method for SEs and CIs used internally.
+For \code{"survival"}, choose one of \code{"greenwood"} (default), \code{"tsiatis"}, or \code{"if"}.
+For \code{"competing-risk"}, choose one of \code{"delta"} (default), \code{"aalen"}, or \code{"if"}.}
 
 \item{conf.type}{Character specifying the method of transformation for confidence intervals
 used internally (default \code{arcsine-square root}).}
 
 \item{conf.int}{Numeric two-sided confidence level (default \code{0.95}).}
 
-\item{type.y}{Optional vector/list per panel: \code{"surv"} or \code{"risk"} (display 1 - survival i.e. CIF).}
+\item{type.y}{Character string specifying the y-scale: \code{"surv"} for survival probabilities
+or \code{"risk"} for cumulative incidence (1 - survival in simple survival settings).
+If \code{NULL}, a default is chosen from \code{outcome.type}.}
 
 \item{label.x}{Character x-axis label (default \code{"Time"}).}
 
@@ -265,15 +267,36 @@ Returns a \code{"cifplot"} object (list) with elements
 \code{axis.info}, \code{visual.info}, \code{panel.info}, \code{style.info},
 \code{inset.info}, \code{print.info}, \code{ggsave.info}, \code{version},
 and \code{call}.
+
+A \code{"cifplot"} object (a list) with at least the following elements:
+\itemize{
+\item \code{plot} a ggplot object containing the main plot
+\item \code{patchwork} reserved for compatibility with panel displays
+(typically \code{NULL} for single-panel plots)
+\item \code{survfit.info}, \code{axis.info}, \code{visual.info}, \code{panel.info},
+\code{style.info}, \code{inset.info}, \code{print.info}, \code{ggsave.info}
+internal lists storing the fitted curves and display settings
+\item \code{version} a character string giving the cifmodeling version used
+\item \code{call} the original function call
+}
+
+The object is returned invisibly. When a panel mode is active and
+\code{print.panel=TRUE}, the panel is also printed in interactive sessions.
 }
 \description{
-This function generates a survival or CIF curve from a unified formula +
-data interface (\code{Event()} or \code{Surv()} on the LHS, and a stratification
-variable on the RHS if necessary). You may also pass a survfit-compatible object directly.
-Options for risk and estimate+CI tables, censoring/competing-risk/intercurrent-event marks,
-and simple panel display internally using \code{cifpanel()} are available.
-This function returns a list including \code{plot}, a regular \code{ggplot} object
-(compatible with \code{+} and \code{\%+\%}).
+This function generatesa survival or CIF curve from a unified formula–data interface
+or from an existing survfit object. When a formula is supplied, the LHS is typically
+\code{Event()} or \code{survivai::Surv()}, and the RHS specifies an optional
+stratification variable. In addition to the curves themselves,
+\code{cifplot()} can add numbers-at-risk tables, tables of point estimates and
+confidence intervals, censoring marks, competing-risk marks, and
+intercurrent-event marks.
+
+For more complex multi-panel displays, \code{cifplot()} can internally call
+\code{cifpanel()} via several “panel modes” (per event, per covariate, or
+censoring-focused). The function returns an object whose \code{plot}
+component is a regular ggplot object that can be further modified with
+the usual \code{+} syntax.
 }
 \details{
 \subsection{Typical use cases}{

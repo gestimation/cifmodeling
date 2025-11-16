@@ -5,7 +5,9 @@
 \title{These arguments are shared by \code{cifplot()}, \code{cifpanel()}, and
 \code{cifcurve()}.}
 \arguments{
-\item{type.y}{Optional vector/list per panel: \code{"surv"} or \code{"risk"} (display 1 - survival i.e. CIF).}
+\item{type.y}{Character string specifying the y-scale: \code{"surv"} for survival probabilities
+or \code{"risk"} for cumulative incidence (1 - survival in simple survival settings).
+If \code{NULL}, a default is chosen from \code{outcome.type}.}
 
 \item{label.x}{Character x-axis label (default \code{"Time"}).}
 

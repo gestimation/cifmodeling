@@ -1,22 +1,27 @@
-#' @title Arrange multiple survival/CIF plots in a panel display
+#' @title Arrange multiple survival and CIF plots in a panel display
 #'
 #' @description
-#' \code{cifpanel()} is the panel-building counterpart of \code{cifplot()}.
-#' It takes one or more model formulas (or, alternatively, one formula and several
-#' event-coding specifications) and returns a multi-panel figure, typically as a
-#' patchwork-compatible object. Most display options (axis labels, marks, style, ggsave options)
-#' are shared with \code{cifplot()}, but per-panel legends and risk tables are
-#' suppressed to avoid duplicated display. Typical use cases are:
+#' \code{cifpanel()} is the panel-building counterpart of \code{cifplot()}. It
+#' composes multiple survival and CIF curves into a single
+#' figure, typically returned as a patchwork-compatible object. You can
+#' either supply one or more model formulas (to be fitted internally) or a
+#' list of existing ggplot objects. Most graphical options (axis labels,
+#' marks, styles, and export settings) are shared with \code{cifplot()}, while
+#' per-panel legends and risk tables are suppressed to avoid duplicated
+#' display.
 #'
-#'-   Compare CIF (event 1) vs CIF (event 2) in a 1×2 layout.
-#'-   Compare survival/CIF curves across strata with a shared legend and matched axes.
-#'-   Display a plot with an enlarged y-axis inside a full-scale plot.
+#' Typical use cases include:
+#'
+#' - comparing CIFs for different event types in a 1 × 2 layout
+#' - comparing survival or CIF curves across strata with a shared legend and
+#'   harmonized axes
+#' - adding an inset plot with a restricted y-axis range into a full-scale plot
 #'
 #' @inheritParams cif-stat-arguments
 #' @inheritParams cif-visual-arguments
 #'
-#' @param plots Optional list of already-built \code{ggplot} objects to be arranged.
-#'   If supplied, these are used as-is (no fitting is done).
+#' @param plots Optional list of existing ggplot objects to be arranged into a panel.
+#' When plots is supplied, no new models are fitted; the plots are used as-is.
 #' @param formula A model formula specifying the time-to-event outcome on the
 #'   left-hand side (typically \code{Event(time, status)} or \code{Surv(time, status)})
 #'   and, optionally, a stratification variable on the right-hand side.
@@ -127,8 +132,7 @@
 #' -   `title.panel`, `subtitle.panel`, `caption.panel`, `title.plot` — overall titles and captions.
 #' -   `tag.panel` — panel tag style (e.g., "A", "a", "1").
 #' -   `label.x`, `label.y`, `limits.x`, `limits.y`, `breaks.x`, `breaks.y` — shared axis control unless a list is supplied for per-panel control.
-
-
+#'
 #' #### Scale & labels
 #'
 #' | Argument | Meaning | Default |
@@ -178,10 +182,17 @@
 #'   element of `list.plot` or to the composed `patchwork`.
 #'
 #' @importFrom patchwork wrap_plots plot_layout inset_element plot_annotation
-#' @return Returns a \code{"cifpanel"} object (list) with elements \code{plot}
-#'   (always \code{NULL}), \code{list.plot} (list of \code{ggplot} objects),
-#'   \code{patchwork}, and the same metadata fields as [cifplot()]. The object is
-#'   returned invisibly; printing occurs only when \code{print.panel = TRUE}.
+#' @return A \code{"cifpanel"} object (returned invisibly), which is a list
+#' with at least the following elements:
+#'
+#' - \code{list.plot} a list of `ggplot` objects, one per panel;
+#' - \code{patchwork} a patchwork object representing the composed panel;
+#' - \code{plot} reserved for backwards compatibility (always \code{NULL});
+#' - metadata fields mirroring those in \code{cifplot()`} (such as information
+#'   on the fitted curves and display settings).
+#'
+#' When \code{print.panel=TRUE}, the patchwork object is printed in interactive
+#' sessions in addition to being returned.
 #'
 #' @keywords internal
 #' @param survfit.info,axis.info,visual.info,panel.info,style.info,print.info,ggsave.info,inset.info

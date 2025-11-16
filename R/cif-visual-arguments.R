@@ -4,7 +4,9 @@
 #' @name cif-visual-arguments
 #' @keywords internal
 #'
-#' @param type.y Optional vector/list per panel: \code{"surv"} or \code{"risk"} (display 1 - survival i.e. CIF).
+#' @param type.y Character string specifying the y-scale: \code{"surv"} for survival probabilities
+#' or \code{"risk"} for cumulative incidence (1 - survival in simple survival settings).
+#' If \code{NULL}, a default is chosen from \code{outcome.type}.
 #' @param label.x Character x-axis label (default \code{"Time"}).
 #' @param label.y Character y-axis label (default is chosen automatically from \code{outcome.type}
 #'   and \code{type.y}, e.g. \dQuote{Survival} or \dQuote{Cumulative incidence}).

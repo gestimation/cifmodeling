@@ -9,8 +9,8 @@
 
 \item{weights}{Optional name of the weight variable in \code{data}. Weights must be nonnegative.}
 
-\item{subset.condition}{Optional expression (as a character string) defining a
-subset of \code{data} to analyze (default \code{NULL}).}
+\item{subset.condition}{Optional character string giving a logical condition to subset
+\code{data} (default \code{NULL}).}
 
 \item{na.action}{A function specifying the action to take on missing values (default \code{na.omit}).}
 
@@ -27,9 +27,9 @@ Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detectio
 
 \item{code.censoring}{Integer code of censoring (default \code{0}).}
 
-\item{error}{Character specifying the method for standard error and confidence intervals used internally
-(\code{greenwood} (default), \code{tsiatis} or \code{if} for \code{"survival"},
-and \code{delta} (default),  \code{aalen} or  \code{if} for \code{"competing-risk"}).}
+\item{error}{Character string specifying the method for SEs and CIs used internally.
+For \code{"survival"}, choose one of \code{"greenwood"} (default), \code{"tsiatis"}, or \code{"if"}.
+For \code{"competing-risk"}, choose one of \code{"delta"} (default), \code{"aalen"}, or \code{"if"}.}
 
 \item{conf.type}{Character specifying the method of transformation for confidence intervals
 used internally (default \code{arcsine-square root}).}

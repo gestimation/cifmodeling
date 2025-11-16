@@ -1,12 +1,18 @@
-#' @title Fits regression models of CIFs based on polytomous
-#' log odds products and the stratified IPCW estimator
-#' @description The direct polytomous regression enables coherent modeling and
-#' estimation of a variety of multiplicative effects of a categorical exposure under
-#' several outcome types, including competing risks, survival and binomial outcomes.
-#' The function follows the familiar **formula + data** syntax and outputs tidy results,
-#' including point estimates, SEs, CIs, and p-values.
-#' Its results can be easily summarized with `summary()` or combined with external
-#' functions such as `modelsummary()` for reporting.
+#' @title Fits regression models of CIFs based on polytomous log odds products
+#'
+#' @description
+#' `polyreg()` fits regression models for CIFs and related probabilities using
+#' polytomous log odds products and a stratified IPCW estimator. It enables
+#' coherent modelling of multiplicative effects of a categorical exposure under
+#' several outcome types, including competing risks, survival, and binomial outcomes.
+#'
+#' The function follows a familiar formula–data workflow: the outcome and
+#' nuisance covariates are specified through a formula in `nuisance.model`
+#' (with `Event()` or `survival::Surv()` on the LHS), and the exposure of interest
+#' is given by a separate variable name in `exposure`. The fitted object contains
+#' tidy summaries of exposure effects (point estimates, SEs, CIs, and p-values)
+#' and can be summarised with `summary.polyreg()` or formatted with external tools
+#' such as `modelsummary::modelsummary()`.
 #'
 #' @param nuisance.model A \code{formula} describing the outcome and
 #'   nuisance covariates, excluding the exposure of interest.
@@ -17,8 +23,8 @@
 #'   variable used to adjust for dependent censoring (default \code{NULL}).
 #' @param data A data frame containing the outcome, exposure and nuisance
 #'   covariates referenced by \code{nuisance.model}.
-#' @param subset.condition Optional expression (as a character string) defining a
-#'   subset of \code{data} to analyze (default \code{NULL}).
+#' @param subset.condition Optional character string giving a logical condition to subset
+#' \code{data} (default \code{NULL}).
 #' @param na.action A function specifying the action to take on missing values (default \code{na.omit}).
 #' @param code.event1 Integer code of the event of interest (default \code{1}).
 #' @param code.event2 Integer code of the competing event (default \code{2}).
@@ -31,18 +37,18 @@
 #' @param effect.measure2 Character string specifying the effect measure for the
 #'   competing event. Supported values are \code{"RR"}, \code{"OR"} and
 #'   \code{"SHR"}.
-#' @param time.point Numeric time point at which the exposure effect is
-#'   evaluated. Required for survival and competing risk analyses.
-#' @param outcome.type Character string selecting the outcome type. Valid values
-#'   are \code{"competing-risk"}, \code{"survival"}, \code{"binomial"},
-#'   \code{"proportional-survival"} and \code{"proportional-competing-risk"}.
-#'   Defaults to \code{"competing-risk"}.
-#' If \code{NULL} (default), the function automatically infers the outcome type
-#' from the data: if the event variable has more than two unique levels,
-#' \code{"competing-risk"} is assumed; otherwise, \code{"survival"} is used.
-#' You can also use abbreviations such as \code{"S"} or \code{"C"}.
-#' Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic
-#' detection based on the event coding in \code{data}.
+#' @param time.point
+#'   Numeric time point at which the exposure effect is evaluated for
+#'   time-point models. Required for `"competing-risk"` and `"survival"`
+#'   outcomes.
+#' @param outcome.type Character string selecting the outcome type. Valid values are
+#'   `"competing-risk"`, `"survival"`, `"binomial"`, `"proportional-survival"`,
+#'   and `"proportional-competing-risk"`. The default is `"competing-risk"`.
+#'   If explicitly set to `NULL`, `polyreg()` attempts to infer the outcome type from the data: if the
+#'   event variable has more than two distinct levels, `"competing-risk"`
+#'   is assumed; otherwise, `"survival"` is assumed. Abbreviations such as
+#'   `"S"` or `"C"` are accepted; mixed or ambiguous inputs trigger
+#'   automatic detection from the event coding in `data`.
 #' @param conf.level Confidence level for Wald-type intervals (default \code{0.95}).
 #' @param report.nuisance.parameter Logical; if \code{TRUE}, the returned object
 #'   includes estimates of the nuisance model parameters (default \code{FALSE}).
@@ -62,8 +68,8 @@
 #' @param boot.bca Logical indicating the bootstrap confidence interval method.
 #'   Use \code{TRUE} for bias-corrected and accelerated intervals or \code{FALSE}
 #'   for the normal approximation (default \code{FALSE}).
-#' @param boot.multiplier Character \code{"rademacher"}, \code{"mammen"},
-#'   or \code{"gaussian"}. Defaults to \code{"rademacher"}.
+#' @param boot.multiplier Character string specifying the wild bootstrap weight distribution.
+#' One of \code{"rademacher"}, \code{"mammen"} or \code{"gaussian"} (default \code{"rademacher"}).
 #' @param boot.replications Integer giving the number of bootstrap replications
 #'   (default \code{200}).
 #' @param boot.seed Numeric seed used for resampling of bootstrap.
@@ -250,20 +256,20 @@
 #' @useDynLib cifmodeling, .registration = TRUE
 #'
 #' @return
-#' A list of class \code{"polyreg"} containing fitted exposure effects and
+#' A list of class `"polyreg"` containing the fitted exposure effects and
 #' supporting results. Key components and methods include:
 #'
-#' - \code{coef}, \code{coef()} Regression coefficients on the chosen
-#'     effect-measure scale.
-#' - \code{vcov}, \code{vcov()} Variance–covariance matrix of the
-#'     regression coefficients. The default behavior of \code{vcov()} mirrors
-#'     the CI option implied by \code{outcome.type},
-#'     \code{report.sandwich.conf} and \code{report.boot.conf}.
-#' - \code{diagnostic.statistics} A data frame with inverse probability
-#'     weights, influence functions and predicted potential outcomes.
-#' - \code{summary}, \code{summary()} Event-wise tidy/glance summaries.
-#'     \code{summary()} prints a modelsummary-like table to the console and
-#'     returns these summaries invisibly.
+#' - `coef`: regression coefficients on the chosen effect-measure scale
+#' - `vcov`: variance–covariance matrix of the regression coefficients
+#' - `diagnostic.statistics`: a data frame with inverse-probability weights,
+#'   influence-function contributions, and predicted potential outcomes
+#' - `summary`: event-wise tidy/glance summaries used by
+#'   `summary.polyreg()` or `modelsummary::modelsummary()`
+#' - additional elements storing convergence information and internal
+#'   tuning parameters.
+#'
+#' Standard S3 methods are available: `coef.polyreg()`, `vcov.polyreg()`,
+#' `nobs.polyreg()`, and `summary.polyreg()`.
 #'
 #' @examples
 #' data(diabetes.complications)
