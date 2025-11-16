@@ -4,6 +4,7 @@
 #include <cmath>
 #include <limits>
 #include <vector>
+#include <R_ext/Print.h>
 using namespace Rcpp;
 
 namespace {
@@ -32,12 +33,12 @@ inline std::string to_lower(std::string s){
 
 struct RecW {
   double t;
-  int    eps;   // 0=censor, 1=cause1, 2+=competing
-  int    g;     // stratum label (>=1)
-  int    id;    // original index
-  double w;     // frequency weight (>=0)
+  int    eps;
+  int    g;
+  int    id;
+  double w;
 };
-} // namespace
+}
 
 // [[Rcpp::export]]
 Rcpp::List calculateAJ_Rcpp(
@@ -95,7 +96,6 @@ Rcpp::List calculateAJ_Rcpp(
 
   std::vector<double> combined_aj;  combined_aj.reserve(N);
 
-  // strata
   IntegerVector G(N, 1);
   Rcpp::CharacterVector levs;
   if (!strata.isNull()){
@@ -135,8 +135,8 @@ Rcpp::List calculateAJ_Rcpp(
   if (has_competing) {
       if (error_tsiatis || (!error_delta && !error_if && !error_aalen)) {
       error_tsiatis = false;
-        error_aalen   = false;
-        error_delta   = true;
+        error_aalen = false;
+        error_delta = true;
       }
       error_cif = (error_aalen || error_delta || error_if);
   }
@@ -188,12 +188,16 @@ Rcpp::List calculateAJ_Rcpp(
     std::vector<double> w_event_all, w_censor_all, w_total_all, w_event1_all;
     w_event_all.reserve(n_g); w_censor_all.reserve(n_g);
     w_total_all.reserve(n_g); w_event1_all.reserve(n_g);
+    std::vector<double> w2_total_all; w2_total_all.reserve(n_g);
+    std::vector<int> count_total_all; count_total_all.reserve(n_g);
 
-    for (size_t p=0; p<v.size(); ){
+    for (size_t p = 0; p < v.size(); ) {
       const double curT = v[p].t;
-      double wE=0.0, wC=0.0, wTot=0.0, wE1=0.0;
-      size_t q=p;
-      while (q<v.size() && feq(v[q].t, curT)){
+      double wE = 0.0, wC = 0.0, wTot = 0.0, wE1 = 0.0;
+      double w2Tot = 0.0;
+      int cTot = 0;
+      size_t q = p;
+      while (q < v.size() && feq(v[q].t, curT)) {
         const bool isEvent = (v[q].eps >= 1);
         if (isEvent) {
           wE  += v[q].w;
@@ -201,7 +205,9 @@ Rcpp::List calculateAJ_Rcpp(
         } else {
           wC  += v[q].w;
         }
-        wTot += v[q].w;
+        wTot  += v[q].w;
+        w2Tot += v[q].w * v[q].w;
+        ++cTot;
         ++q;
       }
       t_all.push_back(curT);
@@ -209,9 +215,21 @@ Rcpp::List calculateAJ_Rcpp(
       w_censor_all.push_back(wC);
       w_total_all.push_back(wTot);
       w_event1_all.push_back(wE1);
-      p=q;
+      w2_total_all.push_back(w2Tot);
+      count_total_all.push_back(cTot);
+      p = q;
     }
+
     const int Uall = (int)t_all.size();
+
+    std::vector<double> Nrisk_all(Uall, 0.0);
+    {
+      double sufN = 0.0;
+      for (int j = Uall - 1; j >= 0; --j) {
+        sufN += (double)count_total_all[j];
+        Nrisk_all[j] = sufN;
+      }
+    }
 
     std::vector<double> Y_all(Uall, 0.0);
     {
@@ -221,6 +239,25 @@ Rcpp::List calculateAJ_Rcpp(
     std::vector<double> invY_all(Uall, 0.0);
     for (int j = 0; j < Uall; ++j) {
       if (Y_all[j] > 0.0) invY_all[j] = 1.0 / Y_all[j];
+    }
+
+    std::vector<double> W2risk_all(Uall, 0.0);
+    {
+      double suf2 = 0.0;
+      for (int j = Uall - 1; j >= 0; --j) {
+        suf2 += w2_total_all[j];
+        W2risk_all[j] = suf2;
+      }
+    }
+
+    std::vector<double> Mi_all(Uall, 1.0);
+    {
+      const double EPS_M = 1e-12;
+      for (int j = 0; j < Uall; ++j) {
+        double sumW  = Y_all[j];
+        double sumW2 = W2risk_all[j];
+        Mi_all[j] = (sumW2 <= EPS_M) ? 1.0 : (sumW * sumW) / sumW2;
+      }
     }
 
     std::vector<int> ev_any_idx, ev_c1_idx;
@@ -273,13 +310,16 @@ Rcpp::List calculateAJ_Rcpp(
       double fac  = (invY > 0.0) ? (1.0 - dj * invY) : 1.0;
       S_any[m]     = Sprev * fac;
 
-      if (dj>0.0 && Yj>0.0){
+      if (dj > 0.0 && Yj > 0.0) {
+        double Yn   = Nrisk_all[j];
+        double Mi   = Mi_all[j];
+        double invM = (Mi > 0.0 ? 1.0 / Mi : 1.0);
+
         if (error_tsiatis) {
-          accKM += dj * invY * invY;
+          accKM += dj * Yn * invM / (Yj * Yj);
         } else {
           if (Yj > dj) {
-            double invYm = 1.0 / (Yj - dj);
-            accKM += dj * invY * invYm;
+            accKM += dj * Yn * invM / (Yj * (Yj - dj));
           } else {
             accKM = std::numeric_limits<double>::infinity();
           }
@@ -325,7 +365,6 @@ Rcpp::List calculateAJ_Rcpp(
     NumericMatrix IF_AJ_all;
     if (error_if) {
       NumericMatrix IF_AJ_any(n_g, M_any);
-      NumericMatrix IF_AJ_all;
       if (return_if) IF_AJ_all = NumericMatrix(n_g, Uall);
       for (int r=0; r<n_g; ++r){
         int i = ids[r];
@@ -368,7 +407,10 @@ Rcpp::List calculateAJ_Rcpp(
         }
       }
       for (int j=0; j<Uall; ++j)
-        se_cif_if[j] = std::sqrt((double)(ss[j] / ((long double)denom * denom)));
+        se_cif_if[j] = std::sqrt((double)ss[j]);
+
+//      for (int j=0; j<Uall; ++j)
+//        se_cif_if[j] = std::sqrt((double)(ss[j] / ((long double)denom * denom)));
     }
     IF_AJ_output[kg] = (error_if && return_if) ? IF_AJ_all : Rcpp::NumericMatrix(0,0);
 

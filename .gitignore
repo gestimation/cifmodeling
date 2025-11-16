@@ -7,3 +7,6 @@
 inst/doc
 /doc/
 /Meta/
+inst/doc/
+vignettes/*.html
+vignettes/*.R

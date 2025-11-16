@@ -73,7 +73,7 @@ output <- extract_time_to_event(Event(t,epsilon) ~ fruitq,
                                 which_event = "event2")
 cifplot(Event(t,epsilon) ~ fruitq,
         data = diabetes.complications,
-        outcome.type="COMPETING-RISK",
+        outcome.type="competing-risk",
         add.conf=FALSE,
         add.risktable=FALSE,
         add.censor.mark=FALSE,

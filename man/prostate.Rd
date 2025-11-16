@@ -1,7 +1,7 @@
 \name{prostate}
 \alias{prostate}
 \docType{data}
-\title{Prostate cancer trial data from Byer & Green (1980)}
+\title{Data from a prostate cancer trial in Byer & Green (1980)}
 \format{A data frame with 502 observations and 16 variables, including:
 \describe{
   \item{dtime}{Follow-up time in days.}

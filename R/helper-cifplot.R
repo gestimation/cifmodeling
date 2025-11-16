@@ -123,7 +123,7 @@ plot_resolve_palette_color <- function(levels_final, palette, n, fallback_colors
 
 plot_apply_style <- function(
     p,
-    style = c("CLASSIC", "BOLD", "FRAMED", "GRID", "GRAY"),
+    style = c("classic", "bold", "framed", "grid", "gray"),
     font.family = "sans",
     font.size = 12,
     legend.position = "top",
@@ -132,15 +132,16 @@ plot_apply_style <- function(
     strata_levels_final = NULL,
     strata_labels_final = NULL
 ) {
-  if (style=="G") style <- "GRID"
+  if (style=="g") style <- "grid"
+  style <- tolower(style)
   style <- match.arg(style)
   style_theme <- switch(
     style,
-    CLASSIC    = plot_style_classic(font.family, font.size, legend.position),
-    BOLD       = plot_style_bold(font.family, font.size, legend.position),
-    FRAMED     = plot_style_framed(font.family, font.size, legend.position),
-    GRID       = plot_style_grid(font.family, font.size, legend.position),
-    GRAY       = plot_style_gray(font.family, font.size, legend.position)
+    classic    = plot_style_classic(font.family, font.size, legend.position),
+    bold       = plot_style_bold(font.family, font.size, legend.position),
+    framed     = plot_style_framed(font.family, font.size, legend.position),
+    grid       = plot_style_grid(font.family, font.size, legend.position),
+    gray       = plot_style_gray(font.family, font.size, legend.position)
   )
 
   p <- p + style_theme
@@ -918,9 +919,9 @@ plot_decide_panel_mode <- function(
     return("each_var")
   }
 
-  if (identical(outcome.type, "COMPETING-RISK")) {
+  if (identical(outcome.type, "competing-risk")) {
     return("each_event")
-  } else if (identical(outcome.type, "SURVIVAL")) {
+  } else if (identical(outcome.type, "survival")) {
     return("censoring")
   }
 
