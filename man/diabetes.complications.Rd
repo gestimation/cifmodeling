@@ -1,7 +1,7 @@
 \name{diabetes.complications}
 \alias{diabetes.complications}
 \docType{data}
-\title{Data of patients with type 2 diabetes}
+\title{Data from a cohort study of patients with type 2 diabetes}
 
 \format{
 A data frame with 978 observations and 19 variables:

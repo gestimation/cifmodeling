@@ -14,8 +14,8 @@ test_that("cifpanel() accepts pre-built plots (grid mode)", {
   )
 
   expect_true(is.list(out))
-  expect_true(any(c("plots", "out_patchwork") %in% names(out)))
-  expect_equal(length(out$plots), 2L)
+  expect_true(all(c("list.plot", "patchwork") %in% names(out)))
+  expect_equal(length(out$list.plot), 2L)
 })
 
 test_that("cifpanel() accepts pre-built plots (inset mode)", {
@@ -33,7 +33,7 @@ test_that("cifpanel() accepts pre-built plots (inset mode)", {
   )
 
   expect_true(is.list(out))
-  expect_true(any(c("plots", "out_patchwork") %in% names(out)))
+  expect_true(all(c("list.plot", "patchwork") %in% names(out)))
 })
 
 
@@ -52,7 +52,7 @@ make_min_inputs <- function() {
     data = make_min_data(),
     code.events = list(c(1, 2, 0)),
     outcome.flags = c("C"),
-    outcome.list = list("COMPETING-RISK"),
+    outcome.list = list("competing-risk"),
     typey.list = list("risk"),
     labely.list = list("CIF"),
     labelx.list = list("Time"),
@@ -67,7 +67,7 @@ make_min_inputs <- function() {
     addQ.list = list(FALSE),
     strata.list = NULL,
     legend.position = "top",
-    dots = list(style = "CLASSIC", font.family = NULL, font.size = NULL)
+    dots = list(style = "classic", font.family = NULL, font.size = NULL)
   )
 }
 
@@ -79,7 +79,7 @@ make_inputs_2panel <- function(df) {
     data = df,
     code.events = list(c(1, 2, 0), c(2, 1, 0)),
     outcome.flags = c("C", "C"),
-    outcome.list = list("COMPETING-RISK", "COMPETING-RISK"),
+    outcome.list = list("competing-risk", "competing-risk"),
     typey.list = list("risk", "risk"),
     labely.list = list("Diabetic retinopathy", "Macrovascular complications"),
     labelx.list = list("Years from registration", "Years from registration"),
@@ -94,7 +94,7 @@ make_inputs_2panel <- function(df) {
     addQ.list = list(FALSE, FALSE),
     strata.list = NULL,
     legend.position = "top",
-    dots = list(style = "CLASSIC", font.family = NULL, font.size = NULL)
+    dots = list(style = "classic", font.family = NULL, font.size = NULL)
   )
 }
 
@@ -110,7 +110,7 @@ test_that("cifpanel() produces expected outputs with competing risks data (no pl
     rows.columns.panel = c(1, 2),
     formula          = Event(t, epsilon) ~ fruitq,
     data             = diabetes.complications,
-    outcome.type     = "COMPETING-RISK",
+    outcome.type     = "competing-risk",
     code.events      = list(c(1, 2, 0), c(2, 1, 0)),
     label.y          = c("Diabetic retinopathy", "Macrovascular complications"),
     label.x          = "Years from registration",
@@ -122,7 +122,7 @@ test_that("cifpanel() produces expected outputs with competing risks data (no pl
     print.panel      = FALSE
   )
   expect_true(is.list(out))
-  expect_true(any(c("plots", "out_patchwork") %in% names(out)))
+  expect_true(all(c("list.plot", "patchwork") %in% names(out)))
 })
 
 test_that("panel_prepare() returns curves and plot arguments", {
@@ -186,16 +186,16 @@ test_that("cifpanel() with two formulas shows per-plot titles", {
     formulas     = list(Event(t, epsilon) ~ x1,
                         Event(t, epsilon) ~ x2),
     data         = df,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.events  = list(c(1, 2, 0), c(1, 2, 0)),
     title.plot   = c("Plot-x1", "Plot-x2"),
     print.panel  = FALSE
   )
 
   expect_type(res, "list")
-  expect_length(res$plots, 2)
-  expect_equal(res$plots[[1]]$labels$title, "Plot-x1")
-  expect_equal(res$plots[[2]]$labels$title, "Plot-x2")
+  expect_length(res$list.plot, 2)
+  expect_equal(res$list.plot[[1]]$labels$title, "Plot-x1")
+  expect_equal(res$list.plot[[2]]$labels$title, "Plot-x2")
 })
 
 test_that("panel flags work", {
@@ -212,7 +212,7 @@ test_that("panel flags work", {
   res <- cifpanel(
     formulas           = list(f1, f2),
     data               = diabetes.complications,
-    outcome.type       = "COMPETING-RISK",
+    outcome.type       = "competing-risk",
     panel.per.event    = TRUE,
     panel.censoring    = FALSE,
     panel.per.variable = TRUE,
@@ -221,7 +221,7 @@ test_that("panel flags work", {
 
   expect_true(is.list(res))
   expect_true(
-    inherits(res$out_patchwork, "patchwork") || inherits(res$out_patchwork, "gg")
+    inherits(res$patchwork, "patchwork") || inherits(res$patchwork, "gg")
   )
 })
 
@@ -239,13 +239,13 @@ test_that("cifpanel() applies panel-level tag_levels", {
     formulas     = list(Event(t, epsilon) ~ x,
                         Event(t, epsilon) ~ 1),
     data         = df,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.events  = list(c(1, 2, 0), c(1, 2, 0)),
     tag.panel = "A",
     print.panel  = FALSE
   )
 
-  ann <- res$out_patchwork$patches$annotation
+  ann <- res$patchwork$patches$annotation
   expect_false(is.null(ann))
   expect_equal(ann$tag_levels, "A")
 })
@@ -263,7 +263,7 @@ test_that("cifplot(panel.per.event=TRUE) creates 2-event panel", {
   p <- cifplot(
     Event(t, epsilon) ~ trt,
     data             = df,
-    outcome.type     = "COMPETING-RISK",
+    outcome.type     = "competing-risk",
     code.events      = c(1, 2, 0),
     panel.per.event   = TRUE,
     add.risktable     = FALSE,
@@ -271,12 +271,12 @@ test_that("cifplot(panel.per.event=TRUE) creates 2-event panel", {
     print.panel      = FALSE
   )
 
-  expect_s3_class(p, "patchwork")
-  plots <- attr(p, "plots")
-  expect_equal(length(plots), 2)
+  expect_s3_class(p, "cifpanel")
+  expect_true(inherits(p$patchwork, "patchwork"))
+  expect_equal(length(p$list.plot), 2)
 
-  expect_equal(plots[[1]]$labels$y, "Cumulative incidence of interest")
-  expect_equal(plots[[2]]$labels$y, "Cumulative incidence of competing risk")
+  expect_equal(p$list.plot[[1]]$labels$y, "Cumulative incidence of interest")
+  expect_equal(p$list.plot[[2]]$labels$y, "Cumulative incidence of competing risk")
 })
 
 test_that("cifpanel() can take per-panel label.x/label.y", {
@@ -293,13 +293,13 @@ test_that("cifpanel() can take per-panel label.x/label.y", {
     formulas     = list(Event(t, epsilon) ~ g,
                         Event(t, epsilon) ~ 1),
     data         = df,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.events  = list(c(1, 2, 0), c(1, 2, 0)),
     label.y      = list("CIF by group", "Overall CIF"),
     label.x      = list("Time (days)", "Time (days)"),
     print.panel  = FALSE
   )
 
-  expect_equal(res$plots[[1]]$labels$y, "CIF by group")
-  expect_equal(res$plots[[2]]$labels$y, "Overall CIF")
+  expect_equal(res$list.plot[[1]]$labels$y, "CIF by group")
+  expect_equal(res$list.plot[[2]]$labels$y, "Overall CIF")
 })

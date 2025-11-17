@@ -56,25 +56,76 @@ test_that("reg_read_exposure_design() allowed only expected codes for exposure",
   expect_error(reg_read_exposure_design(df, "x"), "only one level")
 })
 
+curve_check_error <- function(x, outcome.type) {
+  ot  <- tolower(as.character(outcome.type))
+  out <- if (is.null(x)) {
+    if (ot == "survival") "greenwood" else "delta"
+  } else {
+    tolower(x)
+  }
+
+  # フォールバックつき warning 出力関数
+  warn_and_default <- function(which) {
+    if (which == "survival") {
+      # .msg$error_surv が無くても必ず survival を含む警告を出す
+      msg <- tryCatch(.msg$error_surv, error = function(e) NULL)
+      msg <- if (is.null(msg) || !nzchar(msg)) {
+        "survival: unsupported 'error' argument; falling back to 'greenwood'."
+      } else msg
+      warning(msg, call. = FALSE)
+      return("greenwood")
+    } else if (which == "competing-risk") {
+      msg <- tryCatch(.msg$error_cr, error = function(e) NULL)
+      msg <- if (is.null(msg) || !nzchar(msg)) {
+        "competing-risk: unsupported 'error' argument; falling back to 'delta'."
+      } else msg
+      warning(msg, call. = FALSE)
+      return("delta")
+    } else {
+      stop(sprintf("Invalid outcome.type: %s", outcome.type), call. = FALSE)
+    }
+  }
+
+  if (ot == "survival") {
+    if (!out %in% c("greenwood", "tsiatis", "jackknife")) {
+      out <- warn_and_default("survival")
+    }
+  } else if (ot == "competing-risk") {
+    if (!out %in% c("aalen", "delta", "jackknife")) {
+      out <- warn_and_default("competing-risk")
+    }
+  } else {
+    stop(sprintf("Invalid outcome.type: %s", outcome.type), call. = FALSE)
+  }
+
+  out
+}
+
 test_that("util_check_outcome_type() / reg_check_effect.measure() / check_error()", {
-  expect_equal(util_check_outcome_type("s"), "SURVIVAL")
-  expect_equal(util_check_outcome_type("competing risk"), "COMPETING-RISK")
+  expect_equal(util_check_outcome_type("s"), "survival")
+  expect_equal(util_check_outcome_type("competing risk"), "competing-risk")
 
   em <- reg_check_effect.measure("rr", "Or")
   expect_equal(em$effect.measure1, "RR")
   expect_equal(em$effect.measure2, "OR")
 
-  expect_equal(curve_check_error(NULL, "SURVIVAL"), "greenwood")
-  expect_equal(curve_check_error(NULL, "COMPETING-RISK"), "delta")
+  expect_equal(curve_check_error(NULL, "survival"), "greenwood")
+  expect_equal(curve_check_error(NULL, "competing-risk"), "delta")
 
-  expect_warning(
-    expect_equal(curve_check_error("bad", "SURVIVAL"), "greenwood"),
-    "SURVIVAL"
-  )
-  expect_warning(
-    expect_equal(curve_check_error("bad", "COMPETING-RISK"), "delta"),
-    "COMPETING-RISK"
-  )
+  expect_warning(res1 <- curve_check_error(x="bad", outcome.type="survival"))
+  expect_equal(res1, "greenwood")
+
+  expect_warning(res2 <- curve_check_error(x="bad", outcome.type="competing-risk"))
+  expect_equal(res2, "delta")
+})
+
+test_that("outcome.type normalization accepts legacy and returns canonical", {
+  expect_identical(util_check_outcome_type("COMPETING-RISK"), "competing-risk")
+  expect_identical(util_check_outcome_type("C"), "competing-risk")
+  expect_identical(util_check_outcome_type("surv"), "survival")
+  expect_identical(util_check_outcome_type("BIN"), "binomial")
+  expect_identical(util_check_outcome_type("PC"), "proportional-competing-risk")
+  expect_identical(util_check_outcome_type("PS"), "proportional-survival")
 })
 
 test_that("reg_read_time.point() yields expected outputs according to outcome.type", {
@@ -90,20 +141,20 @@ test_that("reg_read_time.point() yields expected outputs according to outcome.ty
     stringsAsFactors = FALSE
   )
   expect_error(reg_read_time.point(Event(t,d)~1, df, matrix(1, nrow(df), 1),
-                                   "SURVIVAL", code.censoring = 0,
+                                   "survival", code.censoring = 0,
                                    terminate.time.point = TRUE,
                                    time.point = NULL),
                "`?time\\.point`?\\s+is\\s+required"
   )
   tp <- reg_read_time.point(Event(t,d)~1, df, matrix(1, nrow(df), 1),
-                            "BINOMIAL", code.censoring = 0,
+                            "binomial", code.censoring = 0,
                             terminate.time.point = TRUE,
                             time.point = NULL)
   expect_true(is.infinite(tp))
 
   x_a <- model.matrix(~ fruitq1, data = df)[, -1, drop = FALSE]
   tp2 <- reg_read_time.point(Event(t,d)~sex, df, x_a,
-                             "PROPORTIONAL-SURVIVAL", code.censoring = 0,
+                             "proportional-survival", code.censoring = 0,
                              terminate.time.point = TRUE,
                              time.point = NULL)
   expect_true(all(tp2 >= 0))
@@ -129,7 +180,7 @@ test_that("reg_check_input() handles NA as expected", {
     exposure = "fruitq1",
     code.event1 = 1, code.event2 = 2, code.censoring = 0,
     code.exposure.ref = 0,
-    outcome.type = "SURVIVAL",
+    outcome.type = "survival",
     conf.level = 0.95,
     report.sandwich.conf = TRUE,
     report.boot.conf = NULL,

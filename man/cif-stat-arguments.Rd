@@ -2,7 +2,8 @@
 % Please edit documentation in R/cif-stat-arguments.R
 \name{cif-stat-arguments}
 \alias{cif-stat-arguments}
-\title{Common data / outcome arguments for CIF functions}
+\title{These arguments are shared by \code{cifplot()}, \code{cifpanel()}, and
+\code{cifcurve()}.}
 \arguments{
 \item{data}{A data frame containing variables in the formula.}
 
@@ -14,10 +15,10 @@ subset of \code{data} to analyze (default \code{NULL}).}
 \item{na.action}{A function specifying the action to take on missing values (default \code{na.omit}).}
 
 \item{outcome.type}{Character string specifying the type of time-to-event outcome.
-One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
+One of \code{"survival"} (Kaplan–Meier) or \code{"competing-risk"} (Aalen–Johansen).
 If \code{NULL} (default), the function automatically infers the outcome type from the data:
-if the event variable has more than two unique levels, \code{"COMPETING-RISK"} is assumed;
-otherwise, \code{"SURVIVAL"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
+if the event variable has more than two unique levels, \code{"competing-risk"} is assumed;
+otherwise, \code{"survival"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
 Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detection based on the event coding.}
 
 \item{code.event1}{Integer code of the event of interest (default \code{1}).}
@@ -26,9 +27,12 @@ Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detectio
 
 \item{code.censoring}{Integer code of censoring (default \code{0}).}
 
-\item{error}{Character specifying the method for variance and standard error used internally.}
+\item{error}{Character specifying the method for standard error and confidence intervals used internally
+(\code{greenwood} (default), \code{tsiatis} or \code{if} for \code{"survival"},
+and \code{delta} (default),  \code{aalen} or  \code{if} for \code{"competing-risk"}).}
 
-\item{conf.type}{Character specifying the method of transformation for confidence intervals used internally.}
+\item{conf.type}{Character specifying the method of transformation for confidence intervals
+used internally (default \code{arcsine-square root}).}
 
 \item{conf.int}{Numeric two-sided confidence level (default \code{0.95}).}
 }

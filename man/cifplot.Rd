@@ -2,7 +2,7 @@
 % Please edit documentation in R/cifplot.R
 \name{cifplot}
 \alias{cifplot}
-\title{Generate a survival or cumulative incidence curve with marks that represent
+\title{Generate a survival or CIF curve with marks that represent
 censoring, competing risks and intermediate events}
 \usage{
 cifplot(
@@ -11,7 +11,7 @@ cifplot(
   weights = NULL,
   subset.condition = NULL,
   na.action = na.omit,
-  outcome.type = c("COMPETING-RISK", "SURVIVAL"),
+  outcome.type = c("competing-risk", "survival"),
   code.event1 = 1,
   code.event2 = 2,
   code.censoring = 0,
@@ -53,13 +53,14 @@ cifplot(
   panel.per.variable = FALSE,
   panel.mode = "auto",
   rows.columns.panel = NULL,
-  style = "CLASSIC",
+  style = "classic",
   palette = NULL,
   linewidth = 0.8,
   linetype = FALSE,
   font.family = "sans",
   font.size = 12,
   legend.position = "top",
+  print.panel = FALSE,
   filename.ggsave = NULL,
   width.ggsave = 6,
   height.ggsave = 6,
@@ -77,8 +78,8 @@ cifplot(
 }
 \arguments{
 \item{formula_or_fit}{A model formula or a \code{survfit} object. \strong{Note:} When a formula is supplied,
-the left-hand side must be \code{Event(time, status)} or \code{Surv(time, status)}.
-The right-hand side specifies the stratification variable.}
+the LHS must be \code{Event(time, status)} or \code{Surv(time, status)}.
+The RHS specifies the stratification variable.}
 
 \item{data}{A data frame containing variables in the formula.}
 
@@ -90,10 +91,10 @@ subset of \code{data} to analyze (default \code{NULL}).}
 \item{na.action}{A function specifying the action to take on missing values (default \code{na.omit}).}
 
 \item{outcome.type}{Character string specifying the type of time-to-event outcome.
-One of \code{"SURVIVAL"} (Kaplan–Meier type) or \code{"COMPETING-RISK"} (Aalen–Johansen type).
+One of \code{"survival"} (Kaplan–Meier) or \code{"competing-risk"} (Aalen–Johansen).
 If \code{NULL} (default), the function automatically infers the outcome type from the data:
-if the event variable has more than two unique levels, \code{"COMPETING-RISK"} is assumed;
-otherwise, \code{"SURVIVAL"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
+if the event variable has more than two unique levels, \code{"competing-risk"} is assumed;
+otherwise, \code{"survival"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
 Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detection based on the event coding.}
 
 \item{code.event1}{Integer code of the event of interest (default \code{1}).}
@@ -106,9 +107,12 @@ Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detectio
 When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
 (primarily used when \code{cifpanel()} is called or when \code{panel.per.event = TRUE}).}
 
-\item{error}{Character specifying the method for variance and standard error used internally.}
+\item{error}{Character specifying the method for standard error and confidence intervals used internally
+(\code{greenwood} (default), \code{tsiatis} or \code{if} for \code{"survival"},
+and \code{delta} (default),  \code{aalen} or  \code{if} for \code{"competing-risk"}).}
 
-\item{conf.type}{Character specifying the method of transformation for confidence intervals used internally.}
+\item{conf.type}{Character specifying the method of transformation for confidence intervals
+used internally (default \code{arcsine-square root}).}
 
 \item{conf.int}{Numeric two-sided confidence level (default \code{0.95}).}
 
@@ -197,25 +201,25 @@ times per stratum. Default \code{FALSE}.}
 \item{level.quantile}{Numeric quantile level to be shown (default \code{0.5} for the median).}
 
 \item{panel.per.event}{Logical. \strong{Explicit panel mode.} If \code{TRUE} and
-\code{outcome.type == "COMPETING-RISK"}, \code{cifplot()} internally calls \code{cifpanel()}
+\code{outcome.type == "competing-risk"}, \code{cifplot()} internally calls \code{cifpanel()}
 to display two event-specific CIFs side-by-side (event 1 and event 2) using
 reversed \code{code.events}. Ignored for non-competing-risk outcomes.}
 
 \item{panel.censoring}{Logical. \strong{Explicit panel mode.} If \code{TRUE} and
-\code{outcome.type == "SURVIVAL"}, \code{cifplot()} internally calls \code{cifpanel()}
-to display KM-type curves for \code{(event, censor)} and \code{(censor, event)} so that
+\code{outcome.type == "survival"}, \code{cifplot()} internally calls \code{cifpanel()}
+to display KM curves for \code{(event, censor)} and \code{(censor, event)} so that
 censoring patterns can be inspected.}
 
-\item{panel.per.variable}{Logical. \strong{Explicit panel mode.} If \code{TRUE} and the right-hand side
+\item{panel.per.variable}{Logical. \strong{Explicit panel mode.} If \code{TRUE} and the RHS
 of the formula has multiple covariates (e.g. \code{~ a + b + c}), the function produces
-a panel where each variable in RHS is used once as the stratification factor.}
+a panel where each variable in the RHS is used once as the stratification factor.}
 
 \item{panel.mode}{Character specifying \strong{Automatic panel mode.} If \code{"auto"} and none of
 \code{panel.per.variable}, \code{panel.per.event}, \code{panel.censoring} has been set to \code{TRUE},
 the function chooses a suitable panel mode automatically:
 (i) if the formula RHS has 2+ variables, it behaves like \code{panel.per.variable = TRUE};
-(ii) otherwise, if \code{outcome.type == "COMPETING-RISK"}, it behaves like
-\code{panel.per.event = TRUE}; (iii) otherwise, if \code{outcome.type == "SURVIVAL"}, it
+(ii) otherwise, if \code{outcome.type == "competing-risk"}, it behaves like
+\code{panel.per.event = TRUE}; (iii) otherwise, if \code{outcome.type == "survival"}, it
 behaves like \code{panel.censoring = TRUE}. If a panel mode is explicitly specified,
 \code{panel.mode} is ignored.}
 
@@ -223,8 +227,8 @@ behaves like \code{panel.censoring = TRUE}. If a panel mode is explicitly specif
 the layout of the panel returned by the panel modes. If \code{NULL}, an automatic
 layout is determined from the number of subplots.}
 
-\item{style}{Character choosing the base plot style: \code{"CLASSIC"}, \code{"BOLD"},
-\code{"FRAMED"}, \code{"GRID"}, \code{"GRAY"} or \code{"GGSURVFIT"} (default \code{"CLASSIC"}).
+\item{style}{Character choosing the base plot style: \code{"classic"}, \code{"bold"},
+\code{"framed"}, \code{"grid"}, \code{"gray"} or \code{"ggsurvfit"} (default \code{"classic"}).
 Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also accepted.}
 
 \item{palette}{Optional character vector specifying the color palette to use across strata.}
@@ -241,6 +245,10 @@ Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also
 \item{legend.position}{Character specifying the legend position:
 \code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, or \code{"none"} (default \code{"top"}).}
 
+\item{print.panel}{Logical. When \code{TRUE}, panel displays created internally are
+printed automatically in interactive sessions; otherwise they are returned
+invisibly for further modification (default \code{FALSE}).}
+
 \item{filename.ggsave}{Character; if non-\code{NULL}, save the plot to this file.}
 
 \item{width.ggsave}{Numeric width passed to \code{ggplot2::ggsave()} (default \code{6}).}
@@ -252,52 +260,72 @@ Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also
 \item{survfit.info, axis.info, visual.info, panel.info, style.info, print.info, ggsave.info}{Internal lists used for programmatic control. Not intended for direct user input.}
 }
 \value{
-A \code{ggplot} object. When \code{panel.per.variable = TRUE}, a \pkg{patchwork}
-object is returned with an attribute \code{attr(x, "plots")} containing the
-individual \code{ggplot} panels.
+Returns a \code{"cifplot"} object (list) with elements
+\code{plot}, \code{patchwork} (always \code{NULL}), \code{survfit.info},
+\code{axis.info}, \code{visual.info}, \code{panel.info}, \code{style.info},
+\code{inset.info}, \code{print.info}, \code{ggsave.info}, \code{version},
+and \code{call}.
 }
 \description{
-This function produces the Kaplan–Meier survival or Aalen–Johansen cumulative
-incidence curve from a unified formula + data interface (\code{Event()} or \code{Surv()} on
-the left-hand side, and a stratification variable on the right-hand side if necessary).
-You may also pass a survfit-compatible object directly.
+This function generates a survival or CIF curve from a unified formula +
+data interface (\code{Event()} or \code{Surv()} on the LHS, and a stratification
+variable on the RHS if necessary). You may also pass a survfit-compatible object directly.
 Options for risk and estimate+CI tables, censoring/competing-risk/intercurrent-event marks,
 and simple panel display internally using \code{cifpanel()} are available.
-This function returns a regular \code{ggplot} object (compatible with \code{+} and \code{\%+\%}).
-
-\strong{Outcome type and estimator}
+This function returns a list including \code{plot}, a regular \code{ggplot} object
+(compatible with \code{+} and \code{\%+\%}).
+}
+\details{
+\subsection{Typical use cases}{
 \itemize{
-\item \code{outcome.type = "SURVIVAL"} → Kaplan–Meier estimator
-\item \code{outcome.type = "COMPETING-RISK"} → Aalen–Johansen estimator
+\item Draw one survival/CIF curve set by exposure groups (e.g., treatment vs control).
+\item Call \code{cifpanel()} with a simplified code to create a panel displaying plots of multiple stratified survival/CIF curves or CIF curves for each event type.
+\item Add CIs and censor/competing-risk/intercurrent-event marks.
+\item Add a risk table to display the number at risk or the estimated survival probabilities or CIFs and CIs at each point in time.
+}
 }
 
-\strong{Data visualization}
+\subsection{Key arguments shared with cifcurve()}{
 \itemize{
-\item \code{add.conf} adds confidence intervals on the ggplot2-based plot
+\item \strong{Outcome type and estimator}
+\itemize{
+\item \code{outcome.type = "survival"} → Kaplan–Meier estimator
+\item \code{outcome.type = "competing-risk"} → Aalen–Johansen estimator
+}
+\item \strong{Confidence intervals}
+\itemize{
+\item \code{conf.int} sets the two-sided level (default 0.95)
+\item \code{conf.type} chooses the transformation (\code{"arcsine-square root"}, \code{"plain"}, \code{"log"}, \code{"log-log"}, \code{"logit"}, or \code{"none"})
+\item \code{error} chooses the estimator for SE (\code{"greenwood"}, \code{"tsiatis"} or \code{"if"} for survival curves and \code{"delta"}, \code{"aalen"} or \code{"if"} for CIFs)
+}
+}
+}
+
+\subsection{Key arguments for cifplot()}{
+\itemize{
+\item \strong{Data visualization}
+\itemize{
+\item \code{add.conf} adds CIs on the ggplot2-based plot
 \item \code{add.competing.risk.mark} and \code{add.intercurrent.event.mark} add symbols to describe competing risks or intercurrent events in addition to conventional censoring marks with \code{add.censor.mark}
 \item \code{add.risktable} adds numbers at risk
-\item \code{add.estimate.table} adds estimates and 95\% confidence interval
-\item \code{add.quantile} adds a line that represents the median or a selected quantile level
+\item \code{add.estimate.table} adds time-by-time estimates and CIs
+\item \code{add.quantile} add a reference line at a chosen quantile level
 }
-
-\strong{Plot customization}
+\item \strong{Plot customization}
 \itemize{
-\item \code{type.y} chooses y-axis. (\code{"surv"} for survival curves and \code{"risk"} for CIFs)
+\item \code{type.y} chooses y-axis (\code{"surv"} for survival and \code{"risk"} for 1-survival/CIF)
 \item \code{limits.x}, \code{limits.y}, \code{breaks.x}, \code{breaks.y} numeric vectors for axis control
-\item \code{style} specifies the appearance of plot (\code{"CLASSIC"}, \code{"BOLD"}, \code{"FRAMED"}, \code{"GRID"}, \code{"GRAY"} or \code{"GGSURVFIT"})
+\item \code{style} specifies the appearance of plot (\code{"classic"}, \code{"bold"}, \code{"framed"}, \code{"grid"}, \code{"gray"} or \code{"ggsurvfit"})
+\item \code{palette} specifies color of each curve (e.g. \verb{palette=c("blue1", "cyan3", "navy", "deepskyblue3"))})
 }
-
-\strong{Panel display}
+\item \strong{Panel display}
 \itemize{
 \item \code{panel.per.variable} produces multiple survival/CIF curves per stratification variable specified in the formula
 \item \code{panel.per.event} produces CIF curves for each event type
-\item \code{panel.censoring} produces KM-type curves for (event, censor) and (censor, event) so that censoring patterns can be inspected
+\item \code{panel.censoring} produces the Kaplan–Meier curves for (event, censor) and (censor, event) so that censoring patterns can be inspected
 \item \code{panel.mode} uses automatic panel mode
 }
 }
-\details{
-This function calls an internal helper \code{call_ggsurvfit()} which adds confidence intervals,
-risk table, censoring marks, and optional competing-risk and intercurrent-event marks.
 
 When \code{panel.per.event = TRUE}, two panels are created with
 \code{code.events = list(c(e1, e2, c), c(e2, e1, c))}, where
@@ -308,6 +336,8 @@ Numeric stratification variables are normalized automatically. Columns with
 fewer than nine distinct numeric values are coerced to factors; columns with
 nine or more distinct numeric values are split at the median into
 \dQuote{Below median} and \dQuote{Above median} strata.
+}
+
 \subsection{Advanced control not required for typical use}{
 
 The arguments below fine-tune internal estimation and figure appearance.
@@ -320,7 +350,7 @@ The arguments below fine-tune internal estimation and figure appearance.
    \code{symbol.risk.table} \tab Symbol for strata in risk / estimate tables \tab \code{"square"} \cr
    \code{font.size.risk.table} \tab Font size for texts in risk / estimate tables \tab \code{3} \cr
    \code{add.censor.mark} \tab Add censoring marks. \tab \code{TRUE} \cr
-   \code{add.competing.risk.mark} \tab Add marks for event2 of "COMPETING-RISK" outcome. \tab \code{FALSE} \cr
+   \code{add.competing.risk.mark} \tab Add marks for event2 of "competing-risk" outcome. \tab \code{FALSE} \cr
    \code{add.intercurrent.event.mark} \tab Add intercurrent event marks at user-specified times. \tab \code{FALSE} \cr
    \code{add.quantile} \tab Add quantile reference lines. \tab \code{FALSE} \cr
    \code{level.quantile} \tab Quantile level for \code{add.quantile}. \tab \code{0.5} \cr
@@ -351,11 +381,11 @@ The arguments below fine-tune internal estimation and figure appearance.
 \subsection{Panel display}{\tabular{ll}{
    Argument \tab Description \cr
    \code{panel.per.variable} \tab One panel per stratification variable \cr
-   \code{panel.per.event} \tab For competing risks, show CIFs of event 1 and event 2 \cr
+   \code{panel.per.event} \tab For \code{"competing-risk"}, show CIFs of event 1 and event 2 \cr
    \code{panel.censoring} \tab For survival, show (event, censor) vs (censor, event) \cr
    \code{panel.mode} with 2+ stratification variables \tab Behave like \code{panel.per.variable} \cr
-   \code{panel.mode} with outcome.type = "COMPETING-RISK" \tab Behave like \code{panel.per.event} \cr
-   \code{panel.mode} with outcome.type = "SURVIVAL" \tab Behave like \code{panel.censoring} \cr
+   \code{panel.mode} with outcome.type = "competing-risk" \tab Behave like \code{panel.per.event} \cr
+   \code{panel.mode} with outcome.type = "survival" \tab Behave like \code{panel.censoring} \cr
 }
 
 }
@@ -379,7 +409,7 @@ The arguments below fine-tune internal estimation and figure appearance.
 }
 
 
-\strong{Notes.}
+\strong{Notes}
 \itemize{
 \item For CIF displays, set \code{type.y = "risk"}. For survival scale, use \code{type.y = NULL} or \verb{= "surv"}.
 \item Event coding can be controlled via \code{code.event1}, \code{code.event2}, \code{code.censoring}.
@@ -398,7 +428,7 @@ if (requireNamespace("cifmodeling", quietly = TRUE) &&
 data(diabetes.complications)
 cifplot(Event(t,epsilon) ~ fruitq,
         data = diabetes.complications,
-        outcome.type="COMPETING-RISK",
+        outcome.type="competing-risk",
         add.risktable = FALSE,
         label.y='CIF of diabetic retinopathy',
         label.x='Years from registration')

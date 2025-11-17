@@ -1,27 +1,22 @@
-#' @title Arrange multiple survival / CIF plots in a panel display
+#' @title Arrange multiple survival/CIF plots in a panel display
 #'
 #' @description
 #' \code{cifpanel()} is the panel-building counterpart of \code{cifplot()}.
 #' It takes one or more model formulas (or, alternatively, one formula and several
 #' event-coding specifications) and returns a multi-panel figure, typically as a
+<<<<<<< HEAD
 #' list that contains \pkg{patchwork} object. Most display options
 #' (axis labels, marks, style, ggsave options) are shared with \code{cifplot()},
 #' but per-panel legends and risk tables are suppressed to avoid duplicated display.
+=======
+#' patchwork-compatible object. Most display options (axis labels, marks, style, ggsave options)
+#' are shared with \code{cifplot()}, but per-panel legends and risk tables are
+#' suppressed to avoid duplicated display. Typical use cases are:
+>>>>>>> b435e2e2a8533a9ddf203371cd883334004acf4b
 #'
-#' Panel layout is specified by length-2 vector \code{rows.columns.panel}.
-#' This function can also automatically determine the panel count in the following order:
-#' (1) if \code{plots} is supplied, its length defines the number of plots,
-#' (2) else if \code{formulas} is supplied, its length defines the number of plots,
-#' (3) else if \code{code.events} is supplied, its length defines the number of plots
-#' together with formula, and (4) otherwise \code{rows.columns.panel=c(1,1)}.
-#'
-#' -   `formula` or `formulas` — one formula or a list of formulas; each entry creates a panel.
-#' -   `data`, `outcome.type`, `code.events`, `type.y` — recycled across panels unless a list is supplied for per-panel control.
-#' -   `rows.columns.panel` — selects grid layout by c(rows, cols).
-#' -   `inset.panel` — selects inset layout.
-#' -   `title.panel`, `subtitle.panel`, `caption.panel`, `title.plot` — overall titles and captions.
-#' -   `tag.panel` — panel tag style (e.g., "A", "a", "1").
-#' -   `label.x`, `label.y`, `limits.x`, `limits.y`, `breaks.x`, `breaks.y` — shared axis control unless a list is supplied for per-panel control.
+#'-   Compare CIF (event 1) vs CIF (event 2) in a 1×2 layout.
+#'-   Compare survival/CIF curves across strata with a shared legend and matched axes.
+#'-   Display a plot with an enlarged y-axis inside a full-scale plot.
 #'
 #' @inheritParams cif-stat-arguments
 #' @inheritParams cif-visual-arguments
@@ -79,10 +74,6 @@
 #' @param title.plot Character vector of titles for **each panel** in the order they
 #'   are drawn. Length-1 values are recycled to all panels. In inset mode, the first
 #'   element refers to the main plot and the second (if present) to the inset.
-#' @param print.panel Logical. If \code{TRUE}, the composed patchwork object is
-#'   printed immediately (for interactive use). If \code{FALSE}, the object is
-#'   returned invisibly so that it can be assigned, modified, or saved. Kept for
-#'   backward compatibility.
 #'
 #' @param ... Additional arguments forwarded to the internal \code{cifplot_single()}
 #'   calls that build each panel. Use this to pass low-level options such as
@@ -98,14 +89,22 @@
 #'
 #' ### Outcome type & event coding
 #'
-#' - Use `outcome.type` to set per-panel estimator (`"SURVIVAL"`=KM, `"COMPETING-RISK"`=AJ).
+#' - Use `outcome.type` to set per-panel estimator (`"survival"`=KM, `"competing-risk"`=AJ).
 #' - Alternatively, pass `code.events` per panel to infer the type:
-#'   - length 2 = SURVIVAL: `c(event1, censor)`
-#'   - length 3 = COMPETING-RISK: `c(event1, event2, censor)`
+#'   - length 2 = survival: `c(event1, censor)`
+#'   - length 3 = competing-risk: `c(event1, event2, censor)`
 #' - If `outcome.type` is `NULL`, the function infers each panel from its
 #'   `code.events[[i]]` length. When both are given, `outcome.type` takes precedence.
 #'
+#'
 #' ### Panel-wise vs shared arguments
+#'
+#' Panel layout is specified by length-2 vector \code{rows.columns.panel}.
+#' This function can also automatically determine the panel count in the following order:
+#' (1) if \code{plots} is supplied, its length defines the number of plots,
+#' (2) else if \code{formulas} is supplied, its length defines the number of plots,
+#' (3) else if \code{code.events} is supplied, its length defines the number of plots
+#' together with formula, and (4) otherwise \code{rows.columns.panel=c(1,1)}.
 #'
 #' Many arguments accept a **scalar** (recycled to all panels) or a **list/vector**
 #' (one entry per panel). Precedence: **panel-wise explicit values** >
@@ -127,6 +126,15 @@
 #' The following arguments allow **per-panel** control by supplying vectors/lists,
 #' or **shared** control by supplying scalars. They are forwarded to `cifplot()`.
 #'
+#' -   `formula` or `formulas` — one formula or a list of formulas; each entry creates a panel.
+#' -   `data`, `outcome.type`, `code.events`, `type.y` — recycled across panels unless a list is supplied for per-panel control.
+#' -   `rows.columns.panel` — selects grid layout by c(rows, cols).
+#' -   `inset.panel` — selects inset layout.
+#' -   `title.panel`, `subtitle.panel`, `caption.panel`, `title.plot` — overall titles and captions.
+#' -   `tag.panel` — panel tag style (e.g., "A", "a", "1").
+#' -   `label.x`, `label.y`, `limits.x`, `limits.y`, `breaks.x`, `breaks.y` — shared axis control unless a list is supplied for per-panel control.
+
+
 #' #### Scale & labels
 #'
 #' | Argument | Meaning | Default |
@@ -164,29 +172,22 @@
 #' `ggsave()` using `width.ggsave`, `height.ggsave`, and `dpi.ggsave`.
 #' Otherwise, the function returns objects without saving.
 #'
-#' ### Value
-#'
-#' Returns **invisibly**:
-#' `list(plots = <list of ggplot objects>, out_patchwork = <patchwork object>)`.
-#' Print the latter to display the composed panel. If `print.panel = TRUE`,
-#' printing is done automatically.
-#'
-#' ### Notes & tips
-#'
+#' **Notes**
 #' - Mixed panel types are supported (e.g., AJ in panel 1; KM in panel 2).
 #' - If `formulas` is shorter than the grid capacity, empty slots are ignored.
 #' - When supplying vectors/lists per panel, their lengths must match the number
 #'   of panels; length-1 inputs are recycled; otherwise an error is thrown.
-#' - For CIF displays, set `type.y = "risk"` in the relevant panels.
-#' - ADaM-style coding can be expressed via `code.events` (e.g., `c(0,1)` for KM:
-#'   `event1=0`, `censor=1`).
+#' - For CIF displays, set `type.y = "risk"`. For survival scale, use `type.y = NULL` or `= "surv"`.
+#'   For ADaM-style data, use `code.events=c(0,1)` or
+#'   `code.event1 = 0`, `code.censoring = 1`.
 #' - Additional graphical options (e.g., theme) can be added post-hoc to each
-#'   element of `plots` or to the composed `out_patchwork`.
-
+#'   element of `list.plot` or to the composed `patchwork`.
+#'
 #' @importFrom patchwork wrap_plots plot_layout inset_element plot_annotation
-#' @return An invisible list: \code{list(plots = <list of ggplot objects>, out_patchwork = <patchwork object>)}.
-#' Print the returned object to display the panel, or access individual panels via
-#' `out_patchwork$plots[[1]]`, `out_patchwork$plots[[2]]`, ...
+#' @return Returns a \code{"cifpanel"} object (list) with elements \code{plot}
+#'   (always \code{NULL}), \code{list.plot} (list of \code{ggplot} objects),
+#'   \code{patchwork}, and the same metadata fields as [cifplot()]. The object is
+#'   returned invisibly; printing occurs only when \code{print.panel = TRUE}.
 #'
 #' @keywords internal
 #' @param survfit.info,axis.info,visual.info,panel.info,style.info,print.info,ggsave.info,inset.info
@@ -198,12 +199,12 @@
 #'              requireNamespace("ggsurvfit", quietly = TRUE) &&
 #'              requireNamespace("patchwork", quietly = TRUE)) {
 #' data(diabetes.complications)
-#' cifpanel(
+#' output1 <- cifpanel(
 #'   title.panel = "A comparison of cumulative incidence of competing events",
 #'   rows.columns.panel = c(1,2),
 #'   formula = Event(t, epsilon) ~ fruitq,
 #'   data = diabetes.complications,
-#'   outcome.type = "COMPETING-RISK",
+#'   outcome.type = "competing-risk",
 #'   code.events = list(c(1,2,0), c(2,1,0)),
 #'   label.y = c("Diabetic retinopathy", "Macrovascular complications"),
 #'   label.x = "Years from registration",
@@ -213,53 +214,40 @@
 #'   legend.position = "bottom",
 #'   legend.collect=TRUE
 #' )
+#' print(output1)
 #'
-#' cifpanel(
-#'   title.plot = c("Associations between fruit intake and macrovascular complications", "Details"),
-#'   inset.panel = TRUE,
-#'   formula = Event(t, epsilon) ~ fruitq,
-#'   data = diabetes.complications,
-#'   outcome.type = "COMPETING-RISK",
-#'   code.events = list(c(2,1,0), c(2,1,0)),
-#'   label.y = c("CIF of macrovascular complications", ""),
-#'   label.x = c("Years from registration", ""),
-#'   limits.y     = list(c(0,1), c(0,0.15)),
-#'   inset.left   = 0.40, inset.bottom = 0.45,
-#'   inset.right  = 1.00, inset.top    = 0.95,
-#'   inset.align.to = "plot",
-#'   inset.legend.position = "none",
-#'   legend.position = "bottom",
-#'   add.conf = FALSE
-#' )
-#'
-#' output1 <- cifplot(Event(t,epsilon) ~ fruitq,
-#'                    data = diabetes.complications,
-#'                    outcome.type="COMPETING-RISK",
-#'                    code.event1=2,
-#'                    code.event2=1,
-#'                    add.conf = FALSE,
-#'                    add.risktable = FALSE,
-#'                    label.y='CIF of macrovascular complications',
-#'                    label.x='Years from registration')
 #' output2 <- cifplot(Event(t,epsilon) ~ fruitq,
 #'                    data = diabetes.complications,
-#'                    outcome.type="COMPETING-RISK",
+#'                    outcome.type="competing-risk",
 #'                    code.event1=2,
 #'                    code.event2=1,
 #'                    add.conf = FALSE,
 #'                    add.risktable = FALSE,
-#'                    label.y='CIF of macrovascular complications',
-#'                    label.x='Years from registration',
+#'                    label.y="CIF of macrovascular complications",
+#'                    label.x="Years from registration")
+#' output3 <- cifplot(Event(t,epsilon) ~ fruitq,
+#'                    data = diabetes.complications,
+#'                    outcome.type="competing-risk",
+#'                    code.event1=2,
+#'                    code.event2=1,
+#'                    add.conf = FALSE,
+#'                    add.risktable = FALSE,
+#'                    label.y="",
+#'                    label.x="",
 #'                    limits.y=c(0,0.15))
-#' output3 <- list(a=output1, b=output2)
-#' cifpanel(plots = output3,
+#' output4 <- list(a = output2$plot, b = output3$plot)
+#' output5 <- cifpanel(plots = output4,
 #'          inset.panel = TRUE,
 #'          inset.left = 0.40, inset.bottom = 0.45,
 #'          inset.right = 1.00, inset.top = 0.95,
 #'          inset.align.to = "plot",
 #'          inset.legend.position = "none",
 #'          legend.position = "bottom")
+<<<<<<< HEAD
 #' }
+=======
+#' print(output5)
+>>>>>>> b435e2e2a8533a9ddf203371cd883334004acf4b
 #'
 #' @importFrom ggplot2 ggplot theme_void ggsave theme element_text labs
 #' @importFrom patchwork wrap_plots plot_layout inset_element plot_annotation
@@ -290,24 +278,24 @@ cifpanel <- function(
     limits.y                      = NULL,
     breaks.x                      = NULL,
     breaks.y                      = NULL,
-    add.conf         = NULL,
-    add.risktable                  = NULL,
-    add.estimate.table              = NULL,
-    symbol.risk.table              = NULL,
-    font.size.risk.table           = NULL,
-    add.censor.mark                 = NULL,
+    add.conf                      = NULL,
+    add.risktable                 = NULL,
+    add.estimate.table            = NULL,
+    symbol.risk.table             = NULL,
+    font.size.risk.table          = NULL,
+    add.censor.mark               = NULL,
     shape.censor.mark             = NULL,
     size.censor.mark              = NULL,
-    add.competing.risk.mark          = NULL,
+    add.competing.risk.mark       = NULL,
     competing.risk.time           = NULL,
     shape.competing.risk.mark     = NULL,
     size.competing.risk.mark      = NULL,
-    add.intercurrent.event.mark      = NULL,
+    add.intercurrent.event.mark   = NULL,
     intercurrent.event.time       = NULL,
     shape.intercurrent.event.mark = NULL,
     size.intercurrent.event.mark  = NULL,
-    add.quantile               = NULL,
-    level.quantile                      = NULL,
+    add.quantile                  = NULL,
+    level.quantile                = NULL,
     rows.columns.panel            = c(1, 1),
     inset.panel                   = FALSE,
     title.panel                   = NULL,
@@ -315,7 +303,7 @@ cifpanel <- function(
     caption.panel                 = NULL,
     tag.panel                     = NULL,
     title.plot                    = NULL,
-    style                         = "CLASSIC",
+    style                         = "classic",
     palette                       = NULL,
     linewidth                     = 0.8,
     linetype                      = FALSE,
@@ -329,7 +317,7 @@ cifpanel <- function(
     inset.top                     = 0.45,
     inset.align.to                = c("panel","plot","full"),
     inset.legend.position         = NULL,
-    print.panel                   = TRUE,
+    print.panel                   = FALSE,
     filename.ggsave               = NULL,
     width.ggsave                  = NULL,
     height.ggsave                 = NULL,
@@ -357,6 +345,9 @@ cifpanel <- function(
   inset.align.to <- match.arg(inset.align.to)
 
   dots <- list(...)
+  call <- match.call()
+  plots_out <- NULL
+  engine.list <- panel_to_list(engine)
 
   survfit.info.user <- survfit.info
   axis.info.user    <- axis.info
@@ -432,7 +423,7 @@ cifpanel <- function(
   style.info$legend.collect  <- style.info$legend.collect  %||% legend.collect
 
   style.info <- panel_modify_list(list(
-    style           = "CLASSIC",
+    style           = "classic",
     palette         = NULL,
     linewidth       = NULL,
     linetype        = NULL,
@@ -541,9 +532,6 @@ cifpanel <- function(
   add.intercurrent.event.mark <- visual.info$add.intercurrent.event.mark
   add.quantile          <- visual.info$add.quantile
 
-  # ------------------------------------------------------------
-  # 1) plots が指定されているときは「並べるだけ」モード
-  # ------------------------------------------------------------
   if (!is.null(plots)) {
     if (!is.list(plots)) {
       stop("`plots` must be a list of ggplot objects.")
@@ -552,7 +540,6 @@ cifpanel <- function(
       stop("All elements of `plots` must inherit from 'ggplot'.")
     }
 
-    # ここは ggsurvfit の warning を避けるために touch_colour = FALSE にしてもよい
     plots <- apply_strata_to_plots(
       plots,
       order_data   = axis.info$order.strata,
@@ -612,7 +599,7 @@ cifpanel <- function(
       theme      = theme.panel.unified
     )
 
-    if (isTRUE(print.panel)) print(out_patchwork)
+    if (interactive() && isTRUE(print.panel)) print(out_patchwork)
     if (!is.null(filename.ggsave)) {
       if (is.null(width.ggsave))  width.ggsave  <- if (isTRUE(inset.panel)) 6 else max(6, 5 * rows.columns.panel[2])
       if (is.null(height.ggsave)) height.ggsave <- if (isTRUE(inset.panel)) 6 else max(6, 5 * rows.columns.panel[1])
@@ -621,18 +608,33 @@ cifpanel <- function(
                       dpi = dpi.ggsave, units = ggsave.units)
     }
 
-    return(invisible(list(
-      plots        = plots_out,
-      out_patchwork= out_patchwork,
-      axis.info    = axis.info,
+    survfit.info$formula_or_fit <- survfit.info$formula_or_fit %||% list(
+      formula  = formula,
+      formulas = formulas
+    )
+    survfit.info$outcome.type   <- survfit.info$outcome.type   %||% outcome.type
+    survfit.info$code.events    <- survfit.info$code.events    %||% code.events
+    survfit.info$data.name      <- survfit.info$data.name      %||% deparse(substitute(data))
+
+    print.info$engine <- print.info$engine %||% engine.list
+
+    res <- list(
+      plot         = NULL,
+      list.plot    = plots_out %||% plots,
+      patchwork    = out_patchwork,
       survfit.info = survfit.info,
+      axis.info    = axis.info,
       visual.info  = visual.info,
       panel.info   = panel.info,
       style.info   = style.info,
       inset.info   = inset.info,
       print.info   = print.info,
-      ggsave.info  = ggsave.info
-    )))
+      ggsave.info  = ggsave.info,
+      version      = utils::packageVersion("cifmodeling"),
+      call         = call
+    )
+    class(res) <- c("cifpanel", class(res))
+    return(invisible(res))
   }
 
   rows.columns.panel <- panel.info$rows.columns.panel
@@ -640,9 +642,6 @@ cifpanel <- function(
   ncol   <- as.integer(rows.columns.panel[2])
   n_slots <- nrow * ncol
 
-  # ------------------------------------------------------------
-  # 2) ここから「推定して描く」通常モード
-  # ------------------------------------------------------------
   if (is.null(data)) stop("data must be provided.")
   if (is.null(code.events) || !is.list(code.events) || length(code.events) == 0)
     .err("need_code_events")
@@ -688,7 +687,6 @@ cifpanel <- function(
   labelstrata.list  <- make_panel_list_preserve_vector(label.strata,  K)
   orderstrata.list  <- make_panel_list_preserve_vector(order.strata,  K)
 
-  # limits/breaksをパネルごとにしておく
   limsx.list <- NULL
   if (!is.null(limits.x)) {
     limsx.list <- if (is.list(limits.x)) limits.x else list(limits.x)
@@ -715,7 +713,6 @@ cifpanel <- function(
   if (!is.null(addIC.list))   visual.info$add.intercurrent.event.mark <- NULL
   if (!is.null(addQ.list))    visual.info$add.quantile          <- NULL
 
-  # outcome.flag 判定
   infer_flag_by_codes <- function(v) if (length(v) == 2L) "S" else if (length(v) == 3L) "C" else NA_character_
   if (!is.null(outcome.list)) {
     outcome.flags <- vapply(outcome.list, panel_norm_outcome, character(1))
@@ -723,9 +720,7 @@ cifpanel <- function(
     outcome.flags <- vapply(code.events, infer_flag_by_codes, character(1))
     if (anyNA(outcome.flags)) .err("infer_outcome_fail")
   }
-  panel_validate_code_events(code.events, outcome.flags)
 
-  # dots の中にある「パネルで決めた値と衝突するやつ」を抜く
   kill_names <- c()
   if (!is.null(outcome.list))     kill_names <- c(kill_names, "outcome.type")
   if (!is.null(typey.list))       kill_names <- c(kill_names, "type.y")
@@ -735,8 +730,8 @@ cifpanel <- function(
   if (!is.null(limsx.list))       kill_names <- c(kill_names, "limits.x")
   if (!is.null(labelstrata.list)) kill_names <- c(kill_names, "label.strata")
   if (!is.null(orderstrata.list)) kill_names <- c(kill_names, "order.strata")
-  if (!is.null(breakx.list))      kill_names <- c(kill_names, "breaks.x","breaks.x")
-  if (!is.null(breaky.list))      kill_names <- c(kill_names, "breaks.y","breaks.y")
+  if (!is.null(breakx.list))      kill_names <- c(kill_names, "breaks.x")
+  if (!is.null(breaky.list))      kill_names <- c(kill_names, "breaks.y")
   if (!is.null(addCI.list))       kill_names <- c(kill_names, "add.conf")
   if (!is.null(addCen.list))      kill_names <- c(kill_names, "add.censor.mark")
   if (!is.null(addCR.list))       kill_names <- c(kill_names, "add.competing.risk.mark")
@@ -745,11 +740,10 @@ cifpanel <- function(
 
   dots <- panel_strip_overrides_from_dots(dots, unique(kill_names))
 
-  # engine をパネル数にそろえる（★ここが今回の肝）
-  engine.list <- panel_to_list(engine)
-  engine.list <- panel_recycle_to(engine.list, K)
+  if (!is.null(engine.list)) {
+    engine.list <- panel_recycle_to(engine.list, K)
+  }
 
-  # パネル内部は panel_prepare でまとめて生成させる（いままで通り）
   prep <- panel_prepare(
     K               = K,
     formulas        = formulas,
@@ -774,7 +768,8 @@ cifpanel <- function(
     survfit.info    = survfit.info,
     style.info      = style.info,
     dots            = dots,
-    fonts           = fonts
+    fonts           = fonts,
+    na.action       = na.action
   )
 
   plots <- lapply(seq_len(prep$K), function(i) {
@@ -956,7 +951,7 @@ cifpanel <- function(
     theme      = theme.panel.unified
   )
 
-  if (isTRUE(print.panel)) print(out_patchwork)
+  if (interactive() && isTRUE(print.panel)) print(out_patchwork)
   if (!is.null(filename.ggsave)) {
     if (is.null(width.ggsave))  width.ggsave  <- if (isTRUE(inset.panel)) 6 else max(6, 5 * rows.columns.panel[2])
     if (is.null(height.ggsave)) height.ggsave <- if (isTRUE(inset.panel)) 6 else max(6, 5 * rows.columns.panel[1])
@@ -965,18 +960,33 @@ cifpanel <- function(
                     dpi = dpi.ggsave, units = ggsave.units)
   }
 
-  invisible(list(
-    plots        = plots,
-    out_patchwork= out_patchwork,
-    axis.info    = axis.info,
+  survfit.info$formula_or_fit <- survfit.info$formula_or_fit %||% list(
+    formula  = formula,
+    formulas = formulas
+  )
+  survfit.info$outcome.type   <- survfit.info$outcome.type   %||% outcome.type
+  survfit.info$code.events    <- survfit.info$code.events    %||% code.events
+  survfit.info$data.name      <- survfit.info$data.name      %||% deparse(substitute(data))
+
+  print.info$engine <- print.info$engine %||% engine.list
+
+  res <- list(
+    plot         = NULL,
+    list.plot    = plots_out %||% plots,
+    patchwork    = out_patchwork,
     survfit.info = survfit.info,
+    axis.info    = axis.info,
     visual.info  = visual.info,
     panel.info   = panel.info,
     style.info   = style.info,
     inset.info   = inset.info,
     print.info   = print.info,
-    ggsave.info  = ggsave.info
-  ))
+    ggsave.info  = ggsave.info,
+    version      = utils::packageVersion("cifmodeling"),
+    call         = call
+  )
+  class(res) <- c("cifpanel", class(res))
+  invisible(res)
 }
 
 panel_force_apply <- function(

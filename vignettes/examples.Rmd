@@ -48,16 +48,16 @@ diabetes.complications$fruitq1 <- ifelse(
   diabetes.complications$fruitq == "Q1","Q1","Q2 to Q4"
 )
 cifplot(Event(t,epsilon)~fruitq+fruitq1, data=diabetes.complications, 
-        outcome.type="COMPETING-RISK",
+        outcome.type="competing-risk",
         add.conf=TRUE, add.censor.mark=FALSE, 
         add.competing.risk.mark=FALSE, panel.per.variable=TRUE)
 ```
 
-In the second figure, censoring marks are added along each curve (`add.censor.mark = TRUE`) to indicate individuals who were censored before experiencing any event. These marks visualize the timing and frequency of censoring, allowing a clearer understanding of loss-to-censoring patterns over follow-up. Here the workflow differs slightly from the previous code. First, we compute a survfit-compatible object `output1` using `cifcurve()` with `outcome.type="COMPETING-RISK"` by calculating Aalen–Johansen estimator stratified by `fruitq1`. Then, `cifplot()` is used to generate the figure. The `label.y`, `label.x` and `limit.x` arguments are also used to customize the axis labels and limits. 
+In the second figure, censoring marks are added along each curve (`add.censor.mark = TRUE`) to indicate individuals who were censored before experiencing any event. These marks visualize the timing and frequency of censoring, allowing a clearer understanding of loss-to-censoring patterns over follow-up. Here the workflow differs slightly from the previous code. First, we compute a survfit-compatible object `output1` using `cifcurve()` with `outcome.type="competing-risk"` by calculating Aalen–Johansen estimator stratified by `fruitq1`. Then, `cifplot()` is used to generate the figure. The `label.y`, `label.x` and `limit.x` arguments are also used to customize the axis labels and limits. 
 
 ```{r example04-1-2, fig.cap="Cumulative incidence curves with censor marks and axis labels", warning=FALSE, message=FALSE}
 output1 <- cifcurve(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
-                    outcome.type="COMPETING-RISK")
+                    outcome.type="competing-risk")
 cifplot(output1, add.conf=FALSE, add.risktable=FALSE, 
         add.censor.mark=TRUE, add.competing.risk.mark=FALSE, 
         label.y="CIF of diabetic retinopathy", label.x="Years from registration",
@@ -75,79 +75,82 @@ cifplot(output1, add.conf=FALSE, add.risktable=FALSE,
         limits.x=c(0,8))
 ```
 
-`label.strata` is another argument for customizing labels, but when inputting a survfit object, it becomes invalid because it does not contain stratum information.
-Therefore, the following code inputs the formula and data. `label.strata` is used by combining `level.strata` and `order.strata`. `level.strata` specifies the levels of the stratification variable corresponding to each label in `label.strata`. The levels specified in `level.strata` are then displayed in the figure in the order defined by `order.strata`. A figure enclosed in a square was generated, which is due to `style="FRAMED"` specification.
+The `label.strata` is another argument for customizing labels, but when inputting a survfit object, it becomes invalid because it does not contain stratum information. Therefore, the following code inputs the formula and data. `label.strata` is used by combining `level.strata` and `order.strata`. The `level.strata` specifies the levels of the stratification variable corresponding to each label in `label.strata`. The levels specified in `level.strata` are then displayed in the figure in the order defined by `order.strata`. A figure enclosed in a square was generated, which is due to `style="framed"` specification.
 
 ```{r example04-1-4, fig.cap="Cumulative incidence curves with strata labels and FRAMED style", warning=FALSE, message=FALSE}
 cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
-        outcome.type="COMPETING-RISK", add.conf=FALSE, add.risktable=FALSE, 
+        outcome.type="competing-risk", add.conf=FALSE, add.risktable=FALSE, 
         add.estimate.table=TRUE, add.censor.mark=FALSE, add.competing.risk.mark=TRUE, 
         competing.risk.time=output2, label.y="CIF of diabetic retinopathy", 
         label.x="Years from registration", limits.x=c(0,8),
         label.strata=c("High intake","Low intake"), level.strata=c("Q2 to Q4","Q1"), 
-        order.strata=c("Q1", "Q2 to Q4"), style="FRAMED")
+        order.strata=c("Q1", "Q2 to Q4"), style="framed")
 ```
 
-By specifying `add.estimate.table=TRUE`, the risks of diabetic retinopathy (estimates for CIFs) along with their confidence interval are shown in the table at the bottom of the figure The risk ratios at a specific time point (e.g. 8 years) for competing events can be jointly and coherently estimated using `polyreg()` with `outcome.type="COMPETING-RISK"`. In the code of `polyreg()` below, no covariates are included in the nuisance model (`~1` specifies intercept only). The effect of low fruit intake `fruitq1` is estimated as an unadjusted risk ratio (`effect.measure1="RR"`) for diabetic retinopathy (event 1) and macrovascular complications (event 2) at 8 years (`time.point=8`). 
+By specifying `add.estimate.table = TRUE`, the risks of diabetic retinopathy
+(estimates for CIFs) along with their CIs are shown in the table at the bottom of the figure. The risk ratios at a specific time point (e.g. 8 years) for competing events can be jointly and coherently estimated using `polyreg()` with `outcome.type = "competing-risk"`. In the code of `polyreg()` below, no covariates are included in the nuisance model (`~1` specifies intercept only). The effect of low fruit intake `fruitq1` is estimated as an unadjusted risk ratio (`effect.measure1="RR"`) for diabetic retinopathy (event 1) and macrovascular complications (event 2) at 8 years (`time.point=8`). 
 
 ```{r example04-1-5, fig.cap="Joint estimation of unadjusted risk ratios at 8 years using polyreg()", warning=FALSE, message=FALSE}
 output3 <- polyreg(nuisance.model=Event(t,epsilon)~1, exposure="fruitq1", 
           data=diabetes.complications, effect.measure1="RR", effect.measure2="RR", 
-          time.point=8, outcome.type="COMPETING-RISK", 
+          time.point=8, outcome.type="competing-risk", 
           report.nuisance.parameter=TRUE)
-print(output3$coefficient)
-print(output3$cov)
+coef(output3)
+vcov(output3)
+summary(output3)
 ```
 
-The summaries of analysis results in the list of outputs (e.g. `output3$summary` below) are compatible with the `modelsummary` ecosystem, which makes it easy to create publication-ready tables in a variety of formats. A typical workflow is to pass the `summary` element of a `polyreg()` fit (or a list of such fits) to `modelsummary::msummary()`. In this case, all regression coefficients are included in summary by setting `report.nuisance.parameter = TRUE`. Model summaries can also be exponentiated to display risk ratios, odds ratios, or subdistribution hazard ratios using `exponentiate` option. The summaries can be displayed in the Viewer with customized statistics such as p-values or confidence intervals.
+The `summary()` method prints an event-wise table of point estimates, CIs, and p-values. Internally, this table is stored in a `summary` component of the `"polyreg"` object, which is compatible with the `modelsummary` ecosystem. If you want more elaborate tables, you can optionally pass this object to `modelsummary::msummary()`. In this case, all regression coefficients are included in the summary by setting `report.nuisance.parameter = TRUE`. Model summaries can also be exponentiated to display risk ratios, odds ratios, or subdistribution hazard ratios using the `exponentiate` option.
 
 ## Example 2. Survival analysis
 
-The second example is time to first event analysis (`outcome.type="SURVIVAL"`) to estimate the effect on the risk of diabetic retinopathy or macrovascular complications at 8 years. In the code below, `cifplot()` is directly used to generate a survfit-compatible object internally and plot it. 
+The second example is time to first event analysis (`outcome.type="survival"`) to estimate the effect on the risk of diabetic retinopathy or macrovascular complications at 8 years. In the code below, `cifplot()` is directly used to generate a survfit-compatible object internally and plot it. 
 
 ```{r example04-2-1, fig.cap="Survival curves from cifplot()", warning=FALSE, message=FALSE}
 diabetes.complications$d <- as.integer(diabetes.complications$epsilon>0)
 cifplot(Event(t,d) ~ fruitq1, data=diabetes.complications, 
-outcome.type="SURVIVAL", add.conf=TRUE, add.censor.mark=FALSE, 
+outcome.type="survival", add.conf=TRUE, add.censor.mark=FALSE, 
 add.competing.risk.mark=FALSE, label.y="Survival probability", 
 label.x="Years from registration", label.strata=c("High intake","Low intake"),
 level.strata=c("Q2 to Q4","Q1"), order.strata=c("Q1", "Q2 to Q4"))
 ```
 
-The code below specifies the Richardson model on the risk of diabetic retinopathy or macrovascular complications at 8 years (outcome.type="SURVIVAL"). Dependent censoring is adjusted by stratified IPCW method (`strata='strata'`). Estimates other than the effects of exposure (e.g. intercept) are suppressed when `report.nuisance.parameter` is not specified.
+The code below specifies the Richardson model on the risk of diabetic retinopathy or macrovascular complications at 8 years (outcome.type="survival"). Dependent censoring is adjusted by stratified IPCW method (`strata='strata'`). Estimates other than the effects of exposure (e.g. intercept) are suppressed when `report.nuisance.parameter` is not specified.
 
 ```{r example04-2-2, fig.cap="Cause-specific estimation of an unadjusted risk ratio at 8 years using polyreg()", warning=FALSE, message=FALSE}
 output4 <- polyreg(nuisance.model=Event(t,d)~1, 
           exposure="fruitq1", strata="strata", data=diabetes.complications,
-          effect.measure1="RR", time.point=8, outcome.type="SURVIVAL")
+          effect.measure1="RR", time.point=8, outcome.type="survival")
+summary(output4)
 ```
 
 ## Example 3. Adjusted competing risks analysis
 
-The code below specifies polytomous log-odds models of both of competing events (`outcome.type="COMPETING-RISK"`). Here 15 covariates and censoring strata are specified in `nuisance.model=` and `strata=`, respectively.
+The code below specifies polytomous log-odds models of both of competing events (`outcome.type="competing-risk"`). Here 15 covariates and censoring strata are specified in `nuisance.model=` and `strata=`, respectively.
 
 ```{r example04-3, fig.cap="Joint estimation of adjusted risk ratios at 8 years using polyreg()", warning=FALSE, message=FALSE}
 output5 <- polyreg(nuisance.model=Event(t,epsilon)~age+sex+bmi+hba1c
           +diabetes_duration+drug_oha+drug_insulin+sbp+ldl+hdl+tg
           +current_smoker+alcohol_drinker+ltpa, 
           exposure="fruitq1", strata="strata", data=diabetes.complications,
-          effect.measure1="RR", time.point=8, outcome.type="COMPETING-RISK")
+          effect.measure1="RR", time.point=8, outcome.type="competing-risk")
+summary(output5)
 ```
 
 ## Example 4. Description of cumulative incidence of competing events
 
-`cifpanel()` arranges multiple survival and CIF plots into a single, polished layout with a shared legend. It’s designed for side-by-side comparisons—e.g., event 1 vs event 2, different groupings, or different y-scales—while keeping axis ranges and styles consistent. Internally each panel is produced using the same engine as `cifcurve()`, and you can supply scalar arguments (applied to all panels) or lists to control each panel independently.
+The `cifpanel()` arranges multiple survival and CIF plots into a single, polished layout with a shared legend. It’s designed for side-by-side comparisons—e.g., event 1 vs event 2, different groupings, or different y-scales—while keeping axis ranges and styles consistent. Internally each panel is produced using the same engine as `cifcurve()`, and you can supply scalar arguments (applied to all panels) or lists to control each panel independently.
 
 This function accepts both shared and panel-specific arguments. When a single formula is provided, the same model structure is reused for each panel, and arguments supplied as lists are applied individually to each panel. Arguments such as `code.events`, `label.strata`, or `add.censor.mark` can be given as lists, where each list element corresponds to one panel. This allows flexible configuration while maintaining a concise and readable syntax.
 
 The example below creates a 1×2 panel (`rows.columns.panel = c(1,2)`) comparing the cumulative incidence of two competing events in the same cohort, namely CIF of diabetic retinopathy in the left panel and CIF of macrovascular complications in the right panel. Both panels are stratified by `fruitq1`, and the legend is shared at the bottom. The pairs of `code.events` as a list instructs `cifpanel()` to display event 1 in the first panel and event 2 in the second panel, with event code 0 representing censoring.
 
 ```{r example04-4, fig.cap="Cumulative incidence curves for event 1 vs event 2 using cifpanel()", warning=FALSE, message=FALSE}
-cifpanel(
+output6 <- cifpanel(
  rows.columns.panel = c(1,2),
  formula            = Event(t, epsilon) ~ fruitq1,
  data               = diabetes.complications,
- outcome.type       = "COMPETING-RISK",
+ outcome.type       = "competing-risk",
  code.events        = list(c(1,2,0), c(2,1,0)),
  label.y            = c("CIF of diabetic retinopathy", "CIF of macrovascular complications"),
  label.x            = "Years from registration",
@@ -156,17 +159,74 @@ cifpanel(
  legend.position    = "bottom",
  legend.collect     = TRUE
 )
+print(output6)
 ```
 
 Arguments specified as scalars (for example, `label.x = "Years from registration"`) are applied uniformly to all panels. Character vectors of the same length as the number of panels (for example, `label.y = c("Diabetic retinopathy", "Macrovascular complications")`) assign a different label to each panel in order. Lists provide the most flexibility, allowing each panel to have distinct settings that mirror the arguments of `cifcurve()`.
 
 The `legend.collect = TRUE` option merges legends from all panels into a single shared legend, positioned according to `legend.position`. The arguments `title.panel`, `subtitle.panel`, `caption.panel`, and `title.plot` control the overall panel title and individual subplot titles, ensuring that multi-panel layouts remain consistent and publication-ready. 
 
-## Example 5. Plot customization
+## Example 5. Zoomed-in-view
+
+In this example, `cifplot()` calls `cifpanel()` to combine multiple plots. The `cifpanel()` can create a panel with multiple plots and display one plot inside another. The cumulative incidence probability for macrovascular complications is low, making it difficult to discern differences between groups. The following code uses `inset.panel=` to display plot `output2`, with an enlarged vertical axis, inside plot `output1`. The position and size of the zoomed-in-view panel is specified by `inset.left`, `inset.bottom`, `inset.right`, and `inset.top`. 
+
+```{r example04-5-1, fig.cap="Zoomed-in-view panel using cifplot() and cifpanel()", warning=FALSE, message=FALSE}
+output7 <- cifplot(Event(t,epsilon) ~ fruitq,
+                   data=diabetes.complications,
+                   outcome.type="competing-risk",
+                   code.event1=2,
+                   code.event2=1,
+                   add.conf=FALSE,
+                   add.risktable = FALSE,
+                   label.y="CIF of macrovascular complications",
+                   label.x="Years from registration")
+output8 <- cifplot(Event(t,epsilon) ~ fruitq,
+                   data=diabetes.complications,
+                   outcome.type="competing-risk",
+                   code.event1=2,
+                   code.event2=1,
+                   add.conf = FALSE,
+                   add.risktable = FALSE,
+                   label.y="",
+                   label.x="",
+                   limits.y=c(0,0.15))
+output9 <- list(a = output7$plot, b = output8$plot)
+output10 <- cifpanel(plots=output9,
+         title.plot=c("Fruit intake and macrovascular complications", "Zoomed-in view"),
+         inset.panel=TRUE,
+         inset.left=0.40, inset.bottom=0.45,
+         inset.right=1.00, inset.top=0.95,
+         inset.legend.position="none",
+         legend.position="bottom")
+print(output10)
+```
+
+The code below, in which a formula and data is given directly, produces the same output as above. 
+
+```{r example04-5-2, eval=FALSE, warning=FALSE, message=FALSE}
+cifpanel(
+ title.plot = c("Fruit intake and macrovascular complications", "Zoomed-in view"),
+ inset.panel = TRUE,
+ formula = Event(t, epsilon) ~ fruitq,
+ data = diabetes.complications,
+ outcome.type = "competing-risk",
+ code.events = list(c(2,1,0), c(2,1,0)),
+ label.y = c("CIF of macrovascular complications", ""),
+ label.x = c("Years from registration", ""),
+ limits.y = list(c(0,1), c(0,0.15)),
+ inset.left = 0.40, inset.bottom = 0.45,
+ inset.right = 1.00, inset.top = 0.95,
+ inset.legend.position = "none",
+ legend.position = "bottom", 
+ add.conf = FALSE
+)
+```
+
+## Example 6. Plot customization
 
 ### Default
 
-```{r example04-5-01, fig.cap="Default of cifplot()", warning=FALSE, message=FALSE}
+```{r example04-6-01, fig.cap="Default of cifplot()", warning=FALSE, message=FALSE}
 data(diabetes.complications)
 diabetes.complications$d <- as.integer(diabetes.complications$epsilon>0)
 diabetes.complications$fruitq1 <- ifelse(
@@ -176,26 +236,30 @@ diabetes.complications$fruitq1 <- ifelse(
 # Default
 cifplot(Event(t,epsilon) ~ fruitq1,
         data                    = diabetes.complications,
-        outcome.type            = "COMPETING-RISK")
+        outcome.type            = "competing-risk")
 ```
 
 ### Visual elements
 
-```{r example04-5-02, fig.cap="Hide confidence interval, risk table, and censor marks", warning=FALSE, message=FALSE}
+```{r example04-6-02, fig.cap="Hide confidence interval, risk table, and censor marks", warning=FALSE, message=FALSE}
 # Hide confidence interval, risk table, and censor marks
 cifplot(Event(t,epsilon) ~ fruitq1,
         data                    = diabetes.complications,
+<<<<<<< HEAD:vignettes/04_examples.Rmd
         outcome.type            = "COMPETING-RISK",
+=======
+        outcome.type            = "competing-risk",
+>>>>>>> b435e2e2a8533a9ddf203371cd883334004acf4b:vignettes/examples.Rmd
         add.conf                = FALSE, 
         add.risktable           = FALSE, 
         add.censor.mark         = FALSE)
 ```
 
-```{r example04-5-03, fig.cap="Add a table of CIF estimates and event-2 time marks", warning=FALSE, message=FALSE}
+```{r example04-6-03, fig.cap="Add a table of CIF estimates and event-2 time marks", warning=FALSE, message=FALSE}
 # Add a table of CIF estimates and event-2 time marks
 cifplot(Event(t,epsilon) ~ fruitq1,
         data                    = diabetes.complications,
-        outcome.type            = "COMPETING-RISK",
+        outcome.type            = "competing-risk",
         add.risktable           = FALSE, 
         add.estimate.table      = TRUE, 
         add.censor.mark         = FALSE, 
@@ -203,7 +267,7 @@ cifplot(Event(t,epsilon) ~ fruitq1,
 
 ```
 
-```{r example04-5-04, fig.cap="Add event-2 time marks using external event-2 time", warning=FALSE, message=FALSE}
+```{r example04-6-04, fig.cap="Add event-2 time marks using external event-2 time", warning=FALSE, message=FALSE}
 # Extract event-2 time from data frame
 time_to_event <- extract_time_to_event(Event(t, epsilon) ~ fruitq1,
                                        data = diabetes.complications, which_event = "event2")
@@ -214,7 +278,7 @@ stopifnot(is.list(time_to_event), length(time_to_event) > 0)
 # Add event-2 time marks using external event-2 time 
 cifplot(Event(t, epsilon) ~ fruitq1,
         data                    = diabetes.complications,
-        outcome.type            = "COMPETING-RISK",
+        outcome.type            = "competing-risk",
         add.risktable           = FALSE,
         add.estimate.table      = TRUE,
         add.censor.mark         = FALSE,
@@ -223,11 +287,11 @@ cifplot(Event(t, epsilon) ~ fruitq1,
 
 ```
 
-```{r example04-5-05, fig.cap="Use (open) circle for strata in estimate table and event-2 time marks", warning=FALSE, message=FALSE}
+```{r example04-6-05, fig.cap="Use (open) circle for strata in estimate table and event-2 time marks", warning=FALSE, message=FALSE}
 # Use (open) circle for strata in estimate table and event-2 time marks 
 cifplot(Event(t, epsilon) ~ fruitq1,
         data                      = diabetes.complications,
-        outcome.type              = "COMPETING-RISK",
+        outcome.type              = "competing-risk",
         add.risktable             = FALSE,
         add.estimate.table        = TRUE,
         symbol.risk.table         = "circle", 
@@ -240,57 +304,57 @@ cifplot(Event(t, epsilon) ~ fruitq1,
 
 ### Font, style and palette
 
-```{r example04-5-06, fig.cap="Adjust font size", warning=FALSE, message=FALSE}
+```{r example04-6-06, fig.cap="Adjust font size", warning=FALSE, message=FALSE}
 # Adjust font size
 cifplot(Event(t,epsilon) ~ fruitq,
         data                      = diabetes.complications,
-        outcome.type              = "COMPETING-RISK",
+        outcome.type              = "competing-risk",
         add.conf                  = FALSE, 
         font.size                 = 16, 
         font.size.risk.table      = 3)
 ```
 
-```{r example04-5-07, fig.cap="Select font family, style, linewidth and palette", warning=FALSE, message=FALSE}
+```{r example04-6-07, fig.cap="Select font family, style, linewidth and palette", warning=FALSE, message=FALSE}
 # Select font family, style, linewidth and palette
 cifplot(Event(t,epsilon) ~ fruitq,
         data                      = diabetes.complications,
-        outcome.type              = "COMPETING-RISK",
+        outcome.type              = "competing-risk",
         add.conf                  = FALSE, 
-        style                     = "BOLD", 
+        style                     = "bold", 
         font.family               = "serif", 
         palette                   = c("blue1", "cyan3", "navy", "deepskyblue3"))
 cifplot(Event(t,epsilon) ~ fruitq,
         data                      = diabetes.complications,
-        outcome.type              = "COMPETING-RISK",
+        outcome.type              = "competing-risk",
         add.conf = FALSE, 
-        style                     = "FRAMED", 
+        style                     = "framed", 
         font.family               = "serif", 
         linewidth                 = 1.3, 
         linetype                  = TRUE, 
         palette                   = c("azure4", "gray", "black", "darkgray"))
 cifplot(Event(t,epsilon) ~ fruitq,
         data                      = diabetes.complications,
-        outcome.type              = "COMPETING-RISK",
+        outcome.type              = "competing-risk",
         add.conf                  = FALSE, 
-        style                     = "GRAY", 
+        style                     = "gray", 
         font.family               = "mono", 
         palette                   = c("cyan3", "deepskyblue4", "darkseagreen2", "deepskyblue3"))
 cifplot(Event(t,epsilon) ~ fruitq,
         data                      = diabetes.complications,
-        outcome.type              = "COMPETING-RISK",
+        outcome.type              = "competing-risk",
         add.conf                  = FALSE, 
-        style                     = "GGSURVFIT", 
+        style                     = "ggsurvfit", 
         font.family               = "mono", 
         palette                   = c("brown", "orange", "purple", "darkgoldenrod"))
 ```
 
 ### Axis and label
 
-```{r example04-5-08, fig.cap="Customize labels with explicit level mapping (safe against factor order)", warning=FALSE, message=FALSE}
+```{r example04-6-08, fig.cap="Customize labels with explicit level mapping (safe against factor order)", warning=FALSE, message=FALSE}
 # Customize labels with explicit level mapping (safe against factor order)
 cifplot(Event(t,d) ~ fruitq1,
         data                      = diabetes.complications,
-        outcome.type              = "SURVIVAL",
+        outcome.type              = "survival",
         label.y                   = "Survival (no complications)",
         label.x                   = "Years from registration",
         label.strata              = c("High intake","Low intake"), 
@@ -299,11 +363,11 @@ cifplot(Event(t,d) ~ fruitq1,
 
 ```
 
-```{r example04-5-09, fig.cap="Plot 1 - survival and set axis limits", warning=FALSE, message=FALSE}
+```{r example04-6-09, fig.cap="Plot 1 - survival and set axis limits", warning=FALSE, message=FALSE}
 # Plot 1 - survival and set axis limits
 cifplot(Event(t,d) ~ fruitq1,
         data                      = diabetes.complications,
-        outcome.type              = "SURVIVAL",
+        outcome.type              = "survival",
         label.y                   = "Risk of diabetes complications",
         label.x                   = "Years from registration",
         label.strata              = c("High intake","Low intake"), 
@@ -319,26 +383,26 @@ cifplot(Event(t,d) ~ fruitq1,
 
 ### Panel mode
 
-```{r example04-5-10, fig.cap="Cumulative incidence curves per each stratification variable", warning=FALSE, message=FALSE}
+```{r example04-6-10, fig.cap="Cumulative incidence curves per each stratification variable", warning=FALSE, message=FALSE}
 # Cumulative incidence curves per each stratification variable
 cifplot(Event(t,epsilon) ~ fruitq + fruitq1,
         data                      = diabetes.complications,
-        outcome.type              = "COMPETING-RISK",
+        outcome.type              = "competing-risk",
         panel.per.variable        = TRUE)
 ```
 
-```{r example04-5-11, fig.cap="Cumulative incidence curves for event 1 vs event 2", warning=FALSE, message=FALSE}
+```{r example04-6-11, fig.cap="Cumulative incidence curves for event 1 vs event 2", warning=FALSE, message=FALSE}
 # Cumulative incidence curves for event 1 vs event 2
 cifplot(Event(t,epsilon) ~ fruitq1,
         data                      = diabetes.complications,
-        outcome.type              = "COMPETING-RISK",
+        outcome.type              = "competing-risk",
         panel.per.event           = TRUE)
 ```
 
-```{r example04-5-12, fig.cap="Survival curves for event vs censoring", warning=FALSE, message=FALSE}
+```{r example04-6-12, fig.cap="Survival curves for event vs censoring", warning=FALSE, message=FALSE}
 # Survival curves for event vs censoring
 cifplot(Event(t,d) ~ fruitq1,
         data                      = diabetes.complications,
-        outcome.type              = "SURVIVAL",
+        outcome.type              = "survival",
         panel.censoring           = TRUE)
 ```

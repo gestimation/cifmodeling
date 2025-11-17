@@ -5,17 +5,16 @@ test_that("panel.per.variable returns one plot per RHS var", {
   plt <- cifplot(
     Event(t, epsilon) ~ sex_ + fruitq,
     data = diabetes.complications,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.event1 = 1, code.event2 = 2, code.censoring = 0,
     panel.per.variable = TRUE,
     add.risktable = FALSE,
     rows.columns.panel = c(1, 2)
   )
-  expect_true(inherits(plt, "patchwork") || inherits(plt, "ggplot"))
-  pa <- attr(plt, "plots")
-  expect_false(is.null(pa))
-  expect_length(pa, 2L)
-  expect_true(all(vapply(pa, function(p) inherits(p, "ggplot"), logical(1))))
+  expect_s3_class(plt, "cifpanel")
+  expect_true(inherits(plt$patchwork, "patchwork"))
+  expect_length(plt$list.plot, 2L)
+  expect_true(all(vapply(plt$list.plot, function(p) inherits(p, "ggplot"), logical(1))))
 })
 
 test_that("order.strata and label.strata (positional) are respected", {
@@ -24,14 +23,14 @@ test_that("order.strata and label.strata (positional) are respected", {
   plt <- cifplot(
     Event(t, epsilon) ~ fruitq,
     data = diabetes.complications,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.event1 = 1, code.event2 = 2, code.censoring = 0,
     panel.per.variable = TRUE,
     rows.columns.panel = c(1, 1),
     order.strata = list(fruitq = c("Q1", "Q2", "Q3", "Q4")),
     label.strata = list(fruitq = c("Q1", "Q2", "Q3", "Q4"))
   )
-  expect_true(inherits(plt, "patchwork") || inherits(plt, "ggplot"))
+  expect_s3_class(plt, "cifpanel")
 })
 
 test_that("label.strata named mapping works with order.strata", {
@@ -40,14 +39,14 @@ test_that("label.strata named mapping works with order.strata", {
   plt <- cifplot(
     Event(t, epsilon) ~ fruitq,
     data = diabetes.complications,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     code.event1 = 1, code.event2 = 2, code.censoring = 0,
     panel.per.variable = TRUE,
     rows.columns.panel = c(1, 1),
     order.strata = list(fruitq1 = c("Q1", "Q2", "Q3", "Q4")),
     label.strata = list(fruitq1 = c(Q1 = "Q1", Q2 = "Q2", Q3 = "Q3", Q4 = "Q4"))
   )
-  expect_true(inherits(plt, "patchwork") || inherits(plt, "ggplot"))
+  expect_s3_class(plt, "cifpanel")
 })
 
 test_that("order.strata works per-variable when panel.per.variable = TRUE", {
@@ -69,30 +68,25 @@ test_that("order.strata works per-variable when panel.per.variable = TRUE", {
   patch <- cifplot(
     Event(t, epsilon) ~ fruitq + z2,
     data = df,
-    outcome.type = "COMPETING-RISK",
+    outcome.type = "competing-risk",
     type.y = "risk",
     panel.per.variable = TRUE,
     order.strata = ord_list,
     add.risktable = FALSE
   )
 
-  expect_true(
-    inherits(patch, c("gg", "ggplot")) ||
-      inherits(patch, "patchwork") ||
-      inherits(patch, "gtable")
-  )
-  plots_attr <- attr(patch, "plots")
-  expect_false(is.null(plots_attr))
-  expect_equal(length(plots_attr), 2L)
-  expect_true(all(vapply(plots_attr, function(p) inherits(p, "ggplot"), logical(1))))
+  expect_s3_class(patch, "cifpanel")
+  expect_true(inherits(patch$patchwork, "patchwork"))
+  expect_equal(length(patch$list.plot), 2L)
+  expect_true(all(vapply(patch$list.plot, function(p) inherits(p, "ggplot"), logical(1))))
 
-  sc1_col <- plots_attr[[1]]$scales$get_scales("colour")
-  sc1_fil <- plots_attr[[1]]$scales$get_scales("fill")
+  sc1_col <- patch$list.plot[[1]]$scales$get_scales("colour")
+  sc1_fil <- patch$list.plot[[1]]$scales$get_scales("fill")
   expect_identical(sc1_col$limits, ord_list$fruitq)
   expect_identical(sc1_fil$limits, ord_list$fruitq)
 
-  sc2_col <- plots_attr[[2]]$scales$get_scales("colour")
-  sc2_fil <- plots_attr[[2]]$scales$get_scales("fill")
+  sc2_col <- patch$list.plot[[2]]$scales$get_scales("colour")
+  sc2_fil <- patch$list.plot[[2]]$scales$get_scales("fill")
   expect_identical(sc2_col$limits, ord_list$z2)
   expect_identical(sc2_fil$limits, ord_list$z2)
 })

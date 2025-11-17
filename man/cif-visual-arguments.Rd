@@ -2,7 +2,8 @@
 % Please edit documentation in R/cif-visual-arguments.R
 \name{cif-visual-arguments}
 \alias{cif-visual-arguments}
-\title{Common visual arguments for CIF functions}
+\title{These arguments are shared by \code{cifplot()}, \code{cifpanel()}, and
+\code{cifcurve()}.}
 \arguments{
 \item{type.y}{Optional vector/list per panel: \code{"surv"} or \code{"risk"} (display 1 - survival i.e. CIF).}
 
@@ -67,8 +68,8 @@ times per stratum. Default \code{FALSE}.}
 the layout of the panel returned by the panel modes. If \code{NULL}, an automatic
 layout is determined from the number of subplots.}
 
-\item{style}{Character choosing the base plot style: \code{"CLASSIC"}, \code{"BOLD"},
-\code{"FRAMED"}, \code{"GRID"}, \code{"GRAY"} or \code{"GGSURVFIT"} (default \code{"CLASSIC"}).
+\item{style}{Character choosing the base plot style: \code{"classic"}, \code{"bold"},
+\code{"framed"}, \code{"grid"}, \code{"gray"} or \code{"ggsurvfit"} (default \code{"classic"}).
 Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also accepted.}
 
 \item{palette}{Optional character vector specifying the color palette to use across strata.}
@@ -81,6 +82,10 @@ Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also
 \code{"mono"} (default \code{"sans"}).}
 
 \item{font.size}{Integer specifying the base font size (default \code{12}).}
+
+\item{print.panel}{Logical. When \code{TRUE}, panel displays created internally are
+printed automatically in interactive sessions; otherwise they are returned
+invisibly for further modification (default \code{FALSE}).}
 
 \item{filename.ggsave}{Character; if non-\code{NULL}, save the plot to this file.}
 

@@ -1,43 +1,21 @@
-#' @title Generate a survival or cumulative incidence curve with marks that represent
+#' @title Generate a survival or CIF curve with marks that represent
 #' censoring, competing risks and intermediate events
 #'
 #' @description
-#' This function produces the Kaplan–Meier survival or Aalen–Johansen cumulative
-#' incidence curve from a unified formula + data interface (\code{Event()} or \code{Surv()} on
-#' the left-hand side, and a stratification variable on the right-hand side if necessary).
-#' You may also pass a survfit-compatible object directly.
+#' This function generates a survival or CIF curve from a unified formula +
+#' data interface (\code{Event()} or \code{Surv()} on the LHS, and a stratification
+#' variable on the RHS if necessary). You may also pass a survfit-compatible object directly.
 #' Options for risk and estimate+CI tables, censoring/competing-risk/intercurrent-event marks,
 #' and simple panel display internally using \code{cifpanel()} are available.
-#' This function returns a regular \code{ggplot} object (compatible with \code{+} and \code{%+%}).
-#'
-#' **Outcome type and estimator**
-#' -   `outcome.type = "SURVIVAL"` → Kaplan–Meier estimator
-#' -   `outcome.type = "COMPETING-RISK"` → Aalen–Johansen estimator
-#'
-#' **Data visualization**
-#' -   `add.conf` adds confidence intervals on the ggplot2-based plot
-#' -   `add.competing.risk.mark` and `add.intercurrent.event.mark` add symbols to describe competing risks or intercurrent events in addition to conventional censoring marks with `add.censor.mark`
-#' -   `add.risktable` adds numbers at risk
-#' -   `add.estimate.table` adds estimates and 95% confidence interval
-#' -   `add.quantile` adds a line that represents the median or a selected quantile level
-#'
-#' **Plot customization**
-#' -   `type.y` chooses y-axis. (`"surv"` for survival curves and `"risk"` for CIFs)
-#' -   `limits.x`, `limits.y`, `breaks.x`, `breaks.y` numeric vectors for axis control
-#' -   `style` specifies the appearance of plot (`"CLASSIC"`, `"BOLD"`, `"FRAMED"`, `"GRID"`, `"GRAY"` or `"GGSURVFIT"`)
-#'
-#' **Panel display**
-#' -   `panel.per.variable` produces multiple survival/CIF curves per stratification variable specified in the formula
-#' -   `panel.per.event` produces CIF curves for each event type
-#' -   `panel.censoring` produces KM-type curves for (event, censor) and (censor, event) so that censoring patterns can be inspected
-#' -   `panel.mode` uses automatic panel mode
+#' This function returns a list including \code{plot}, a regular \code{ggplot} object
+#' (compatible with \code{+} and \code{%+%}).
 #'
 #' @inheritParams cif-stat-arguments
 #' @inheritParams cif-visual-arguments
 #'
 #' @param formula_or_fit A model formula or a \code{survfit} object. **Note:** When a formula is supplied,
-#'   the left-hand side must be \code{Event(time, status)} or \code{Surv(time, status)}.
-#'   The right-hand side specifies the stratification variable.
+#'   the LHS must be \code{Event(time, status)} or \code{Surv(time, status)}.
+#'   The RHS specifies the stratification variable.
 #' @param code.events Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
 #'   When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
 #'   (primarily used when \code{cifpanel()} is called or when \code{panel.per.event = TRUE}).
@@ -62,28 +40,62 @@
 #' @param legend.position Character specifying the legend position:
 #'   \code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, or \code{"none"} (default \code{"top"}).
 #' @param panel.per.event Logical. **Explicit panel mode.** If \code{TRUE} and
-#'   \code{outcome.type == "COMPETING-RISK"}, \code{cifplot()} internally calls \code{cifpanel()}
+#'   \code{outcome.type == "competing-risk"}, \code{cifplot()} internally calls \code{cifpanel()}
 #'   to display two event-specific CIFs side-by-side (event 1 and event 2) using
 #'   reversed \code{code.events}. Ignored for non-competing-risk outcomes.
 #' @param panel.censoring Logical. **Explicit panel mode.** If \code{TRUE} and
-#'   \code{outcome.type == "SURVIVAL"}, \code{cifplot()} internally calls \code{cifpanel()}
-#'   to display KM-type curves for \code{(event, censor)} and \code{(censor, event)} so that
+#'   \code{outcome.type == "survival"}, \code{cifplot()} internally calls \code{cifpanel()}
+#'   to display KM curves for \code{(event, censor)} and \code{(censor, event)} so that
 #'   censoring patterns can be inspected.
-#' @param panel.per.variable Logical. **Explicit panel mode.** If \code{TRUE} and the right-hand side
+#' @param panel.per.variable Logical. **Explicit panel mode.** If \code{TRUE} and the RHS
 #'   of the formula has multiple covariates (e.g. \code{~ a + b + c}), the function produces
-#'   a panel where each variable in RHS is used once as the stratification factor.
+#'   a panel where each variable in the RHS is used once as the stratification factor.
 #' @param panel.mode Character specifying **Automatic panel mode.** If \code{"auto"} and none of
 #'   \code{panel.per.variable}, \code{panel.per.event}, \code{panel.censoring} has been set to \code{TRUE},
 #'   the function chooses a suitable panel mode automatically:
 #'   (i) if the formula RHS has 2+ variables, it behaves like \code{panel.per.variable = TRUE};
-#'   (ii) otherwise, if \code{outcome.type == "COMPETING-RISK"}, it behaves like
-#'   \code{panel.per.event = TRUE}; (iii) otherwise, if \code{outcome.type == "SURVIVAL"}, it
+#'   (ii) otherwise, if \code{outcome.type == "competing-risk"}, it behaves like
+#'   \code{panel.per.event = TRUE}; (iii) otherwise, if \code{outcome.type == "survival"}, it
 #'   behaves like \code{panel.censoring = TRUE}. If a panel mode is explicitly specified,
 #'   \code{panel.mode} is ignored.
 #'
 #' @details
-#' This function calls an internal helper \code{call_ggsurvfit()} which adds confidence intervals,
-#' risk table, censoring marks, and optional competing-risk and intercurrent-event marks.
+#'
+#' ### Typical use cases
+#' -   Draw one survival/CIF curve set by exposure groups (e.g., treatment vs control).
+#' -   Call `cifpanel()` with a simplified code to create a panel displaying plots of multiple stratified survival/CIF curves or CIF curves for each event type.
+#' -   Add CIs and censor/competing-risk/intercurrent-event marks.
+#' -   Add a risk table to display the number at risk or the estimated survival probabilities or CIFs and CIs at each point in time.
+#'
+#' ### Key arguments shared with cifcurve()
+#' -   **Outcome type and estimator**
+#'       -   `outcome.type = "survival"` → Kaplan–Meier estimator
+#'       -   `outcome.type = "competing-risk"` → Aalen–Johansen estimator
+#'
+#' -   **Confidence intervals**
+#'       -   `conf.int` sets the two-sided level (default 0.95)
+#'       -   `conf.type` chooses the transformation (`"arcsine-square root"`, `"plain"`, `"log"`, `"log-log"`, `"logit"`, or `"none"`)
+#'       -   `error` chooses the estimator for SE (`"greenwood"`, `"tsiatis"` or `"if"` for survival curves and `"delta"`, `"aalen"` or `"if"` for CIFs)
+#'
+#' ### Key arguments for cifplot()
+#' -   **Data visualization**
+#'       -   `add.conf` adds CIs on the ggplot2-based plot
+#'       -   `add.competing.risk.mark` and `add.intercurrent.event.mark` add symbols to describe competing risks or intercurrent events in addition to conventional censoring marks with `add.censor.mark`
+#'       -   `add.risktable` adds numbers at risk
+#'       -   `add.estimate.table` adds time-by-time estimates and CIs
+#'       -   `add.quantile` add a reference line at a chosen quantile level
+#'
+#' -   **Plot customization**
+#'       -   `type.y` chooses y-axis (`"surv"` for survival and `"risk"` for 1-survival/CIF)
+#'       -   `limits.x`, `limits.y`, `breaks.x`, `breaks.y` numeric vectors for axis control
+#'       -   `style` specifies the appearance of plot (`"classic"`, `"bold"`, `"framed"`, `"grid"`, `"gray"` or `"ggsurvfit"`)
+#'       -   `palette` specifies color of each curve (e.g. `palette=c("blue1", "cyan3", "navy", "deepskyblue3"))`)
+#'
+#' -   **Panel display**
+#'       -   `panel.per.variable` produces multiple survival/CIF curves per stratification variable specified in the formula
+#'       -   `panel.per.event` produces CIF curves for each event type
+#'       -   `panel.censoring` produces the Kaplan–Meier curves for (event, censor) and (censor, event) so that censoring patterns can be inspected
+#'       -   `panel.mode` uses automatic panel mode
 #'
 #' When \code{panel.per.event = TRUE}, two panels are created with
 #' \code{code.events = list(c(e1, e2, c), c(e2, e1, c))}, where
@@ -110,7 +122,7 @@
 #' | `symbol.risk.table` |  Symbol for strata in risk / estimate tables | `"square"` |
 #' | `font.size.risk.table` |  Font size for texts in risk / estimate tables | `3` |
 #' | `add.censor.mark` | Add censoring marks. | `TRUE` |
-#' | `add.competing.risk.mark` | Add marks for event2 of "COMPETING-RISK" outcome. | `FALSE` |
+#' | `add.competing.risk.mark` | Add marks for event2 of "competing-risk" outcome. | `FALSE` |
 #' | `add.intercurrent.event.mark` | Add intercurrent event marks at user-specified times. | `FALSE` |
 #' | `add.quantile` | Add quantile reference lines. | `FALSE` |
 #' | `level.quantile` | Quantile level for `add.quantile`. | `0.5` |
@@ -138,11 +150,11 @@
 #' | Argument | Description |
 #' |---|---|
 #' | `panel.per.variable` | One panel per stratification variable |
-#' | `panel.per.event` | For competing risks, show CIFs of event 1 and event 2 |
+#' | `panel.per.event` | For `"competing-risk"`, show CIFs of event 1 and event 2 |
 #' | `panel.censoring` | For survival, show (event, censor) vs (censor, event) |
 #' | `panel.mode` with 2+ stratification variables | Behave like `panel.per.variable` |
-#' | `panel.mode` with outcome.type = "COMPETING-RISK" | Behave like `panel.per.event` |
-#' | `panel.mode` with outcome.type = "SURVIVAL" | Behave like `panel.censoring` |
+#' | `panel.mode` with outcome.type = "competing-risk" | Behave like `panel.per.event` |
+#' | `panel.mode` with outcome.type = "survival" | Behave like `panel.censoring` |
 #'
 #' #### Axes and legend
 #'
@@ -162,15 +174,17 @@
 #' | `height.ggsave` | Size passed to `ggsave()` | `6`|
 #' | `dpi.ggsave` | DPI passed to `ggsave()` | `300` |
 #'
-#' **Notes.**
+#' **Notes**
 #' - For CIF displays, set `type.y = "risk"`. For survival scale, use `type.y = NULL` or `= "surv"`.
 #' - Event coding can be controlled via `code.event1`, `code.event2`, `code.censoring`.
 #'   For ADaM-style data, use `code.event1 = 0`, `code.censoring = 1`.
 #' - Per-stratum time lists should have names identical to plotted strata labels.
-
-#' @return A \code{ggplot} object. When \code{panel.per.variable = TRUE}, a \pkg{patchwork}
-#'   object is returned with an attribute \code{attr(x, "plots")} containing the
-#'   individual \code{ggplot} panels.
+#'
+#' @return Returns a \code{"cifplot"} object (list) with elements
+#'   \code{plot}, \code{patchwork} (always \code{NULL}), \code{survfit.info},
+#'   \code{axis.info}, \code{visual.info}, \code{panel.info}, \code{style.info},
+#'   \code{inset.info}, \code{print.info}, \code{ggsave.info}, \code{version},
+#'   and \code{call}.
 #'
 #' @keywords internal
 #' @param survfit.info,axis.info,visual.info,panel.info,style.info,print.info,ggsave.info
@@ -184,14 +198,16 @@
 #' data(diabetes.complications)
 #' cifplot(Event(t,epsilon) ~ fruitq,
 #'         data = diabetes.complications,
-#'         outcome.type="COMPETING-RISK",
+#'         outcome.type="competing-risk",
 #'         add.risktable = FALSE,
 #'         label.y='CIF of diabetic retinopathy',
 #'         label.x='Years from registration')
 #' }
 #'
 #' @importFrom ggsurvfit ggsurvfit add_confidence_interval add_risktable add_risktable_strata_symbol add_censor_mark add_quantile
-#' @importFrom ggplot2 theme_classic theme_bw element_text labs lims geom_point aes ggsave guides scale_color_discrete scale_fill_discrete element_text element_rect element_blank scale_color_manual scale_fill_manual scale_linetype_manual scale_shape_manual scale_linetype_discrete scale_shape_discrete
+#' @importFrom ggplot2 theme_classic theme_bw element_text  element_rect element_blank labs lims geom_point aes
+#' ggsave guides scale_color_discrete scale_fill_discrete scale_color_manual
+#' scale_fill_manual scale_linetype_manual scale_linetype_discrete scale_shape_discrete scale_shape_manual
 #' @importFrom grDevices gray
 #' @importFrom patchwork wrap_plots
 #'
@@ -204,7 +220,7 @@ cifplot <- function(
     weights                       = NULL,
     subset.condition              = NULL,
     na.action                     = na.omit,
-    outcome.type                  = c("COMPETING-RISK", "SURVIVAL"),
+    outcome.type                  = c("competing-risk", "survival"),
     code.event1                   = 1,
     code.event2                   = 2,
     code.censoring                = 0,
@@ -223,36 +239,37 @@ cifplot <- function(
     breaks.x                      = NULL,
     breaks.y                      = NULL,
     use.coord.cartesian           = FALSE,
-    add.conf         = TRUE,
-    add.risktable                  = TRUE,
-    add.estimate.table              = FALSE,
-    symbol.risk.table              = "square",
-    font.size.risk.table           = 3,
-    add.censor.mark                 = TRUE,
+    add.conf                      = TRUE,
+    add.risktable                 = TRUE,
+    add.estimate.table            = FALSE,
+    symbol.risk.table             = "square",
+    font.size.risk.table          = 3,
+    add.censor.mark               = TRUE,
     shape.censor.mark             = 3,
     size.censor.mark              = 2,
-    add.competing.risk.mark          = FALSE,
+    add.competing.risk.mark       = FALSE,
     competing.risk.time           = list(),
     shape.competing.risk.mark     = 16,
     size.competing.risk.mark      = 2,
-    add.intercurrent.event.mark      = FALSE,
+    add.intercurrent.event.mark   = FALSE,
     intercurrent.event.time       = list(),
     shape.intercurrent.event.mark = 1,
     size.intercurrent.event.mark  = 2,
-    add.quantile               = FALSE,
-    level.quantile                      = 0.5,
-    panel.per.event                = FALSE,
-    panel.censoring                = FALSE,
-    panel.per.variable                  = FALSE,
+    add.quantile                  = FALSE,
+    level.quantile                = 0.5,
+    panel.per.event               = FALSE,
+    panel.censoring               = FALSE,
+    panel.per.variable            = FALSE,
     panel.mode                    = "auto",
     rows.columns.panel            = NULL,
-    style                         = "CLASSIC",
+    style                         = "classic",
     palette                       = NULL,
     linewidth                     = 0.8,
     linetype                      = FALSE,
     font.family                   = "sans",
     font.size                     = 12,
     legend.position               = "top",
+    print.panel                   = FALSE,
     filename.ggsave               = NULL,
     width.ggsave                  = 6,
     height.ggsave                 = 6,
@@ -268,6 +285,7 @@ cifplot <- function(
     ...
 ) {
   dots <- list(...)
+  dots$print.panel <- dots$print.panel %||% print.panel
 
   print_panel <- isTRUE(panel.per.variable) || isTRUE(panel.per.event) || isTRUE(panel.censoring)
   if (print_panel) {
@@ -352,6 +370,8 @@ cifplot <- function(
   panel.info   <- infos$panel.info
   style.info   <- infos$style.info
   ggsave.info  <- infos$ggsave.info
+  inset.info   <- inset.info %||% list()
+  print.info   <- print.info %||% list()
 
   style.info$font.family <- style.info$font.family %||% "sans"
   style.info$font.size   <- style.info$font.size   %||% 12
@@ -522,8 +542,46 @@ cifplot <- function(
   )
 
   out_plot <- do.call(cifplot_single, args_single)
-  out_plot <- apply_strata_to_plots(list(out_plot),order_data = axis.info$order.strata,label_map  = axis.info$label.strata)[[1]]
-  out_plot
+  out_plot <- apply_strata_to_plots(
+    list(out_plot),
+    order_data = axis.info$order.strata,
+    label_map  = axis.info$label.strata
+  )[[1]]
+
+  survfit.info$formula_or_fit <- survfit.info$formula_or_fit %||% formula_or_fit
+  survfit.info$outcome.type   <- survfit.info$outcome.type   %||% outcome.type
+  survfit.info$code.event1    <- survfit.info$code.event1    %||% code.event1
+  survfit.info$code.event2    <- survfit.info$code.event2    %||% code.event2
+  survfit.info$code.censoring <- survfit.info$code.censoring %||% code.censoring
+  survfit.info$code.events    <- survfit.info$code.events    %||% code.events
+  survfit.info$data.name      <- survfit.info$data.name      %||% deparse(substitute(data))
+
+  print.info <- print.info %||% list()
+  print.info$print.panel <- isTRUE(print.panel)
+  print.info$engine      <- print.info$engine %||% "cifplot_single"
+
+  ret <- list(
+    plot         = out_plot,
+    patchwork    = NULL,
+    survfit.info = survfit.info,
+    axis.info    = axis.info,
+    visual.info  = visual.info,
+    panel.info   = panel.info,
+    style.info   = style.info,
+    inset.info   = inset.info %||% list(),
+    print.info   = print.info,
+    ggsave.info  = ggsave.info,
+    version      = utils::packageVersion("cifmodeling"),
+    call         = match.call()
+  )
+  class(ret) <- c("cifplot", class(ret))
+
+  if (interactive() && isTRUE(ret$print.info$print.panel)) {
+    print(ret$plot)
+    invisible(ret)
+  } else {
+    ret
+  }
 }
 
 plot_panel.per.variable <- function(
@@ -575,7 +633,7 @@ plot_panel.per.variable <- function(
   formulas <- lapply(vars, function(v) as.formula(paste0(lhs_chr, " ~ ", v)))
   K        <- length(formulas)
 
-  if (identical(outcome.type, "COMPETING-RISK")) {
+  if (identical(outcome.type, "competing-risk")) {
     code.events <- rep(list(c(code.event1, code.event2, code.censoring)), K)
   } else {
     code.events <- rep(list(c(code.event1, code.censoring)), K)
@@ -616,9 +674,8 @@ plot_panel.per.variable <- function(
     ), dots)
   )
 
-  if (is.list(res) && !is.null(res$out_patchwork)) {
-    attr(res$out_patchwork, "plots") <- res$plots
-    return(res$out_patchwork)
+  if (is.list(res) && !is.null(res$patchwork)) {
+    return(res)
   }
   res
 }
@@ -641,7 +698,7 @@ plot_panel.per.event <- function(
     subset.condition = NULL,
     na.action = na.omit
 ) {
-  if (is.null(outcome.type) || outcome.type != "COMPETING-RISK") {
+  if (is.null(outcome.type) || outcome.type != "competing-risk") {
     warning("panel.per.event=TRUE is only for COMPETING-RISK; falling back to single-plot.")
     return(NULL)
   }
@@ -691,7 +748,7 @@ plot_panel.per.event <- function(
     data              = data,
     subset.condition  = subset.condition,
     na.action         = na.action,
-    outcome.type      = "COMPETING-RISK",
+    outcome.type      = "competing-risk",
     code.events       = list(ce_panel, c(ce_panel[2L], ce_panel[1L], ce_panel[3L])),
     axis.info         = axis.info.panel,
     visual.info       = visual.info.panel,
@@ -716,9 +773,8 @@ plot_panel.per.event <- function(
 
   panel_out <- do.call(cifpanel, c(panel_args, dots))
 
-  if (is.list(panel_out) && !is.null(panel_out$out_patchwork)) {
-    attr(panel_out$out_patchwork, "plots") <- panel_out$plots
-    return(panel_out$out_patchwork)
+  if (is.list(panel_out) && !is.null(panel_out$patchwork)) {
+    return(panel_out)
   }
   panel_out
 }
@@ -741,7 +797,7 @@ plot_panel.censoring <- function(
     subset.condition = NULL,
     na.action = na.omit
 ) {
-  if (is.null(outcome.type) || outcome.type != "SURVIVAL") {
+  if (is.null(outcome.type) || outcome.type != "survival") {
     warning("panel.censoring=TRUE is only for SURVIVAL outcome; falling back to single-plot.")
     return(NULL)
   }
@@ -766,7 +822,7 @@ plot_panel.censoring <- function(
     data              = data,
     subset.condition  = subset.condition,
     na.action         = na.action,
-    outcome.type      = "SURVIVAL",
+    outcome.type      = "survival",
     code.events       = list(
       c(code.event1,    code.censoring),
       c(code.censoring, code.event1)
@@ -786,9 +842,8 @@ plot_panel.censoring <- function(
 
   panel_out <- do.call(cifpanel, c(panel_args, dots))
 
-  if (is.list(panel_out) && !is.null(panel_out$out_patchwork)) {
-    attr(panel_out$out_patchwork, "plots") <- panel_out$plots
-    return(panel_out$out_patchwork)
+  if (is.list(panel_out) && !is.null(panel_out$patchwork)) {
+    return(panel_out)
   }
   panel_out
 }
@@ -800,7 +855,7 @@ cifplot_single <- function(
     weights          = NULL,
     subset.condition = NULL,
     na.action        = na.omit,
-    outcome.type     = c("COMPETING-RISK", "SURVIVAL"),
+    outcome.type     = c("competing-risk", "survival"),
     code.event1      = 1,
     code.event2      = 2,
     code.censoring   = 0,
@@ -912,7 +967,7 @@ cifplot_single <- function(
   ), panel.info)
 
   style.info <- panel_modify_list(list(
-    style           = "CLASSIC",
+    style           = "classic",
     palette         = NULL,
     linewidth       = 0.8,
     linetype        = FALSE,
@@ -1014,33 +1069,21 @@ cifplot_single <- function(
     outcome.type <- util_check_outcome_type(formula = if (inherits(formula_or_fit,"survfit")) NULL
                                             else formula_or_fit, data = data, na.action = na.action, auto_message = FALSE)
   } else {
-    outcome.type <- match.arg(outcome.type, c("COMPETING-RISK","SURVIVAL"))
+    outcome.type <- match.arg(outcome.type, c("competing-risk","survival"))
   }
 
   if (!inherits(formula_or_fit, "survfit")) {
     if (is.null(data)) stop("When `formula` is a formula, `data` must be provided.")
     norm_inputs <- plot_normalize_formula_data(formula_or_fit, data)
     data_working <- norm_inputs$data
-    #    if (!isTRUE(panel.per.event) &&
-    #        isTRUE(add.competing.risk.mark) &&
-    #        length(competing.risk.time) == 0) {
-    #      competing.risk.time <- extract_time_to_event(
-    #        formula_or_fit, data = data_working, which_event = "event2",
-    #        code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring)
-    #    }
     formula_or_fit <- cifcurve(formula_or_fit, data = data_working, weights = weights, subset.condition = subset.condition, na.action = na.action,
                                outcome.type = outcome.type, code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
                                error = error, conf.type = conf.type, conf.int = conf.int)
     formula_or_fit <- plot_survfit_short_strata_names(formula_or_fit)
-    #    if (!is.null(axis.info$label.strata) && !is.null(formula_or_fit$strata)) {
-    #      formula_or_fit <- plot_survfit_strata_labels(
-    #        formula_or_fit, axis.info$label.strata
-    #      )
-    #    }
   }
 
   p <- call_ggsurvfit(
-    survfit_object = if (inherits(formula_or_fit, "survfit")) formula_or_fit else stop("..."),
+    survfit_object = formula_or_fit,
     out_readSurv   = NULL,
     survfit.info   = survfit.info,
     axis.info      = axis.info,
@@ -1087,7 +1130,7 @@ cifplot_single <- function(
 #' @param breaks.y Numeric vectors for axis breaks (default \code{NULL}).
 #' @param use.coord.cartesian Logical specify use of coord_cartesian() (default \code{FALSE}).
 
-#' @param style Character plot theme controls (default \code{"CLASSIC"}).
+#' @param style Character plot theme controls (default \code{"classic"}).
 #' @param font.family Character plot theme controls (default \code{"sans"}).
 #' @param font.size Integer plot theme controls (default \code{14}).
 #' @param legend.position Character specify position of legend: \code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, or \code{"none"} (default \code{"top"}).
@@ -1128,28 +1171,28 @@ call_ggsurvfit <- function(
   breaks.y            <- axis.info$breaks.y
   use.coord.cartesian <- isTRUE(axis.info$use.coord.cartesian)
 
-  add.conf         <- visual.info$add.conf
-  add.risktable                  <- visual.info$add.risktable
-  add.estimate.table              <- visual.info$add.estimate.table
-  symbol.risk.table              <- visual.info$symbol.risk.table
-  font.size.risk.table           <- visual.info$font.size.risk.table
-  add.censor.mark                 <- visual.info$add.censor.mark
+  add.conf                      <- visual.info$add.conf
+  add.risktable                 <- visual.info$add.risktable
+  add.estimate.table            <- visual.info$add.estimate.table
+  symbol.risk.table             <- visual.info$symbol.risk.table
+  font.size.risk.table          <- visual.info$font.size.risk.table
+  add.censor.mark               <- visual.info$add.censor.mark
   shape.censor.mark             <- visual.info$shape.censor.mark
   size.censor.mark              <- visual.info$size.censor.mark
-  add.competing.risk.mark          <- visual.info$add.competing.risk.mark
+  add.competing.risk.mark       <- visual.info$add.competing.risk.mark
   competing.risk.time           <- visual.info$competing.risk.time
   shape.competing.risk.mark     <- visual.info$shape.competing.risk.mark
   size.competing.risk.mark      <- visual.info$size.competing.risk.mark
-  add.intercurrent.event.mark      <- visual.info$add.intercurrent.event.mark
+  add.intercurrent.event.mark   <- visual.info$add.intercurrent.event.mark
   intercurrent.event.time       <- visual.info$intercurrent.event.time
   shape.intercurrent.event.mark <- visual.info$shape.intercurrent.event.mark
   size.intercurrent.event.mark  <- visual.info$size.intercurrent.event.mark
-  add.quantile               <- visual.info$add.quantile
-  level.quantile                      <- visual.info$level.quantile
+  add.quantile                  <- visual.info$add.quantile
+  level.quantile                <- visual.info$level.quantile
 
-  panel.per.event     <- isTRUE(panel.info$panel.per.event)
-  panel.censoring     <- isTRUE(panel.info$panel.censoring)
-  panel.per.variable       <- isTRUE(panel.info$panel.per.variable)
+  panel.per.event               <- isTRUE(panel.info$panel.per.event)
+  panel.censoring               <- isTRUE(panel.info$panel.censoring)
+  panel.per.variable            <- isTRUE(panel.info$panel.per.variable)
 
   style              <- style.info$style
   palette            <- style.info$palette
@@ -1165,12 +1208,29 @@ call_ggsurvfit <- function(
   dpi.ggsave         <- ggsave.info$dpi.ggsave
   ggsave.units       <- ggsave.info$units %||% "in"
 
-  if (!identical(style.info$legend.position, "none")) {
-    label.strata.map   <- plot_make_label.strata.map(
-      survfit_object   = survfit_object,
-      label.strata     = label.strata,
-      level.strata     = level.strata
+  if (!identical(legend.position, "none")) {
+    label.strata.map <- plot_make_label.strata.map(
+      survfit_object = survfit_object,
+      label.strata   = label.strata,
+      level.strata   = level.strata
     )
+    res <- plot_reconcile_order_and_labels(
+      survfit_object   = survfit_object,
+      label.strata.map = label.strata.map,
+      level.strata     = level.strata,
+      order.strata     = order.strata
+    )
+    limits_arg          <- res$limits_arg
+    label.strata.map    <- res$label.strata.map
+    strata_levels_final <- res$strata_levels_final
+    strata_labels_final <- res$strata_labels_final
+    n_strata_effective  <- length(limits_arg)
+  } else {
+    limits_arg          <- NULL
+    label.strata.map    <- NULL
+    strata_levels_final <- NULL
+    strata_labels_final <- NULL
+    n_strata_effective  <- NULL
   }
 
   out_cg <- check_ggsurvfit(
@@ -1181,28 +1241,6 @@ call_ggsurvfit <- function(
     style.info       = style.info,
     out_readSurv     = out_readSurv
   )
-
-  if (!identical(legend.position, "none")) {
-    res <- plot_reconcile_order_and_labels(
-      survfit_object   = survfit_object,
-      label.strata.map = label.strata.map,
-      level.strata     = level.strata,
-      order.strata     = order.strata
-    )
-
-    limits_arg                 <- res$limits_arg
-    label.strata.map           <- res$label.strata.map
-    strata_levels_final        <- res$strata_levels_final
-    strata_labels_final        <- res$strata_labels_final
-    n_strata_effective         <- length(limits_arg)
-  } else {
-    limits_arg                 <- NULL
-    label.strata.map           <- NULL
-    strata_levels_final        <- NULL
-    strata_labels_final        <- NULL
-    n_strata_effective         <- NULL
-  }
-
 
   p <- out_cg$out_survfit_object +
     ggplot2::labs(
@@ -1305,7 +1343,7 @@ call_ggsurvfit <- function(
     }
   }
 
-  if (!identical(style, "GGSURVFIT")) {
+  if (!identical(style, "ggsurvfit")) {
     p <- plot_apply_style(
       p,
       style               = style,
@@ -1350,10 +1388,7 @@ check_ggsurvfit <- function(
   visual.info  <- visual.info  %||% list()
   style.info   <- style.info   %||% list()
 
-  conf.type <- survfit.info$conf.type
-  # error     <- survfit.info$error
-  # conf.int  <- survfit.info$conf.int
-
+  conf.type           <- survfit.info$conf.type
   type.y              <- axis.info$type.y
   label.y             <- axis.info$label.y
   limits.x            <- axis.info$limits.x
@@ -1362,10 +1397,10 @@ check_ggsurvfit <- function(
   breaks.y            <- axis.info$breaks.y
   use.coord.cartesian <- isTRUE(axis.info$use.coord.cartesian)
 
-  add.conf         <- visual.info$add.conf
-  add.censor.mark                 <- visual.info$add.censor.mark
-  add.competing.risk.mark          <- visual.info$add.competing.risk.mark
-  add.intercurrent.event.mark      <- visual.info$add.intercurrent.event.mark
+  add.conf                      <- visual.info$add.conf
+  add.censor.mark               <- visual.info$add.censor.mark
+  add.competing.risk.mark       <- visual.info$add.competing.risk.mark
+  add.intercurrent.event.mark   <- visual.info$add.intercurrent.event.mark
   shape.censor.mark             <- visual.info$shape.censor.mark
   shape.competing.risk.mark     <- visual.info$shape.competing.risk.mark
   shape.intercurrent.event.mark <- visual.info$shape.intercurrent.event.mark
@@ -1483,7 +1518,6 @@ check_ggsurvfit <- function(
   )
   type.y <- if (identical(target_type, "risk")) "risk" else "surv"
 
-  old_opt <- getOption("ggsurvfit.switch-color-linetype", FALSE)
   out_plot <- ggsurvfit(
     survfit_object,
     type         = target_type,
