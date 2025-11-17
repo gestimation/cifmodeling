@@ -18,8 +18,7 @@ Suggests:
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),
-    pkgdown,
-    lifecycle
+    pkgdown
 Config/testthat/edition: 3
 LinkingTo: 
     Rcpp
@@ -30,7 +29,8 @@ Imports:
     ggsurvfit,
     ggplot2,
     patchwork,
-    scales
+    scales,
+    lifecycle
 VignetteBuilder: knitr
 URL: https://gestimation.github.io/cifmodeling/, https://github.com/gestimation/cifmodeling
 BugReports: https://github.com/gestimation/cifmodeling/issues

@@ -268,10 +268,18 @@ calls that build each panel. Use this to pass low-level options such as
 \code{competing.risk.time}, \code{intercurrent.event.time}, or styling overrides.}
 }
 \value{
-Returns a \code{"cifpanel"} object (list) with elements \code{plot}
-(always \code{NULL}), \code{list.plot} (list of \code{ggplot} objects),
-\code{patchwork}, and the same metadata fields as \code{\link[=cifplot]{cifplot()}}. The object is
-returned invisibly; printing occurs only when \code{print.panel = TRUE}.
+A \code{"cifpanel"} object (returned invisibly), which is a list
+with at least the following elements:
+\itemize{
+\item \code{list.plot} a list of ggplot objects, one per panel;
+\item \code{patchwork} a patchwork object representing the composed panel;
+\item \code{plot} reserved for backwards compatibility (always \code{NULL});
+\item metadata fields mirroring those in \code{\link[=cifplot]{cifplot()}} (such as information
+on the fitted curves and display settings).
+}
+
+When \code{print.panel=TRUE}, the patchwork object is printed in interactive
+sessions in addition to being returned.
 }
 \description{
 \code{cifpanel()} is the panel-building counterpart of \code{cifplot()}.

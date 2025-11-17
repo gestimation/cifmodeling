@@ -178,10 +178,17 @@
 #'   element of `list.plot` or to the composed `patchwork`.
 #'
 #' @importFrom patchwork wrap_plots plot_layout inset_element plot_annotation
-#' @return Returns a \code{"cifpanel"} object (list) with elements \code{plot}
-#'   (always \code{NULL}), \code{list.plot} (list of \code{ggplot} objects),
-#'   \code{patchwork}, and the same metadata fields as [cifplot()]. The object is
-#'   returned invisibly; printing occurs only when \code{print.panel = TRUE}.
+#' @return A \code{"cifpanel"} object (returned invisibly), which is a list
+#' with at least the following elements:
+#'
+#' - \code{list.plot} a list of ggplot objects, one per panel;
+#' - \code{patchwork} a patchwork object representing the composed panel;
+#' - \code{plot} reserved for backwards compatibility (always \code{NULL});
+#' - metadata fields mirroring those in [cifplot()] (such as information
+#'   on the fitted curves and display settings).
+#'
+#' When \code{print.panel=TRUE}, the patchwork object is printed in interactive
+#' sessions in addition to being returned.
 #'
 #' @keywords internal
 #' @param survfit.info,axis.info,visual.info,panel.info,style.info,print.info,ggsave.info,inset.info

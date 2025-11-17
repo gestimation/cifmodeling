@@ -1,12 +1,19 @@
-#' @title Fits regression models of CIFs based on polytomous
-#' log odds products and the stratified IPCW estimator
-#' @description The direct polytomous regression enables coherent modeling and
-#' estimation of a variety of multiplicative effects of a categorical exposure under
-#' several outcome types, including competing risks, survival and binomial outcomes.
-#' The function follows the familiar **formula + data** syntax and outputs tidy results,
-#' including point estimates, SEs, CIs, and p-values.
-#' Its results can be easily summarized with `summary()` or combined with external
-#' functions such as `modelsummary()` for reporting.
+#' @title Fit coherent regression models of CIFs using polytomous log odds products
+#'
+#' @description
+#' `polyreg()` fits regression models of CIFs, targeting familiar effect measures
+#' (risk ratios, odds ratios and subdistribution hazard ratios).
+#' Modeling the nuisance structure using polytomous log odds products ensures that
+#' the sum of cause-specific CIFs does not exceed one, and enables coherent modelling
+#' of the multiplicative effects.
+#'
+#' This function follows a familiar formula–data workflow: the outcome and
+#' covariates other than the exposure are specified through a formula in `nuisance.model`
+#' (with `Event()` or `survival::Surv()` on the LHS), and the exposure of interest
+#' is given by a separate variable name in `exposure`. The fitted object contains
+#' tidy summaries of exposure effects (point estimates, SEs, CIs, and p-values)
+#' and can be summarised with `summary.polyreg()` or formatted with external tools
+#' such as `modelsummary::modelsummary()`.
 #'
 #' @param nuisance.model A \code{formula} describing the outcome and
 #'   nuisance covariates, excluding the exposure of interest.
@@ -250,20 +257,20 @@
 #' @useDynLib cifmodeling, .registration = TRUE
 #'
 #' @return
-#' A list of class \code{"polyreg"} containing fitted exposure effects and
+#' A list of class `"polyreg"` containing the fitted exposure effects and
 #' supporting results. Key components and methods include:
 #'
-#' - \code{coef}, \code{coef()} Regression coefficients on the chosen
-#'     effect-measure scale.
-#' - \code{vcov}, \code{vcov()} Variance–covariance matrix of the
-#'     regression coefficients. The default behavior of \code{vcov()} mirrors
-#'     the CI option implied by \code{outcome.type},
-#'     \code{report.sandwich.conf} and \code{report.boot.conf}.
-#' - \code{diagnostic.statistics} A data frame with inverse probability
-#'     weights, influence functions and predicted potential outcomes.
-#' - \code{summary}, \code{summary()} Event-wise tidy/glance summaries.
-#'     \code{summary()} prints a modelsummary-like table to the console and
-#'     returns these summaries invisibly.
+#' - `coef`: regression coefficients on the chosen effect-measure scale
+#' - `vcov`: variance–covariance matrix of the regression coefficients
+#' - `diagnostic.statistics`: a data frame with inverse-probability weights,
+#'   influence-function contributions, and predicted potential outcomes
+#' - `summary`: event-wise tidy/glance summaries used by
+#'   `summary.polyreg()` or `modelsummary::modelsummary()`
+#' - additional elements storing convergence information and internal
+#'   tuning parameters.
+#'
+#' Standard S3 methods are available: `coef.polyreg()`, `vcov.polyreg()`,
+#' `nobs.polyreg()`, and `summary.polyreg()`.
 #'
 #' @examples
 #' data(diabetes.complications)
