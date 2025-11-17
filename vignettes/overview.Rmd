@@ -39,7 +39,7 @@ set.seed(1)
 
 ## Quick start
 
-This package is a compact and unified toolkit for the Kaplan–Meier/Aalen–Johansen curves, visualization, and direct polytomous regression for survival and competing risks data. 
+This package is a compact and unified toolkit for the Kaplan-Meier/Aalen–Johansen curves, visualization, and direct polytomous regression for survival and competing risks data. 
 
 ```{r example01-1, fig.cap="Aalen–Johansen cumulative incidence curves from cifplot()", warning=FALSE, message=FALSE}
 library(cifmodeling)
@@ -186,7 +186,7 @@ set.seed(1)
 
 ## Quick start
 
-This package is a compact, high-level extension of the existing *survival* ecosystem. It provides a unified interface for Kaplan–Meier and Aalen–Johansen curves, modern visualization, and direct polytomous regression for survival and competing risks data.
+This package is a compact, high-level extension of the existing *survival* ecosystem. It provides a unified interface for Kaplan-Meier and Aalen–Johansen curves, modern visualization, and direct polytomous regression for survival and competing risks data.
 
 ```{r example01-1, fig.cap="Aalen–Johansen cumulative incidence curves from cifplot()", warning=FALSE, message=FALSE}
 library(cifmodeling)
@@ -199,7 +199,7 @@ In competing risks data, censoring is often coded as 0, the event of interest as
 
 ### Why cifmodeling?
 
-- **Unified interface** for Kaplan–Meier and Aalen–Johansen curves, with survival and competing risks handled by the same syntax.
+- **Unified interface** for Kaplan-Meier and Aalen–Johansen curves, with survival and competing risks handled by the same syntax.
 - **Publication-ready graphics** built on `ggsurvfit` and `ggplot2`, including risk/estimate tables, censoring/competing-risks/intercurrent-events marks, and multi-panel layouts.
 - **Coherent regression models** of CIFs, targeting familiar effect measures (risk ratios, odds ratios and subdistribution hazard ratios). Modeling the nuisance structure using polytomous log odds products ensures that the sum of cause-specific CIFs does not exceed one, and enables coherent modelling of the multiplicative effects. 
 
@@ -219,7 +219,7 @@ These functions adopt a formula + data syntax, return tidy, publication-ready ou
 
 Several excellent R packages exist for survival and competing risks analysis. The **survival** package provides the canonical API for survival data. In combination with **ggsurvfit**, `survival::survfit()` can produce publication-ready survival plots. For CIF plots, however, integration in the general ecosystem is less streamlined. `cifmodeling` fills this gap by offering `cifplot()` for survival/CIF plots and multi-panel figures via a single, unified interface.
 
-Beyond providing a unified interface, `cifcurve()` also extends `survival::survfit()` in a few targeted ways. For unweighted survival data, it reproduces the standard Kaplan–Meier estimator with Greenwood or Tsiatis SEs and a unified set of CI transformations. For competing risks data, it computes Aalen–Johansen CIFs with both Aalen-type and delta-method SEs. For weighted survival or competing risks data (e.g. inverse probability weighting), it implements influence-function based SEs (Deng and Wang 2025) as well as modified Greenwood- and Tsiatis-type SEs (Xie and Liu 2005), which are valid under general positive weights.
+Beyond providing a unified interface, `cifcurve()` also extends `survival::survfit()` in a few targeted ways. For unweighted survival data, it reproduces the standard Kaplan-Meier estimator with Greenwood or Tsiatis SEs and a unified set of CI transformations. For competing risks data, it computes Aalen–Johansen CIFs with both Aalen-type and delta-method SEs. For weighted survival or competing risks data (e.g. inverse probability weighting), it implements influence-function based SEs (Deng and Wang 2025) as well as modified Greenwood- and Tsiatis-type SEs (Xie and Liu 2005), which are valid under general positive weights.
 
 If you need very fine-grained plot customisation, you can compute the estimator and keep a `survfit`-compatible object with `cifcurve()` (or supply your own `survfit` object) and then style it using **ggsurvfit**/**ggplot2** layers. In other words:
 

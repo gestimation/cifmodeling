@@ -77,8 +77,8 @@
 #'
 #' ### Key arguments shared with cifcurve()
 #' -   **Outcome type and estimator**
-#'       -   `outcome.type = "survival"` → Kaplan–Meier estimator
-#'       -   `outcome.type = "competing-risk"` → Aalen–Johansen estimator
+#'       -   `outcome.type = "survival"` → Kaplan-Meier estimator
+#'       -   `outcome.type = "competing-risk"` → Aalen-Johansen estimator
 #'
 #' -   **Confidence intervals**
 #'       -   `conf.int` sets the two-sided level (default 0.95)
@@ -102,7 +102,7 @@
 #' -   **Panel display**
 #'       -   `panel.per.variable` produces multiple survival/CIF curves per stratification variable specified in the formula
 #'       -   `panel.per.event` produces CIF curves for each event type
-#'       -   `panel.censoring` produces the Kaplan–Meier curves for (event, censor) and (censor, event) so that censoring patterns can be inspected
+#'       -   `panel.censoring` produces the Kaplan-Meier curves for (event, censor) and (censor, event) so that censoring patterns can be inspected
 #'       -   `panel.mode` uses automatic panel mode
 #'
 #' When `panel.per.event = TRUE`, two panels are created with

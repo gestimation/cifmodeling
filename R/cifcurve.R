@@ -1,4 +1,4 @@
-#' @title Calculate the Kaplan–Meier estimator and the Aalen–Johansen estimator
+#' @title Calculate the Kaplan-Meier estimator and the Aalen-Johansen estimator
 #' @description
 #' Core estimation routine that computes a survfit-compatible object
 #' from a formula + data interface (`Event()` or `survival::Surv()` on
