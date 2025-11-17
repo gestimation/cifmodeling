@@ -48,11 +48,10 @@ complications (`epsilon = 2`) on the right.
   censoring/competing-risks/intercurrent-events marks, and multi-panel
   layouts.
 - **Coherent regression models** of CIFs, targeting familiar effect
-  measures such as risk ratios (RR), odds ratios (OR), and
-  subdistribution hazard ratios (SHR). Modeling the nuisance structure
-  using polytomous log odds products ensures that the sum of
-  cause-specific CIFs does not exceed one, and enables coherent
-  modelling of the multiplicative effects.
+  measures (risk ratios, odds ratios and subdistribution hazard ratios).
+  Modeling the nuisance structure using polytomous log odds products
+  ensures that the sum of cause-specific CIFs does not exceed one, and
+  enables coherent modelling of the multiplicative effects.
 
 ## Tools for survival and competing risks analysis
 

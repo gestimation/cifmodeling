@@ -15,102 +15,102 @@
 #' and can be summarised with `summary.polyreg()` or formatted with external tools
 #' such as `modelsummary::modelsummary()`.
 #'
-#' @param nuisance.model A \code{formula} describing the outcome and
+#' @param nuisance.model A `formula` describing the outcome and
 #'   nuisance covariates, excluding the exposure of interest.
-#'   The left-hand side must be \code{Event(time, status)} or \code{survival::Surv(time, status)}.
+#'   The LHS must be `Event(time, status)` or `survival::Surv(time, status)`.
 #' @param exposure A character string giving the name of the categorical exposure
-#'   variable in \code{data}.
+#'   variable in `data`.
 #' @param strata Optional character string with the name of the stratification
-#'   variable used to adjust for dependent censoring (default \code{NULL}).
+#'   variable used to adjust for dependent censoring (default `NULL`).
 #' @param data A data frame containing the outcome, exposure and nuisance
-#'   covariates referenced by \code{nuisance.model}.
-#' @param subset.condition Optional expression (as a character string) defining a
-#'   subset of \code{data} to analyze (default \code{NULL}).
-#' @param na.action A function specifying the action to take on missing values (default \code{na.omit}).
-#' @param code.event1 Integer code of the event of interest (default \code{1}).
-#' @param code.event2 Integer code of the competing event (default \code{2}).
-#' @param code.censoring  Integer code of censoring (default \code{0}).
+#'   covariates referenced by `nuisance.model`.
+#' @param subset.condition Optional character string giving a logical condition to subset
+#' `data` (default `NULL`).
+#' @param na.action A function specifying the action to take on missing values (default `na.omit`).
+#' @param code.event1 Integer code of the event of interest (default `1`).
+#' @param code.event2 Integer code of the competing event (default `2`).
+#' @param code.censoring  Integer code of censoring (default `0`).
 #' @param code.exposure.ref Integer code identifying the reference exposure
-#'   category (default \code{0}).
+#'   category (default `0`).
 #' @param effect.measure1 Character string specifying the effect measure for the
-#'   primary event. Supported values are \code{"RR"}, \code{"OR"} and
-#'   \code{"SHR"}.
+#'   primary event. Supported values are `"RR"`, `"OR"` and
+#'   `"SHR"`.
 #' @param effect.measure2 Character string specifying the effect measure for the
-#'   competing event. Supported values are \code{"RR"}, \code{"OR"} and
-#'   \code{"SHR"}.
-#' @param time.point Numeric time point at which the exposure effect is
-#'   evaluated. Required for survival and competing risk analyses.
-#' @param outcome.type Character string selecting the outcome type. Valid values
-#'   are \code{"competing-risk"}, \code{"survival"}, \code{"binomial"},
-#'   \code{"proportional-survival"} and \code{"proportional-competing-risk"}.
-#'   Defaults to \code{"competing-risk"}.
-#' If \code{NULL} (default), the function automatically infers the outcome type
-#' from the data: if the event variable has more than two unique levels,
-#' \code{"competing-risk"} is assumed; otherwise, \code{"survival"} is used.
-#' You can also use abbreviations such as \code{"S"} or \code{"C"}.
-#' Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic
-#' detection based on the event coding in \code{data}.
-#' @param conf.level Confidence level for Wald-type intervals (default \code{0.95}).
-#' @param report.nuisance.parameter Logical; if \code{TRUE}, the returned object
-#'   includes estimates of the nuisance model parameters (default \code{FALSE}).
-#' @param report.optim.convergence Logical; if \code{TRUE}, optimization
-#'   convergence summaries are returned (default \code{FALSE}).
-#' @param report.sandwich.conf Logical or \code{NULL}. When \code{TRUE},
+#'   competing event. Supported values are `"RR"`, `"OR"` and
+#'   `"SHR"`.
+#' @param time.point
+#'   Numeric time point at which the exposure effect is evaluated for
+#'   time-point models. Required for `"competing-risk"` and `"survival"`
+#'   outcomes.
+#' @param outcome.type Character string selecting the outcome type. Valid values are
+#'   `"competing-risk"`, `"survival"`, `"binomial"`, `"proportional-survival"`,
+#'   and `"proportional-competing-risk"`. The default is `"competing-risk"`.
+#'   If explicitly set to `NULL`, `polyreg()` attempts to infer the outcome type from the data: if the
+#'   event variable has more than two distinct levels, `"competing-risk"`
+#'   is assumed; otherwise, `"survival"` is assumed. Abbreviations such as
+#'   `"S"` or `"C"` are accepted; mixed or ambiguous inputs trigger
+#'   automatic detection from the event coding in `data`.
+#' @param conf.level Confidence level for Wald-type intervals (default `0.95`).
+#' @param report.nuisance.parameter Logical; if `TRUE`, the returned object
+#'   includes estimates of the nuisance model parameters (default `FALSE`).
+#' @param report.optim.convergence Logical; if `TRUE`, optimization
+#'   convergence summaries are returned (default `FALSE`).
+#' @param report.sandwich.conf Logical or `NULL`. When `TRUE`,
 #' confidence intervals based on sandwich variance are computed.
-#' When \code{FALSE}, they are omitted (default \code{TRUE}).
+#' When `FALSE`, they are omitted (default `TRUE`).
 #' This confidence interval is default for time-point models
-#' (\code{"outcome.type=competing-risk"}, \code{"survival"} or \code{"binomial"}) and
+#' (`"outcome.type=competing-risk"`, `"survival"` or `"binomial"`) and
 #' is not available otherwise.
-#' @param report.boot.conf Logical or \code{NULL}. When \code{TRUE}, bootstrap
-#' confidence intervals are computed. When \code{FALSE}, they are omitted.
-#' If \code{NULL}, the function chooses based on \code{outcome.type} (default \code{NULL}).
+#' @param report.boot.conf Logical or `NULL`. When `TRUE`, bootstrap
+#' confidence intervals are computed. When `FALSE`, they are omitted.
+#' If `NULL`, the function chooses based on `outcome.type` (default `NULL`).
 #' This confidence interval is default for proportional models
-#' (\code{outcome.type="PROPORTIONAL-COMPETING-RISK"} or \code{"PROPORTIONAL-SURVIVAL"}).
+#' (`outcome.type="PROPORTIONAL-COMPETING-RISK"` or `"PROPORTIONAL-SURVIVAL"`).
 #' @param boot.bca Logical indicating the bootstrap confidence interval method.
-#'   Use \code{TRUE} for bias-corrected and accelerated intervals or \code{FALSE}
-#'   for the normal approximation (default \code{FALSE}).
-#' @param boot.multiplier Character \code{"rademacher"}, \code{"mammen"},
-#'   or \code{"gaussian"}. Defaults to \code{"rademacher"}.
+#'   Use `TRUE` for bias-corrected and accelerated intervals or `FALSE`
+#'   for the normal approximation (default `FALSE`).
+#' @param boot.multiplier Character string specifying the wild bootstrap weight distribution.
+#' One of `"rademacher"`, `"mammen"` or `"gaussian"` (default `"rademacher"`).
 #' @param boot.replications Integer giving the number of bootstrap replications
-#'   (default \code{200}).
+#'   (default `200`).
 #' @param boot.seed Numeric seed used for resampling of bootstrap.
 #' @param nleqslv.method Character string specifying the solver used in
-#'   \pkg{nleqslv()}. Available choices are \code{"Broyden"} and \code{"Newton"}.
+#'   \pkg{nleqslv()}. Available choices are `"Broyden"` and `"Newton"`.
 #' @param optim.parameter1 Numeric tolerance for convergence of the outer loop
-#'    (default \code{1e-6}).
+#'    (default `1e-6`).
 #' @param optim.parameter2 Numeric tolerance for convergence of the inner loop
-#'    (default \code{1e-6}).
+#'    (default `1e-6`).
 #' @param optim.parameter3 Numeric constraint on the absolute value of
-#'   parameters (default \code{100}).
+#'   parameters (default `100`).
 #' @param optim.parameter4 Integer maximum number of outer loop iterations
-#'   (default \code{50}).
-#' @param optim.parameter5 Integer maximum number of \code{nleqslv}
-#'   iterations per outer iteration (default \code{50}).
+#'   (default `50`).
+#' @param optim.parameter5 Integer maximum number of `nleqslv`
+#'   iterations per outer iteration (default `50`).
 #' @param optim.parameter6 Integer maximum number of iterations for the
-#'   Levenberg-Marquardt routine (default \code{50}).
+#'   Levenberg-Marquardt routine (default `50`).
 #' @param optim.parameter7 Numeric convergence tolerance for the
-#'   Levenberg-Marquardt routine (default \code{1e-10}).
+#'   Levenberg-Marquardt routine (default `1e-10`).
 #' @param optim.parameter8 Numeric tolerance for updating the Hessian in the
-#'   Levenberg-Marquardt routine (default \code{1e-6}).
+#'   Levenberg-Marquardt routine (default `1e-6`).
 #' @param optim.parameter9 Numeric starting value for the Levenberg-Marquardt
-#'   damping parameter lambda (default \code{1e-6}).
+#'   damping parameter lambda (default `1e-6`).
 #' @param optim.parameter10 Numeric upper bound for lambda in the
-#'   Levenberg-Marquardt routine (default \code{40}).
+#'   Levenberg-Marquardt routine (default `40`).
 #' @param optim.parameter11 Numeric lower bound for lambda in the
-#'   Levenberg-Marquardt routine (default \code{0.025}).
+#'   Levenberg-Marquardt routine (default `0.025`).
 #' @param optim.parameter12 Numeric multiplicative increment applied to lambda
-#'   when the Levenberg-Marquardt step is successful (default \code{2}).
+#'   when the Levenberg-Marquardt step is successful (default `2`).
 #' @param optim.parameter13 Numeric multiplicative decrement applied to lambda
-#'   when the Levenberg-Marquardt step is unsuccessful (default \code{0.5}).
+#'   when the Levenberg-Marquardt step is unsuccessful (default `0.5`).
 #' @param data.initial.values Optional data frame providing starting values for
-#'   the optimization (default \code{NULL}).
+#'   the optimization (default `NULL`).
 #' @param normalize.covariate Logical indicating whether covariates should
-#'   be centered and scaled prior to optimization (default \code{TRUE}).
+#'   be centered and scaled prior to optimization (default `TRUE`).
 #' @param terminate.time.point Logical indicating whether time points
 #'   that contribute estimation are terminated by min of max follow-up times
-#'   of each exposure level (default \code{TRUE}).
+#'   of each exposure level (default `TRUE`).
 #' @param prob.bound Numeric lower bound used to internally truncate probabilities away
-#'   from 0 and 1 (default \code{1e-5}).
+#'   from 0 and 1 (default `1e-5`).
 #'
 #' @details
 #'
@@ -199,7 +199,7 @@
 #' | `optim.parameter1`, `optim.parameter2` | Outer / inner convergence tolerances | `1e-6`, `1e-6` |
 #' | `optim.parameter3`| Parameter absolute bound        | `100`     |
 #' | `optim.parameter4`| Max outer iterations            | `50`      |
-#' | `optim.parameter5`| Max \code{nleqslv} iterations per outer | `50` |
+#' | `optim.parameter5`| Max `nleqslv` iterations per outer | `50` |
 #' | `optim.parameter6:13` | Levenberg–Marquardt controls (iterations, tolerances, lambda) | see defaults |
 #'
 #' ### Data handling and stability
@@ -215,22 +215,22 @@
 #'
 #' ### Downstream use
 #'
-#' `polyreg()` returns an object of class \code{"polyreg"} that contains
+#' `polyreg()` returns an object of class `"polyreg"` that contains
 #' regression coefficients (`coef`), variance-covariance matrix (`vcov`)
 #' and a list of event-wise \emph{tidy} and \emph{glance} tables (`summary`).
 #' Users should typically access results via the S3 methods:
 #'
 #' - `coef()` — extract regression coefficients.
 #' - `vcov()` — extract the variance–covariance matrix
-#'   (sandwich or bootstrap, depending on \code{outcome.type} and the
-#'   \code{report.*} arguments).
+#'   (sandwich or bootstrap, depending on `outcome.type` and the
+#'   `report.*` arguments).
 #' - `nobs()` — number of observations used in the fit.
 #' - `summary()` — print an event-wise, modelsummary-like table of estimates,
 #'   CIs and p-values, and return the underlying list of tidy/glance tables invisibly.
 #'
-#' For backward compatibility, components named \code{coefficient} and \code{cov}
-#' may also be present and mirror \code{coef} and \code{vcov}, respectively.
-#' The \code{summary} component can be passed to external functions such as
+#' For backward compatibility, components named `coefficient` and `cov`
+#' may also be present and mirror `coef` and `vcov`, respectively.
+#' The `summary` component can be passed to external functions such as
 #' `modelsummary()` for further formatting, if desired.
 #'
 #' ### Reproducibility and conventions
@@ -238,7 +238,7 @@
 #' - If convergence warnings appear, relax/tighten tolerances or cap the parameter
 #'   bound (`optim.parameter1`–`3`) and inspect the output with
 #'   `report.optim.convergence = TRUE`.
-#' - If necessary, modify other \code{optim.parameter}, provide user-specified
+#' - If necessary, modify other `optim.parameter`, provide user-specified
 #'   initial values, or reduce the number of nuisance parameters (e.g., provide
 #'   a small set of time points contributing to estimation when using
 #'   `"proportional-survival"` or `"proportional-competing-risk"`).
