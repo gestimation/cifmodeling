@@ -17,7 +17,7 @@
 
 \method{summary}{polyreg}(object, ...)
 
-\method{print}{summary.polyreg}(summary, digits = 3, ...)
+\method{print}{summary.polyreg}(x, digits = 3, ...)
 }
 \arguments{
 \item{object}{A \code{"polyreg"} object returned by \code{polyreg()}.}
@@ -30,17 +30,17 @@ sandwich and bootstrap variance based on the original \code{polyreg()}
 settings, using \code{outcome.type}, \code{report.sandwich.conf}, and
 \code{report.boot.conf}. (Used only by \code{vcov.polyreg()}.)}
 
-\item{digits}{Number of digits to print for parameter estimates.
-(Used only by \code{print.summary.polyreg()}.)}
-
 \item{x}{A \code{"summary.polyreg"} object, as returned by
 \code{summary.polyreg()}.}
+
+\item{digits}{Number of digits to print for parameter estimates.
+(Used only by \code{print.summary.polyreg()}.)}
 }
 \value{
 \itemize{
 \item \code{coef.polyreg()} returns a numeric vector of regression
 coefficients.
-\item \code{vcov.polyreg()} returns a variance–covariance matrix.
+\item \code{vcov.polyreg()} returns a variance-ovariance matrix.
 \item \code{nobs.polyreg()} returns the number of observations.
 \item \code{summary.polyreg()} returns a list of tidy and glance
 summaries by event.
@@ -50,7 +50,7 @@ console and returns \code{x} invisibly.
 }
 }
 \description{
-S3 methods to extract coefficients, variance–covariance matrices,
+S3 methods to extract coefficients, variance-ovariance matrices,
 sample size, and formatted summaries from objects returned by
 \code{polyreg()}.
 }

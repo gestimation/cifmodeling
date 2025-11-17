@@ -383,10 +383,10 @@ output <- polyreg(
   outcome.type = "competing-risk"
 )
 
-coef(fit)
-vcov(fit)
-nobs(fit)
-summary(fit)
+coef(output)
+vcov(output)
+nobs(output)
+summary(output)
 
 }
 \seealso{

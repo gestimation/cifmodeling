@@ -14,7 +14,7 @@ print.cifpanel <- function(x, ...) {
 
 #' Methods for \code{polyreg} objects
 #'
-#' S3 methods to extract coefficients, variance–covariance matrices,
+#' S3 methods to extract coefficients, variance-ovariance matrices,
 #' sample size, and formatted summaries from objects returned by
 #' \code{polyreg()}.
 #'
@@ -36,7 +36,7 @@ print.cifpanel <- function(x, ...) {
 #' \itemize{
 #'   \item \code{coef.polyreg()} returns a numeric vector of regression
 #'     coefficients.
-#'   \item \code{vcov.polyreg()} returns a variance–covariance matrix.
+#'   \item \code{vcov.polyreg()} returns a variance-ovariance matrix.
 #'   \item \code{nobs.polyreg()} returns the number of observations.
 #'   \item \code{summary.polyreg()} returns a list of tidy and glance
 #'     summaries by event.
@@ -92,7 +92,7 @@ vcov.polyreg <- function(object,
       )
       return(V_boot)
     }
-    stop("No valid sandwich or bootstrap variance–covariance matrix.")
+    stop("No valid sandwich or bootstrap variance-ovariance matrix.")
   }
 
   if (type == "bootstrap") {
@@ -105,7 +105,7 @@ vcov.polyreg <- function(object,
       )
       return(V_sand)
     }
-    stop("No valid bootstrap or sandwich variance–covariance matrix.")
+    stop("No valid bootstrap or sandwich variance-ovariance matrix.")
   }
 
   stop("Internal error in vcov.polyreg: unsupported 'type'.")
@@ -127,10 +127,10 @@ summary.polyreg <- function(object, ...) {
 
 #' @export
 #' @rdname polyreg-methods
-print.summary.polyreg <- function(summary,
+print.summary.polyreg <- function(x,
                                   digits = 3,
                                   ...) {
-  event_names <- names(summary)
+  event_names <- names(x)
 
   cat("\n")
   cat(sprintf("%-20s", ""))
@@ -141,7 +141,7 @@ print.summary.polyreg <- function(summary,
 
   cat(strrep("-", 20 + 2 + 12 * length(event_names)), "\n")
 
-  terms_all <- unique(unlist(lapply(summary, function(ev) ev$tidy$term)))
+  terms_all <- unique(unlist(lapply(x, function(ev) ev$tidy$term)))
 
   for (term in terms_all) {
 
@@ -152,7 +152,7 @@ print.summary.polyreg <- function(summary,
     p_row    <- character(length(event_names))
 
     for (j in seq_along(event_names)) {
-      ev <- summary[[event_names[j]]]
+      ev <- x[[event_names[j]]]
       td <- ev$tidy[ev$tidy$term == term, , drop = FALSE]
       if (nrow(td) == 0) {
         est_row[j] <- ""
@@ -199,7 +199,7 @@ print.summary.polyreg <- function(summary,
     cat(sprintf("%-20s", rowname))
 
     for (evnm in event_names) {
-      gl  <- summary[[evnm]]$glance
+      gl  <- x[[evnm]]$glance
       val <- if (rowname %in% names(gl)) gl[[rowname]][1] else ""
       cat(sprintf("  %-12s", as.character(val)))
     }
@@ -207,5 +207,5 @@ print.summary.polyreg <- function(summary,
   }
 
   cat("\n")
-  invisible(summary)
+  invisible(x)
 }

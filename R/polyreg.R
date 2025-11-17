@@ -252,7 +252,7 @@
 #' @importFrom stats IQR as.formula binomial coef glm mad median
 #' @importFrom stats model.extract model.frame model.matrix update na.omit na.pass
 #' @importFrom stats pnorm qnorm rbinom reformulate rexp sd setNames terms time var
-#' @importFrom stats runif rnorm
+#' @importFrom stats runif rnorm coef vcov nobs
 #'
 #' @useDynLib cifmodeling, .registration = TRUE
 #'
@@ -284,10 +284,10 @@
 #'   outcome.type = "competing-risk"
 #' )
 #'
-#' coef(fit)
-#' vcov(fit)
-#' nobs(fit)
-#' summary(fit)
+#' coef(output)
+#' vcov(output)
+#' nobs(output)
+#' summary(output)
 #'
 #' @name polyreg
 #' @section Lifecycle:
