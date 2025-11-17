@@ -262,12 +262,6 @@ invisibly for further modification (default \code{FALSE}).}
 \item{survfit.info, axis.info, visual.info, panel.info, style.info, print.info, ggsave.info}{Internal lists used for programmatic control. Not intended for direct user input.}
 }
 \value{
-Returns a \code{"cifplot"} object (list) with elements
-\code{plot}, \code{patchwork} (always \code{NULL}), \code{survfit.info},
-\code{axis.info}, \code{visual.info}, \code{panel.info}, \code{style.info},
-\code{inset.info}, \code{print.info}, \code{ggsave.info}, \code{version},
-and \code{call}.
-
 A \code{"cifplot"} object (a list) with at least the following elements:
 \itemize{
 \item \code{plot} a ggplot object containing the main plot
