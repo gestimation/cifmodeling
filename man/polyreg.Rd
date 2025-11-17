@@ -116,7 +116,7 @@ is not available otherwise.}
 confidence intervals are computed. When \code{FALSE}, they are omitted.
 If \code{NULL}, the function chooses based on \code{outcome.type} (default \code{NULL}).
 This confidence interval is default for proportional models
-(\code{outcome.type="PROPORTIONAL-COMPETING-RISK"} or \code{"PROPORTIONAL-SURVIVAL"}).}
+(\code{outcome.type="proportional-competing-risk"} or \code{"proportional-survival"}).}
 
 \item{boot.bca}{Logical indicating the bootstrap confidence interval method.
 Use \code{TRUE} for bias-corrected and accelerated intervals or \code{FALSE}
@@ -191,8 +191,8 @@ supporting results. Key components and methods include:
 \itemize{
 \item \code{coef}: regression coefficients on the chosen effect-measure scale
 \item \code{vcov}: variance–covariance matrix of the regression coefficients
-\item \code{diagnostic.statistics}: a data frame with inverse-probability weights,
-influence-function contributions, and predicted potential outcomes
+\item \code{diagnostic.statistics}: a data frame with inverse probability weights,
+influence function contributions, and predicted potential outcomes
 \item \code{summary}: event-wise tidy/glance summaries used by
 \code{summary.polyreg()} or \code{modelsummary::modelsummary()}
 \item additional elements storing convergence information and internal
@@ -235,16 +235,16 @@ both of which use log odds products.
 
 \subsection{Key arguments}{
 \itemize{
-\item \code{nuisance.model} — a formula with \code{Event()} or \code{survivai::Surv()}
+\item \code{nuisance.model}: a formula with \code{Event()} or \code{survivai::Surv()}
 describing the outcome and nuisance covariates, excluding the exposure of interest.
-\item \code{exposure} — specifies the categorical exposure variable
-\item \code{effect.measure1} and \code{effect.measure2} — specifies the effect measures
+\item \code{exposure}: name of the categorical exposure variable
+\item \code{effect.measure1} and \code{effect.measure2}: the effect measures
 for event1 and event2 (\code{"RR"}, \code{"OR"} or \code{"SHR"}).
-\item \code{outcome.type} selects the outcome type (\code{"competing-risk"}, \code{"survival"},
+\item \code{outcome.type}: type of the outcome variable (\code{"competing-risk"}, \code{"survival"},
 \code{"binomial"}, \code{"proportional-survival"} or \code{"proportional-competing-risk"}).
-\item \code{time.point} — specifies time point at which the exposure effect is evaluated.
+\item \code{time.point}: time point(s) at which the exposure effect is evaluated.
 Required for \code{"competing-risk"} and \code{"survival"} outcomes.
-\item \code{strata} — specifies a stratification variable used for IPCW adjustment for dependent censoring.
+\item \code{strata}: name of the stratification variable used for IPCW adjustment for dependent censoring.
 }
 }
 

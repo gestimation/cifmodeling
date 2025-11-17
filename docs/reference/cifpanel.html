@@ -186,8 +186,8 @@ panels.</p></dd>
 
 
 <dt id="arg-subset-condition">subset.condition<a class="anchor" aria-label="anchor" href="#arg-subset-condition"></a></dt>
-<dd><p>Optional expression (as a character string) defining a
-subset of <code>data</code> to analyze (default <code>NULL</code>).</p></dd>
+<dd><p>Optional character string giving a logical condition to subset
+<code>data</code> (default <code>NULL</code>).</p></dd>
 
 
 <dt id="arg-na-action">na.action<a class="anchor" aria-label="anchor" href="#arg-na-action"></a></dt>
@@ -200,7 +200,7 @@ One of <code>"survival"</code> (Kaplan–Meier) or <code>"competing-risk"</code>
 If <code>NULL</code> (default), the function automatically infers the outcome type from the data:
 if the event variable has more than two unique levels, <code>"competing-risk"</code> is assumed;
 otherwise, <code>"survival"</code> is used. You can also use abbreviations such as <code>"S"</code> or <code>"C"</code>.
-Mixed or ambiguous inputs (e.g., <code>"c("S", "C")"</code> trigger automatic detection based on the event coding.</p></dd>
+Mixed or ambiguous inputs (e.g., <code>c("S", "C")</code>) trigger automatic detection based on the event coding.</p></dd>
 
 
 <dt id="arg-code-events">code.events<a class="anchor" aria-label="anchor" href="#arg-code-events"></a></dt>
@@ -210,9 +210,9 @@ When supplied, it overrides <code>code.event1</code>, <code>code.event2</code>, 
 
 
 <dt id="arg-error">error<a class="anchor" aria-label="anchor" href="#arg-error"></a></dt>
-<dd><p>Character specifying the method for standard error and confidence intervals used internally
-(<code>greenwood</code> (default), <code>tsiatis</code> or <code>if</code> for <code>"survival"</code>,
-and <code>delta</code> (default),  <code>aalen</code> or  <code>if</code> for <code>"competing-risk"</code>).</p></dd>
+<dd><p>Character string specifying the method for SEs and CIs used internally.
+For <code>"survival"</code>, choose one of <code>"greenwood"</code> (default), <code>"tsiatis"</code>, or <code>"if"</code>.
+For <code>"competing-risk"</code>, choose one of <code>"delta"</code> (default), <code>"aalen"</code>, or <code>"if"</code>.</p></dd>
 
 
 <dt id="arg-conf-type">conf.type<a class="anchor" aria-label="anchor" href="#arg-conf-type"></a></dt>
@@ -225,7 +225,8 @@ used internally (default <code>arcsine-square root</code>).</p></dd>
 
 
 <dt id="arg-type-y">type.y<a class="anchor" aria-label="anchor" href="#arg-type-y"></a></dt>
-<dd><p>Optional vector/list per panel: <code>"surv"</code> or <code>"risk"</code> (display 1 - survival i.e. CIF).</p></dd>
+<dd><p>Character string specifying the y-scale: <code>"surv"</code> for survival probabilities
+or <code>"risk"</code> for cumulative incidence (1 - survival in simple survival settings).</p></dd>
 
 
 <dt id="arg-label-x">label.x<a class="anchor" aria-label="anchor" href="#arg-label-x"></a></dt>
@@ -234,7 +235,7 @@ used internally (default <code>arcsine-square root</code>).</p></dd>
 
 <dt id="arg-label-y">label.y<a class="anchor" aria-label="anchor" href="#arg-label-y"></a></dt>
 <dd><p>Character y-axis label (default is chosen automatically from <code>outcome.type</code>
-and <code>type.y</code>, e.g. “Survival” or “Cumulative incidence”).</p></dd>
+and <code>type.y</code>, e.g. "Survival" or "Cumulative incidence").</p></dd>
 
 
 <dt id="arg-limits-x">limits.x<a class="anchor" aria-label="anchor" href="#arg-limits-x"></a></dt>
@@ -256,7 +257,7 @@ set to <code>c(0, 1)</code> for probability-type outcomes.</p></dd>
 
 
 <dt id="arg-add-conf">add.conf<a class="anchor" aria-label="anchor" href="#arg-add-conf"></a></dt>
-<dd><p>Logical; if <code>TRUE</code>, adds a confidence-interval ribbon
+<dd><p>Logical; if <code>TRUE</code>, adds a CI ribbon
 (via <code><a href="http://www.danieldsjoberg.com/ggsurvfit/reference/add_confidence_interval.html" class="external-link">ggsurvfit::add_confidence_interval()</a></code>). Default <code>TRUE</code>.</p></dd>
 
 

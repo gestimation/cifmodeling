@@ -65,7 +65,7 @@
 #' confidence intervals are computed. When `FALSE`, they are omitted.
 #' If `NULL`, the function chooses based on `outcome.type` (default `NULL`).
 #' This confidence interval is default for proportional models
-#' (`outcome.type="PROPORTIONAL-COMPETING-RISK"` or `"PROPORTIONAL-SURVIVAL"`).
+#' (`outcome.type="proportional-competing-risk"` or `"proportional-survival"`).
 #' @param boot.bca Logical indicating the bootstrap confidence interval method.
 #'   Use `TRUE` for bias-corrected and accelerated intervals or `FALSE`
 #'   for the normal approximation (default `FALSE`).
@@ -128,16 +128,16 @@
 #' both of which use log odds products.
 #'
 #' ### Key arguments
-#' -   `nuisance.model` — a formula with `Event()` or `survivai::Surv()`
+#' -   `nuisance.model`: a formula with `Event()` or `survivai::Surv()`
 #' describing the outcome and nuisance covariates, excluding the exposure of interest.
-#' -   `exposure` — specifies the categorical exposure variable
-#' -   `effect.measure1` and `effect.measure2` — specifies the effect measures
+#' -   `exposure`: name of the categorical exposure variable
+#' -   `effect.measure1` and `effect.measure2`: the effect measures
 #' for event1 and event2 (`"RR"`, `"OR"` or `"SHR"`).
-#' -   `outcome.type` selects the outcome type (`"competing-risk"`, `"survival"`,
+#' -   `outcome.type`: type of the outcome variable (`"competing-risk"`, `"survival"`,
 #' `"binomial"`, `"proportional-survival"` or `"proportional-competing-risk"`).
-#' -   `time.point` — specifies time point at which the exposure effect is evaluated.
+#' -   `time.point`: time point(s) at which the exposure effect is evaluated.
 #' Required for `"competing-risk"` and `"survival"` outcomes.
-#' -   `strata` — specifies a stratification variable used for IPCW adjustment for dependent censoring.
+#' -   `strata`: name of the stratification variable used for IPCW adjustment for dependent censoring.
 #'
 #' ### Outcome type and event status coding
 #'
@@ -262,8 +262,8 @@
 #'
 #' - `coef`: regression coefficients on the chosen effect-measure scale
 #' - `vcov`: variance–covariance matrix of the regression coefficients
-#' - `diagnostic.statistics`: a data frame with inverse-probability weights,
-#'   influence-function contributions, and predicted potential outcomes
+#' - `diagnostic.statistics`: a data frame with inverse probability weights,
+#'   influence function contributions, and predicted potential outcomes
 #' - `summary`: event-wise tidy/glance summaries used by
 #'   `summary.polyreg()` or `modelsummary::modelsummary()`
 #' - additional elements storing convergence information and internal
