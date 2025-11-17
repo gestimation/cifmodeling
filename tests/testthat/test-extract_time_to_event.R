@@ -16,25 +16,25 @@ test_that("extract_time_to_event() with basic flows for event1/event2/censor wor
   f <- Event(t, status) ~ 1
 
   te1 <- extract_time_to_event(
-    formula = f, data = dat, which_event = "event1",
+    formula = f, data = dat, which.event = "event1",
     code.event1 = 1, code.event2 = 2, code.censoring = 0,
-    readUniqueTime = TRUE, dropEmpty = TRUE
+    read.unique.time = TRUE, drop.empty = TRUE
   )
   expect_true(is.numeric(te1))
   expect_true(length(te1) >= 0)
   expect_true(length(unique(te1)) == length(te1)) # readUniqueTime
 
   te2 <- extract_time_to_event(
-    formula = f, data = dat, which_event = "event2",
+    formula = f, data = dat, which.event = "event2",
     code.event1 = 1, code.event2 = 2, code.censoring = 0,
-    readUniqueTime = FALSE, dropEmpty = FALSE
+    read.unique.time = FALSE, drop.empty = FALSE
   )
   testthat::expect_true(is.numeric(te2))
 
   tc <- extract_time_to_event(
-    formula = f, data = dat, which_event = "censor",
+    formula = f, data = dat, which.event = "censor",
     code.event1 = 1, code.event2 = 2, code.censoring = 0,
-    readUniqueTime = TRUE, dropEmpty = TRUE
+    read.unique.time = TRUE, drop.empty = TRUE
   )
   expect_true(is.numeric(tc))
 })
@@ -44,10 +44,10 @@ test_that("In extract_time_to_event() subset.condition and na.action work", {
   f   <- Event(t, status) ~ x
 
   te <- extract_time_to_event(
-    formula = f, data = dat, which_event = "event1",
+    formula = f, data = dat, which.event = "event1",
     subset.condition = "x == 1",
     na.action = stats::na.omit,
-    readUniqueTime = TRUE, dropEmpty = TRUE
+    read.unique.time = TRUE, drop.empty = TRUE
   )
   manual <- unique(na.omit(dat$t[dat$status == 1 & dat$x == 1]))
   testthat::expect_equal(sort(te), sort(manual))
@@ -60,9 +60,9 @@ testthat::test_that("In extract_time_to_event() remapped codes are respected", {
   f <- Event(t, status) ~ 1
   te <- extract_time_to_event(
     formula = f, data = dat2,
-    which_event = "event2",
+    which.event = "event2",
     code.event1 = 10, code.event2 = 20, code.censoring = 0,
-    readUniqueTime = TRUE, dropEmpty = TRUE
+    read.unique.time = TRUE, drop.empty = TRUE
   )
   manual <- unique(na.omit(dat2$t[dat2$status == 20]))
   testthat::expect_equal(sort(te), sort(manual))
@@ -73,14 +73,14 @@ testthat::test_that("extract_time_to_event() with user_specified requires code",
   f   <- Event(t, status) ~ 1
 
   testthat::expect_error(
-    extract_time_to_event(formula = f, data = dat, which_event = "user_specified"),
+    extract_time_to_event(formula = f, data = dat, which.event = "user_specified"),
     regexp = "user_specified", ignore.case = TRUE
   )
 
   te <- extract_time_to_event(
-    formula = f, data = dat, which_event = "user_specified",
-    user_specified_code = 2,
-    readUniqueTime = TRUE, dropEmpty = TRUE
+    formula = f, data = dat, which.event = "user_specified",
+    code.user.specified = 2,
+    read.unique.time = TRUE, drop.empty = TRUE
   )
   manual <- unique(na.omit(dat$t[dat$status == 2]))
   testthat::expect_equal(sort(te), sort(manual))
@@ -90,7 +90,7 @@ testthat::test_that("In extract_time_to_event() invalid which_event fails clearl
   dat <- createTestData2()
   f   <- Event(t, status) ~ 1
   testthat::expect_error(
-    extract_time_to_event(formula = f, data = dat, which_event = "ev3"),
+    extract_time_to_event(formula = f, data = dat, which.event = "ev3"),
     regexp = "should be one of", ignore.case = TRUE
   )
 })

@@ -8,7 +8,7 @@ development:
 
 home:
   title: cifmodeling
-  description: A compact and unified toolkit for Kaplan–Meier/Aalen–Johansen curves, visualization, and direct polytomous regression for survival and competing risks data.
+  description: A compact and unified toolkit for Kaplan-Meier/Aalen-Johansen curves, visualization, and direct polytomous regression for survival and competing risks data.
 
 navbar:
   structure:
@@ -54,7 +54,7 @@ articles:
       - arguments
 
 reference:
-  - title: visualization
+  - title: Nomparametric estimation and visualization
     contents:
       - cifcurve
       - cifplot

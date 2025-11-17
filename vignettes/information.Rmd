@@ -13,14 +13,14 @@ vignette: >
 
 **Common ground**
 
--   Both functions expect a `Surv()` or `Event()` response on the LHS of the model formula so that follow-up time and event indicators are supplied in the same way. Internally the helpers validate non-negative times, check that the event codes match the user-specified `code.event*` arguments, and derive indicators used downstream.
+-   Both functions expect a `Surv()` or `Event()` response on the LHS of the model formula so that follow-up time and event indicators are supplied in the same way. Internally the helpers validate non-negative times, check that the event codes match the user-specified `code.event1` and `code.event2` arguments, and derive indicators used downstream. 
 -   The `outcome.type` argument is normalized by the same utility, meaning that the same set of synonyms (e.g. `"C"`, `"competing risk"`, or `"S"`) are accepted in both workflows and mapped onto the canonical labels used in the estimators.
 
 **Key differences**
 
--   In `cifcurve()` the RHS of the formula defines the grouping variable(s) whose curves are estimated; weights (if any) are supplied separately. There is no dedicated exposure argument because all strata are handled through the formula term that is turned into a factor for plotting and estimation.
--   In `polyreg()` the `nuisance.model` formula describes only the outcome and nuisance covariates (i.e. confounders), while the exposure is passed separately through the `exposure` argument. The exposure design matrix, reference level handling, and scaling of nuisance covariates are handled explicitly for regression fitting.
--   `cifcurve()` focuses on two estimands, selecting between the Kaplan–Meier and Aalen–Johansen estimators via `outcome.type = "survival"` or `"competing-risk"`. In contrast, `polyreg()` supports additional time-constant and binomial estimands (`"proportional-survival"`, `"proportional-competing-risk"`, `"binomial"`) and enforces time-point requirements accordingly—for example `time.point` is mandatory for the effects at a fixed time, while time-constant-effect (e.g. proportional subdistribution hazards) models can either use all observed event times or a user-specified grid supplied via a (vector) `time.point`.
+-   In `cifcurve()` the RHS of the formula specifies the grouping variable whose curves are estimated; weights (if any) are supplied separately. There is no dedicated exposure argument because all strata are handled through the formula term that is turned into a factor for plotting and estimation.
+-   In `polyreg()` the `nuisance.model` formula describes only the outcome and nuisance covariates (i.e. confounders), while **the exposure is passed separately** through the `exposure` argument. The exposure design matrix, reference level handling, and scaling of nuisance covariates are handled explicitly for regression fitting.
+-   `cifcurve()` focuses on two estimands, selecting between the Kaplan–Meier and Aalen–Johansen estimators via `outcome.type = "survival"` or `"competing-risk"`. In contrast, `polyreg()` supports additional **time-constant and binomial estimands** (`"proportional-survival"`, `"proportional-competing-risk"`, `"binomial"`) and enforces time-point requirements accordingly—for example `time.point` is mandatory for the effects at a fixed time, while time-constant-effect (e.g. proportional subdistribution hazards) models can either use all observed event times or a user-specified grid supplied via a (vector) `time.point`.
 
 ## Event coding conventions incifmodeling and CDISC ADaM ADTTE
 
@@ -35,9 +35,7 @@ polyreg(Event(AVAL, CNSR) ~ ARM, data = adtte,
 
 ## Processing pipeline of cifcurve()
 
-A user-specified model formula in `Event()` or `Surv()` is first parsed by `util_read_surv()` to extract the time-to-event, the event indicator, optional weights, and any stratification variables. Those components are then passed to the back-end estimators implemented in `src/calculateAJ_Rcpp.cpp`. The C++ routine supports both weighted and stratified data, so the heavy lifting for the Kaplan–Meier or Aalen–Johansen estimates (and associated at-risk, event, and censor counts) happens efficiently regardless of how the input was specified. 
-
-- The `error` argument determines how SEs are computed. For survival data (`outcome.type = "survival"`) it maps to Greenwood (default) or Tsiatis estimators, while for competing-risks data (`outcome.type = "competing-risk"`) `"aalen"` reproduces the classic Aalen standard errors and `"delta"` implements the delta method. The SEs for weighted Kaplan-Meier estimators are calculated using the formulas by Zie and Liu (2005). 
+A user-specified model formula in `Event()` or `Surv()` is first parsed by `util_read_surv()` to extract the time-to-event, the event indicator, optional weights, and any stratification variables. Those components are then passed to the back-end estimators implemented in `src/calculateAJ_Rcpp.cpp`. The C++ routine supports both weighted and stratified data, so the heavy lifting for the Kaplan–Meier or Aalen–Johansen estimates (and associated at-risk, event, censor counts and influence functions) happens efficiently regardless of how the input was specified. The `error` argument determines how SEs are computed. 
 
 ## Computational formulas in cifcurve()
 
@@ -148,23 +146,21 @@ $$
 
 ## Processing pipeline of polyreg()
 
-
-  
 Input pre-processing mirrors the survival workflow by calling `util_check_outcome_type()`, `reg_check_effect.measure()`, and `reg_check_input()` to parse the format of inputs, event codes, exposure levels, and requested estimands before `createAnalysisDataset()` builds the modeling frame and `reg_normalize_covariate()` rescales covariates by default. Starting values are obtained from the nuisance model fits via `getInitialValues()` or `getInitialValuesProportional()`, or, when necessary, from user-supplied data frame of starting values. Inverse-probability-of-censoring weights for survival and competing-risks outcomes are calculated by `calculateIPCW()`, which in turn wraps the `calculateKM()` C++ routine to obtain the Kaplan-Meier estimates of censoring, while the proportional models assemble matrices through `calculateIPCWMatrix()`.
 
-The weighted estimating equations are then solved by `solveEstimatingEquation()`, which dispatches to specific score functions such as `estimating_equation_ipcw()`, `estimating_equation_survival()`, and `estimating_equation_proportional()` and iterates with `nleqslv`/Levenberg–Marquardt updates until the convergence criteria in `assessConvergence()` are met. Sandwich variances come from `calculateCov()` or `calculateCovSurvival()` and are rescaled back to the original covariate scale by `reg_normalize_estimate()`, while optional bootstrap intervals reuse the same solver inside the `boot` resampling loop. The resulting influence functions, weights, and fitted CIFs are retained in `diagnostic.statistics` for downstream diagnostics.
+The weighted estimating equations are then solved by `solveEstimatingEquation()`, which dispatches to specific score functions such as `estimating_equation_ipcw()`, `estimating_equation_survival()`, and `estimating_equation_proportional()` and iterates with `nleqslv`/Levenberg-Marquardt updates until the convergence criteria in `assessConvergence()` are met. Sandwich variances come from `calculateCov()` or `calculateCovSurvival()` and are rescaled back to the original covariate scale by `reg_normalize_estimate()`, while optional bootstrap intervals reuse the same solver inside the `boot` resampling loop. The resulting influence functions, weights, and fitted CIFs are retained in `diagnostic.statistics` for downstream diagnostics.
 
 ## Reproducibility and conventions for polyreg()
 
- - If convergence warnings appear, relax/tighten tolerances or cap the parameter bound (`optim.parameter1` to `3`) and inspect `report.optim.convergence = TRUE`.
+ - If convergence warnings appear, relax/tighten tolerances or cap the parameter bound (`optim.parameter1` to `optim.parameter3`) and inspect `report.optim.convergence = TRUE`.
  - If necessary, try modifying other `optim.parameter`, providing user-specified initial values, or reducing the number of nuisance parameters (e.g. provide a `time.point` grid that contributes to estimation when using `"proportional-survival"` and `"proportional-competing-risk"`).
  - Set `boot.seed` for reproducible bootstrap results.
  - Match CDISC ADaM conventions via `code.event1 = 0`, `code.censoring = 1` (and, if applicable, `code.event2` for competing events).
 
 ## Key arguments of msummary() that are helpful when reporting polyreg() results
 
--   `output` – controls the destination of the table (e.g., `"markdown"`, `"latex"`, `"html"`, or a file path such as `'results/cif_table.docx'`).
--   `coef_map` or `coef_rename` – renames model terms for interpretability.
--   `statistic` – which uncertainty summaries to display. Examples: `statistic = "p.value"` for p-values, `statistic = "conf.int"` for Wald CIs, `statistic = "t"` for t statistics, `and statistic = "z"` for z statistics, instead of SEs (default).
+-   `output` controls the destination of the table (e.g., `"markdown"`, `"latex"`, `"html"`, or a file path such as `'results/cif_table.docx'`).
+-   `coef_map` or `coef_rename` renames model terms for interpretability.
+-   `statistic` specifies which uncertainty summaries to display. Examples: `statistic = "p.value"` for p-values, `statistic = "conf.int"` for Wald CIs, `statistic = "t"` for t statistics, `and statistic = "z"` for z statistics, instead of SEs (default). 
 
 You can also supply multiple model summaries as a named list to compare estimates across specifications in a single table. See `vignette('modelsummary')` for a comprehensive overview of additional layout and styling options.

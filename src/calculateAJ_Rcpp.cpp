@@ -394,7 +394,7 @@ Rcpp::List calculateAJ_Rcpp(
       }
 
       double sum_w = 0.0; for (int ii = 0; ii < n_g; ++ii) sum_w += W[ ids[ii] ];
-      const double denom = (sum_w > 0.0 ? sum_w : (double)n_g);
+//      const double denom = (sum_w > 0.0 ? sum_w : (double)n_g);
 
       std::vector<long double> ss(Uall, 0.0L);
 

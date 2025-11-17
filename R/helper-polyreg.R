@@ -153,7 +153,7 @@ reg_normalize_estimate <- function(
 }
 
 reg_check_input <- function(data, formula, exposure, code.event1, code.event2, code.censoring,
-                       code.exposure.ref, outcome.type, conf.level, report.sandwich.conf,
+                       code.exposure.ref, outcome.type, conf.int, report.sandwich.conf,
                        report.boot.conf, nleqslv.method, normalize.covariate,
                        strata = NULL, subset.condition = NULL, na.action = na.omit) {
 
@@ -198,7 +198,7 @@ reg_check_input <- function(data, formula, exposure, code.event1, code.event2, c
   x_a <- out_readExposureDesign$x_a
   x_l <- model.matrix(out_terms, mf)
 
-  if (!is.numeric(conf.level) || length(conf.level) != 1 || conf.level <= 0 || conf.level >= 1) .err("conf_level")
+  if (!is.numeric(conf.int) || length(conf.int) != 1 || conf.int <= 0 || conf.int >= 1) .err("conf_level")
 
   if (outcome.type == "proportional-survival" | outcome.type == "proportional-competing-risk") {
     normalize.covariate.corrected <- FALSE
