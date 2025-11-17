@@ -19,7 +19,7 @@ polyreg(
   effect.measure2 = "RR",
   time.point = NULL,
   outcome.type = "competing-risk",
-  conf.level = 0.95,
+  conf.int = 0.95,
   report.nuisance.parameter = FALSE,
   report.optim.convergence = FALSE,
   report.sandwich.conf = TRUE,
@@ -97,7 +97,7 @@ is assumed; otherwise, \code{"survival"} is assumed. Abbreviations such as
 \code{"S"} or \code{"C"} are accepted; mixed or ambiguous inputs trigger
 automatic detection from the event coding in \code{data}.}
 
-\item{conf.level}{Confidence level for Wald-type intervals (default \code{0.95}).}
+\item{conf.int}{Numeric two-sided level of CIs (default \code{0.95}).}
 
 \item{report.nuisance.parameter}{Logical; if \code{TRUE}, the returned object
 includes estimates of the nuisance model parameters (default \code{FALSE}).}
@@ -292,7 +292,7 @@ Choose the effect scale for event 1 and (optionally) event 2:\tabular{llll}{
 
 \subsection{Inference and intervals (advanced)}{\tabular{lll}{
    Argument \tab Meaning \tab Default \cr
-   \code{conf.level} \tab Wald-type CI level \tab \code{0.95} \cr
+   \code{conf.int} \tab Wald-type CI level \tab \code{0.95} \cr
    \code{report.sandwich.conf} \tab Sandwich variance CIs \tab \code{TRUE} \cr
    \code{report.boot.conf} \tab Bootstrap CIs (used by \code{"proportional-*"} types) \tab \code{NULL} \cr
    \code{boot.bca} \tab Use BCa intervals (else normal approximation) \tab \code{FALSE} \cr

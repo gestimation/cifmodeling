@@ -9,13 +9,13 @@ extract_time_to_event(
   data,
   subset.condition = NULL,
   na.action = na.omit,
-  which_event = c("event2", "event1", "censor", "censoring", "user_specified"),
+  which.event = c("event2", "event1", "censor", "censoring", "user_specified"),
   code.event1 = 1,
   code.event2 = 2,
   code.censoring = 0,
-  user_specified_code = NULL,
-  readUniqueTime = TRUE,
-  dropEmpty = TRUE
+  code.user.specified = NULL,
+  read.unique.time = TRUE,
+  drop.empty = TRUE
 )
 }
 \arguments{
@@ -28,7 +28,7 @@ subset of \code{data} to analyse. Defaults to \code{NULL}.}
 
 \item{na.action}{Function to handle missing values (default: \code{na.omit} in \pkg{stats}).}
 
-\item{which_event}{One of \code{"event1"}, \code{"event2"}, \code{"censor"},
+\item{which.event}{One of \code{"event1"}, \code{"event2"}, \code{"censor"},
 \code{"censoring"}, or \code{"user_specified"}, indicating which event type
 to extract times for.}
 
@@ -36,13 +36,13 @@ to extract times for.}
 event and censoring categories. Defaults are \code{1}, \code{2}, and
 \code{0}, respectively.}
 
-\item{user_specified_code}{When \code{which_event = "user_specified"},
+\item{code.user.specified}{When \code{which.event = "user_specified"},
 the integer event code to extract (e.g., 3 for an intercurrent event).}
 
-\item{readUniqueTime}{Logical if \code{TRUE}, only unique and sorted time points
+\item{read.unique.time}{Logical if \code{TRUE}, only unique and sorted time points
 are returned for each stratum.}
 
-\item{dropEmpty}{Logical if \code{TRUE} (default), strata with no events are
+\item{drop.empty}{Logical if \code{TRUE} (default), strata with no events are
 dropped from the returned list. Set to \code{FALSE} to retain empty strata
 as \code{numeric(0)} vectors (useful for diagnostics or consistent list length).}
 }
@@ -70,7 +70,7 @@ structure of a data frame.
 data(diabetes.complications)
 output <- extract_time_to_event(Event(t,epsilon) ~ fruitq,
                                 data = diabetes.complications,
-                                which_event = "event2")
+                                which.event = "event2")
 cifplot(Event(t,epsilon) ~ fruitq,
         data = diabetes.complications,
         outcome.type="competing-risk",
@@ -79,8 +79,8 @@ cifplot(Event(t,epsilon) ~ fruitq,
         add.censor.mark=FALSE,
         add.competing.risk.mark=TRUE,
         competing.risk.time=output,
-        label.y='CIF of diabetic retinopathy',
-        label.x='Years from registration')
+        label.y="CIF of diabetic retinopathy",
+        label.x="Years from registration")
 }
 \seealso{
 \code{\link[=polyreg]{polyreg()}} for log-odds product modeling of CIFs; \code{\link[=cifcurve]{cifcurve()}} for KM/AJ estimators; \code{\link[=cifplot]{cifplot()}} for display of a CIF; \code{\link[=cifpanel]{cifpanel()}} for display of multiple CIFs; \link[ggsurvfit:ggsurvfit]{ggsurvfit::ggsurvfit}, \link[patchwork:patchwork-package]{patchwork::patchwork} and \link[modelsummary:modelsummary]{modelsummary::modelsummary} for display helpers.

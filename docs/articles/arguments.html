@@ -94,18 +94,18 @@ stratification variable on the right-hand side. Unlike
 subset <code>data</code> before analysis.</li>
 <li>
 <code>na.action</code> A function specifying the action to take on
-missing values. The default is <code>na.omit</code>.</li>
+missing values (default <code>na.omit</code>).</li>
 <li>
 <code>outcome.type</code> Character string specifying the type of
-time-to-event outcome. One of <code>"survival"</code> (Kaplan–Meier) or
-<code>"competing-risk"</code> (Aalen–Johansen). If <code>NULL</code>
+time-to-event outcome. One of <code>"survival"</code> (Kaplan-Meier) or
+<code>"competing-risk"</code> (Aalen-Johansen). If <code>NULL</code>
 (default), the function automatically infers the outcome type from the
 data: if the event variable has more than two unique levels,
 <code>"competing-risk"</code> is assumed; otherwise,
 <code>"survival"</code> is used. You can also use abbreviations such as
 <code>"S"</code> or <code>"C"</code>. Mixed or ambiguous inputs (e.g.,
 <code>c("S", "C")</code>) trigger automatic detection based on the event
-coding in <code>data</code>.</li>
+coding.</li>
 <li>
 <code>code.event1</code> Integer code of the event of interest
 (default <code>1</code>).</li>
@@ -116,18 +116,18 @@ coding in <code>data</code>.</li>
 <code>code.censoring</code> Integer code of censoring (default
 <code>0</code>).</li>
 <li>
-<code>error</code> Character specifying the method for standard
-error and confidence intervals used internally. <code>"greenwood"</code>
-(default), <code>"tsiatis"</code> or <code>"if"</code> for
-<code>"survival"</code>, and <code>"delta"</code> (default),
-<code>"aalen"</code> or <code>"if"</code> for
-<code>"competing-risk"</code>).</li>
+<code>error</code> Character string specifying the method for SEs
+and CIs used internally. For <code>"survival"</code>, choose one of
+<code>"greenwood"</code> (default), <code>"tsiatis"</code>, or
+<code>"if"</code>. For <code>"competing-risk"</code>, choose one of
+<code>"delta"</code> (default), <code>"aalen"</code>, or
+<code>"if"</code>.</li>
 <li>
 <code>conf.type</code> Character specifying the method of
-transformation for confidence intervals used internally (default
+transformation for CIs used internally (default
 <code>"arcsine-square root"</code>).</li>
 <li>
-<code>conf.int</code> numeric two-sided confidence level (default
+<code>conf.int</code> Numeric two-sided level of CIs (default
 <code>0.95</code>).</li>
 <li>
 <code>return_if</code> Logical. When <code>TRUE</code> and
@@ -167,18 +167,18 @@ Note: When a formula is supplied, the left-hand side must be
 subset <code>data</code> before analysis.</li>
 <li>
 <code>na.action</code> A function specifying the action to take on
-missing values. The default is <code>na.omit</code>.</li>
+missing values (default <code>na.omit</code>).</li>
 <li>
 <code>outcome.type</code> Character string specifying the type of
-time-to-event outcome. One of <code>"survival"</code> (Kaplan–Meier
-type) or <code>"competing-risk"</code> (Aalen–Johansen type). If
-<code>NULL</code> (default), the function automatically infers the
-outcome type from the data: if the event variable has more than two
-unique levels, <code>"competing-risk"</code> is assumed; otherwise,
+time-to-event outcome. One of <code>"survival"</code> (Kaplan-Meier) or
+<code>"competing-risk"</code> (Aalen-Johansen). If <code>NULL</code>
+(default), the function automatically infers the outcome type from the
+data: if the event variable has more than two unique levels,
+<code>"competing-risk"</code> is assumed; otherwise,
 <code>"survival"</code> is used. You can also use abbreviations such as
 <code>"S"</code> or <code>"C"</code>. Mixed or ambiguous inputs (e.g.,
 <code>c("S", "C")</code>) trigger automatic detection based on the event
-coding in <code>data</code>.</li>
+coding.</li>
 <li>
 <code>code.event1</code> Integer code of the event of interest
 (default <code>1</code>).</li>
@@ -189,21 +189,24 @@ coding in <code>data</code>.</li>
 <code>code.censoring</code> Integer code of censoring (default
 <code>0</code>).</li>
 <li>
-<code>error</code> Character specifying the method for variance and
-standard error used internally. For <code>"survival"</code> typically
-<code>"greenwood"</code>. For <code>"competing-risk"</code> pass options
-supported by <code>calculateAalenDeltaSE()</code> (<code>"aalen"</code>,
-<code>"delta"</code>, <code>"none"</code>).</li>
+<code>error</code> Character string specifying the method for SEs
+and CIs used internally. For <code>"survival"</code>, choose one of
+<code>"greenwood"</code> (default), <code>"tsiatis"</code>, or
+<code>"if"</code>. For <code>"competing-risk"</code>, choose one of
+<code>"delta"</code> (default), <code>"aalen"</code>, or
+<code>"if"</code>.</li>
 <li>
-<code>conf.type</code> Character transformation for CI on the
-probability scale (default <code>"arcsine-square root"</code>).</li>
+<code>conf.type</code> Character specifying the method of
+transformation for CIs used internally (default
+<code>"arcsine-square root"</code>).</li>
 <li>
-<code>conf.int</code> numeric two-sided confidence level (default
+<code>conf.int</code> Numeric two-sided level of CIs (default
 <code>0.95</code>).</li>
 <li>
-<code>type.y</code> Optional vector/list per panel:
-<code>"surv"</code> or <code>"risk"</code> (display
-<code>1 - survival</code> i.e. CIF).</li>
+<code>type.y</code> Character string specifying the y-scale:
+<code>"surv"</code> for survival probabilities or <code>"risk"</code>
+for cumulative incidence (1 - survival in simple survival settings). If
+<code>NULL``, a default is chosen from</code>outcome.type`.</li>
 <li>
 <code>label.x</code> Character x-axis labels (default
 <code>"Time"</code>).</li>
@@ -237,8 +240,9 @@ names must match the (re-ordered) levels.</li>
 <code>breaks.y</code> Numeric vectors for axis breaks (default
 <code>NULL</code>).</li>
 <li>
-<code>use.coord.cartesian</code> Logical specify use of
-<code>coord_cartesian()</code> (default <code>FALSE</code>).</li>
+<code>use.coord.cartesian</code> Logical; if <code>TRUE</code>, uses
+<code><a href="https://ggplot2.tidyverse.org/reference/coord_cartesian.html" class="external-link">ggplot2::coord_cartesian()</a></code> for zooming instead of changing
+the scale limits (default <code>FALSE</code>).</li>
 <li>
 <code>add.conf</code> Logical add
 <code>add_confidence_interval()</code> to plot. It calls
@@ -381,6 +385,9 @@ curve (default <code>\code{</code>FALSE`).</li>
 <h2 id="cifpanel">cifpanel()<a class="anchor" aria-label="anchor" href="#cifpanel"></a>
 </h2>
 <ul>
+<li><p><code>plots</code> Optional list of existing ggplot objects to be
+arranged into a panel. When plots is supplied, no new models are fitted;
+the plots are used as-is.</p></li>
 <li><p><code>formula</code> A model formula specifying the time-to-event
 outcome on the left-hand side (typically
 <code>Event(time, status)</code> or
@@ -397,17 +404,17 @@ provided, overrides <code>formula</code>.</p></li>
 <li><p><code>subset.condition</code> Optional character expression to
 subset <code>data</code> before analysis.</p></li>
 <li><p><code>na.action</code> A function specifying the action to take
-on missing values. The default is <code>na.omit</code>.</p></li>
+on missing values (default <code>na.omit</code>).</p></li>
 <li><p><code>outcome.type</code> Character string specifying the type of
-time-to-event outcome. One of <code>"survival"</code> (Kaplan–Meier
-type) or <code>"competing-risk"</code> (Aalen–Johansen type). If
-<code>NULL</code> (default), the function automatically infers the
-outcome type from the data: if the event variable has more than two
-unique levels, <code>"competing-risk"</code> is assumed; otherwise,
+time-to-event outcome. One of <code>"survival"</code> (Kaplan-Meier) or
+<code>"competing-risk"</code> (Aalen-Johansen). If <code>NULL</code>
+(default), the function automatically infers the outcome type from the
+data: if the event variable has more than two unique levels,
+<code>"competing-risk"</code> is assumed; otherwise,
 <code>"survival"</code> is used. You can also use abbreviations such as
 <code>"S"</code> or <code>"C"</code>. Mixed or ambiguous inputs (e.g.,
 <code>c("S", "C")</code>) trigger automatic detection based on the event
-coding in <code>data</code>.</p></li>
+coding.</p></li>
 <li><p><code>code.event1</code> Integer code of the event of interest
 (default <code>1</code>).</p></li>
 <li><p><code>code.event2</code> Integer code of the competing event
@@ -419,19 +426,21 @@ coding in <code>data</code>.</p></li>
 <code>code.event1</code>, <code>code.event2</code>, and
 <code>code.censoring</code> (primarily used when <code><a href="../reference/cifpanel.html">cifpanel()</a></code>
 is called or when <code>panel.per.event = TRUE</code>).</p></li>
-<li><p><code>error</code> Character specifying the method for variance
-and standard error used internally. For <code>"survival"</code>
-typically <code>"greenwood"</code>. For <code>"competing-risk"</code>
-pass options supported by <code>calculateAalenDeltaSE()</code>
-(<code>"aalen"</code>, <code>"delta"</code>,
-<code>"none"</code>).</p></li>
-<li><p><code>conf.type</code> Character transformation for CI on the
-probability scale (default <code>"arcsine-square root"</code>).</p></li>
-<li><p><code>conf.int</code> numeric two-sided confidence level (default
+<li><p><code>error</code> Character string specifying the method for SEs
+and CIs used internally. For <code>"survival"</code>, choose one of
+<code>"greenwood"</code> (default), <code>"tsiatis"</code>, or
+<code>"if"</code>. For <code>"competing-risk"</code>, choose one of
+<code>"delta"</code> (default), <code>"aalen"</code>, or
+<code>"if"</code>.</p></li>
+<li><p><code>conf.type</code> Character specifying the method of
+transformation for CIs used internally (default
+<code>"arcsine-square root"</code>).</p></li>
+<li><p><code>conf.int</code> Numeric two-sided level of CIs (default
 <code>0.95</code>).</p></li>
-<li><p><code>type.y</code> Optional vector/list per panel:
-<code>"surv"</code> or <code>"risk"</code> (display
-<code>1 - survival</code> i.e. CIF).</p></li>
+<li><p><code>type.y</code> Character string specifying the y-scale:
+<code>"surv"</code> for survival probabilities or <code>"risk"</code>
+for cumulative incidence (1 - survival in simple survival settings). If
+<code>NULL``, a default is chosen from</code>outcome.type`.</p></li>
 <li><p><code>label.x</code>, <code>label.y</code> Optional vectors/lists
 of axis labels per panel.</p></li>
 <li><p><code>label.strata</code> Optional list of character vectors for
@@ -518,9 +527,8 @@ stratification variable used to adjust for dependent censoring (default
 <code>data</code> A data frame containing the outcome, exposure and
 nuisance covariates referenced by <code>nuisance.model</code>.</li>
 <li>
-<code>subset.condition</code> Optional expression (as a character
-string) defining a subset of <code>data</code> to analyze (default
-<code>NULL</code>).</li>
+<code>na.action</code> A function specifying the action to take on
+missing values (default <code>na.omit</code>).</li>
 <li>
 <code>code.event1</code> Integer code of the event of interest
 (default <code>1</code>).</li>
@@ -560,7 +568,7 @@ event variable has more than two unique levels,
 <code>c("S", "C")</code>) trigger automatic detection based on the event
 coding in <code>data</code>.</li>
 <li>
-<code>conf.int</code> numeric two-sided confidence level (default
+<code>conf.int</code> Numeric two-sided level of CIs (default
 <code>0.95</code>).</li>
 <li>
 <code>report.nuisance.parameter</code> Logical if <code>TRUE</code>,

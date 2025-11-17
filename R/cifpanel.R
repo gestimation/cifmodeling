@@ -797,7 +797,7 @@ cifpanel <- function(
           data             = data,
           subset.condition = subset.condition,
           na.action        = na.action,
-          which_event      = "event2",
+          which.event      = "event2",
           code.event1      = ce[1],
           code.event2      = ce[2],
           code.censoring   = ce[3]

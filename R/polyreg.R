@@ -50,7 +50,7 @@
 #'   is assumed; otherwise, `"survival"` is assumed. Abbreviations such as
 #'   `"S"` or `"C"` are accepted; mixed or ambiguous inputs trigger
 #'   automatic detection from the event coding in `data`.
-#' @param conf.level Confidence level for Wald-type intervals (default `0.95`).
+#' @param conf.int Numeric two-sided level of CIs (default `0.95`).
 #' @param report.nuisance.parameter Logical; if `TRUE`, the returned object
 #'   includes estimates of the nuisance model parameters (default `FALSE`).
 #' @param report.optim.convergence Logical; if `TRUE`, optimization
@@ -181,7 +181,7 @@
 #'
 #' | Argument             | Meaning                                         | Default      |
 #' |----------------------|-------------------------------------------------|--------------|
-#' | `conf.level`         | Wald-type CI level                              | `0.95`       |
+#' | `conf.int`         | Wald-type CI level                              | `0.95`       |
 #' | `report.sandwich.conf` | Sandwich variance CIs                        | `TRUE`       |
 #' | `report.boot.conf`   | Bootstrap CIs (used by `"proportional-*"` types) | `NULL`       |
 #' | `boot.bca`           | Use BCa intervals (else normal approximation)   | `FALSE`      |
@@ -310,7 +310,7 @@ polyreg <- function(
     effect.measure2 = "RR",
     time.point = NULL,
     outcome.type = "competing-risk",
-    conf.level = 0.95,
+    conf.int = 0.95,
     report.nuisance.parameter = FALSE,
     report.optim.convergence = FALSE,
     report.sandwich.conf = TRUE,
@@ -345,7 +345,7 @@ polyreg <- function(
   computation.time0 <- proc.time()
   outcome.type  <- util_check_outcome_type(outcome.type, formula=formula, data=data)
   ce <- reg_check_effect.measure(effect.measure1, effect.measure2)
-  ci <- reg_check_input(data, nuisance.model, exposure, code.event1, code.event2, code.censoring, code.exposure.ref, outcome.type, conf.level, report.sandwich.conf, report.boot.conf, nleqslv.method, normalize.covariate)
+  ci <- reg_check_input(data, nuisance.model, exposure, code.event1, code.event2, code.censoring, code.exposure.ref, outcome.type, conf.int, report.sandwich.conf, report.boot.conf, nleqslv.method, normalize.covariate)
   normalize.covariate <- ci$normalize.covariate
   report.sandwich.conf <- ci$report.sandwich.conf
   report.boot.conf <- ci$report.boot.conf
@@ -616,10 +616,10 @@ polyreg <- function(
     out_boot <- boot(normalized_data, boot_function, R = boot.replications)
     for (j in index_coef) {
       if (isTRUE(boot.bca)) {
-        out_boot.ci       <- boot.ci(out_boot, conf = conf.level, index = index_coef[j], type = c("norm", "bca"))
+        out_boot.ci       <- boot.ci(out_boot, conf = conf.int, index = index_coef[j], type = c("norm", "bca"))
         boot.coef[j]      <- (out_boot.ci$normal[2] + out_boot.ci$normal[3])/2
         ci_range          <- out_boot.ci$normal[3] - out_boot.ci$normal[2]
-        boot.coef_se[j]   <- ci_range/2/qnorm(1 - (1-conf.level)/2)
+        boot.coef_se[j]   <- ci_range/2/qnorm(1 - (1-conf.int)/2)
         boot.p_value[j]   <- 2 * (1 - pnorm(abs(boot.coef[j]) / boot.coef_se[j]))
         boot.conf_low[j]  <- out_boot.ci$bca[4]
         boot.conf_high[j] <- out_boot.ci$bca[5]
@@ -649,7 +649,7 @@ polyreg <- function(
     outcome.type, report.nuisance.parameter, report.optim.convergence, report.sandwich.conf, report.boot.conf,
     nuisance.model, exposure, estimand, alpha_beta_estimated, cov_estimated, cov_bootstrap,
     out_bootstrap, out_getResults, iteration, converged.by, objective.function, max.absolute.difference, relative.difference,
-    out_nleqslv, conf.level, optim.method$nleqslv.method
+    out_nleqslv, conf.int, optim.method$nleqslv.method
   )
   if (outcome.type == "competing-risk" || outcome.type == "survival" || outcome.type == "binomial") {
     data$influence.function <- out_calculateCov$influence.function
@@ -667,7 +667,7 @@ polyreg <- function(
     diagnostics        = out_data,
     outcome.type       = outcome.type,
     exposure           = exposure,
-    conf.level         = conf.level,
+    conf.int           = conf.int,
     estimand           = estimand,
     boot.method        = boot.method,
     optim.method       = optim.method,

@@ -7,7 +7,7 @@
   code_events_distinct = "code.events[1]` and `code.events[2]` must be different event codes.",
   code_events_len_surv = "code.events[[{i}]] must be c(event.code1, censoring) for survival.",
   code_events_len_cr = "code.events[[{i}]] must be c(event.code1, event.code2, censoring) for competing-risk.",
-  conf_level = "conf.level must be a single number in (0, 1).",
+  conf.int = "conf.int must be a single number in (0, 1).",
   effect_meas   = "Invalid input for {which}. Choose 'RR', 'OR', or 'SHR'.",
   error_cr      = "Invalid SE method for COMPETING-RISK. Use aalen, delta, jackknife. Defaulting to delta.",
   error_surv    = "Invalid SE method for SURVIVAL. Use greenwood, tsiatis, jackknife. Defaulting to greenwood.",

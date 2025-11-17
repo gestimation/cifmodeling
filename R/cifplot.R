@@ -76,8 +76,8 @@
 #'
 #' ### Key arguments shared with cifcurve()
 #' -   **Outcome type and estimator**
-#'       -   `outcome.type = "survival"`: Kaplan–Meier estimator
-#'       -   `outcome.type = "competing-risk"`: Aalen–Johansen estimator
+#'       -   `outcome.type = "survival"`: Kaplan-Meier estimator
+#'       -   `outcome.type = "competing-risk"`: Aalen-Johansen estimator
 #'
 #' -   **Confidence intervals**
 #'       -   `conf.int` sets the two-sided level (default 0.95)
@@ -429,7 +429,7 @@ cifplot <- function(
 
   if (isTRUE(add.competing.risk.mark) && length(competing.risk.time) == 0) {
     visual.info$competing.risk.time <- extract_time_to_event(
-      formula_or_fit, data=data, subset.condition=subset.condition, na.action=na.action, which_event="event2",
+      formula_or_fit, data=data, subset.condition=subset.condition, na.action=na.action, which.event="event2",
       code.event1=code.event1, code.event2=code.event2, code.censoring=code.censoring)
   }
 

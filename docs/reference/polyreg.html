@@ -95,7 +95,7 @@ such as <code><a href="https://modelsummary.com/man/modelsummary.html" class="ex
 <span>  effect.measure2 <span class="op">=</span> <span class="st">"RR"</span>,</span>
 <span>  time.point <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  outcome.type <span class="op">=</span> <span class="st">"competing-risk"</span>,</span>
-<span>  conf.level <span class="op">=</span> <span class="fl">0.95</span>,</span>
+<span>  conf.int <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  report.nuisance.parameter <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  report.optim.convergence <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  report.sandwich.conf <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -205,8 +205,8 @@ is assumed; otherwise, <code>"survival"</code> is assumed. Abbreviations such as
 automatic detection from the event coding in <code>data</code>.</p></dd>
 
 
-<dt id="arg-conf-level">conf.level<a class="anchor" aria-label="anchor" href="#arg-conf-level"></a></dt>
-<dd><p>Confidence level for Wald-type intervals (default <code>0.95</code>).</p></dd>
+<dt id="arg-conf-int">conf.int<a class="anchor" aria-label="anchor" href="#arg-conf-int"></a></dt>
+<dd><p>Numeric two-sided level of CIs (default <code>0.95</code>).</p></dd>
 
 
 <dt id="arg-report-nuisance-parameter">report.nuisance.parameter<a class="anchor" aria-label="anchor" href="#arg-report-nuisance-parameter"></a></dt>
@@ -420,7 +420,7 @@ Required for <code>"competing-risk"</code> and <code>"survival"</code> outcomes.
 
 <div class="section">
 <h3 id="inference-and-intervals-advanced-">Inference and intervals (advanced)<a class="anchor" aria-label="anchor" href="#inference-and-intervals-advanced-"></a></h3>
-<table class="table table"><tr><td>Argument</td><td>Meaning</td><td>Default</td></tr><tr><td><code>conf.level</code></td><td>Wald-type CI level</td><td><code>0.95</code></td></tr><tr><td><code>report.sandwich.conf</code></td><td>Sandwich variance CIs</td><td><code>TRUE</code></td></tr><tr><td><code>report.boot.conf</code></td><td>Bootstrap CIs (used by <code>"proportional-*"</code> types)</td><td><code>NULL</code></td></tr><tr><td><code>boot.bca</code></td><td>Use BCa intervals (else normal approximation)</td><td><code>FALSE</code></td></tr><tr><td><code>boot.multiplier</code></td><td>Method for wild bootstrap</td><td><code>"rademacher"</code></td></tr><tr><td><code>boot.replications</code></td><td>Bootstrap replications</td><td><code>200</code></td></tr><tr><td><code>boot.seed</code></td><td>Seed for resampling</td><td><code>46</code></td></tr></table></div>
+<table class="table table"><tr><td>Argument</td><td>Meaning</td><td>Default</td></tr><tr><td><code>conf.int</code></td><td>Wald-type CI level</td><td><code>0.95</code></td></tr><tr><td><code>report.sandwich.conf</code></td><td>Sandwich variance CIs</td><td><code>TRUE</code></td></tr><tr><td><code>report.boot.conf</code></td><td>Bootstrap CIs (used by <code>"proportional-*"</code> types)</td><td><code>NULL</code></td></tr><tr><td><code>boot.bca</code></td><td>Use BCa intervals (else normal approximation)</td><td><code>FALSE</code></td></tr><tr><td><code>boot.multiplier</code></td><td>Method for wild bootstrap</td><td><code>"rademacher"</code></td></tr><tr><td><code>boot.replications</code></td><td>Bootstrap replications</td><td><code>200</code></td></tr><tr><td><code>boot.seed</code></td><td>Seed for resampling</td><td><code>46</code></td></tr></table></div>
 
 <div class="section">
 <h3 id="optimization-amp-solver-controls-advanced-">Optimization &amp; solver controls (advanced)<a class="anchor" aria-label="anchor" href="#optimization-amp-solver-controls-advanced-"></a></h3>

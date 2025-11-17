@@ -107,7 +107,7 @@ panels.}
 \item{na.action}{A function specifying the action to take on missing values (default \code{na.omit}).}
 
 \item{outcome.type}{Character string specifying the type of time-to-event outcome.
-One of \code{"survival"} (Kaplan–Meier) or \code{"competing-risk"} (Aalen–Johansen).
+One of \code{"survival"} (Kaplan-Meier) or \code{"competing-risk"} (Aalen-Johansen).
 If \code{NULL} (default), the function automatically infers the outcome type from the data:
 if the event variable has more than two unique levels, \code{"competing-risk"} is assumed;
 otherwise, \code{"survival"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
@@ -121,13 +121,14 @@ When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{co
 For \code{"survival"}, choose one of \code{"greenwood"} (default), \code{"tsiatis"}, or \code{"if"}.
 For \code{"competing-risk"}, choose one of \code{"delta"} (default), \code{"aalen"}, or \code{"if"}.}
 
-\item{conf.type}{Character specifying the method of transformation for confidence intervals
+\item{conf.type}{Character specifying the method of transformation for CIs
 used internally (default \verb{arcsine-square root}).}
 
-\item{conf.int}{Numeric two-sided confidence level (default \code{0.95}).}
+\item{conf.int}{Numeric two-sided level of CIs (default \code{0.95}).}
 
 \item{type.y}{Character string specifying the y-scale: \code{"surv"} for survival probabilities
-or \code{"risk"} for cumulative incidence (1 - survival in simple survival settings).}
+or \code{"risk"} for cumulative incidence (1 - survival in simple survival settings).
+If \verb{NULL``, a default is chosen from }outcome.type`.}
 
 \item{label.x}{Character x-axis label (default \code{"Time"}).}
 

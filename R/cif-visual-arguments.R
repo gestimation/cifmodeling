@@ -6,6 +6,7 @@
 #'
 #' @param type.y Character string specifying the y-scale: `"surv"` for survival probabilities
 #' or `"risk"` for cumulative incidence (1 - survival in simple survival settings).
+#' If `NULL``, a default is chosen from `outcome.type`.
 #' @param label.x Character x-axis label (default `"Time"`).
 #' @param label.y Character y-axis label (default is chosen automatically from `outcome.type`
 #'   and `type.y`, e.g. "Survival" or "Cumulative incidence").
@@ -17,15 +18,12 @@
 #' @param breaks.y Numeric vector of y-axis breaks (default `NULL`).
 #' @param use.coord.cartesian Logical; if `TRUE`, uses `ggplot2::coord_cartesian()` for zooming
 #'   instead of changing the scale limits (default `FALSE`).
-#'
 #' @param add.conf Logical; if `TRUE`, adds a CI ribbon
 #'   (via `ggsurvfit::add_confidence_interval()`). Default `TRUE`.
-#'
 #' @param add.censor.mark Logical; if `TRUE`, draws censoring marks on each curve
 #'   (via `ggsurvfit::add_censor_mark()`). Default `TRUE`.
 #' @param shape.censor.mark Integer point shape used for censoring marks (default `3`).
 #' @param size.censor.mark Numeric point size used for censoring marks (default `2`).
-#'
 #' @param add.competing.risk.mark Logical; if `TRUE`, draws time marks for the competing event
 #'   (event 2). If no times are supplied via `competing.risk.time`, the function tries to
 #'   extract them automatically from the data. Default `FALSE`.
@@ -34,7 +32,6 @@
 #'   in that stratum. Typically left as `list()` and filled internally.
 #' @param shape.competing.risk.mark Integer point shape for competing-risk marks (default `16`).
 #' @param size.competing.risk.mark Numeric point size for competing-risk marks (default `2`).
-#'
 #' @param add.intercurrent.event.mark Logical; if `TRUE`, overlays user-specified intercurrent-event
 #'   times per stratum. Default `FALSE`.
 #' @param intercurrent.event.time A **named list** of numeric vectors for intercurrent events
@@ -43,15 +40,12 @@
 #'   (default `1`).
 #' @param size.intercurrent.event.mark Numeric point size for intercurrent-event marks
 #'   (default `2`).
-#'
 #' @param add.quantile Logical; if `TRUE`, adds a quantile reference line (via
 #'   `ggsurvfit::add_quantile()`). Default `FALSE`.
 #' @param level.quantile Numeric quantile level to be shown (default `0.5` for the median).
-#'
 #' @param rows.columns.panel Optional integer vector `c(nrow, ncol)` controlling
 #'   the layout of the panel returned by the panel modes. If `NULL`, an automatic
 #'   layout is determined from the number of subplots.
-#'
 #' @param style Character choosing the base plot style: `"classic"`, `"bold"`,
 #' `"framed"`, `"grid"`, `"gray"` or `"ggsurvfit"` (default `"classic"`).
 #'   Abbreviations such as `"C"`, `"B"`, `"F"`, or `"G"` are also accepted.

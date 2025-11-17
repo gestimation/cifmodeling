@@ -75,8 +75,8 @@
 <h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
 <p>This package is a compact, high-level extension of the existing
-<em>survival</em> ecosystem. It provides a unified interface for
-Kaplan–Meier and Aalen–Johansen curves, modern visualization, and direct
+<code>survival</code> ecosystem. It provides a unified interface for
+Kaplan-Meier and Aalen-Johansen curves, modern visualization, and direct
 polytomous regression for survival and competing risks data.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gestimation.github.io/cifmodeling/">cifmodeling</a></span><span class="op">)</span></span>
@@ -84,8 +84,8 @@ polytomous regression for survival and competing risks data.</p>
 <span><span class="fu"><a href="../reference/cifplot.html">cifplot</a></span><span class="op">(</span><span class="fu"><a href="../reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="va">fruitq</span>, data<span class="op">=</span><span class="va">diabetes.complications</span>, </span>
 <span>        outcome.type<span class="op">=</span><span class="st">"competing-risk"</span>, panel.per.event<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <div class="figure" style="text-align: center">
-<img src="fig/overview-example01-1-1.png" alt="Aalen–Johansen cumulative incidence curves from cifplot()" width="70%"><p class="caption">
-Aalen–Johansen cumulative incidence curves from cifplot()
+<img src="fig/overview-example01-1-1.png" alt="Aalen-Johansen cumulative incidence curves from cifplot()" width="70%"><p class="caption">
+Aalen-Johansen cumulative incidence curves from cifplot()
 </p>
 </div>
 <p>In competing risks data, censoring is often coded as 0, the event of
@@ -101,8 +101,8 @@ shown on the left and the CIF of macrovascular complications
 </h3>
 <ul>
 <li>
-<strong>Unified interface</strong> for Kaplan–Meier and
-Aalen–Johansen curves, with survival and competing risks handled by the
+<strong>Unified interface</strong> for Kaplan-Meier and
+Aalen-Johansen curves, with survival and competing risks handled by the
 same syntax.</li>
 <li>
 <strong>Publication-ready graphics</strong> built on
@@ -111,11 +111,11 @@ tables, censoring/competing-risks/intercurrent-events marks, and
 multi-panel layouts.</li>
 <li>
 <strong>Coherent regression models</strong> of CIFs, targeting
-familiar effect measures such as risk ratios (RR), odds ratios (OR), and
-subdistribution hazard ratios (SHR). Modeling the nuisance structure
-using polytomous log odds products ensures that the sum of
-cause-specific CIFs does not exceed one, and enables coherent modelling
-of the multiplicative effects.</li>
+familiar effect measures (risk ratios, odds ratios and subdistribution
+hazard ratios). Modeling the nuisance structure using polytomous log
+odds products ensures that the sum of cause-specific CIFs does not
+exceed one, and enables coherent modelling of the multiplicative
+effects.</li>
 </ul>
 </div>
 </div>
@@ -133,15 +133,15 @@ tightly connected functions:</p>
 <ul>
 <li><p><code><a href="../reference/cifplot.html">cifplot()</a></code> typically generates a survival or CIF
 curve with marks that represent censoring, competing risks and
-intercurrent events. Multiple standard error (SE) estimators and
-confidence interval (CI) methods are supported. The visualization is
-built on top of <code>ggsurvfit</code> and
-<code>ggplot2</code>.</p></li>
+intercurrent events. <strong>Multiple standard error (SE) estimators and
+confidence interval (CI) methods valid for unweighted and weighted data
+are supported.</strong> The visualization is built on top of
+<code>ggsurvfit</code> and <code>ggplot2</code>.</p></li>
 <li><p><code><a href="../reference/cifpanel.html">cifpanel()</a></code> creates a multi-panel figure for
-survival/CIF curves, arranged either in a grid layout or as an inset
-overlay.</p></li>
-<li><p><code><a href="../reference/polyreg.html">polyreg()</a></code> fits coherent regression models of CIFs
-using polytomous log odds products.</p></li>
+survival/CIF curves, arranged either <strong>in a grid layout or as an
+inset overlay</strong>.</p></li>
+<li><p><code><a href="../reference/polyreg.html">polyreg()</a></code> fits <strong>coherent regression
+models</strong> of CIFs using polytomous log odds products.</p></li>
 </ul>
 <p>These functions adopt a formula + data syntax, return tidy,
 publication-ready outputs, and integrate seamlessly with
@@ -153,43 +153,44 @@ and reporting.</p>
 </h2>
 <p>Several excellent R packages exist for survival and competing risks
 analysis. The <strong>survival</strong> package provides the canonical
-API for survival data. In combination with <strong>ggsurvfit</strong>,
-<code><a href="https://rdrr.io/pkg/survival/man/survfit.html" class="external-link">survival::survfit()</a></code> can produce publication-ready survival
-plots. For CIF plots, however, integration in the general ecosystem is
-less streamlined. <code>cifmodeling</code> fills this gap by offering
+API for survival data. In combination with the
+<strong>ggsurvfit</strong> package, <code><a href="https://rdrr.io/pkg/survival/man/survfit.html" class="external-link">survival::survfit()</a></code> can
+produce publication-ready survival plots. For CIF plots, however,
+integration in the general ecosystem is less streamlined.
+<code>cifmodeling</code> fills this gap by offering
 <code><a href="../reference/cifplot.html">cifplot()</a></code> for survival/CIF plots and multi-panel figures
 via a single, unified interface.</p>
 <p>Beyond providing a unified interface, <code><a href="../reference/cifcurve.html">cifcurve()</a></code> also
-extends <code><a href="https://rdrr.io/pkg/survival/man/survfit.html" class="external-link">survival::survfit()</a></code> in a few targeted ways. For
-unweighted survival data, it reproduces the standard Kaplan–Meier
-estimator with Greenwood or Tsiatis SEs and a unified set of CI
-transformations. For competing risks data, it computes Aalen–Johansen
-CIFs with both Aalen-type and delta-method SEs. For weighted survival or
-competing risks data (e.g. inverse probability weighting), it implements
-influence-function based SEs (Deng and Wang 2025) as well as modified
-Greenwood- and Tsiatis-type SEs (Xie and Liu 2005), which are valid
-under general positive weights.</p>
-<p>If you need very fine-grained plot customisation, you can compute the
-estimator and keep a <code>survfit</code>-compatible object with
-<code><a href="../reference/cifcurve.html">cifcurve()</a></code> (or supply your own <code>survfit</code> object)
-and then style it using
-<strong>ggsurvfit</strong>/<strong>ggplot2</strong> layers. In other
+extends <code>survfit()</code> in a few targeted ways. For unweighted
+survival data, it reproduces the standard Kaplan-Meier estimator with
+<strong>Greenwood and Tsiatis SEs</strong> and a unified set of CI
+transformations. For competing risks data, it computes Aalen-Johansen
+CIFs with both <strong>Aalen-type and delta-method SEs</strong>. For
+weighted survival or competing risks data (e.g. inverse probability
+weighting), it implements <strong>influence-function based SEs</strong>
+(Deng and Wang 2025) as well as <strong>modified Greenwood- and
+Tsiatis-type SEs</strong> (Xie and Liu 2005), which are valid under
+general positive weights.</p>
+<p>If you need very fine-grained plot customization, you can compute the
+estimator and keep a survfit-compatible object with
+<code><a href="../reference/cifcurve.html">cifcurve()</a></code> (or supply your own survfit object) and then
+style it using <code>ggsurvfit/ggplot2</code> layers. In other
 words:</p>
 <ul>
 <li>use <code><a href="../reference/cifcurve.html">cifcurve()</a></code> for estimation,</li>
 <li>use <code><a href="../reference/cifplot.html">cifplot()</a></code> / <code><a href="../reference/cifpanel.html">cifpanel()</a></code> for quick,
 high-quality figures, and</li>
-<li>fall back to the ggplot ecosystem when you want full artistic
-control.</li>
+<li>fall back to the <code>ggplot</code> ecosystem when you want full
+artistic control.</li>
 </ul>
 <p>The <strong>mets</strong> package is a more specialised toolkit that
 provides advanced methods for competing risks analysis.
 <code><a href="../reference/polyreg.html">cifmodeling::polyreg()</a></code> focuses on coherent modelling of all
-CIFs simultaneously to estimate RR/OR/SHR at user-specified times. This
-coherence can come with longer runtimes for large problems. If you
-prefer fitting separate regression models for each competing event or
-specifically need Fine–Gray models (Fine and Gray 1999) and direct
-binomial model (Scheike, Zhang and Gerds 2008),
+CIFs simultaneously to estimate the exposure effects in terms of
+RR/OR/SHR. This coherence can come with longer runtimes for large
+problems. If you prefer fitting separate regression models for each
+competing event or specifically need Fine-Gray models (Fine and Gray
+1999) and direct binomial model (Scheike, Zhang and Gerds 2008),
 <code><a href="http://kkholst.github.io/mets/reference/cifreg.html" class="external-link">mets::cifreg()</a></code> and <code><a href="http://kkholst.github.io/mets/reference/binreg.html" class="external-link">mets::binreg()</a></code> are
 excellent choices.</p>
 </div>

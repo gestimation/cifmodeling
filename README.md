@@ -5,13 +5,13 @@
 
 <!-- badges: end -->
 
-# Visualization and Modeling of Survival and Competing Risks in R — cifmodeling
+# Visualization and Modeling of Survival and Competing Risks Data — cifmodeling
 
 ## Quick start
 
 This package is a compact, high-level extension of the existing
-*survival* ecosystem. It provides a unified interface for Kaplan–Meier
-and Aalen–Johansen curves, modern visualization, and direct polytomous
+`survival` ecosystem. It provides a unified interface for Kaplan-Meier
+and Aalen-Johansen curves, modern visualization, and direct polytomous
 regression for survival and competing risks data.
 
 ``` r
@@ -23,10 +23,10 @@ cifplot(Event(t,epsilon)~fruitq, data=diabetes.complications,
 
 <div class="figure">
 
-<img src="man/figures/README-example01-1-1.png" alt="Aalen–Johansen cumulative incidence curves from cifplot()" width="70%" />
+<img src="man/figures/README-example01-1-1.png" alt="Aalen-Johansen cumulative incidence curves from cifplot()" width="70%" />
 <p class="caption">
 
-Aalen–Johansen cumulative incidence curves from cifplot()
+Aalen-Johansen cumulative incidence curves from cifplot()
 </p>
 
 </div>
@@ -41,7 +41,7 @@ complications (`epsilon = 2`) on the right.
 
 ### Why cifmodeling?
 
-- **Unified interface** for Kaplan–Meier and Aalen–Johansen curves, with
+- **Unified interface** for Kaplan-Meier and Aalen-Johansen curves, with
   survival and competing risks handled by the same syntax.
 - **Publication-ready graphics** built on `ggsurvfit` and `ggplot2`,
   including risk/estimate tables,
@@ -65,15 +65,15 @@ data. The package is centered around three tightly connected functions:
 
 - `cifplot()` typically generates a survival or CIF curve with marks
   that represent censoring, competing risks and intercurrent events.
-  Multiple standard error (SE) estimators and confidence interval (CI)
-  methods are supported. The visualization is built on top of
-  `ggsurvfit` and `ggplot2`.
+  **Multiple standard error (SE) estimators and confidence interval (CI)
+  methods valid for unweighted and weighted data are supported.** The
+  visualization is built on top of `ggsurvfit` and `ggplot2`.
 
 - `cifpanel()` creates a multi-panel figure for survival/CIF curves,
-  arranged either in a grid layout or as an inset overlay.
+  arranged either **in a grid layout or as an inset overlay**.
 
-- `polyreg()` fits coherent regression models of CIFs using polytomous
-  log odds products.
+- `polyreg()` fits **coherent regression models** of CIFs using
+  polytomous log odds products.
 
 These functions adopt a formula + data syntax, return tidy,
 publication-ready outputs, and integrate seamlessly with `ggsurvfit` and
@@ -83,40 +83,43 @@ publication-ready outputs, and integrate seamlessly with `ggsurvfit` and
 
 Several excellent R packages exist for survival and competing risks
 analysis. The **survival** package provides the canonical API for
-survival data. In combination with **ggsurvfit**, `survival::survfit()`
-can produce publication-ready survival plots. For CIF plots, however,
-integration in the general ecosystem is less streamlined. `cifmodeling`
-fills this gap by offering `cifplot()` for survival/CIF plots and
-multi-panel figures via a single, unified interface.
+survival data. In combination with the **ggsurvfit** package,
+`survival::survfit()` can produce publication-ready survival plots. For
+CIF plots, however, integration in the general ecosystem is less
+streamlined. `cifmodeling` fills this gap by offering `cifplot()` for
+survival/CIF plots and multi-panel figures via a single, unified
+interface.
 
 Beyond providing a unified interface, `cifcurve()` also extends
-`survival::survfit()` in a few targeted ways. For unweighted survival
-data, it reproduces the standard Kaplan–Meier estimator with Greenwood
-or Tsiatis SEs and a unified set of CI transformations. For competing
-risks data, it computes Aalen–Johansen CIFs with both Aalen-type and
-delta-method SEs. For weighted survival or competing risks data
-(e.g. inverse probability weighting), it implements influence-function
-based SEs (Deng and Wang 2025) as well as modified Greenwood- and
-Tsiatis-type SEs (Xie and Liu 2005), which are valid under general
+`survfit()` in a few targeted ways. For unweighted survival data, it
+reproduces the standard Kaplan-Meier estimator with **Greenwood and
+Tsiatis SEs** and a unified set of CI transformations. For competing
+risks data, it computes Aalen-Johansen CIFs with both **Aalen-type and
+delta-method SEs**. For weighted survival or competing risks data
+(e.g. inverse probability weighting), it implements **influence-function
+based SEs** (Deng and Wang 2025) as well as **modified Greenwood- and
+Tsiatis-type SEs** (Xie and Liu 2005), which are valid under general
 positive weights.
 
-If you need very fine-grained plot customisation, you can compute the
-estimator and keep a `survfit`-compatible object with `cifcurve()` (or
-supply your own `survfit` object) and then style it using
-**ggsurvfit**/**ggplot2** layers. In other words:
+If you need very fine-grained plot customization, you can compute the
+estimator and keep a survfit-compatible object with `cifcurve()` (or
+supply your own survfit object) and then style it using
+`ggsurvfit/ggplot2` layers. In other words:
 
 - use `cifcurve()` for estimation,
 - use `cifplot()` / `cifpanel()` for quick, high-quality figures, and
-- fall back to the ggplot ecosystem when you want full artistic control.
+- fall back to the `ggplot` ecosystem when you want full artistic
+  control.
 
 The **mets** package is a more specialised toolkit that provides
 advanced methods for competing risks analysis. `cifmodeling::polyreg()`
-focuses on coherent modelling of all CIFs simultaneously to estimate
-RR/OR/SHR at user-specified times. This coherence can come with longer
-runtimes for large problems. If you prefer fitting separate regression
-models for each competing event or specifically need Fine–Gray models
-(Fine and Gray 1999) and direct binomial model (Scheike, Zhang and Gerds
-2008), `mets::cifreg()` and `mets::binreg()` are excellent choices.
+focuses on coherent modelling of all CIFs simultaneously to estimate the
+exposure effects in terms of RR/OR/SHR. This coherence can come with
+longer runtimes for large problems. If you prefer fitting separate
+regression models for each competing event or specifically need
+Fine-Gray models (Fine and Gray 1999) and direct binomial model
+(Scheike, Zhang and Gerds 2008), `mets::cifreg()` and `mets::binreg()`
+are excellent choices.
 
 ## Installation
 
@@ -193,7 +196,7 @@ frequency of censoring, allowing a clearer understanding of
 loss-to-censoring patterns over follow-up. Here the workflow differs
 slightly from the previous code. First, we compute a survfit-compatible
 object `output1` using `cifcurve()` with `outcome.type="competing-risk"`
-by calculating the Aalen–Johansen estimator stratified by `fruitq1`.
+by calculating the Aalen-Johansen estimator stratified by `fruitq1`.
 Then, `cifplot()` is used to generate the figure. The `label.y`,
 `label.x` and `limit.x` arguments are also used to customize the axis
 labels and limits.
@@ -230,7 +233,7 @@ if supplied by the user.
 
 ``` r
 output2 <- extract_time_to_event(Event(t,epsilon)~fruitq1, 
-                                 data=diabetes.complications, which_event="event2")
+                                 data=diabetes.complications, which.event="event2")
 cifplot(output1, add.conf=FALSE, add.risktable=FALSE, 
         add.censor.mark=FALSE, add.competing.risk.mark=TRUE, competing.risk.time=output2, 
         label.y="CIF of diabetic retinopathy", label.x="Years from registration",

@@ -6,7 +6,8 @@
 \code{\link[=cifcurve]{cifcurve()}}.}
 \arguments{
 \item{type.y}{Character string specifying the y-scale: \code{"surv"} for survival probabilities
-or \code{"risk"} for cumulative incidence (1 - survival in simple survival settings).}
+or \code{"risk"} for cumulative incidence (1 - survival in simple survival settings).
+If \verb{NULL``, a default is chosen from }outcome.type`.}
 
 \item{label.x}{Character x-axis label (default \code{"Time"}).}
 

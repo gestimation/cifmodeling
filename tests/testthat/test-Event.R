@@ -181,7 +181,7 @@ test_that("reg_check_input() handles NA as expected", {
     code.event1 = 1, code.event2 = 2, code.censoring = 0,
     code.exposure.ref = 0,
     outcome.type = "survival",
-    conf.level = 0.95,
+    conf.int = 0.95,
     report.sandwich.conf = TRUE,
     report.boot.conf = NULL,
     nleqslv.method = "Broyden",
