@@ -1,35 +1,35 @@
 #' @title Calculate the Kaplan–Meier estimator and the Aalen–Johansen estimator
 #' @description
-#' Core estimation routine that computes a \code{survfit}-compatible object
-#' from a formula + data interface (\code{Event()} or \code{survival::Surv()} on
+#' Core estimation routine that computes a survfit-compatible object
+#' from a formula + data interface (`Event()` or `survival::Surv()` on
 #' the LHS, and a stratification variable on the RHS if necessary).
 #' Use this when you want **numbers only** (KM / CIF + SE + CI) and
-#' you will plot it yourself (for example with \code{ggsurvfit} or \code{\link{cifplot}}).
+#' you will plot it yourself (for example with `ggsurvfit` or [cifplot()]).
 #'
 #' @inheritParams cif-stat-arguments
 #'
 #' @param formula A model formula specifying the time-to-event outcome on the LHS
-#'   (typically \code{Event(time, status)} or \code{survival::Surv(time, status)})
+#'   (typically `Event(time, status)` or `survival::Surv(time, status)`)
 #'   and, optionally, a stratification variable on the RHS.
-#'   Unlike \code{\link{cifplot}}, this function does not accept a fitted
-#'   \code{survfit} object.
-#' @param report.influence.function Logical. When \code{TRUE} and \code{engine = "calculateAJ_Rcpp"},
-#' the influence function is also computed and returned (default \code{FALSE}).
-#' @param report.survfit.std.err Logical. If \code{TRUE}, report SE on the log-survival
+#'   Unlike [cifplot()], this function does not accept a fitted
+#'   `survfit` object.
+#' @param report.influence.function Logical. When `TRUE` and `engine = "calculateAJ_Rcpp"`,
+#' the influence function is also computed and returned (default `FALSE`).
+#' @param report.survfit.std.err Logical. If `TRUE`, report SE on the log-survival
 #' scale (survfit's convention). Otherwise SE is on the probability scale.
-#' @param engine Character. One of \code{"auto"}, \code{"calculateKM"}, or \code{"calculateAJ_Rcpp"} (default \code{"calculateAJ_Rcpp"}).
-#' @param prob.bound Numeric lower bound used to internally truncate probabilities away from 0 and 1 (default \code{1e-7}).
+#' @param engine Character. One of `"auto"`, `"calculateKM"`, or `"calculateAJ_Rcpp"` (default `"calculateAJ_Rcpp"`).
+#' @param prob.bound Numeric lower bound used to internally truncate probabilities away from 0 and 1 (default `1e-7`).
 #'
 #' @details
 #'
 #' ### Typical use cases
-#' - When \code{outcome.type = "survival"}, this is a thin wrapper around
+#' - When `outcome.type = "survival"`, this is a thin wrapper around
 #' the KM estimator with the chosen variance / CI transformation.
-#' - When \code{outcome.type = "competing-risk"}, this computes the AJ
-#'   estimator of CIF for \code{code.event1}. The returned \code{$surv} is
-#'   \code{1 - CIF}, i.e. in the format that \pkg{ggsurvfit} expects.
-#' - Use \code{\link{cifplot}} if you want to go straight to a figure; use
-#'   \code{cifcurve()} if you only want the numbers.
+#' - When `outcome.type = "competing-risk"`, this computes the AJ
+#'   estimator of CIF for `code.event1`. The returned `$surv` is
+#'   `1 - CIF`, i.e. in the format that \pkg{ggsurvfit} expects.
+#' - Use [cifplot()] if you want to go straight to a figure; use
+#'   [cifcurve()] if you only want the numbers.
 #'
 #' ### Standard error and confidence intervals
 #'
@@ -39,16 +39,16 @@
 #' | `conf.type` | Transformation for CIs: `"plain"`, `"log"`, `"log-log"`, `"arcsin"`, `"logit"`, or `"none"`. | `"arcsin"` |
 #' | `conf.int` | Two-sided CI level. | `0.95` |
 #'
-#' @returns A \code{survfit} object. For \code{outcome.type="survival"}, \code{$surv} is the survival function.
-#' For \code{outcome.type="competing-risk"}, \code{$surv} equals \code{1 - CIF} for \code{code.event1}.
-#' SE and CIs are provided per  \code{error}, \code{conf.type} and \code{conf.int}.
-#' This enables an independent use of standard methods for \code{survfit} such as:
+#' @return A `survfit` object. For `outcome.type="survival"`, `$surv` is the survival function.
+#' For `outcome.type="competing-risk"`, `$surv` equals `1 - CIF` for `code.event1`.
+#' SE and CIs are provided per  `error`, `conf.type` and `conf.int`.
+#' This enables an independent use of standard methods for `survfit` such as:
 #' -   `summary()` — time-by-time estimates with SEs and CIs
 #' -   `plot()` — base R stepwise survival/CIF curves
 #' -   `mean()` — restricted mean survival estimates with CIs
 #' -   `quantile()` — quantile estimates with CIs
 #'
-#' Note that some methods (e.g., \code{residuals.survfit}) may not be supported.
+#' Note that some methods (e.g., `residuals.survfit`) may not be supported.
 #'
 #' @examples
 #' data(diabetes.complications)
