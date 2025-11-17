@@ -1,63 +1,70 @@
-#' @title Generate a survival or CIF curve with marks that represent
+#' @title Generate a survival/CIF curve with marks that represent
 #' censoring, competing risks and intermediate events
 #'
 #' @description
-#' This function generates a survival or CIF curve from a unified formula +
-#' data interface (\code{Event()} or \code{Surv()} on the LHS, and a stratification
-#' variable on the RHS if necessary). You may also pass a survfit-compatible object directly.
-#' Options for risk and estimate+CI tables, censoring/competing-risk/intercurrent-event marks,
-#' and simple panel display internally using \code{cifpanel()} are available.
-#' This function returns a list including \code{plot}, a regular \code{ggplot} object
-#' (compatible with \code{+} and \code{%+%}).
+#' This function generates a survival or CIF curve from a unified formula–data interface
+#' or from an existing survfit object. When a formula is supplied, the LHS is typically
+#' `Event()` or `survivai::Surv()`, and the RHS specifies an optional
+#' stratification variable. In addition to the curves themselves,
+#' [cifplot()] can add numbers-at-risk tables, tables of point estimates and
+#' CIs, censoring marks, competing-risk marks, and
+#' intercurrent-event marks.
+#'
+#' For more complex multi-panel displays, [cifplot()] can internally call
+#' [cifpanel()] via several “panel modes” (per event, per variable, or
+#' censoring-focused). The function returns an object whose `plot`
+#' component is a regular ggplot object that can be further modified (compatible with \code{+} and \code{%+%}).
 #'
 #' @inheritParams cif-stat-arguments
 #' @inheritParams cif-visual-arguments
 #'
-#' @param formula_or_fit A model formula or a \code{survfit} object. **Note:** When a formula is supplied,
-#'   the LHS must be \code{Event(time, status)} or \code{Surv(time, status)}.
-#'   The RHS specifies the stratification variable.
-#' @param code.events Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
-#'   When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
-#'   (primarily used when \code{cifpanel()} is called or when \code{panel.per.event = TRUE}).
-#' @param add.risktable Logical; if \code{TRUE}, adds a numbers-at-risk table under the plot.
-#'   Default \code{TRUE}. **Note:** when a panel mode is active, tables are suppressed.
-#' @param add.estimate.table Logical; if \code{TRUE}, adds a table of estimates and CIs.
-#'   Default \code{FALSE}. **Note:** when a panel mode is active, tables are suppressed.
+#' @param formula_or_fit Either a model formula or a survfit object. When a formula is
+#'   supplied, the LHS must be `Event(time, status)` or `Surv(time, status)`.
+#'   The RHS specifies an optional stratification variable.
+#' @param code.events Optional numeric length-3 vector `c(event1, event2, censoring)`.
+#'   When supplied, it overrides `code.event1`, `code.event2`, and `code.censoring`
+#'   (primarily used when [cifpanel()] is called or when `panel.per.event = TRUE`).
+#' @param add.risktable Logical; if `TRUE`, adds a numbers-at-risk table under the plot.
+#'   Default `TRUE`. **Note:** when a panel mode is active, tables are suppressed.
+#' @param add.estimate.table Logical; if `TRUE`, adds a table of estimates and CIs.
+#'   Default `FALSE`. **Note:** when a panel mode is active, tables are suppressed.
 #' @param symbol.risk.table Character specifying the symbol used in the risk table to denote
-#'   strata: \code{"square"}, \code{"circle"}, or \code{"triangle"} (default \code{"square"}).
-#' @param font.size.risk.table Numeric font size for texts in risk / estimate tables (default \code{3}).
+#'   strata: `"square"`, `"circle"`, or `"triangle"` (default `"square"`).
+#' @param font.size.risk.table Numeric font size for texts in risk / estimate tables (default `3`).
 #' @param label.strata Character vector or named character vector specifying labels for strata.
 #'   Names (if present) must match the (re-ordered) underlying strata levels.
 #'   **Note:** when any of the panel modes is active
-#'   (\code{panel.per.variable = TRUE}, \code{panel.per.event = TRUE}, \code{panel.censoring = TRUE},
-#'   or \code{panel.mode = "auto"} and it actually dispatches to a panel),
+#'   (`panel.per.variable = TRUE`, `panel.per.event = TRUE`, `panel.censoring = TRUE`,
+#'   or `panel.mode = "auto"` and it actually dispatches to a panel),
 #'   strata labels are suppressed to avoid duplicated legends across sub-plots.
 #' @param level.strata Optional character vector giving the full set of expected strata levels.
-#'   When provided, both \code{order.strata} and \code{label.strata} are validated against it
+#'   When provided, both `order.strata` and `label.strata` are validated against it
 #'   before application.
 #' @param order.strata Optional character vector specifying the display order of strata
 #'   in the legend / risk table. Specify the levels of strata. Levels not listed are dropped.
 #' @param legend.position Character specifying the legend position:
-#'   \code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, or \code{"none"} (default \code{"top"}).
-#' @param panel.per.event Logical. **Explicit panel mode.** If \code{TRUE} and
-#'   \code{outcome.type == "competing-risk"}, \code{cifplot()} internally calls \code{cifpanel()}
+#'   `"top"`, `"right"`, `"bottom"`, `"left"`, or `"none"` (default `"top"`).
+#' @param panel.per.event Logical. **Explicit panel mode.** If `TRUE` and
+#'   `outcome.type == "competing-risk"`, [cifplot()] internally calls [cifpanel()]
 #'   to display two event-specific CIFs side-by-side (event 1 and event 2) using
-#'   reversed \code{code.events}. Ignored for non-competing-risk outcomes.
-#' @param panel.censoring Logical. **Explicit panel mode.** If \code{TRUE} and
-#'   \code{outcome.type == "survival"}, \code{cifplot()} internally calls \code{cifpanel()}
-#'   to display KM curves for \code{(event, censor)} and \code{(censor, event)} so that
+#'   reversed `code.events`. Ignored for non-competing-risk outcomes.
+#' @param panel.censoring Logical. **Explicit panel mode.** If `TRUE` and
+#'   `outcome.type == "survival"`, [cifplot()] internally calls [cifpanel()]
+#'   to display KM curves for `(event, censor)` and `(censor, event)` so that
 #'   censoring patterns can be inspected.
-#' @param panel.per.variable Logical. **Explicit panel mode.** If \code{TRUE} and the RHS
-#'   of the formula has multiple covariates (e.g. \code{~ a + b + c}), the function produces
+#' @param panel.per.variable Logical. **Explicit panel mode.** If `TRUE` and the RHS
+#'   of the formula has multiple covariates (e.g. `~ a + b + c`), the function produces
 #'   a panel where each variable in the RHS is used once as the stratification factor.
-#' @param panel.mode Character specifying **Automatic panel mode.** If \code{"auto"} and none of
-#'   \code{panel.per.variable}, \code{panel.per.event}, \code{panel.censoring} has been set to \code{TRUE},
+#' @param panel.mode Character specifying **Automatic panel mode.** If `"auto"` and none of
+#'   `panel.per.variable`, `panel.per.event`, `panel.censoring` has been set to `TRUE`,
 #'   the function chooses a suitable panel mode automatically:
-#'   (i) if the formula RHS has 2+ variables, it behaves like \code{panel.per.variable = TRUE};
-#'   (ii) otherwise, if \code{outcome.type == "competing-risk"}, it behaves like
-#'   \code{panel.per.event = TRUE}; (iii) otherwise, if \code{outcome.type == "survival"}, it
-#'   behaves like \code{panel.censoring = TRUE}. If a panel mode is explicitly specified,
-#'   \code{panel.mode} is ignored.
+#'   (i) if the formula RHS has 2+ variables, it behaves like `panel.per.variable = TRUE`;
+#'   (ii) otherwise, if `outcome.type == "competing-risk"`, it behaves like
+#'   `panel.per.event = TRUE`; (iii) otherwise, if `outcome.type == "survival"`, it
+#'   behaves like `panel.censoring = TRUE`. If a panel mode is explicitly specified,
+#'   `panel.mode` is ignored.
+#' @param survfit.info,axis.info,visual.info,panel.info,style.info,print.info,ggsave.info
+#'   Internal lists used for programmatic control. Not intended for direct user input.
 #'
 #' @details
 #'
@@ -69,8 +76,8 @@
 #'
 #' ### Key arguments shared with cifcurve()
 #' -   **Outcome type and estimator**
-#'       -   `outcome.type = "survival"` → Kaplan–Meier estimator
-#'       -   `outcome.type = "competing-risk"` → Aalen–Johansen estimator
+#'       -   `outcome.type = "survival"`: Kaplan–Meier estimator
+#'       -   `outcome.type = "competing-risk"`: Aalen–Johansen estimator
 #'
 #' -   **Confidence intervals**
 #'       -   `conf.int` sets the two-sided level (default 0.95)
@@ -80,14 +87,14 @@
 #' ### Key arguments for cifplot()
 #' -   **Data visualization**
 #'       -   `add.conf` adds CIs on the ggplot2-based plot
-#'       -   `add.competing.risk.mark` and `add.intercurrent.event.mark` add symbols to describe competing risks or intercurrent events in addition to conventional censoring marks with `add.censor.mark`
+#'       -   `add.competing.risk.mark` and `add.intercurrent.event.mark` adds symbols to describe competing risks or intercurrent events in addition to conventional censoring marks with `add.censor.mark`
 #'       -   `add.risktable` adds numbers at risk
 #'       -   `add.estimate.table` adds time-by-time estimates and CIs
-#'       -   `add.quantile` add a reference line at a chosen quantile level
+#'       -   `add.quantile` adds a reference line at a chosen quantile level
 #'
 #' -   **Plot customization**
 #'       -   `type.y` chooses y-axis (`"surv"` for survival and `"risk"` for 1-survival/CIF)
-#'       -   `limits.x`, `limits.y`, `breaks.x`, `breaks.y` numeric vectors for axis control
+#'       -   `limits.x`, `limits.y`, `breaks.x`, `breaks.y`: numeric vectors for axis control
 #'       -   `style` specifies the appearance of plot (`"classic"`, `"bold"`, `"framed"`, `"grid"`, `"gray"` or `"ggsurvfit"`)
 #'       -   `palette` specifies color of each curve (e.g. `palette=c("blue1", "cyan3", "navy", "deepskyblue3"))`)
 #'
@@ -180,15 +187,20 @@
 #'   For ADaM-style data, use `code.event1 = 0`, `code.censoring = 1`.
 #' - Per-stratum time lists should have names identical to plotted strata labels.
 #'
-#' @return Returns a \code{"cifplot"} object (list) with elements
-#'   \code{plot}, \code{patchwork} (always \code{NULL}), \code{survfit.info},
-#'   \code{axis.info}, \code{visual.info}, \code{panel.info}, \code{style.info},
-#'   \code{inset.info}, \code{print.info}, \code{ggsave.info}, \code{version},
-#'   and \code{call}.
+#' @return
+#' A `"cifplot"` object (a list) with at least the following elements:
 #'
-#' @keywords internal
-#' @param survfit.info,axis.info,visual.info,panel.info,style.info,print.info,ggsave.info
-#'   Internal lists used for programmatic control. Not intended for direct user input.
+#' - `plot`: a ggplot object containing the main plot
+#' - `patchwork`: reserved for compatibility with panel displays
+#'   (typically `NULL` for single-panel plots)
+#' - `survfit.info`, `axis.info`, `visual.info`, `panel.info`,
+#'   `style.info`, `inset.info`, `print.info`, `ggsave.info`:
+#'   internal lists storing the fitted curves and display settings
+#' - `version`: a character string giving the cifmodeling version used
+#' - `call`: the original function call
+#'
+#' The object is returned invisibly. When a panel mode is active and
+#' `print.panel = TRUE`, the panel is also printed in interactive sessions.
 #'
 #' @examples
 #' data(diabetes.complications)
@@ -207,9 +219,9 @@
 #' @importFrom patchwork wrap_plots
 #'
 #' @name cifplot
+#' @keywords internal
 #' @section Lifecycle:
 #' \lifecycle{stable}
-#'
 #' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 cifplot <- function(

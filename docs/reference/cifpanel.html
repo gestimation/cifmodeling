@@ -159,15 +159,15 @@ suppressed to avoid duplicated display. Typical use cases are:</p><ul><li><p>Com
 
 
 <dl><dt id="arg-plots">plots<a class="anchor" aria-label="anchor" href="#arg-plots"></a></dt>
-<dd><p>Optional list of already-built <code>ggplot</code> objects to be arranged.
-If supplied, these are used as-is (no fitting is done).</p></dd>
+<dd><p>Optional list of existing ggplot objects to be arranged into a panel.
+When plots is supplied, no new models are fitted; the plots are used as-is.</p></dd>
 
 
 <dt id="arg-formula">formula<a class="anchor" aria-label="anchor" href="#arg-formula"></a></dt>
 <dd><p>A model formula specifying the time-to-event outcome on the
 left-hand side (typically <code>Event(time, status)</code> or <code>Surv(time, status)</code>)
 and, optionally, a stratification variable on the right-hand side.
-Unlike <code><a href="cifplot.html">cifplot</a></code>, this function does not accept a fitted
+Unlike <code><a href="cifplot.html">cifplot()</a></code>, this function does not accept a fitted
 <code>survfit</code> object.</p></dd>
 
 
@@ -334,7 +334,7 @@ in a regular grid using <code><a href="https://patchwork.data-imaginist.com/refe
 If <code>TRUE</code>, the function switches to “inset mode”: the <strong>first</strong> plot becomes
 the main plot and the <strong>second</strong> plot (only the second) is drawn on top of it
 as an inset. Additional plots beyond the second are ignored in inset mode.
-Use grid mode to display more than two panels (inset.panel = FALSE).</p></dd>
+Use grid mode to display more than two panels (<code>inset.panel = FALSE</code>).</p></dd>
 
 
 <dt id="arg-title-panel-subtitle-panel-caption-panel">title.panel, subtitle.panel, caption.panel<a class="anchor" aria-label="anchor" href="#arg-title-panel-subtitle-panel-caption-panel"></a></dt>
@@ -400,12 +400,11 @@ over the right 60% of the reference area.</p></dd>
 
 <dt id="arg-inset-align-to">inset.align.to<a class="anchor" aria-label="anchor" href="#arg-inset-align-to"></a></dt>
 <dd><p>Character string specifying the coordinate system for the
-inset box. One of:</p><ul><li><p><code>"panel"</code> (default): the box is placed relative to the <strong>panel area</strong>
-(i.e. the plotting region, excluding outer titles/margins);</p></li>
-<li><p><code>"plot"</code>: the box is placed relative to the <strong>entire plot</strong> area,
-including axes and titles of the main plot;</p></li>
-<li><p><code>"full"</code>: the box is placed relative to the <strong>full patchwork canvas</strong>.</p></li>
-</ul><p>This argument is passed to <code><a href="https://patchwork.data-imaginist.com/reference/inset_element.html" class="external-link">patchwork::inset_element()</a></code>.</p></dd>
+inset box. One of <code>"panel"</code> (default; the box is placed relative to the panel
+area, i.e. the plotting region excluding outer titles/margins),
+<code>"plot"</code> (relative to the entire plot area, including axes and titles of the
+main plot), or <code>"full"</code> (relative to the full patchwork canvas).
+This argument is passed to <code><a href="https://patchwork.data-imaginist.com/reference/inset_element.html" class="external-link">patchwork::inset_element()</a></code>.</p></dd>
 
 
 <dt id="arg-inset-legend-position">inset.legend.position<a class="anchor" aria-label="anchor" href="#arg-inset-legend-position"></a></dt>
@@ -450,10 +449,14 @@ calls that build each panel. Use this to pass low-level options such as
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Returns a <code>"cifpanel"</code> object (list) with elements <code>plot</code>
-(always <code>NULL</code>), <code>list.plot</code> (list of <code>ggplot</code> objects),
-<code>patchwork</code>, and the same metadata fields as <code><a href="cifplot.html">cifplot()</a></code>. The object is
-returned invisibly; printing occurs only when <code>print.panel = TRUE</code>.</p>
+    <p>A <code>"cifpanel"</code> object (returned invisibly), which is a list
+with at least the following elements:</p><ul><li><p><code>list.plot</code>: a list of ggplot objects, one per panel</p></li>
+<li><p><code>patchwork</code>: a patchwork object representing the composed panel</p></li>
+<li><p><code>plot</code>: reserved for backwards compatibility (always <code>NULL</code>)</p></li>
+<li><p>metadata fields mirroring those in <code><a href="cifplot.html">cifplot()</a></code> (such as information
+on the fitted curves and display settings)</p></li>
+</ul><p>When <code>print.panel = TRUE</code>, the patchwork object is printed in interactive
+sessions in addition to being returned.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -512,13 +515,13 @@ reference frame via <code>inset.align.to</code> (<code>"panel"</code>, <code>"pl
 
 
 <p>The following arguments allow <strong>per-panel</strong> control by supplying vectors/lists,
-or <strong>shared</strong> control by supplying scalars. They are forwarded to <code><a href="cifplot.html">cifplot()</a></code>.</p><ul><li><p><code>formula</code> or <code>formulas</code> — one formula or a list of formulas; each entry creates a panel.</p></li>
-<li><p><code>data</code>, <code>outcome.type</code>, <code>code.events</code>, <code>type.y</code> — recycled across panels unless a list is supplied for per-panel control.</p></li>
-<li><p><code>rows.columns.panel</code> — selects grid layout by c(rows, cols).</p></li>
-<li><p><code>inset.panel</code> — selects inset layout.</p></li>
-<li><p><code>title.panel</code>, <code>subtitle.panel</code>, <code>caption.panel</code>, <code>title.plot</code> — overall titles and captions.</p></li>
-<li><p><code>tag.panel</code> — panel tag style (e.g., "A", "a", "1").</p></li>
-<li><p><code>label.x</code>, <code>label.y</code>, <code>limits.x</code>, <code>limits.y</code>, <code>breaks.x</code>, <code>breaks.y</code> — shared axis control unless a list is supplied for per-panel control.</p></li>
+or <strong>shared</strong> control by supplying scalars. They are forwarded to <code><a href="cifplot.html">cifplot()</a></code>.</p><ul><li><p><code>formula</code> or <code>formulas</code>: one formula or a list of formulas; each entry creates a panel.</p></li>
+<li><p><code>data</code>, <code>outcome.type</code>, <code>code.events</code>, <code>type.y</code>: recycled across panels unless a list is supplied for per-panel control.</p></li>
+<li><p><code>rows.columns.panel</code>: specification of grid layout by c(rows, cols).</p></li>
+<li><p><code>inset.panel</code>: inset layout.</p></li>
+<li><p><code>title.panel</code>, <code>subtitle.panel</code>, <code>caption.panel</code>, <code>title.plot</code>: overall titles and captions.</p></li>
+<li><p><code>tag.panel</code>: panel tag style (e.g., "A", "a", "1").</p></li>
+<li><p><code>label.x</code>, <code>label.y</code>, <code>limits.x</code>, <code>limits.y</code>, <code>breaks.x</code>, <code>breaks.y</code>: shared axis control unless a list is supplied for per-panel control.</p></li>
 </ul><div class="section">
 <h4 id="scale-amp-labels">Scale &amp; labels<a class="anchor" aria-label="anchor" href="#scale-amp-labels"></a></h4>
 <table class="table table"><tr><td>Argument</td><td>Meaning</td><td>Default</td></tr><tr><td><code>type.y</code></td><td><code>"risk"</code> (CIF y-axis) or <code>NULL</code> (survival).</td><td>inferred</td></tr><tr><td><code>label.x</code>, <code>label.y</code></td><td>Axis labels per panel.</td><td>auto</td></tr><tr><td><code>label.strata</code></td><td>Legend labels per panel.</td><td>from data</td></tr><tr><td><code>limits.x</code>, <code>limits.y</code></td><td>Axis limits <code>c(min, max)</code>.</td><td>auto</td></tr><tr><td><code>breaks.x</code>, <code>breaks.y</code></td><td>Axis breaks (forwarded to <code>breaks.x</code>/<code>breaks.y</code>).</td><td>auto</td></tr></table></div>
