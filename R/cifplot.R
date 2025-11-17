@@ -186,12 +186,6 @@
 #'   For ADaM-style data, use `code.event1 = 0`, `code.censoring = 1`.
 #' - Per-stratum time lists should have names identical to plotted strata labels.
 #'
-#' @return Returns a \code{"cifplot"} object (list) with elements
-#'   \code{plot}, \code{patchwork} (always \code{NULL}), \code{survfit.info},
-#'   \code{axis.info}, \code{visual.info}, \code{panel.info}, \code{style.info},
-#'   \code{inset.info}, \code{print.info}, \code{ggsave.info}, \code{version},
-#'   and \code{call}.
-
 #' @return
 #' A \code{"cifplot"} object (a list) with at least the following elements:
 #'
