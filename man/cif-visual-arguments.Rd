@@ -2,15 +2,16 @@
 % Please edit documentation in R/cif-visual-arguments.R
 \name{cif-visual-arguments}
 \alias{cif-visual-arguments}
-\title{These arguments are shared by \code{cifplot()}, \code{cifpanel()}, and
-\code{cifcurve()}.}
+\title{These arguments are shared by \code{\link[=cifplot]{cifplot()}}, \code{\link[=cifpanel]{cifpanel()}}, and
+\code{\link[=cifcurve]{cifcurve()}}.}
 \arguments{
-\item{type.y}{Optional vector/list per panel: \code{"surv"} or \code{"risk"} (display 1 - survival i.e. CIF).}
+\item{type.y}{Character string specifying the y-scale: \code{"surv"} for survival probabilities
+or \code{"risk"} for cumulative incidence (1 - survival in simple survival settings).}
 
 \item{label.x}{Character x-axis label (default \code{"Time"}).}
 
 \item{label.y}{Character y-axis label (default is chosen automatically from \code{outcome.type}
-and \code{type.y}, e.g. \dQuote{Survival} or \dQuote{Cumulative incidence}).}
+and \code{type.y}, e.g. "Survival" or "Cumulative incidence").}
 
 \item{limits.x}{Numeric length-2 vector specifying x-axis limits. If \code{NULL}, it is
 set from the fitted object (typically \code{c(0, max(time))}).}
@@ -22,10 +23,10 @@ set to \code{c(0, 1)} for probability-type outcomes.}
 
 \item{breaks.y}{Numeric vector of y-axis breaks (default \code{NULL}).}
 
-\item{use.coord.cartesian}{Logical; if \code{TRUE}, uses \code{coord_cartesian()} for zooming
+\item{use.coord.cartesian}{Logical; if \code{TRUE}, uses \code{ggplot2::coord_cartesian()} for zooming
 instead of changing the scale limits (default \code{FALSE}).}
 
-\item{add.conf}{Logical; if \code{TRUE}, adds a confidence-interval ribbon
+\item{add.conf}{Logical; if \code{TRUE}, adds a CI ribbon
 (via \code{ggsurvfit::add_confidence_interval()}). Default \code{TRUE}.}
 
 \item{add.censor.mark}{Logical; if \code{TRUE}, draws censoring marks on each curve
@@ -96,7 +97,7 @@ invisibly for further modification (default \code{FALSE}).}
 \item{dpi.ggsave}{Numeric DPI passed to \code{ggplot2::ggsave()} (default \code{300}).}
 }
 \description{
-These arguments are shared by \code{cifplot()}, \code{cifpanel()}, and
-\code{cifcurve()}.
+These arguments are shared by \code{\link[=cifplot]{cifplot()}}, \code{\link[=cifpanel]{cifpanel()}}, and
+\code{\link[=cifcurve]{cifcurve()}}.
 }
 \keyword{internal}

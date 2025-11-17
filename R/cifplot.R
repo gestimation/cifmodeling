@@ -13,7 +13,7 @@
 #' For more complex multi-panel displays, [cifplot()] can internally call
 #' [cifpanel()] via several “panel modes” (per event, per variable, or
 #' censoring-focused). The function returns an object whose `plot`
-#' component is a regular ggplot object that can be further modified (compatible with \code{+} and \code{%+%}).
+#' component is a regular ggplot object that can be further modified (compatible with `+` and `%+%`).
 #'
 #' @inheritParams cif-stat-arguments
 #' @inheritParams cif-visual-arguments

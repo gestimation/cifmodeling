@@ -54,7 +54,7 @@ articles:
       - arguments
 
 reference:
-  - title: visualization
+  - title: Nomparametric estimation and visualization
     contents:
       - cifcurve
       - cifplot

@@ -101,8 +101,8 @@ panels.}
 
 \item{weights}{Optional name of the weight variable in \code{data}. Weights must be nonnegative.}
 
-\item{subset.condition}{Optional expression (as a character string) defining a
-subset of \code{data} to analyze (default \code{NULL}).}
+\item{subset.condition}{Optional character string giving a logical condition to subset
+\code{data} (default \code{NULL}).}
 
 \item{na.action}{A function specifying the action to take on missing values (default \code{na.omit}).}
 
@@ -111,27 +111,28 @@ One of \code{"survival"} (Kaplan–Meier) or \code{"competing-risk"} (Aalen–Jo
 If \code{NULL} (default), the function automatically infers the outcome type from the data:
 if the event variable has more than two unique levels, \code{"competing-risk"} is assumed;
 otherwise, \code{"survival"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
-Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detection based on the event coding.}
+Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic detection based on the event coding.}
 
 \item{code.events}{Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
 When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
 (primarily used when \code{\link[=cifpanel]{cifpanel()}} is called or when \code{panel.per.event = TRUE}).}
 
-\item{error}{Character specifying the method for standard error and confidence intervals used internally
-(\code{greenwood} (default), \code{tsiatis} or \code{if} for \code{"survival"},
-and \code{delta} (default),  \code{aalen} or  \code{if} for \code{"competing-risk"}).}
+\item{error}{Character string specifying the method for SEs and CIs used internally.
+For \code{"survival"}, choose one of \code{"greenwood"} (default), \code{"tsiatis"}, or \code{"if"}.
+For \code{"competing-risk"}, choose one of \code{"delta"} (default), \code{"aalen"}, or \code{"if"}.}
 
 \item{conf.type}{Character specifying the method of transformation for confidence intervals
-used internally (default \code{arcsine-square root}).}
+used internally (default \verb{arcsine-square root}).}
 
 \item{conf.int}{Numeric two-sided confidence level (default \code{0.95}).}
 
-\item{type.y}{Optional vector/list per panel: \code{"surv"} or \code{"risk"} (display 1 - survival i.e. CIF).}
+\item{type.y}{Character string specifying the y-scale: \code{"surv"} for survival probabilities
+or \code{"risk"} for cumulative incidence (1 - survival in simple survival settings).}
 
 \item{label.x}{Character x-axis label (default \code{"Time"}).}
 
 \item{label.y}{Character y-axis label (default is chosen automatically from \code{outcome.type}
-and \code{type.y}, e.g. \dQuote{Survival} or \dQuote{Cumulative incidence}).}
+and \code{type.y}, e.g. "Survival" or "Cumulative incidence").}
 
 \item{limits.x}{Numeric length-2 vector specifying x-axis limits. If \code{NULL}, it is
 set from the fitted object (typically \code{c(0, max(time))}).}
@@ -143,7 +144,7 @@ set to \code{c(0, 1)} for probability-type outcomes.}
 
 \item{breaks.y}{Numeric vector of y-axis breaks (default \code{NULL}).}
 
-\item{add.conf}{Logical; if \code{TRUE}, adds a confidence-interval ribbon
+\item{add.conf}{Logical; if \code{TRUE}, adds a CI ribbon
 (via \code{ggsurvfit::add_confidence_interval()}). Default \code{TRUE}.}
 
 \item{add.censor.mark}{Logical; if \code{TRUE}, draws censoring marks on each curve
