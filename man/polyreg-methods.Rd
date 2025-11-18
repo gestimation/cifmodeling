@@ -10,7 +10,7 @@
 \alias{tidy.polyreg}
 \alias{glance.polyreg}
 \alias{augment.polyreg}
-\title{Methods for `polyreg objects}
+\title{Methods for polyreg objects}
 \usage{
 \method{coef}{polyreg}(object, ...)
 
