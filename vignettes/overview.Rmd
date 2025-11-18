@@ -52,9 +52,10 @@ In competing risks data, censoring is often coded as 0, the event of interest as
 
 ### Why cifmodeling?
 
-- **Unified interface** for Kaplan-Meier and Aalen-Johansen curves, with survival and competing risks handled by the same syntax.
+- **Unified interface** for Kaplan–Meier and Aalen–Johansen curves, with survival and competing risks handled by the same syntax.
 - **Publication-ready graphics** built on `ggsurvfit` and `ggplot2`, including risk/estimate tables, censoring/competing-risks/intercurrent-events marks, and multi-panel layouts.
-- **Coherent regression models** of CIFs, targeting familiar effect measures (risk ratios, odds ratios and subdistribution hazard ratios). Modeling the nuisance structure using polytomous log odds products ensures that the sum of cause-specific CIFs does not exceed one, and enables coherent modelling of the multiplicative effects. 
+- **Tidy summaries and reporting**: regression results from `polyreg()` support `generics::tidy()`, `glance()`, and `augment()`, which integrate smoothly with `modelsummary` and other broom-style tools.
+- **Coherent regression models** of CIFs, targeting familiar effect measures (risk ratios, odds ratios, and subdistribution hazard ratios). Modeling the nuisance structure using polytomous log odds products ensures that the sum of cause-specific CIFs does not exceed one.
 
 ## Tools for survival and competing risks analysis
 

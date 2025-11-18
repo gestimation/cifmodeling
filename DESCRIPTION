@@ -30,6 +30,7 @@ Imports:
     ggplot2,
     patchwork,
     scales,
+    generics,
     lifecycle
 VignetteBuilder: knitr
 URL: https://gestimation.github.io/cifmodeling/, https://github.com/gestimation/cifmodeling

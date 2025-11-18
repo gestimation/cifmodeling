@@ -232,11 +232,11 @@ getCoef <- function(
     conf_high <- out_bootstrap$boot.conf_high[index]
     p_value <- out_bootstrap$boot.p_value[index]
   } else {
-    coef <- alpha_beta_estimated[index]
-    coef_se <- "N.A."
-    conf_low <- "N.A."
-    conf_high <- "N.A."
-    p_value <- "N.A."
+    coef     <- alpha_beta_estimated[index]
+    coef_se  <- rep(NA_real_, length(index))
+    conf_low <- rep(NA_real_, length(index))
+    conf_high <- rep(NA_real_, length(index))
+    p_value   <- rep(NA_real_, length(index))
   }
   list(coef = coef, coef_se = coef_se, conf_low = conf_low, conf_high = conf_high, p_value = p_value)
 }

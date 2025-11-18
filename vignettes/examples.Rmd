@@ -99,7 +99,15 @@ vcov(output3)
 summary(output3)
 ```
 
-The `summary()` method prints an event-wise table of point estimates, CIs, and p-values. Internally, this table is stored in a `summary` component of the `"polyreg"` object, which is compatible with the `modelsummary` ecosystem. If you want more elaborate tables, you can optionally pass this object to `modelsummary::msummary()`. In this case, all regression coefficients are included in the summary by setting `report.nuisance.parameter = TRUE`. Model summaries can also be exponentiated to display risk ratios, odds ratios, or subdistribution hazard ratios using the `exponentiate` option.
+The `summary()` method prints an event-wise table of point estimates, CIs, and
+p-values. Internally, a `"polyreg"` object also supports the **generics** API:
+
+- `tidy()`: coefficient-level summaries (one row per term and per event),
+- `glance()`: model-level summaries (follow-up, convergence, number of events),
+- `augment()`: observation-level diagnostics (weights for IPCW, predicted CIFs, and
+  influence-functions).
+
+This means that `polyreg()` fits integrate naturally with the broader `broom/modelsummary` ecosystem. For publication-ready tables, you can pass `polyreg` objects directly to `modelsummary::msummary()`, including exponentiated summaries (risk ratios, odds ratios, subdistribution hazard ratios) via the `exponentiate = TRUE` option. 
 
 ## Example 2. Survival analysis
 

@@ -249,6 +249,7 @@
 #' @importFrom nleqslv nleqslv
 #' @importFrom boot boot boot.ci
 #' @importFrom Rcpp sourceCpp
+#' @importFrom generics tidy glance augment
 #' @importFrom stats IQR as.formula binomial coef glm mad median
 #' @importFrom stats model.extract model.frame model.matrix update na.omit na.pass
 #' @importFrom stats pnorm qnorm rbinom reformulate rexp sd setNames terms time var
@@ -343,7 +344,7 @@ polyreg <- function(
   # 1. Pre-processing (function: checkSpell, checkInput, reg_normalize_covariate, sortByCovariate)
   #######################################################################################################
   computation.time0 <- proc.time()
-  outcome.type  <- util_check_outcome_type(outcome.type, formula=formula, data=data)
+  outcome.type  <- util_check_outcome_type(outcome.type, formula=nuisance.model, data=data)
   ce <- reg_check_effect.measure(effect.measure1, effect.measure2)
   ci <- reg_check_input(data, nuisance.model, exposure, code.event1, code.event2, code.censoring, code.exposure.ref, outcome.type, conf.int, report.sandwich.conf, report.boot.conf, nleqslv.method, normalize.covariate)
   normalize.covariate <- ci$normalize.covariate
@@ -363,7 +364,7 @@ polyreg <- function(
     code.event1          = code.event1,
     code.event2          = code.event2,
     code.censoring       = code.censoring,
-    code.exposure.ref    = code.exposure.ref,
+    code.exposure.ref    = ci$out_readExposureDesign$ref,
     exposure.levels      = ci$out_readExposureDesign$exposure.levels,
     index.vector         = index.vector
   )
@@ -677,3 +678,4 @@ polyreg <- function(
   class(out) <- "polyreg"
   return(out)
 }
+

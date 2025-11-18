@@ -41,17 +41,20 @@ complications (`epsilon = 2`) on the right.
 
 ### Why cifmodeling?
 
-- **Unified interface** for Kaplan-Meier and Aalen-Johansen curves, with
+- **Unified interface** for Kaplan–Meier and Aalen–Johansen curves, with
   survival and competing risks handled by the same syntax.
 - **Publication-ready graphics** built on `ggsurvfit` and `ggplot2`,
   including risk/estimate tables,
   censoring/competing-risks/intercurrent-events marks, and multi-panel
   layouts.
+- **Tidy summaries and reporting**: regression results from `polyreg()`
+  support `generics::tidy()`, `glance()`, and `augment()`, which
+  integrate smoothly with `modelsummary` and other broom-style tools.
 - **Coherent regression models** of CIFs, targeting familiar effect
-  measures (risk ratios, odds ratios and subdistribution hazard ratios).
-  Modeling the nuisance structure using polytomous log odds products
-  ensures that the sum of cause-specific CIFs does not exceed one, and
-  enables coherent modelling of the multiplicative effects.
+  measures (risk ratios, odds ratios, and subdistribution hazard
+  ratios). Modeling the nuisance structure using polytomous log odds
+  products ensures that the sum of cause-specific CIFs does not exceed
+  one.
 
 ## Tools for survival and competing risks analysis
 
@@ -313,7 +316,7 @@ summary(output3)
 #>                       [0.194, 0.324]  [0.012, 0.028]
 #>                       (p=0.000)     (p=0.000)   
 #> 
-#> fruitq1, Q2 to Q4 vs 0 
+#> fruitq1, Q2 to Q4 vs Q1 
 #>                       0.740         0.927       
 #>                       [0.593, 0.924]  [0.583, 1.474]
 #>                       (p=0.008)     (p=0.749)   
@@ -330,11 +333,18 @@ summary(output3)
 ```
 
 The `summary()` method prints an event-wise table of point estimates,
-CIs, and p-values. Internally, this table is stored in a `summary`
-component of the `"polyreg"` object, which is compatible with the
-`modelsummary` ecosystem. If you want more elaborate tables, you can
-optionally pass this object to `modelsummary::msummary()`. In this case,
-all regression coefficients are included in the summary by setting
-`report.nuisance.parameter = TRUE`. Model summaries can also be
-exponentiated to display risk ratios, odds ratios, or subdistribution
-hazard ratios using the `exponentiate` option.
+CIs, and p-values. Internally, a `"polyreg"` object also supports the
+**generics** API:
+
+- `tidy()`: coefficient-level summaries (one row per term and per
+  event),
+- `glance()`: model-level summaries (follow-up, convergence, number of
+  events),
+- `augment()`: observation-level diagnostics (weights for IPCW,
+  predicted CIFs, and influence-functions).
+
+This means that `polyreg()` fits integrate naturally with the broader
+`broom/modelsummary` ecosystem. For publication-ready tables, you can
+pass `polyreg` objects directly to `modelsummary::msummary()`, including
+exponentiated summaries (risk ratios, odds ratios, subdistribution
+hazard ratios) via the `exponentiate = TRUE` option.
