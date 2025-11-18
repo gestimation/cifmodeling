@@ -106,19 +106,19 @@ includes estimates of the nuisance model parameters (default \code{FALSE}).}
 convergence summaries are returned (default \code{FALSE}).}
 
 \item{report.sandwich.conf}{Logical or \code{NULL}. When \code{TRUE},
-confidence intervals based on sandwich variance are computed.
+CIs based on sandwich variance are computed.
 When \code{FALSE}, they are omitted (default \code{TRUE}).
-This confidence interval is default for time-point models
+This CI is default for time-point models
 (\code{"outcome.type=competing-risk"}, \code{"survival"} or \code{"binomial"}) and
 is not available otherwise.}
 
 \item{report.boot.conf}{Logical or \code{NULL}. When \code{TRUE}, bootstrap
-confidence intervals are computed. When \code{FALSE}, they are omitted.
+CIs are computed. When \code{FALSE}, they are omitted.
 If \code{NULL}, the function chooses based on \code{outcome.type} (default \code{NULL}).
-This confidence interval is default for proportional models
+This CI is default for proportional models
 (\code{outcome.type="proportional-competing-risk"} or \code{"proportional-survival"}).}
 
-\item{boot.bca}{Logical indicating the bootstrap confidence interval method.
+\item{boot.bca}{Logical indicating the bootstrap CI method.
 Use \code{TRUE} for bias-corrected and accelerated intervals or \code{FALSE}
 for the normal approximation (default \code{FALSE}).}
 
