@@ -56,17 +56,17 @@
 #' @param report.optim.convergence Logical; if `TRUE`, optimization
 #'   convergence summaries are returned (default `FALSE`).
 #' @param report.sandwich.conf Logical or `NULL`. When `TRUE`,
-#' confidence intervals based on sandwich variance are computed.
+#' CIs based on sandwich variance are computed.
 #' When `FALSE`, they are omitted (default `TRUE`).
-#' This confidence interval is default for time-point models
+#' This CI is default for time-point models
 #' (`"outcome.type=competing-risk"`, `"survival"` or `"binomial"`) and
 #' is not available otherwise.
 #' @param report.boot.conf Logical or `NULL`. When `TRUE`, bootstrap
-#' confidence intervals are computed. When `FALSE`, they are omitted.
+#' CIs are computed. When `FALSE`, they are omitted.
 #' If `NULL`, the function chooses based on `outcome.type` (default `NULL`).
-#' This confidence interval is default for proportional models
+#' This CI is default for proportional models
 #' (`outcome.type="proportional-competing-risk"` or `"proportional-survival"`).
-#' @param boot.bca Logical indicating the bootstrap confidence interval method.
+#' @param boot.bca Logical indicating the bootstrap CI method.
 #'   Use `TRUE` for bias-corrected and accelerated intervals or `FALSE`
 #'   for the normal approximation (default `FALSE`).
 #' @param boot.multiplier Character string specifying the wild bootstrap weight distribution.
