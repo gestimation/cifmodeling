@@ -259,12 +259,12 @@ set to <code>c(0, 1)</code> for probability-type outcomes.</p></dd>
 
 <dt id="arg-add-conf">add.conf<a class="anchor" aria-label="anchor" href="#arg-add-conf"></a></dt>
 <dd><p>Logical; if <code>TRUE</code>, adds a CI ribbon
-(via <code><a href="https://rdrr.io/pkg/ggsurvfit/man/add_confidence_interval.html" class="external-link">ggsurvfit::add_confidence_interval()</a></code>). Default <code>TRUE</code>.</p></dd>
+(via <code><a href="http://www.danieldsjoberg.com/ggsurvfit/reference/add_confidence_interval.html" class="external-link">ggsurvfit::add_confidence_interval()</a></code>). Default <code>TRUE</code>.</p></dd>
 
 
 <dt id="arg-add-censor-mark">add.censor.mark<a class="anchor" aria-label="anchor" href="#arg-add-censor-mark"></a></dt>
 <dd><p>Logical; if <code>TRUE</code>, draws censoring marks on each curve
-(via <code><a href="https://rdrr.io/pkg/ggsurvfit/man/add_censor_mark.html" class="external-link">ggsurvfit::add_censor_mark()</a></code>). Default <code>TRUE</code>.</p></dd>
+(via <code><a href="http://www.danieldsjoberg.com/ggsurvfit/reference/add_censor_mark.html" class="external-link">ggsurvfit::add_censor_mark()</a></code>). Default <code>TRUE</code>.</p></dd>
 
 
 <dt id="arg-shape-censor-mark">shape.censor.mark<a class="anchor" aria-label="anchor" href="#arg-shape-censor-mark"></a></dt>
@@ -317,7 +317,7 @@ times per stratum. Default <code>FALSE</code>.</p></dd>
 
 <dt id="arg-add-quantile">add.quantile<a class="anchor" aria-label="anchor" href="#arg-add-quantile"></a></dt>
 <dd><p>Logical; if <code>TRUE</code>, adds a quantile reference line (via
-<code><a href="https://rdrr.io/pkg/ggsurvfit/man/add_quantile.html" class="external-link">ggsurvfit::add_quantile()</a></code>). Default <code>FALSE</code>.</p></dd>
+<code><a href="http://www.danieldsjoberg.com/ggsurvfit/reference/add_quantile.html" class="external-link">ggsurvfit::add_quantile()</a></code>). Default <code>FALSE</code>.</p></dd>
 
 
 <dt id="arg-level-quantile">level.quantile<a class="anchor" aria-label="anchor" href="#arg-level-quantile"></a></dt>
@@ -332,7 +332,7 @@ layout is determined from the number of subplots.</p></dd>
 
 <dt id="arg-inset-panel">inset.panel<a class="anchor" aria-label="anchor" href="#arg-inset-panel"></a></dt>
 <dd><p>Logical. If <code>FALSE</code> (default), all panels are arranged
-in a regular grid using <code><a href="https://rdrr.io/pkg/patchwork/man/wrap_plots.html" class="external-link">patchwork::wrap_plots()</a></code> and <code>plot_layout()</code>.
+in a regular grid using <code><a href="https://patchwork.data-imaginist.com/reference/wrap_plots.html" class="external-link">patchwork::wrap_plots()</a></code> and <code>plot_layout()</code>.
 If <code>TRUE</code>, the function switches to “inset mode”: the <strong>first</strong> plot becomes
 the main plot and the <strong>second</strong> plot (only the second) is drawn on top of it
 as an inset. Additional plots beyond the second are ignored in inset mode.
@@ -342,14 +342,14 @@ Use grid mode to display more than two panels (<code>inset.panel = FALSE</code>)
 <dt id="arg-title-panel-subtitle-panel-caption-panel">title.panel, subtitle.panel, caption.panel<a class="anchor" aria-label="anchor" href="#arg-title-panel-subtitle-panel-caption-panel"></a></dt>
 <dd><p>Character annotations applied to the
 <strong>whole</strong> panel layout (not to individual plots). These are passed to
-<code><a href="https://rdrr.io/pkg/patchwork/man/plot_annotation.html" class="external-link">patchwork::plot_annotation()</a></code> and are useful for creating figure-like
+<code><a href="https://patchwork.data-imaginist.com/reference/plot_annotation.html" class="external-link">patchwork::plot_annotation()</a></code> and are useful for creating figure-like
 outputs (title + subfigures + caption).</p></dd>
 
 
 <dt id="arg-tag-panel">tag.panel<a class="anchor" aria-label="anchor" href="#arg-tag-panel"></a></dt>
-<dd><p>Passed to <code><a href="https://rdrr.io/pkg/patchwork/man/plot_annotation.html" class="external-link">patchwork::plot_annotation()</a></code> to auto-label
+<dd><p>Passed to <code><a href="https://patchwork.data-imaginist.com/reference/plot_annotation.html" class="external-link">patchwork::plot_annotation()</a></code> to auto-label
 individual panels (e.g. <code>"A"</code>, <code>"B"</code>, <code>"C"</code>). Typical values are
-<code>"A"</code>, <code>"1"</code>, or <code>"a"</code>. See <code><a href="https://rdrr.io/pkg/patchwork/man/plot_annotation.html" class="external-link">?patchwork::plot_annotation</a></code>.</p></dd>
+<code>"A"</code>, <code>"1"</code>, or <code>"a"</code>. See <code><a href="https://patchwork.data-imaginist.com/reference/plot_annotation.html" class="external-link">?patchwork::plot_annotation</a></code>.</p></dd>
 
 
 <dt id="arg-title-plot">title.plot<a class="anchor" aria-label="anchor" href="#arg-title-plot"></a></dt>
@@ -406,7 +406,7 @@ inset box. One of <code>"panel"</code> (default; the box is placed relative to t
 area, i.e. the plotting region excluding outer titles/margins),
 <code>"plot"</code> (relative to the entire plot area, including axes and titles of the
 main plot), or <code>"full"</code> (relative to the full patchwork canvas).
-This argument is passed to <code><a href="https://rdrr.io/pkg/patchwork/man/inset_element.html" class="external-link">patchwork::inset_element()</a></code>.</p></dd>
+This argument is passed to <code><a href="https://patchwork.data-imaginist.com/reference/inset_element.html" class="external-link">patchwork::inset_element()</a></code>.</p></dd>
 
 
 <dt id="arg-inset-legend-position">inset.legend.position<a class="anchor" aria-label="anchor" href="#arg-inset-legend-position"></a></dt>
@@ -428,15 +428,15 @@ invisibly for further modification (default <code>FALSE</code>).</p></dd>
 
 
 <dt id="arg-width-ggsave">width.ggsave<a class="anchor" aria-label="anchor" href="#arg-width-ggsave"></a></dt>
-<dd><p>Numeric width passed to <code><a href="https://rdrr.io/pkg/ggplot2/man/ggsave.html" class="external-link">ggplot2::ggsave()</a></code> (default <code>6</code>).</p></dd>
+<dd><p>Numeric width passed to <code><a href="https://ggplot2.tidyverse.org/reference/ggsave.html" class="external-link">ggplot2::ggsave()</a></code> (default <code>6</code>).</p></dd>
 
 
 <dt id="arg-height-ggsave">height.ggsave<a class="anchor" aria-label="anchor" href="#arg-height-ggsave"></a></dt>
-<dd><p>Numeric height passed to <code><a href="https://rdrr.io/pkg/ggplot2/man/ggsave.html" class="external-link">ggplot2::ggsave()</a></code> (default <code>6</code>).</p></dd>
+<dd><p>Numeric height passed to <code><a href="https://ggplot2.tidyverse.org/reference/ggsave.html" class="external-link">ggplot2::ggsave()</a></code> (default <code>6</code>).</p></dd>
 
 
 <dt id="arg-dpi-ggsave">dpi.ggsave<a class="anchor" aria-label="anchor" href="#arg-dpi-ggsave"></a></dt>
-<dd><p>Numeric DPI passed to <code><a href="https://rdrr.io/pkg/ggplot2/man/ggsave.html" class="external-link">ggplot2::ggsave()</a></code> (default <code>300</code>).</p></dd>
+<dd><p>Numeric DPI passed to <code><a href="https://ggplot2.tidyverse.org/reference/ggsave.html" class="external-link">ggplot2::ggsave()</a></code> (default <code>300</code>).</p></dd>
 
 
 <dt id="arg-survfit-info-axis-info-visual-info-panel-info-style-info-print-info-ggsave-info-inset-info">survfit.info, axis.info, visual.info, panel.info, style.info, print.info, ggsave.info, inset.info<a class="anchor" aria-label="anchor" href="#arg-survfit-info-axis-info-visual-info-panel-info-style-info-print-info-ggsave-info-inset-info"></a></dt>
@@ -503,10 +503,10 @@ together with formula, and (4) otherwise <code>rows.columns.panel=c(1,1)</code>.
 <h3 id="grid-vs-inset-composition">Grid vs inset composition<a class="anchor" aria-label="anchor" href="#grid-vs-inset-composition"></a></h3>
 
 <ul><li><p><strong>Grid mode</strong> (<code>inset.panel = FALSE</code>, default): plots are arranged with
-<code><a href="https://rdrr.io/pkg/patchwork/man/wrap_plots.html" class="external-link">patchwork::wrap_plots()</a></code> and <code>plot_layout()</code>. If <code>legend.collect = TRUE</code>,
+<code><a href="https://patchwork.data-imaginist.com/reference/wrap_plots.html" class="external-link">patchwork::wrap_plots()</a></code> and <code>plot_layout()</code>. If <code>legend.collect = TRUE</code>,
 legends are collected across panels where possible.</p></li>
 <li><p><strong>Inset mode</strong> (<code>inset.panel = TRUE</code>): the <strong>second</strong> plot is overlaid
-into the <strong>first</strong> using <code><a href="https://rdrr.io/pkg/patchwork/man/inset_element.html" class="external-link">patchwork::inset_element()</a></code>. Only the first two
+into the <strong>first</strong> using <code><a href="https://patchwork.data-imaginist.com/reference/inset_element.html" class="external-link">patchwork::inset_element()</a></code>. Only the first two
 plots are used; extra plots are ignored. Control the inset box with
 <code>inset.left</code>, <code>inset.bottom</code>, <code>inset.right</code>, <code>inset.top</code>, and its
 reference frame via <code>inset.align.to</code> (<code>"panel"</code>, <code>"plot"</code>, or <code>"full"</code>).</p></li>
@@ -543,7 +543,7 @@ can be given via <code>...</code> if needed; names must match strata labels.)</e
 <ul><li><p><code>legend.position</code>: <code>"top"</code>, <code>"right"</code>, <code>"bottom"</code>, <code>"left"</code>, or <code>"none"</code> (applies to all panels).</p></li>
 <li><p>Grid mode: <code>legend.collect = TRUE</code> attempts a shared legend.</p></li>
 <li><p>Panel annotations: <code>title.panel</code>, <code>subtitle.panel</code>, <code>caption.panel</code>.</p></li>
-<li><p>Tagging: <code>tag.panel</code> is passed to <code><a href="https://rdrr.io/pkg/patchwork/man/plot_annotation.html" class="external-link">patchwork::plot_annotation()</a></code>.</p></li>
+<li><p>Tagging: <code>tag.panel</code> is passed to <code><a href="https://patchwork.data-imaginist.com/reference/plot_annotation.html" class="external-link">patchwork::plot_annotation()</a></code>.</p></li>
 <li><p>In inset mode, <code>title.plot = c(title_base, title_inset)</code> labels the two plots.</p></li>
 </ul></div>
 
@@ -574,7 +574,7 @@ element of <code>list.plot</code> or to the composed <code>patchwork</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="polyreg.html">polyreg()</a></code> for log-odds product modeling of CIFs; <code><a href="cifcurve.html">cifcurve()</a></code> for KM/AJ estimators; <code><a href="cifplot.html">cifplot()</a></code> for display of a CIF; <a href="https://rdrr.io/pkg/ggsurvfit/man/ggsurvfit.html" class="external-link">ggsurvfit::ggsurvfit</a>, <a href="https://rdrr.io/pkg/patchwork/man/patchwork-package.html" class="external-link">patchwork::patchwork</a> and <a href="https://modelsummary.com/man/modelsummary.html" class="external-link">modelsummary::modelsummary</a> for display helpers.</p></div>
+    <div class="dont-index"><p><code><a href="polyreg.html">polyreg()</a></code> for log-odds product modeling of CIFs; <code><a href="cifcurve.html">cifcurve()</a></code> for KM/AJ estimators; <code><a href="cifplot.html">cifplot()</a></code> for display of a CIF; <a href="http://www.danieldsjoberg.com/ggsurvfit/reference/ggsurvfit.html" class="external-link">ggsurvfit::ggsurvfit</a>, <a href="https://patchwork.data-imaginist.com/reference/patchwork-package.html" class="external-link">patchwork::patchwork</a> and <a href="https://modelsummary.com/man/modelsummary.html" class="external-link">modelsummary::modelsummary</a> for display helpers.</p></div>
     </div>
 
     <div class="section level2">

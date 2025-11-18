@@ -119,8 +119,8 @@ advanced methods for competing risks analysis. `cifmodeling::polyreg()`
 focuses on coherent modelling of all CIFs simultaneously to estimate the
 exposure effects in terms of RR/OR/SHR. This coherence can come with
 longer runtimes for large problems. If you prefer fitting separate
-regression models for each competing event or specifically need
-Fine-Gray models (Fine and Gray 1999) and direct binomial model
+regression models for each competing event or specifically need the
+Fine-Gray models (Fine and Gray 1999) and the direct binomial models
 (Scheike, Zhang and Gerds 2008), `mets::cifreg()` and `mets::binreg()`
 are excellent choices.
 
