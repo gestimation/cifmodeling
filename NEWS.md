@@ -1,3 +1,7 @@
+# cifmodeling 0.8.1
+
+* README.Rmd, Vignettes and site were updated. 
+
 # cifmodeling 0.8.0
 
 * Breaking change: `cifplot()` and `cifpanel()` now return structured objects

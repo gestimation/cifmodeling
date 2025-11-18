@@ -11,17 +11,17 @@
 #' @param subset.condition Optional expression (as a character string) defining a
 #'   subset of \code{data} to analyse. Defaults to \code{NULL}.
 #' @param na.action Function to handle missing values (default: \code{na.omit} in \pkg{stats}).
-#' @param which_event One of \code{"event1"}, \code{"event2"}, \code{"censor"},
+#' @param which.event One of \code{"event1"}, \code{"event2"}, \code{"censor"},
 #'   \code{"censoring"}, or \code{"user_specified"}, indicating which event type
 #'   to extract times for.
 #' @param code.event1,code.event2,code.censoring Integer codes representing the
 #'   event and censoring categories. Defaults are \code{1}, \code{2}, and
 #'   \code{0}, respectively.
-#' @param user_specified_code When \code{which_event = "user_specified"},
+#' @param code.user.specified When \code{which.event = "user_specified"},
 #'   the integer event code to extract (e.g., 3 for an intercurrent event).
-#' @param readUniqueTime Logical if \code{TRUE}, only unique and sorted time points
+#' @param read.unique.time Logical if \code{TRUE}, only unique and sorted time points
 #'   are returned for each stratum.
-#' @param dropEmpty Logical if \code{TRUE} (default), strata with no events are
+#' @param drop.empty Logical if \code{TRUE} (default), strata with no events are
 #'   dropped from the returned list. Set to \code{FALSE} to retain empty strata
 #'   as \code{numeric(0)} vectors (useful for diagnostics or consistent list length).
 #'
@@ -38,7 +38,7 @@
 #' data(diabetes.complications)
 #' output <- extract_time_to_event(Event(t,epsilon) ~ fruitq,
 #'                                 data = diabetes.complications,
-#'                                 which_event = "event2")
+#'                                 which.event = "event2")
 #' cifplot(Event(t,epsilon) ~ fruitq,
 #'         data = diabetes.complications,
 #'         outcome.type="competing-risk",
@@ -47,8 +47,8 @@
 #'         add.censor.mark=FALSE,
 #'         add.competing.risk.mark=TRUE,
 #'         competing.risk.time=output,
-#'         label.y='CIF of diabetic retinopathy',
-#'         label.x='Years from registration')
+#'         label.y="CIF of diabetic retinopathy",
+#'         label.x="Years from registration")
 #' @name extract_time_to_event
 #' @section Lifecycle:
 #' \lifecycle{stable}
@@ -60,15 +60,15 @@ extract_time_to_event <- function(
     data,
     subset.condition = NULL,
     na.action = na.omit,
-    which_event = c("event2", "event1", "censor", "censoring", "user_specified"),
+    which.event = c("event2", "event1", "censor", "censoring", "user_specified"),
     code.event1 = 1,
     code.event2 = 2,
     code.censoring = 0,
-    user_specified_code = NULL,
-    readUniqueTime = TRUE,
-    dropEmpty = TRUE
+    code.user.specified = NULL,
+    read.unique.time = TRUE,
+    drop.empty = TRUE
 ){
-  which_event <- match.arg(which_event)
+  which.event <- match.arg(which.event)
   out_readSurv <- util_read_surv(
     formula = formula, data = data, weights = NULL,
     code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
@@ -76,19 +76,19 @@ extract_time_to_event <- function(
   )
   util_get_event_time(
     out_readSurv = out_readSurv,
-    which_event = which_event, user_specified_code = user_specified_code,
-    readUniqueTime = readUniqueTime, dropEmpty = dropEmpty
+    which.event = which.event, code.user.specified = code.user.specified,
+    read.unique.time = read.unique.time, drop.empty = drop.empty
   )
 }
 
 util_get_event_time <- function(
     out_readSurv,
-    which_event = c("event2", "event1", "censor", "censoring", "user_specified"),
-    user_specified_code = NULL,
-    readUniqueTime = TRUE,
-    dropEmpty = TRUE
+    which.event = c("event2", "event1", "censor", "censoring", "user_specified"),
+    code.user.specified = NULL,
+    read.unique.time = TRUE,
+    drop.empty = TRUE
 ){
-  which_event <- match.arg(which_event)
+  which.event <- match.arg(which.event)
 
   if (is.null(out_readSurv) || !is.list(out_readSurv)) .err("req", arg = "out_readSurv (list)")
 
@@ -102,14 +102,14 @@ util_get_event_time <- function(
   if (any(tvec < 0)) .err("nonneg",      arg = "out_readSurv$t")
 
   pick <- switch(
-    which_event,
+    which.event,
     event1 = as.integer(out_readSurv$d1),
     event2 = as.integer(out_readSurv$d2),
     censor = as.integer(out_readSurv$d0),
     censoring = as.integer(out_readSurv$d0),
     user_specified = {
-      if (is.null(user_specified_code)) .err("req", arg = "user_specified_code")
-      as.integer(epsilon == as.numeric(user_specified_code))
+      if (is.null(code.user.specified)) .err("req", arg = "user_specified_code")
+      as.integer(epsilon == as.numeric(code.user.specified))
     }
   )
 
@@ -118,8 +118,8 @@ util_get_event_time <- function(
   if (length(labs) == 1L) {
     idx <- (strata == labs[[1L]]) & (pick > 0L) & is.finite(tvec)
     tt  <- tvec[idx]
-    tt  <- if (isTRUE(readUniqueTime)) sort(unique(tt)) else sort(tt)
-    if (length(tt) == 0L && isTRUE(dropEmpty)) return(numeric(0))
+    tt  <- if (isTRUE(read.unique.time)) sort(unique(tt)) else sort(tt)
+    if (length(tt) == 0L && isTRUE(drop.empty)) return(numeric(0))
     return(tt)
   }
 
@@ -127,9 +127,9 @@ util_get_event_time <- function(
   for (s in labs) {
     idx <- (strata == s) & (pick > 0L) & is.finite(tvec)
     tt  <- tvec[idx]
-    tt  <- if (isTRUE(readUniqueTime)) sort(unique(tt)) else sort(tt)
-    if (length(tt) > 0 || !isTRUE(dropEmpty)) out[[s]] <- tt
+    tt  <- if (isTRUE(read.unique.time)) sort(unique(tt)) else sort(tt)
+    if (length(tt) > 0 || !isTRUE(drop.empty)) out[[s]] <- tt
   }
-  if (isTRUE(dropEmpty)) out <- out[vapply(out, length, integer(1)) > 0]
+  if (isTRUE(drop.empty)) out <- out[vapply(out, length, integer(1)) > 0]
   out
 }

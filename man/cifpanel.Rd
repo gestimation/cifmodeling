@@ -90,7 +90,7 @@ When plots is supplied, no new models are fitted; the plots are used as-is.}
 \item{formula}{A model formula specifying the time-to-event outcome on the
 left-hand side (typically \code{Event(time, status)} or \code{Surv(time, status)})
 and, optionally, a stratification variable on the right-hand side.
-Unlike \code{\link{cifplot}}, this function does not accept a fitted
+Unlike \code{\link[=cifplot]{cifplot()}}, this function does not accept a fitted
 \code{survfit} object.}
 
 \item{formulas}{Optional list of formulas. When given, each formula defines
@@ -107,33 +107,33 @@ panels.}
 \item{na.action}{A function specifying the action to take on missing values (default \code{na.omit}).}
 
 \item{outcome.type}{Character string specifying the type of time-to-event outcome.
-One of \code{"survival"} (Kaplan–Meier) or \code{"competing-risk"} (Aalen–Johansen).
+One of \code{"survival"} (Kaplan-Meier) or \code{"competing-risk"} (Aalen-Johansen).
 If \code{NULL} (default), the function automatically infers the outcome type from the data:
 if the event variable has more than two unique levels, \code{"competing-risk"} is assumed;
 otherwise, \code{"survival"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
-Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detection based on the event coding.}
+Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic detection based on the event coding.}
 
 \item{code.events}{Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
 When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
-(primarily used when \code{cifpanel()} is called or when \code{panel.per.event = TRUE}).}
+(primarily used when \code{\link[=cifpanel]{cifpanel()}} is called or when \code{panel.per.event = TRUE}).}
 
 \item{error}{Character string specifying the method for SEs and CIs used internally.
 For \code{"survival"}, choose one of \code{"greenwood"} (default), \code{"tsiatis"}, or \code{"if"}.
 For \code{"competing-risk"}, choose one of \code{"delta"} (default), \code{"aalen"}, or \code{"if"}.}
 
-\item{conf.type}{Character specifying the method of transformation for confidence intervals
-used internally (default \code{arcsine-square root}).}
+\item{conf.type}{Character specifying the method of transformation for CIs
+used internally (default \verb{arcsine-square root}).}
 
-\item{conf.int}{Numeric two-sided confidence level (default \code{0.95}).}
+\item{conf.int}{Numeric two-sided level of CIs (default \code{0.95}).}
 
 \item{type.y}{Character string specifying the y-scale: \code{"surv"} for survival probabilities
 or \code{"risk"} for cumulative incidence (1 - survival in simple survival settings).
-If \code{NULL}, a default is chosen from \code{outcome.type}.}
+If \verb{NULL``, a default is chosen from }outcome.type`.}
 
 \item{label.x}{Character x-axis label (default \code{"Time"}).}
 
 \item{label.y}{Character y-axis label (default is chosen automatically from \code{outcome.type}
-and \code{type.y}, e.g. \dQuote{Survival} or \dQuote{Cumulative incidence}).}
+and \code{type.y}, e.g. "Survival" or "Cumulative incidence").}
 
 \item{limits.x}{Numeric length-2 vector specifying x-axis limits. If \code{NULL}, it is
 set from the fitted object (typically \code{c(0, max(time))}).}
@@ -145,7 +145,7 @@ set to \code{c(0, 1)} for probability-type outcomes.}
 
 \item{breaks.y}{Numeric vector of y-axis breaks (default \code{NULL}).}
 
-\item{add.conf}{Logical; if \code{TRUE}, adds a confidence-interval ribbon
+\item{add.conf}{Logical; if \code{TRUE}, adds a CI ribbon
 (via \code{ggsurvfit::add_confidence_interval()}). Default \code{TRUE}.}
 
 \item{add.censor.mark}{Logical; if \code{TRUE}, draws censoring marks on each curve
@@ -193,7 +193,7 @@ in a regular grid using \code{patchwork::wrap_plots()} and \code{plot_layout()}.
 If \code{TRUE}, the function switches to “inset mode”: the \strong{first} plot becomes
 the main plot and the \strong{second} plot (only the second) is drawn on top of it
 as an inset. Additional plots beyond the second are ignored in inset mode.
-Use grid mode to display more than two panels (inset.panel = FALSE).}
+Use grid mode to display more than two panels (\code{inset.panel = FALSE}).}
 
 \item{title.panel, subtitle.panel, caption.panel}{Character annotations applied to the
 \strong{whole} panel layout (not to individual plots). These are passed to
@@ -227,7 +227,7 @@ Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also
 for all panels (passed to \pkg{patchwork}). Default \code{TRUE}.}
 
 \item{inset.left, inset.bottom, inset.right, inset.top}{Numeric values in the range
-\code{[0, 1]} that define the inset box as fractions of the reference area.
+\verb{[0, 1]} that define the inset box as fractions of the reference area.
 \code{inset.left} / \code{inset.right} control the horizontal position,
 \code{inset.bottom} / \code{inset.top} control the vertical position.
 Values are interpreted as “from the left/bottom” of the reference.
@@ -235,14 +235,10 @@ For example, \code{inset.left = 0.4}, \code{inset.right = 1.0} draws the inset
 over the right 60\% of the reference area.}
 
 \item{inset.align.to}{Character string specifying the coordinate system for the
-inset box. One of:
-\itemize{
-\item \code{"panel"} (default): the box is placed relative to the \strong{panel area}
-(i.e. the plotting region, excluding outer titles/margins);
-\item \code{"plot"}: the box is placed relative to the \strong{entire plot} area,
-including axes and titles of the main plot;
-\item \code{"full"}: the box is placed relative to the \strong{full patchwork canvas}.
-}
+inset box. One of \code{"panel"} (default; the box is placed relative to the panel
+area, i.e. the plotting region excluding outer titles/margins),
+\code{"plot"} (relative to the entire plot area, including axes and titles of the
+main plot), or \code{"full"} (relative to the full patchwork canvas).
 This argument is passed to \code{patchwork::inset_element()}.}
 
 \item{inset.legend.position}{Optional legend position \strong{for the inset plot only}.
@@ -273,32 +269,27 @@ calls that build each panel. Use this to pass low-level options such as
 A \code{"cifpanel"} object (returned invisibly), which is a list
 with at least the following elements:
 \itemize{
-\item \code{list.plot} a list of \code{ggplot} objects, one per panel;
-\item \code{patchwork} a patchwork object representing the composed panel;
-\item \code{plot} reserved for backwards compatibility (always \code{NULL});
-\item metadata fields mirroring those in \code{cifplot()`} (such as information
-on the fitted curves and display settings).
+\item \code{list.plot}: a list of ggplot objects, one per panel
+\item \code{patchwork}: a patchwork object representing the composed panel
+\item \code{plot}: reserved for backwards compatibility (always \code{NULL})
+\item metadata fields mirroring those in \code{\link[=cifplot]{cifplot()}} (such as information
+on the fitted curves and display settings)
 }
 
-When \code{print.panel=TRUE}, the patchwork object is printed in interactive
+When \code{print.panel = TRUE}, the patchwork object is printed in interactive
 sessions in addition to being returned.
 }
 \description{
-\code{cifpanel()} is the panel-building counterpart of \code{cifplot()}. It
-composes multiple survival and CIF curves into a single
-figure, typically returned as a patchwork-compatible object. You can
-either supply one or more model formulas (to be fitted internally) or a
-list of existing ggplot objects. Most graphical options (axis labels,
-marks, styles, and export settings) are shared with \code{cifplot()}, while
-per-panel legends and risk tables are suppressed to avoid duplicated
-display.
-
-Typical use cases include:
+\code{\link[=cifpanel]{cifpanel()}} is the panel-building counterpart of \code{\link[=cifplot]{cifplot()}}.
+It takes one or more model formulas (or, alternatively, one formula and several
+event-coding specifications) and returns a multi-panel figure, typically as a
+patchwork-compatible object. Most display options (axis labels, marks, style, ggsave options)
+are shared with \code{\link[=cifplot]{cifplot()}}, but per-panel legends and risk tables are
+suppressed to avoid duplicated display. Typical use cases are:
 \itemize{
-\item comparing CIFs for different event types in a 1 × 2 layout
-\item comparing survival or CIF curves across strata with a shared legend and
-harmonized axes
-\item adding an inset plot with a restricted y-axis range into a full-scale plot
+\item Compare CIF (event 1) vs CIF (event 2) in a 1×2 layout.
+\item Compare survival/CIF curves across strata with a shared legend and matched axes.
+\item Display a plot with an enlarged y-axis inside a full-scale plot.
 }
 }
 \details{
@@ -355,13 +346,13 @@ reference frame via \code{inset.align.to} (\code{"panel"}, \code{"plot"}, or \co
 The following arguments allow \strong{per-panel} control by supplying vectors/lists,
 or \strong{shared} control by supplying scalars. They are forwarded to \code{cifplot()}.
 \itemize{
-\item \code{formula} or \code{formulas} — one formula or a list of formulas; each entry creates a panel.
-\item \code{data}, \code{outcome.type}, \code{code.events}, \code{type.y} — recycled across panels unless a list is supplied for per-panel control.
-\item \code{rows.columns.panel} — selects grid layout by c(rows, cols).
-\item \code{inset.panel} — selects inset layout.
-\item \code{title.panel}, \code{subtitle.panel}, \code{caption.panel}, \code{title.plot} — overall titles and captions.
-\item \code{tag.panel} — panel tag style (e.g., "A", "a", "1").
-\item \code{label.x}, \code{label.y}, \code{limits.x}, \code{limits.y}, \code{breaks.x}, \code{breaks.y} — shared axis control unless a list is supplied for per-panel control.
+\item \code{formula} or \code{formulas}: one formula or a list of formulas; each entry creates a panel.
+\item \code{data}, \code{outcome.type}, \code{code.events}, \code{type.y}: recycled across panels unless a list is supplied for per-panel control.
+\item \code{rows.columns.panel}: specification of grid layout by c(rows, cols).
+\item \code{inset.panel}: inset layout.
+\item \code{title.panel}, \code{subtitle.panel}, \code{caption.panel}, \code{title.plot}: overall titles and captions.
+\item \code{tag.panel}: panel tag style (e.g., "A", "a", "1").
+\item \code{label.x}, \code{label.y}, \code{limits.x}, \code{limits.y}, \code{breaks.x}, \code{breaks.y}: shared axis control unless a list is supplied for per-panel control.
 }
 \subsection{Scale & labels}{\tabular{lll}{
    Argument \tab Meaning \tab Default \cr

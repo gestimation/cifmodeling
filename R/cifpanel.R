@@ -1,21 +1,16 @@
 #' @title Arrange multiple survival and CIF plots in a panel display
 #'
 #' @description
-#' \code{cifpanel()} is the panel-building counterpart of \code{cifplot()}. It
-#' composes multiple survival and CIF curves into a single
-#' figure, typically returned as a patchwork-compatible object. You can
-#' either supply one or more model formulas (to be fitted internally) or a
-#' list of existing ggplot objects. Most graphical options (axis labels,
-#' marks, styles, and export settings) are shared with \code{cifplot()}, while
-#' per-panel legends and risk tables are suppressed to avoid duplicated
-#' display.
+#' [cifpanel()] is the panel-building counterpart of [cifplot()].
+#' It takes one or more model formulas (or, alternatively, one formula and several
+#' event-coding specifications) and returns a multi-panel figure, typically as a
+#' patchwork-compatible object. Most display options (axis labels, marks, style, ggsave options)
+#' are shared with [cifplot()], but per-panel legends and risk tables are
+#' suppressed to avoid duplicated display. Typical use cases are:
 #'
-#' Typical use cases include:
-#'
-#' - comparing CIFs for different event types in a 1 × 2 layout
-#' - comparing survival or CIF curves across strata with a shared legend and
-#'   harmonized axes
-#' - adding an inset plot with a restricted y-axis range into a full-scale plot
+#' -   Compare CIF (event 1) vs CIF (event 2) in a 1×2 layout.
+#' -   Compare survival/CIF curves across strata with a shared legend and matched axes.
+#' -   Display a plot with an enlarged y-axis inside a full-scale plot.
 #'
 #' @inheritParams cif-stat-arguments
 #' @inheritParams cif-visual-arguments
@@ -23,60 +18,57 @@
 #' @param plots Optional list of existing ggplot objects to be arranged into a panel.
 #' When plots is supplied, no new models are fitted; the plots are used as-is.
 #' @param formula A model formula specifying the time-to-event outcome on the
-#'   left-hand side (typically \code{Event(time, status)} or \code{Surv(time, status)})
+#'   left-hand side (typically `Event(time, status)` or `Surv(time, status)`)
 #'   and, optionally, a stratification variable on the right-hand side.
-#'   Unlike \code{\link{cifplot}}, this function does not accept a fitted
-#'   \code{survfit} object.
+#'   Unlike [cifplot()], this function does not accept a fitted
+#'   `survfit` object.
 #' @param formulas Optional list of formulas. When given, each formula defines
 #'   **one panel**. This is the most common way to create “one variable per plot”
 #'   panels.
-#' @param code.events Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
-#'   When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
-#'   (primarily used when \code{cifpanel()} is called or when \code{panel.per.event = TRUE}).
-#' @param legend.collect Logical; if \code{TRUE}, try to collect a single legend
-#'   for all panels (passed to \pkg{patchwork}). Default \code{TRUE}.
-#' @param inset.panel Logical. If \code{FALSE} (default), all panels are arranged
-#'   in a regular grid using \code{patchwork::wrap_plots()} and \code{plot_layout()}.
-#'   If \code{TRUE}, the function switches to “inset mode”: the **first** plot becomes
+#' @param code.events Optional numeric length-3 vector `c(event1, event2, censoring)`.
+#'   When supplied, it overrides `code.event1`, `code.event2`, and `code.censoring`
+#'   (primarily used when [cifpanel()] is called or when `panel.per.event = TRUE`).
+#' @param legend.collect Logical; if `TRUE`, try to collect a single legend
+#'   for all panels (passed to \pkg{patchwork}). Default `TRUE`.
+#' @param inset.panel Logical. If `FALSE` (default), all panels are arranged
+#'   in a regular grid using `patchwork::wrap_plots()` and `plot_layout()`.
+#'   If `TRUE`, the function switches to “inset mode”: the **first** plot becomes
 #'   the main plot and the **second** plot (only the second) is drawn on top of it
 #'   as an inset. Additional plots beyond the second are ignored in inset mode.
-#'   Use grid mode to display more than two panels (inset.panel = FALSE).
+#'   Use grid mode to display more than two panels (`inset.panel = FALSE`).
 #' @param inset.left,inset.bottom,inset.right,inset.top Numeric values in the range
-#'   \code{[0, 1]} that define the inset box as fractions of the reference area.
-#'   \code{inset.left} / \code{inset.right} control the horizontal position,
-#'   \code{inset.bottom} / \code{inset.top} control the vertical position.
+#'   `[0, 1]` that define the inset box as fractions of the reference area.
+#'   `inset.left` / `inset.right` control the horizontal position,
+#'   `inset.bottom` / `inset.top` control the vertical position.
 #'   Values are interpreted as “from the left/bottom” of the reference.
-#'   For example, \code{inset.left = 0.4}, \code{inset.right = 1.0} draws the inset
+#'   For example, `inset.left = 0.4`, `inset.right = 1.0` draws the inset
 #'   over the right 60% of the reference area.
 #' @param inset.align.to Character string specifying the coordinate system for the
-#'   inset box. One of:
-#'   \itemize{
-#'     \item \code{"panel"} (default): the box is placed relative to the **panel area**
-#'       (i.e. the plotting region, excluding outer titles/margins);
-#'     \item \code{"plot"}: the box is placed relative to the **entire plot** area,
-#'       including axes and titles of the main plot;
-#'     \item \code{"full"}: the box is placed relative to the **full patchwork canvas**.
-#'   }
-#'   This argument is passed to \code{patchwork::inset_element()}.
+#'   inset box. One of `"panel"` (default; the box is placed relative to the panel
+#'   area, i.e. the plotting region excluding outer titles/margins),
+#'   `"plot"` (relative to the entire plot area, including axes and titles of the
+#'   main plot), or `"full"` (relative to the full patchwork canvas).
+#'   This argument is passed to `patchwork::inset_element()`.
 #' @param inset.legend.position Optional legend position **for the inset plot only**.
-#'   If \code{NULL} (default), the inset plot keeps whatever legend position was
+#'   If `NULL` (default), the inset plot keeps whatever legend position was
 #'   defined for it (often this means a legend will also be inset).
-#'   Set, for example, \code{"none"} to hide the legend inside the inset,
+#'   Set, for example, `"none"` to hide the legend inside the inset,
 #'   while still showing the main plot's legend.
 #' @param title.panel,subtitle.panel,caption.panel Character annotations applied to the
 #'   **whole** panel layout (not to individual plots). These are passed to
-#'   \code{patchwork::plot_annotation()} and are useful for creating figure-like
+#'   `patchwork::plot_annotation()` and are useful for creating figure-like
 #'   outputs (title + subfigures + caption).
-#' @param tag.panel Passed to \code{patchwork::plot_annotation()} to auto-label
-#'   individual panels (e.g. \code{"A"}, \code{"B"}, \code{"C"}). Typical values are
-#'   \code{"A"}, \code{"1"}, or \code{"a"}. See \code{?patchwork::plot_annotation}.
+#' @param tag.panel Passed to `patchwork::plot_annotation()` to auto-label
+#'   individual panels (e.g. `"A"`, `"B"`, `"C"`). Typical values are
+#'   `"A"`, `"1"`, or `"a"`. See `?patchwork::plot_annotation`.
 #' @param title.plot Character vector of titles for **each panel** in the order they
 #'   are drawn. Length-1 values are recycled to all panels. In inset mode, the first
 #'   element refers to the main plot and the second (if present) to the inset.
-#'
-#' @param ... Additional arguments forwarded to the internal \code{cifplot_single()}
+#' @param survfit.info,axis.info,visual.info,panel.info,style.info,print.info,ggsave.info,inset.info
+#'   Internal lists used for programmatic control. Not intended for direct user input.
+#' @param ... Additional arguments forwarded to the internal `cifplot_single()`
 #'   calls that build each panel. Use this to pass low-level options such as
-#'   \code{competing.risk.time}, \code{intercurrent.event.time}, or styling overrides.
+#'   `competing.risk.time`, `intercurrent.event.time`, or styling overrides.
 #'
 #' @details
 #'
@@ -125,13 +117,13 @@
 #' The following arguments allow **per-panel** control by supplying vectors/lists,
 #' or **shared** control by supplying scalars. They are forwarded to `cifplot()`.
 #'
-#' -   `formula` or `formulas` — one formula or a list of formulas; each entry creates a panel.
-#' -   `data`, `outcome.type`, `code.events`, `type.y` — recycled across panels unless a list is supplied for per-panel control.
-#' -   `rows.columns.panel` — selects grid layout by c(rows, cols).
-#' -   `inset.panel` — selects inset layout.
-#' -   `title.panel`, `subtitle.panel`, `caption.panel`, `title.plot` — overall titles and captions.
-#' -   `tag.panel` — panel tag style (e.g., "A", "a", "1").
-#' -   `label.x`, `label.y`, `limits.x`, `limits.y`, `breaks.x`, `breaks.y` — shared axis control unless a list is supplied for per-panel control.
+#' -   `formula` or `formulas`: one formula or a list of formulas; each entry creates a panel.
+#' -   `data`, `outcome.type`, `code.events`, `type.y`: recycled across panels unless a list is supplied for per-panel control.
+#' -   `rows.columns.panel`: specification of grid layout by c(rows, cols).
+#' -   `inset.panel`: inset layout.
+#' -   `title.panel`, `subtitle.panel`, `caption.panel`, `title.plot`: overall titles and captions.
+#' -   `tag.panel`: panel tag style (e.g., "A", "a", "1").
+#' -   `label.x`, `label.y`, `limits.x`, `limits.y`, `breaks.x`, `breaks.y`: shared axis control unless a list is supplied for per-panel control.
 #'
 #' #### Scale & labels
 #'
@@ -182,21 +174,18 @@
 #'   element of `list.plot` or to the composed `patchwork`.
 #'
 #' @importFrom patchwork wrap_plots plot_layout inset_element plot_annotation
-#' @return A \code{"cifpanel"} object (returned invisibly), which is a list
+#'
+#' @return A `"cifpanel"` object (returned invisibly), which is a list
 #' with at least the following elements:
 #'
-#' - \code{list.plot} a list of `ggplot` objects, one per panel;
-#' - \code{patchwork} a patchwork object representing the composed panel;
-#' - \code{plot} reserved for backwards compatibility (always \code{NULL});
-#' - metadata fields mirroring those in \code{cifplot()`} (such as information
-#'   on the fitted curves and display settings).
+#' - `list.plot`: a list of ggplot objects, one per panel
+#' - `patchwork`: a patchwork object representing the composed panel
+#' - `plot`: reserved for backwards compatibility (always `NULL`)
+#' - metadata fields mirroring those in [cifplot()] (such as information
+#'   on the fitted curves and display settings)
 #'
-#' When \code{print.panel=TRUE}, the patchwork object is printed in interactive
+#' When `print.panel = TRUE`, the patchwork object is printed in interactive
 #' sessions in addition to being returned.
-#'
-#' @keywords internal
-#' @param survfit.info,axis.info,visual.info,panel.info,style.info,print.info,ggsave.info,inset.info
-#'   Internal lists used for programmatic control. Not intended for direct user input.
 #'
 #' @examples
 #' data(diabetes.complications)
@@ -250,9 +239,9 @@
 #' @importFrom patchwork wrap_plots plot_layout inset_element plot_annotation
 #'
 #' @name cifpanel
+#' @keywords internal
 #' @section Lifecycle:
 #' \lifecycle{experimental}
-#'
 #' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifplot()] for display of a CIF; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
 #' @export
 cifpanel <- function(
@@ -807,7 +796,7 @@ cifpanel <- function(
           data             = data,
           subset.condition = subset.condition,
           na.action        = na.action,
-          which_event      = "event2",
+          which.event      = "event2",
           code.event1      = ce[1],
           code.event2      = ce[2],
           code.censoring   = ce[3]

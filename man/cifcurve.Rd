@@ -2,7 +2,7 @@
 % Please edit documentation in R/cifcurve.R
 \name{cifcurve}
 \alias{cifcurve}
-\title{Calculate the Kaplan–Meier estimator and the Aalen–Johansen estimator}
+\title{Calculate the Kaplan-Meier estimator and the Aalen-Johansen estimator}
 \usage{
 cifcurve(
   formula,
@@ -27,7 +27,7 @@ cifcurve(
 \item{formula}{A model formula specifying the time-to-event outcome on the LHS
 (typically \code{Event(time, status)} or \code{survival::Surv(time, status)})
 and, optionally, a stratification variable on the RHS.
-Unlike \code{\link{cifplot}}, this function does not accept a fitted
+Unlike \code{\link[=cifplot]{cifplot()}}, this function does not accept a fitted
 \code{survfit} object.}
 
 \item{data}{A data frame containing variables in the formula.}
@@ -40,15 +40,15 @@ Unlike \code{\link{cifplot}}, this function does not accept a fitted
 \item{na.action}{A function specifying the action to take on missing values (default \code{na.omit}).}
 
 \item{outcome.type}{Character string specifying the type of time-to-event outcome.
-One of \code{"survival"} (Kaplan–Meier) or \code{"competing-risk"} (Aalen–Johansen).
+One of \code{"survival"} (Kaplan-Meier) or \code{"competing-risk"} (Aalen-Johansen).
 If \code{NULL} (default), the function automatically infers the outcome type from the data:
 if the event variable has more than two unique levels, \code{"competing-risk"} is assumed;
 otherwise, \code{"survival"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
-Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detection based on the event coding.}
+Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic detection based on the event coding.}
 
 \item{code.event1}{Integer code of the event of interest (default \code{1}).}
 
-\item{code.event2}{Integer code of the competing event (default \code{2}).}
+\item{code.event2}{Integer code of the competing risk (default \code{2}).}
 
 \item{code.censoring}{Integer code of censoring (default \code{0}).}
 
@@ -56,10 +56,10 @@ Mixed or ambiguous inputs (e.g., \code{"c("S", "C")"} trigger automatic detectio
 For \code{"survival"}, choose one of \code{"greenwood"} (default), \code{"tsiatis"}, or \code{"if"}.
 For \code{"competing-risk"}, choose one of \code{"delta"} (default), \code{"aalen"}, or \code{"if"}.}
 
-\item{conf.type}{Character specifying the method of transformation for confidence intervals
-used internally (default \code{arcsine-square root}).}
+\item{conf.type}{Character specifying the method of transformation for CIs
+used internally (default \verb{arcsine-square root}).}
 
-\item{conf.int}{Numeric two-sided confidence level (default \code{0.95}).}
+\item{conf.int}{Numeric two-sided level of CIs (default \code{0.95}).}
 
 \item{report.influence.function}{Logical. When \code{TRUE} and \code{engine = "calculateAJ_Rcpp"},
 the influence function is also computed and returned (default \code{FALSE}).}
@@ -72,25 +72,25 @@ scale (survfit's convention). Otherwise SE is on the probability scale.}
 \item{prob.bound}{Numeric lower bound used to internally truncate probabilities away from 0 and 1 (default \code{1e-7}).}
 }
 \value{
-A \code{survfit} object. For \code{outcome.type="survival"}, \code{$surv} is the survival function.
-For \code{outcome.type="competing-risk"}, \code{$surv} equals \code{1 - CIF} for \code{code.event1}.
+A \code{"survfit"} object. For \code{outcome.type="survival"}, \verb{$surv} is the survival function.
+For \code{outcome.type="competing-risk"}, \verb{$surv} equals \code{1 - CIF} for \code{code.event1}.
 SE and CIs are provided per  \code{error}, \code{conf.type} and \code{conf.int}.
 This enables an independent use of standard methods for \code{survfit} such as:
 \itemize{
-\item \code{summary()} — time-by-time estimates with SEs and CIs
-\item \code{plot()} — base R stepwise survival/CIF curves
-\item \code{mean()} — restricted mean survival estimates with CIs
-\item \code{quantile()} — quantile estimates with CIs
+\item \code{summary()}: time-by-time estimates with SEs and CIs
+\item \code{plot()}: base R stepwise survival/CIF curves
+\item \code{mean()}: restricted mean survival estimates with CIs
+\item \code{quantile()}: quantile estimates with CIs
 }
 
-Note that some methods (e.g., \code{residuals.survfit}) may not be supported.
+Note that some methods (e.g. \code{residuals.survfit}) may not be supported.
 }
 \description{
-Core estimation routine that computes a \code{survfit}-compatible object
+Core estimation routine that computes a survfit-compatible object
 from a formula + data interface (\code{Event()} or \code{survival::Surv()} on
 the LHS, and a stratification variable on the RHS if necessary).
 Use this when you want \strong{numbers only} (KM / CIF + SE + CI) and
-you will plot it yourself (for example with \code{ggsurvfit} or \code{\link{cifplot}}).
+you will plot it yourself (for example with \code{ggsurvfit} or \code{\link[=cifplot]{cifplot()}}).
 }
 \details{
 \subsection{Typical use cases}{
@@ -121,10 +121,10 @@ estimator of CIF for \code{code.event1}. The returned \code{$surv} is
 
 \examples{
 data(diabetes.complications)
-out_cifcurve <- cifcurve(Event(t,epsilon) ~ fruitq,
-                         data = diabetes.complications,
-                         outcome.type="competing-risk")
-cifplot(out_cifcurve,
+output1 <- cifcurve(Event(t,epsilon) ~ fruitq,
+                    data = diabetes.complications,
+                    outcome.type="competing-risk")
+cifplot(output1,
         outcome.type = "competing-risk",
         type.y = "risk",
         add.risktable = FALSE,

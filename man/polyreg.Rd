@@ -2,7 +2,7 @@
 % Please edit documentation in R/polyreg.R
 \name{polyreg}
 \alias{polyreg}
-\title{Fits regression models of CIFs based on polytomous log odds products}
+\title{Fit coherent regression models of CIFs using polytomous log odds products}
 \usage{
 polyreg(
   nuisance.model,
@@ -19,7 +19,7 @@ polyreg(
   effect.measure2 = "RR",
   time.point = NULL,
   outcome.type = "competing-risk",
-  conf.level = 0.95,
+  conf.int = 0.95,
   report.nuisance.parameter = FALSE,
   report.optim.convergence = FALSE,
   report.sandwich.conf = TRUE,
@@ -51,7 +51,7 @@ polyreg(
 \arguments{
 \item{nuisance.model}{A \code{formula} describing the outcome and
 nuisance covariates, excluding the exposure of interest.
-The left-hand side must be \code{Event(time, status)} or \code{survival::Surv(time, status)}.}
+The LHS must be \code{Event(time, status)} or \code{survival::Surv(time, status)}.}
 
 \item{exposure}{A character string giving the name of the categorical exposure
 variable in \code{data}.}
@@ -97,7 +97,7 @@ is assumed; otherwise, \code{"survival"} is assumed. Abbreviations such as
 \code{"S"} or \code{"C"} are accepted; mixed or ambiguous inputs trigger
 automatic detection from the event coding in \code{data}.}
 
-\item{conf.level}{Confidence level for Wald-type intervals (default \code{0.95}).}
+\item{conf.int}{Numeric two-sided level of CIs (default \code{0.95}).}
 
 \item{report.nuisance.parameter}{Logical; if \code{TRUE}, the returned object
 includes estimates of the nuisance model parameters (default \code{FALSE}).}
@@ -106,9 +106,9 @@ includes estimates of the nuisance model parameters (default \code{FALSE}).}
 convergence summaries are returned (default \code{FALSE}).}
 
 \item{report.sandwich.conf}{Logical or \code{NULL}. When \code{TRUE},
-confidence intervals based on sandwich variance are computed.
+CIs based on sandwich variance are computed.
 When \code{FALSE}, they are omitted (default \code{TRUE}).
-This confidence interval is default for time-point models
+This CI is default for time-point models
 (\code{"outcome.type=competing-risk"}, \code{"survival"} or \code{"binomial"}) and
 is not available otherwise.}
 
@@ -116,9 +116,9 @@ is not available otherwise.}
 confidence intervals are computed. When \code{FALSE}, they are omitted.
 If \code{NULL}, the function chooses based on \code{outcome.type} (default \code{NULL}).
 This confidence interval is default for proportional models
-(\code{outcome.type="PROPORTIONAL-COMPETING-RISK"} or \code{"PROPORTIONAL-SURVIVAL"}).}
+(\code{outcome.type="proportional-competing-risk"} or \code{"proportional-survival"}).}
 
-\item{boot.bca}{Logical indicating the bootstrap confidence interval method.
+\item{boot.bca}{Logical indicating the bootstrap CI method.
 Use \code{TRUE} for bias-corrected and accelerated intervals or \code{FALSE}
 for the normal approximation (default \code{FALSE}).}
 
@@ -191,8 +191,8 @@ supporting results. Key components and methods include:
 \itemize{
 \item \code{coef}: regression coefficients on the chosen effect-measure scale
 \item \code{vcov}: variance–covariance matrix of the regression coefficients
-\item \code{diagnostic.statistics}: a data frame with inverse-probability weights,
-influence-function contributions, and predicted potential outcomes
+\item \code{diagnostic.statistics}: a data frame with inverse probability weights,
+influence function contributions, and predicted potential outcomes
 \item \code{summary}: event-wise tidy/glance summaries used by
 \code{summary.polyreg()} or \code{modelsummary::modelsummary()}
 \item additional elements storing convergence information and internal
@@ -203,13 +203,14 @@ Standard S3 methods are available: \code{coef.polyreg()}, \code{vcov.polyreg()},
 \code{nobs.polyreg()}, and \code{summary.polyreg()}.
 }
 \description{
-\code{polyreg()} fits regression models for CIFs and related probabilities using
-polytomous log odds products and a stratified IPCW estimator. It enables
-coherent modelling of multiplicative effects of a categorical exposure under
-several outcome types, including competing risks, survival, and binomial outcomes.
+\code{polyreg()} fits regression models of CIFs, targeting familiar effect measures
+(risk ratios, odds ratios and subdistribution hazard ratios).
+Modeling the nuisance structure using polytomous log odds products ensures that
+the sum of cause-specific CIFs does not exceed one, and enables coherent modelling
+of the multiplicative effects.
 
-The function follows a familiar formula–data workflow: the outcome and
-nuisance covariates are specified through a formula in \code{nuisance.model}
+This function follows a familiar formula–data workflow: the outcome and
+covariates other than the exposure are specified through a formula in \code{nuisance.model}
 (with \code{Event()} or \code{survival::Surv()} on the LHS), and the exposure of interest
 is given by a separate variable name in \code{exposure}. The fitted object contains
 tidy summaries of exposure effects (point estimates, SEs, CIs, and p-values)
@@ -234,16 +235,16 @@ both of which use log odds products.
 
 \subsection{Key arguments}{
 \itemize{
-\item \code{nuisance.model} — a formula with \code{Event()} or \code{survivai::Surv()}
+\item \code{nuisance.model}: a formula with \code{Event()} or \code{survivai::Surv()}
 describing the outcome and nuisance covariates, excluding the exposure of interest.
-\item \code{exposure} — specifies the categorical exposure variable
-\item \code{effect.measure1} and \code{effect.measure2} — specifies the effect measures
+\item \code{exposure}: name of the categorical exposure variable
+\item \code{effect.measure1} and \code{effect.measure2}: the effect measures
 for event1 and event2 (\code{"RR"}, \code{"OR"} or \code{"SHR"}).
-\item \code{outcome.type} selects the outcome type (\code{"competing-risk"}, \code{"survival"},
+\item \code{outcome.type}: type of the outcome variable (\code{"competing-risk"}, \code{"survival"},
 \code{"binomial"}, \code{"proportional-survival"} or \code{"proportional-competing-risk"}).
-\item \code{time.point} — specifies time point at which the exposure effect is evaluated.
+\item \code{time.point}: time point(s) at which the exposure effect is evaluated.
 Required for \code{"competing-risk"} and \code{"survival"} outcomes.
-\item \code{strata} — specifies a stratification variable used for IPCW adjustment for dependent censoring.
+\item \code{strata}: name of the stratification variable used for IPCW adjustment for dependent censoring.
 }
 }
 
@@ -291,7 +292,7 @@ Choose the effect scale for event 1 and (optionally) event 2:\tabular{llll}{
 
 \subsection{Inference and intervals (advanced)}{\tabular{lll}{
    Argument \tab Meaning \tab Default \cr
-   \code{conf.level} \tab Wald-type CI level \tab \code{0.95} \cr
+   \code{conf.int} \tab Wald-type CI level \tab \code{0.95} \cr
    \code{report.sandwich.conf} \tab Sandwich variance CIs \tab \code{TRUE} \cr
    \code{report.boot.conf} \tab Bootstrap CIs (used by \code{"proportional-*"} types) \tab \code{NULL} \cr
    \code{boot.bca} \tab Use BCa intervals (else normal approximation) \tab \code{FALSE} \cr
@@ -338,7 +339,7 @@ Users should typically access results via the S3 methods:
 \item \code{coef()} — extract regression coefficients.
 \item \code{vcov()} — extract the variance–covariance matrix
 (sandwich or bootstrap, depending on \code{outcome.type} and the
-\code{report.*} arguments).
+\verb{report.*} arguments).
 \item \code{nobs()} — number of observations used in the fit.
 \item \code{summary()} — print an event-wise, modelsummary-like table of estimates,
 CIs and p-values, and return the underlying list of tidy/glance tables invisibly.
@@ -382,10 +383,10 @@ output <- polyreg(
   outcome.type = "competing-risk"
 )
 
-coef(fit)
-vcov(fit)
-nobs(fit)
-summary(fit)
+coef(output)
+vcov(output)
+nobs(output)
+summary(output)
 
 }
 \seealso{

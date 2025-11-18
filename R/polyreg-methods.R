@@ -12,41 +12,43 @@ print.cifpanel <- function(x, ...) {
   invisible(x)
 }
 
-#' Methods for \code{polyreg} objects
+#' Methods for polyreg objects
 #'
-#' S3 methods to extract coefficients, variance–covariance matrices,
-#' sample size, and formatted summaries from objects returned by
-#' \code{polyreg()}.
+#' S3 methods to extract coefficients, variance-covariance matrix,
+#' sample size, formatted summaries, and tidy/glance/augment
+#' from objects returned by `polyreg()`.
 #'
 #' @name polyreg-methods
 #'
-#' @param object A \code{"polyreg"} object returned by \code{polyreg()}.
-#' @param type Character string; one of \code{"default"}, \code{"sandwich"},
-#'   or \code{"bootstrap"}. When \code{"default"}, the function chooses between
-#'   sandwich and bootstrap variance based on the original \code{polyreg()}
-#'   settings, using \code{outcome.type}, \code{report.sandwich.conf}, and
-#'   \code{report.boot.conf}. (Used only by \code{vcov.polyreg()}.)
-#' @param x A \code{"summary.polyreg"} object, as returned by
-#'   \code{summary.polyreg()}.
+#' @param object A `"polyreg"` object returned by `polyreg()`.
+#' @param type Character string; one of `"default"`, `"sandwich"`,
+#'   or `"bootstrap"`. When `"default"`, the function chooses between
+#'   sandwich and bootstrap variance based on the original `polyreg()`
+#'   settings, using `outcome.type`, `report.sandwich.conf`, and
+#'   `report.boot.conf`. (Used only by `vcov.polyreg()`.)
+#' @param x A `"summary.polyreg"`` object, as returned by
+#'   `summary.polyreg()`.
 #' @param digits Number of digits to print for parameter estimates.
-#'   (Used only by \code{print.summary.polyreg()}.)
+#'   (Used only by `print.summary.polyreg()`.)
 #' @param ... Further arguments passed to or from methods.
 #'
 #' @return
 #' \itemize{
-#'   \item \code{coef.polyreg()} returns a numeric vector of regression
+#'   \item `coef.polyreg()` returns a numeric vector of regression
 #'     coefficients.
-#'   \item \code{vcov.polyreg()} returns a variance–covariance matrix.
-#'   \item \code{nobs.polyreg()} returns the number of observations.
-#'   \item \code{summary.polyreg()} returns a list of tidy and glance
+#'   \item `vcov.polyreg()` returns a variance-covariance matrix.
+#'   \item `nobs.polyreg()` returns the number of observations.
+#'   \item `summary.polyreg()` returns a list of tidy and glance
 #'     summaries by event.
-#'   \item \code{print.summary.polyreg()} is called for its side effect
-#'     of printing a formatted, \code{modelsummary}-like table to the
-#'     console and returns \code{x} invisibly.
+#'   \item `print.summary.polyreg()` is called for its side effect
+#'     of printing a formatted, modelsummary-like table to the
+#'     console and returns `x` invisibly.
+#'   \item `tidy.polyreg()` returns a list of tidy by event.
+#'   \item `glance.polyreg()` returns a list of glance by event.
+#'   \item `augment.polyreg()` returns an augmented data frame.
 #' }
 #'
-#' @seealso \code{\link{polyreg}}
-#'
+#' @seealso [polyreg()] for log-odds product modeling of CIFs
 #' @export
 #' @rdname polyreg-methods
 coef.polyreg <- function(object, ...) {
@@ -62,11 +64,11 @@ vcov.polyreg <- function(object,
   type <- match.arg(type)
 
   outcome.type         <- object$outcome.type
-  report.sandwich.conf <- object$optim.method$report.sandwich.conf
-  report.boot.conf     <- object$optim.method$report.boot.conf
+  report.sandwich.conf <- object$boot.method$report.sandwich.conf
+  report.boot.conf     <- object$boot.method$report.boot.conf
 
   V_sand <- object$vcov
-  V_boot <- object$cov_bootstrap
+  V_boot <- object$vcov_bootstrap
 
   ok_mat <- function(V) {
     !is.null(V) && is.matrix(V) && length(V) > 0 && any(is.finite(V))
@@ -92,7 +94,7 @@ vcov.polyreg <- function(object,
       )
       return(V_boot)
     }
-    stop("No valid sandwich or bootstrap variance–covariance matrix.")
+    stop("No valid sandwich or bootstrap variance-covariance matrix.")
   }
 
   if (type == "bootstrap") {
@@ -127,10 +129,10 @@ summary.polyreg <- function(object, ...) {
 
 #' @export
 #' @rdname polyreg-methods
-print.summary.polyreg <- function(summary,
+print.summary.polyreg <- function(x,
                                   digits = 3,
                                   ...) {
-  event_names <- names(summary)
+  event_names <- names(x)
 
   cat("\n")
   cat(sprintf("%-20s", ""))
@@ -141,7 +143,7 @@ print.summary.polyreg <- function(summary,
 
   cat(strrep("-", 20 + 2 + 12 * length(event_names)), "\n")
 
-  terms_all <- unique(unlist(lapply(summary, function(ev) ev$tidy$term)))
+  terms_all <- unique(unlist(lapply(x, function(ev) ev$tidy$term)))
 
   for (term in terms_all) {
 
@@ -152,7 +154,7 @@ print.summary.polyreg <- function(summary,
     p_row    <- character(length(event_names))
 
     for (j in seq_along(event_names)) {
-      ev <- summary[[event_names[j]]]
+      ev <- x[[event_names[j]]]
       td <- ev$tidy[ev$tidy$term == term, , drop = FALSE]
       if (nrow(td) == 0) {
         est_row[j] <- ""
@@ -199,7 +201,7 @@ print.summary.polyreg <- function(summary,
     cat(sprintf("%-20s", rowname))
 
     for (evnm in event_names) {
-      gl  <- summary[[evnm]]$glance
+      gl  <- x[[evnm]]$glance
       val <- if (rowname %in% names(gl)) gl[[rowname]][1] else ""
       cat(sprintf("  %-12s", as.character(val)))
     }
@@ -207,5 +209,127 @@ print.summary.polyreg <- function(summary,
   }
 
   cat("\n")
-  invisible(summary)
+  invisible(x)
+}
+
+#' @export
+#' @rdname polyreg-methods
+tidy.polyreg <- function(x,
+                         type = c("event1", "event2", "both"),
+                         ...) {
+
+  type <- match.arg(type)
+  s    <- x$summary
+  ot   <- x$outcome.type
+
+  if (ot %in% c("competing-risk", "proportional-competing-risk")) {
+    s1 <- s$event1
+    s2 <- s$event2
+  } else {
+    s1 <- s[[1L]]
+    s2 <- NULL
+  }
+
+  make_df <- function(part, label) {
+    if (is.null(part)) return(NULL)
+    df <- part$tidy
+    df$event <- label
+    df
+  }
+
+  if (type == "event1") {
+    return(make_df(s1, "event1"))
+  }
+
+  if (type == "event2") {
+    if (is.null(s2)) {
+      stop("No competing event in this polyreg model.", call. = FALSE)
+    }
+    return(make_df(s2, "event2"))
+  }
+
+  # type == "both"
+  out <- rbind(
+    make_df(s1, "event1"),
+    make_df(s2, "event2")
+  )
+  rownames(out) <- NULL
+  out
+}
+
+#' @export
+#' @rdname polyreg-methods
+glance.polyreg <- function(x,
+                           type = c("primary", "competing"),
+                           ...) {
+
+
+  type <- match.arg(type)
+  s    <- x$summary
+  ot   <- x$outcome.type
+
+  if (ot %in% c("competing-risk", "proportional-competing-risk")) {
+    s1 <- s$event1
+    s2 <- s$event2
+  } else {
+    s1 <- s[[1L]]
+    s2 <- NULL
+  }
+
+  make_df <- function(part, label) {
+    if (is.null(part)) return(NULL)
+    df <- part$glance
+    df$event <- label
+    df
+  }
+
+  if (type == "event1") {
+    return(make_df(s1, "event1"))
+  }
+
+  if (type == "event2") {
+    if (is.null(s2)) {
+      stop("No competing event in this polyreg model.", call. = FALSE)
+    }
+    return(make_df(s2, "event2"))
+  }
+
+  # type == "both"
+  out <- rbind(
+    make_df(s1, "event1"),
+    make_df(s2, "event2")
+  )
+  rownames(out) <- NULL
+  out
+}
+
+#' @export
+#' @rdname polyreg-methods
+augment.polyreg <- function(x, data = NULL, ...) {
+  df <- x$diagnostics
+
+  if ("ip.weight" %in% names(df)) {
+    names(df)[names(df) == "ip.weight"] <- ".weights"
+  }
+
+  if ("potential.CIFs" %in% names(df)) {
+    cif <- df$potential.CIFs
+    df$potential.CIFs <- NULL
+
+    if (is.matrix(cif) || is.data.frame(cif)) {
+      cif_df <- as.data.frame(cif)
+      if (is.null(colnames(cif_df))) {
+        colnames(cif_df) <- paste0("event", seq_len(ncol(cif_df)))
+      }
+      colnames(cif_df) <- paste0(".fitted_", colnames(cif_df))
+      df <- cbind(df, cif_df)
+    } else {
+      df$.fitted <- cif
+    }
+  }
+
+  if ("influence.function" %in% names(df)) {
+    names(df)[names(df) == "influence.function"] <- ".influence"
+  }
+  df
 }
