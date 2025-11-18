@@ -7,7 +7,10 @@
 \alias{nobs.polyreg}
 \alias{summary.polyreg}
 \alias{print.summary.polyreg}
-\title{Methods for \code{polyreg} objects}
+\alias{tidy.polyreg}
+\alias{glance.polyreg}
+\alias{augment.polyreg}
+\title{Methods for polyreg objects}
 \usage{
 \method{coef}{polyreg}(object, ...)
 
@@ -17,7 +20,13 @@
 
 \method{summary}{polyreg}(object, ...)
 
-\method{print}{summary.polyreg}(summary, digits = 3, ...)
+\method{print}{summary.polyreg}(x, digits = 3, ...)
+
+\method{tidy}{polyreg}(x, type = c("event1", "event2", "both"), ...)
+
+\method{glance}{polyreg}(x, type = c("primary", "competing"), ...)
+
+\method{augment}{polyreg}(x, data = NULL, ...)
 }
 \arguments{
 \item{object}{A \code{"polyreg"} object returned by \code{polyreg()}.}
@@ -30,30 +39,32 @@ sandwich and bootstrap variance based on the original \code{polyreg()}
 settings, using \code{outcome.type}, \code{report.sandwich.conf}, and
 \code{report.boot.conf}. (Used only by \code{vcov.polyreg()}.)}
 
+\item{x}{A \verb{"summary.polyreg"`` object, as returned by }summary.polyreg()`.}
+
 \item{digits}{Number of digits to print for parameter estimates.
 (Used only by \code{print.summary.polyreg()}.)}
-
-\item{x}{A \code{"summary.polyreg"} object, as returned by
-\code{summary.polyreg()}.}
 }
 \value{
 \itemize{
 \item \code{coef.polyreg()} returns a numeric vector of regression
 coefficients.
-\item \code{vcov.polyreg()} returns a variance–covariance matrix.
+\item \code{vcov.polyreg()} returns a variance-covariance matrix.
 \item \code{nobs.polyreg()} returns the number of observations.
 \item \code{summary.polyreg()} returns a list of tidy and glance
 summaries by event.
 \item \code{print.summary.polyreg()} is called for its side effect
-of printing a formatted, \code{modelsummary}-like table to the
+of printing a formatted, modelsummary-like table to the
 console and returns \code{x} invisibly.
+\item \code{tidy.polyreg()} returns a list of tidy by event.
+\item \code{glance.polyreg()} returns a list of glance by event.
+\item \code{augment.polyreg()} returns an augmented data frame.
 }
 }
 \description{
-S3 methods to extract coefficients, variance–covariance matrices,
-sample size, and formatted summaries from objects returned by
-\code{polyreg()}.
+S3 methods to extract coefficients, variance-covariance matrix,
+sample size, formatted summaries, and tidy/glance/augment
+from objects returned by \code{polyreg()}.
 }
 \seealso{
-\code{\link{polyreg}}
+\code{\link[=polyreg]{polyreg()}} for log-odds product modeling of CIFs
 }

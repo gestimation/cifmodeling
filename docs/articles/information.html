@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.8.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.8.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -80,8 +80,8 @@
 response on the LHS of the model formula so that follow-up time and
 event indicators are supplied in the same way. Internally the helpers
 validate non-negative times, check that the event codes match the
-user-specified <code>code.event*</code> arguments, and derive indicators
-used downstream.</li>
+user-specified <code>code.event1</code> and <code>code.event2</code>
+arguments, and derive indicators used downstream.</li>
 <li>The <code>outcome.type</code> argument is normalized by the same
 utility, meaning that the same set of synonyms (e.g. <code>"C"</code>,
 <code>"competing risk"</code>, or <code>"S"</code>) are accepted in both
@@ -90,14 +90,14 @@ estimators.</li>
 </ul>
 <p><strong>Key differences</strong></p>
 <ul>
-<li>In <code><a href="../reference/cifcurve.html">cifcurve()</a></code> the RHS of the formula defines the
-grouping variable(s) whose curves are estimated; weights (if any) are
+<li>In <code><a href="../reference/cifcurve.html">cifcurve()</a></code> the RHS of the formula specifies the
+grouping variable whose curves are estimated; weights (if any) are
 supplied separately. There is no dedicated exposure argument because all
 strata are handled through the formula term that is turned into a factor
 for plotting and estimation.</li>
 <li>In <code><a href="../reference/polyreg.html">polyreg()</a></code> the <code>nuisance.model</code> formula
 describes only the outcome and nuisance covariates (i.e. confounders),
-while the exposure is passed separately through the
+while <strong>the exposure is passed separately</strong> through the
 <code>exposure</code> argument. The exposure design matrix, reference
 level handling, and scaling of nuisance covariates are handled
 explicitly for regression fitting.</li>
@@ -105,8 +105,9 @@ explicitly for regression fitting.</li>
 <code><a href="../reference/cifcurve.html">cifcurve()</a></code> focuses on two estimands, selecting between
 the Kaplan–Meier and Aalen–Johansen estimators via
 <code>outcome.type = "survival"</code> or <code>"competing-risk"</code>.
-In contrast, <code><a href="../reference/polyreg.html">polyreg()</a></code> supports additional time-constant
-and binomial estimands (<code>"proportional-survival"</code>,
+In contrast, <code><a href="../reference/polyreg.html">polyreg()</a></code> supports additional
+<strong>time-constant and binomial estimands</strong>
+(<code>"proportional-survival"</code>,
 <code>"proportional-competing-risk"</code>, <code>"binomial"</code>) and
 enforces time-point requirements accordingly—for example
 <code>time.point</code> is mandatory for the effects at a fixed time,
@@ -150,18 +151,10 @@ any stratification variables. Those components are then passed to the
 back-end estimators implemented in
 <code>src/calculateAJ_Rcpp.cpp</code>. The C++ routine supports both
 weighted and stratified data, so the heavy lifting for the Kaplan–Meier
-or Aalen–Johansen estimates (and associated at-risk, event, and censor
-counts) happens efficiently regardless of how the input was
-specified.</p>
-<ul>
-<li>The <code>error</code> argument determines how SEs are computed. For
-survival data (<code>outcome.type = "survival"</code>) it maps to
-Greenwood (default) or Tsiatis estimators, while for competing-risks
-data (<code>outcome.type = "competing-risk"</code>) <code>"aalen"</code>
-reproduces the classic Aalen standard errors and <code>"delta"</code>
-implements the delta method. The SEs for weighted Kaplan-Meier
-estimators are calculated using the formulas by Zie and Liu (2005).</li>
-</ul>
+or Aalen–Johansen estimates (and associated at-risk, event, censor
+counts and influence functions) happens efficiently regardless of how
+the input was specified. The <code>error</code> argument determines how
+SEs are computed.</p>
 </div>
 <div class="section level2">
 <h2 id="computational-formulas-in-cifcurve">Computational formulas in cifcurve()<a class="anchor" aria-label="anchor" href="#computational-formulas-in-cifcurve"></a>
@@ -357,7 +350,7 @@ assemble matrices through <code>calculateIPCWMatrix()</code>.</p>
 score functions such as <code>estimating_equation_ipcw()</code>,
 <code>estimating_equation_survival()</code>, and
 <code>estimating_equation_proportional()</code> and iterates with
-<code>nleqslv</code>/Levenberg–Marquardt updates until the convergence
+<code>nleqslv</code>/Levenberg-Marquardt updates until the convergence
 criteria in <code>assessConvergence()</code> are met. Sandwich variances
 come from <code>calculateCov()</code> or
 <code>calculateCovSurvival()</code> and are rescaled back to the
@@ -372,8 +365,9 @@ weights, and fitted CIFs are retained in
 </h2>
 <ul>
 <li>If convergence warnings appear, relax/tighten tolerances or cap the
-parameter bound (<code>optim.parameter1</code> to <code>3</code>) and
-inspect <code>report.optim.convergence = TRUE</code>.</li>
+parameter bound (<code>optim.parameter1</code> to
+<code>optim.parameter3</code>) and inspect
+<code>report.optim.convergence = TRUE</code>.</li>
 <li>If necessary, try modifying other <code>optim.parameter</code>,
 providing user-specified initial values, or reducing the number of
 nuisance parameters (e.g. provide a <code>time.point</code> grid that
@@ -392,15 +386,15 @@ polyreg() results<a class="anchor" aria-label="anchor" href="#key-arguments-of-m
 </h2>
 <ul>
 <li>
-<code>output</code> – controls the destination of the table (e.g.,
+<code>output</code> controls the destination of the table (e.g.,
 <code>"markdown"</code>, <code>"latex"</code>, <code>"html"</code>, or a
 file path such as <code>'results/cif_table.docx'</code>).</li>
 <li>
-<code>coef_map</code> or <code>coef_rename</code> – renames model
+<code>coef_map</code> or <code>coef_rename</code> renames model
 terms for interpretability.</li>
 <li>
-<code>statistic</code> – which uncertainty summaries to display.
-Examples: <code>statistic = "p.value"</code> for p-values,
+<code>statistic</code> specifies which uncertainty summaries to
+display. Examples: <code>statistic = "p.value"</code> for p-values,
 <code>statistic = "conf.int"</code> for Wald CIs,
 <code>statistic = "t"</code> for t statistics,
 <code>and statistic = "z"</code> for z statistics, instead of SEs

@@ -9,7 +9,7 @@ cifcurve()."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.8.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.8.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,7 +38,7 @@ cifcurve()."></head><body>
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
-      <h1>These arguments are shared by <code>cifplot()</code>, <code>cifpanel()</code>, and <code>cifcurve()</code>.</h1>
+      <h1>These arguments are shared by <code><a href="cifplot.html">cifplot()</a></code>, <code><a href="cifpanel.html">cifpanel()</a></code>, and <code><a href="cifcurve.html">cifcurve()</a></code>.</h1>
       <small class="dont-index">Source: <a href="https://github.com/gestimation/cifmodeling/blob/HEAD/R/cif-visual-arguments.R" class="external-link"><code>R/cif-visual-arguments.R</code></a></small>
       <div class="d-none name"><code>cif-visual-arguments.Rd</code></div>
     </div>
@@ -54,7 +54,9 @@ cifcurve()."></head><body>
 
 
 <dl><dt id="arg-type-y">type.y<a class="anchor" aria-label="anchor" href="#arg-type-y"></a></dt>
-<dd><p>Optional vector/list per panel: <code>"surv"</code> or <code>"risk"</code> (display 1 - survival i.e. CIF).</p></dd>
+<dd><p>Character string specifying the y-scale: <code>"surv"</code> for survival probabilities
+or <code>"risk"</code> for cumulative incidence (1 - survival in simple survival settings).
+If <code>NULL``, a default is chosen from </code>outcome.type`.</p></dd>
 
 
 <dt id="arg-label-x">label.x<a class="anchor" aria-label="anchor" href="#arg-label-x"></a></dt>
@@ -63,7 +65,7 @@ cifcurve()."></head><body>
 
 <dt id="arg-label-y">label.y<a class="anchor" aria-label="anchor" href="#arg-label-y"></a></dt>
 <dd><p>Character y-axis label (default is chosen automatically from <code>outcome.type</code>
-and <code>type.y</code>, e.g. “Survival” or “Cumulative incidence”).</p></dd>
+and <code>type.y</code>, e.g. "Survival" or "Cumulative incidence").</p></dd>
 
 
 <dt id="arg-limits-x">limits.x<a class="anchor" aria-label="anchor" href="#arg-limits-x"></a></dt>
@@ -85,12 +87,12 @@ set to <code>c(0, 1)</code> for probability-type outcomes.</p></dd>
 
 
 <dt id="arg-use-coord-cartesian">use.coord.cartesian<a class="anchor" aria-label="anchor" href="#arg-use-coord-cartesian"></a></dt>
-<dd><p>Logical; if <code>TRUE</code>, uses <code>coord_cartesian()</code> for zooming
+<dd><p>Logical; if <code>TRUE</code>, uses <code><a href="https://ggplot2.tidyverse.org/reference/coord_cartesian.html" class="external-link">ggplot2::coord_cartesian()</a></code> for zooming
 instead of changing the scale limits (default <code>FALSE</code>).</p></dd>
 
 
 <dt id="arg-add-conf">add.conf<a class="anchor" aria-label="anchor" href="#arg-add-conf"></a></dt>
-<dd><p>Logical; if <code>TRUE</code>, adds a confidence-interval ribbon
+<dd><p>Logical; if <code>TRUE</code>, adds a CI ribbon
 (via <code><a href="http://www.danieldsjoberg.com/ggsurvfit/reference/add_confidence_interval.html" class="external-link">ggsurvfit::add_confidence_interval()</a></code>). Default <code>TRUE</code>.</p></dd>
 
 
