@@ -12,7 +12,7 @@ print.cifpanel <- function(x, ...) {
   invisible(x)
 }
 
-#' Methods for `polyreg objects
+#' Methods for polyreg objects
 #'
 #' S3 methods to extract coefficients, variance-covariance matrix,
 #' sample size, formatted summaries, and tidy/glance/augment
@@ -94,7 +94,7 @@ vcov.polyreg <- function(object,
       )
       return(V_boot)
     }
-    stop("No valid sandwich or bootstrap variance–covariance matrix.")
+    stop("No valid sandwich or bootstrap variance-covariance matrix.")
   }
 
   if (type == "bootstrap") {
