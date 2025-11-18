@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.8.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.8.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -101,8 +101,8 @@ shown on the left and the CIF of macrovascular complications
 </h3>
 <ul>
 <li>
-<strong>Unified interface</strong> for Kaplan-Meier and
-Aalen-Johansen curves, with survival and competing risks handled by the
+<strong>Unified interface</strong> for Kaplan–Meier and
+Aalen–Johansen curves, with survival and competing risks handled by the
 same syntax.</li>
 <li>
 <strong>Publication-ready graphics</strong> built on
@@ -110,12 +110,17 @@ same syntax.</li>
 tables, censoring/competing-risks/intercurrent-events marks, and
 multi-panel layouts.</li>
 <li>
+<strong>Tidy summaries and reporting</strong>: regression results
+from <code><a href="../reference/polyreg.html">polyreg()</a></code> support <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">generics::tidy()</a></code>,
+<code>glance()</code>, and <code>augment()</code>, which integrate
+smoothly with <code>modelsummary</code> and other broom-style
+tools.</li>
+<li>
 <strong>Coherent regression models</strong> of CIFs, targeting
-familiar effect measures (risk ratios, odds ratios and subdistribution
+familiar effect measures (risk ratios, odds ratios, and subdistribution
 hazard ratios). Modeling the nuisance structure using polytomous log
 odds products ensures that the sum of cause-specific CIFs does not
-exceed one, and enables coherent modelling of the multiplicative
-effects.</li>
+exceed one.</li>
 </ul>
 </div>
 </div>

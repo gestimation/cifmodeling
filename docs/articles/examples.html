@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.8.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.8.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -212,7 +212,7 @@ years (<code>time.point=8</code>).</p>
 <span><span class="co">#&gt;                       [0.194, 0.324]  [0.012, 0.028]</span></span>
 <span><span class="co">#&gt;                       (p=0.000)     (p=0.000)   </span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; fruitq1, Q2 to Q4 vs 0 </span></span>
+<span><span class="co">#&gt; fruitq1, Q2 to Q4 vs Q1 </span></span>
 <span><span class="co">#&gt;                       0.740         0.927       </span></span>
 <span><span class="co">#&gt;                       [0.593, 0.924]  [0.583, 1.474]</span></span>
 <span><span class="co">#&gt;                       (p=0.008)     (p=0.749)   </span></span>
@@ -227,15 +227,25 @@ years (<code>time.point=8</code>).</p>
 <span><span class="co">#&gt; converged.by          Converged in objective function  -           </span></span>
 <span><span class="co">#&gt; nleqslv.message       Function criterion near zero  -</span></span></code></pre></div>
 <p>The <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> method prints an event-wise table of point
-estimates, CIs, and p-values. Internally, this table is stored in a
-<code>summary</code> component of the <code>"polyreg"</code> object,
-which is compatible with the <code>modelsummary</code> ecosystem. If you
-want more elaborate tables, you can optionally pass this object to
-<code><a href="https://modelsummary.com/man/msummary.html" class="external-link">modelsummary::msummary()</a></code>. In this case, all regression
-coefficients are included in the summary by setting
-<code>report.nuisance.parameter = TRUE</code>. Model summaries can also
-be exponentiated to display risk ratios, odds ratios, or subdistribution
-hazard ratios using the <code>exponentiate</code> option.</p>
+estimates, CIs, and p-values. Internally, a <code>"polyreg"</code>
+object also supports the <strong>generics</strong> API:</p>
+<ul>
+<li>
+<code>tidy()</code>: coefficient-level summaries (one row per term
+and per event),</li>
+<li>
+<code>glance()</code>: model-level summaries (follow-up,
+convergence, number of events),</li>
+<li>
+<code>augment()</code>: observation-level diagnostics (weights for
+IPCW, predicted CIFs, and influence-functions).</li>
+</ul>
+<p>This means that <code><a href="../reference/polyreg.html">polyreg()</a></code> fits integrate naturally with
+the broader <code>broom/modelsummary</code> ecosystem. For
+publication-ready tables, you can pass <code>polyreg</code> objects
+directly to <code><a href="https://modelsummary.com/man/msummary.html" class="external-link">modelsummary::msummary()</a></code>, including
+exponentiated summaries (risk ratios, odds ratios, subdistribution
+hazard ratios) via the <code>exponentiate = TRUE</code> option.</p>
 </div>
 <div class="section level2">
 <h2 id="example-2--survival-analysis">Example 2. Survival analysis<a class="anchor" aria-label="anchor" href="#example-2--survival-analysis"></a>
@@ -272,7 +282,7 @@ specified.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;                       event 1 (no competing risk)</span></span>
 <span><span class="co">#&gt; ---------------------------------- </span></span>
-<span><span class="co">#&gt; fruitq1, Q2 to Q4 vs 0 </span></span>
+<span><span class="co">#&gt; fruitq1, Q2 to Q4 vs Q1 </span></span>
 <span><span class="co">#&gt;                       0.777       </span></span>
 <span><span class="co">#&gt;                       [0.001, 685.697]</span></span>
 <span><span class="co">#&gt;                       (p=0.942)   </span></span>
@@ -304,7 +314,7 @@ covariates and censoring strata are specified in
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;                       event1        event2      </span></span>
 <span><span class="co">#&gt; ---------------------------------------------- </span></span>
-<span><span class="co">#&gt; fruitq1, Q2 to Q4 vs 0 </span></span>
+<span><span class="co">#&gt; fruitq1, Q2 to Q4 vs Q1 </span></span>
 <span><span class="co">#&gt;                       0.644         1.100       </span></span>
 <span><span class="co">#&gt;                       [0.489, 0.848]  [0.596, 2.030]</span></span>
 <span><span class="co">#&gt;                       (p=0.002)     (p=0.761)   </span></span>

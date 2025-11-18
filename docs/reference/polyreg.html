@@ -29,7 +29,7 @@ such as modelsummary::modelsummary()."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.8.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.8.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -476,7 +476,7 @@ a small set of time points contributing to estimation when using
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="cifcurve.html">cifcurve()</a></code> for KM/AJ estimators; <code><a href="cifplot.html">cifplot()</a></code> for display of a CIF; <code><a href="cifpanel.html">cifpanel()</a></code> for display of multiple CIFs; <a href="http://www.danieldsjoberg.com/ggsurvfit/reference/ggsurvfit.html" class="external-link">ggsurvfit::ggsurvfit</a>, <a href="https://patchwork.data-imaginist.com/reference/patchwork-package.html" class="external-link">patchwork::patchwork</a> and <a href="https://modelsummary.com/man/modelsummary.html" class="external-link">modelsummary::modelsummary</a> for display helpers.</p></div>
+    <div class="dont-index"><p><code><a href="cifcurve.html">cifcurve()</a></code> for KM/AJ estimators; <code><a href="cifplot.html">cifplot()</a></code> for display of a CIF; <code><a href="cifpanel.html">cifpanel()</a></code> for display of multiple CIFs; <a href="https://rdrr.io/pkg/ggsurvfit/man/ggsurvfit.html" class="external-link">ggsurvfit::ggsurvfit</a>, <a href="https://rdrr.io/pkg/patchwork/man/patchwork-package.html" class="external-link">patchwork::patchwork</a> and <a href="https://modelsummary.com/man/modelsummary.html" class="external-link">modelsummary::modelsummary</a> for display helpers.</p></div>
     </div>
 
     <div class="section level2">
@@ -492,14 +492,35 @@ a small set of time points contributing to estimation when using
 <span class="r-in"><span>  outcome.type <span class="op">=</span> <span class="st">"competing-risk"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'fit' not found</span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'fit' not found</span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/nobs.html" class="external-link">nobs</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'fit' not found</span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'fit' not found</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">output</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -1.38313159  0.30043942 -3.99147406  0.07582595</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="va">output</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              [,1]         [,2]         [,3]         [,4]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1,]  0.007132823 -0.004524224  0.002772872 -0.002210804</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [2,] -0.004524224  0.009639840 -0.001178880  0.004588230</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [3,]  0.002772872 -0.001178880  0.018638168 -0.016918563</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [4,] -0.002210804  0.004588230 -0.016918563  0.054838178</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/nobs.html" class="external-link">nobs</a></span><span class="op">(</span><span class="va">output</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 978</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">output</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                       event1        event2      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ---------------------------------------------- </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> fruitq1, 1 vs 0      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                       1.350         1.079       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                       [1.114, 1.637]  [0.682, 1.707]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                       (p=0.002)     (p=0.746)   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ---------------------------------------------- </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> effect.measure        RR at 8       RR at 8     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> n.events              279 in N = 978  79 in N = 978</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> median.follow.up      8             -           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> range.follow.up       [0.05, 11.00]  -           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> n.parameters          4             -           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> converged.by          Converged in objective function  -           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> nleqslv.message       Function criterion near zero  -           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
