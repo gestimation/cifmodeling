@@ -26,7 +26,7 @@
 
 \method{glance}{polyreg}(x, type = c("primary", "competing"), ...)
 
-\method{augment}{polyreg}(x, data = NULL, ...)
+\method{augment}{polyreg}(x, ...)
 }
 \arguments{
 \item{object}{A \code{"polyreg"} object returned by \code{polyreg()}.}
