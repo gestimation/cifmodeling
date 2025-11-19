@@ -107,7 +107,7 @@ vcov.polyreg <- function(object,
       )
       return(V_sand)
     }
-    stop("No valid bootstrap or sandwich variance–covariance matrix.")
+    stop("No valid bootstrap or sandwich variance-covariance matrix.")
   }
 
   stop("Internal error in vcov.polyreg: unsupported 'type'.")
@@ -305,7 +305,7 @@ glance.polyreg <- function(x,
 
 #' @export
 #' @rdname polyreg-methods
-augment.polyreg <- function(x, data = NULL, ...) {
+augment.polyreg <- function(x, ...) {
   df <- x$diagnostics
 
   if ("ip.weight" %in% names(df)) {
