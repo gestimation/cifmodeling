@@ -9,15 +9,23 @@ vignette: >
 
 <!-- badges: start --> <!-- badges: end -->
 
+
+## Why direct modeling of CIFs?
+
+In survival analysis, users often interpret the results through plots of cumulative incidence: *how far apart are the CIF curves at a given time, and how does this separation evolve over follow-up?* Standard Fine-Gray models, however, parameterize **subdistribution hazards**, whose regression coefficients are only indirectly related to the observed differences between CIF curves for
+the event of interest. This makes it difficult to interpret the model on the probability scale and to quantify effects on all competing events.
+
+Direct polytomous regression was motivated by this gap. It models **all cause-specific CIFs jointly**, parameterizing the nuisance structure (i.e. a model of confounders) with polytomous log odds products. It also targets **effect measures on the CIF scale itself**: at user-specified time points it estimates ratios of CIFs (risk ratios, odds ratios, subdistribution hazard ratios), and in proportional-effect settings it compares CIFs in terms of a constant ratio over time. As a result, the regression parameters are much more directly aligned with what is visible in CIF curves. 
+
 ## Coherent modeling of CIFs using polytomous log odds products
 
-In analyzing competing risks data, standard semiparametric regression modeling that treats each cause separately has two drawbacks: potential loss of information due to ignoring the correlation between causes and an incoherence in modeling that fails to ensure that the sum of cause-specific CIFs does not exceed one. Direct polytomous regression addresses these challenges by reparameterizing nuisance parameters using polytomous log odds products, which naturally enforces the sum restriction. This approach is applicable to semiparametric models with common multiplicative effects over time as well as models focused on a specific time point. 
+Standard semiparametric regression approaches that fit separate models for each cause have two drawbacks in competing risks settings: they may lose efficiency by ignoring the correlation between causes, and they can be **incoherent** in the sense that the implied cause-specific CIFs do not necessarily sum to at most one. Direct polytomous regression addresses these challenges by **modeling all cause-specific CIFs via log odds products**. It introduces a nuisance model specified as polytomous log odds products in addition to the model for effect measures (e.g., risk ratios for the exposure), so that the sum restriction on CIFs is enforced naturally. The same framework applies both to models with common multiplicative effects over time and to models targeting effects at specific time points. 
 
-This model is specified by three main components:
+The models in `polyreg` are specified by three main components:
 
 -   Nuisance model: Describes the relationship between outcomes and covariates (excluding exposure).
 
--   Effect measures and time points: Defines the exposure effect to be estimated and the time point of interest.
+-   Effect measures and time points: Defines the exposure effects to be estimated and the time point of interest if necessary.
 
 -   Censoring adjustment: Specifies strata for inverse probability weighting to adjust for dependent censoring.
 

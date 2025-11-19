@@ -42,19 +42,23 @@ complications (`epsilon = 2`) on the right.
 ### Why cifmodeling?
 
 - **Unified interface** for Kaplan–Meier and Aalen–Johansen curves, with
-  survival and competing risks handled by the same syntax.
+  survival and competing risks handled by the same `Event()` + formula +
+  data syntax.
+- **Effects on the CIF scale**: while Fine-Gray models subdistribution
+  hazards, `polyreg()` directly targets ratios of CIFs (risk ratios,
+  odds ratios, subdistribution hazard ratios), so parameters align
+  closely with differences seen in CIF curves.
+- **Coherent, Joint modeling of all competing events**: `polyreg()`
+  models all cause-specific CIFs together, parameterizing the nuisance
+  structure with polytomous log odds products and enforcing that their
+  CIFs sum to at most one.
+- **Tidy summaries and reporting**: support for `generics::tidy()`,
+  `glance()`, and `augment()`, which integrate `polyreg()` smoothly with
+  `modelsummary` and other broom-style tools.
 - **Publication-ready graphics** built on `ggsurvfit` and `ggplot2`,
   including risk/estimate tables,
   censoring/competing-risks/intercurrent-events marks, and multi-panel
   layouts.
-- **Tidy summaries and reporting**: regression results from `polyreg()`
-  support `generics::tidy()`, `glance()`, and `augment()`, which
-  integrate smoothly with `modelsummary` and other broom-style tools.
-- **Coherent regression models** of CIFs, targeting familiar effect
-  measures (risk ratios, odds ratios, and subdistribution hazard
-  ratios). Modeling the nuisance structure using polytomous log odds
-  products ensures that the sum of cause-specific CIFs does not exceed
-  one.
 
 ## Tools for survival and competing risks analysis
 

@@ -103,24 +103,27 @@ shown on the left and the CIF of macrovascular complications
 <li>
 <strong>Unified interface</strong> for Kaplan–Meier and
 Aalen–Johansen curves, with survival and competing risks handled by the
-same syntax.</li>
+same <code><a href="../reference/Event.html">Event()</a></code> + formula + data syntax.</li>
+<li>
+<strong>Effects on the CIF scale</strong>: while Fine-Gray models
+subdistribution hazards, <code><a href="../reference/polyreg.html">polyreg()</a></code> directly targets ratios
+of CIFs (risk ratios, odds ratios, subdistribution hazard ratios), so
+parameters align closely with differences seen in CIF curves.</li>
+<li>
+<strong>Coherent, Joint modeling of all competing events</strong>:
+<code><a href="../reference/polyreg.html">polyreg()</a></code> models all cause-specific CIFs together,
+parameterizing the nuisance structure with polytomous log odds products
+and enforcing that their CIFs sum to at most one.</li>
+<li>
+<strong>Tidy summaries and reporting</strong>: support for
+<code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">generics::tidy()</a></code>, <code>glance()</code>, and
+<code>augment()</code>, which integrate <code><a href="../reference/polyreg.html">polyreg()</a></code> smoothly
+with <code>modelsummary</code> and other broom-style tools.</li>
 <li>
 <strong>Publication-ready graphics</strong> built on
 <code>ggsurvfit</code> and <code>ggplot2</code>, including risk/estimate
 tables, censoring/competing-risks/intercurrent-events marks, and
 multi-panel layouts.</li>
-<li>
-<strong>Tidy summaries and reporting</strong>: regression results
-from <code><a href="../reference/polyreg.html">polyreg()</a></code> support <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">generics::tidy()</a></code>,
-<code>glance()</code>, and <code>augment()</code>, which integrate
-smoothly with <code>modelsummary</code> and other broom-style
-tools.</li>
-<li>
-<strong>Coherent regression models</strong> of CIFs, targeting
-familiar effect measures (risk ratios, odds ratios, and subdistribution
-hazard ratios). Modeling the nuisance structure using polytomous log
-odds products ensures that the sum of cause-specific CIFs does not
-exceed one.</li>
 </ul>
 </div>
 </div>
