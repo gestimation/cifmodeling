@@ -39,7 +39,7 @@ incidence functions (CIFs), with the CIF of diabetic retinopathy
 (`epsilon = 1`) shown on the left and the CIF of macrovascular
 complications (`epsilon = 2`) on the right.
 
-### Why cifmodeling?
+## Why cifmodeling?
 
 - **Unified interface** for Kaplan–Meier and Aalen–Johansen curves, with
   survival and competing risks handled by the same `Event()` + formula +
@@ -48,7 +48,7 @@ complications (`epsilon = 2`) on the right.
   hazards, `polyreg()` directly targets ratios of CIFs (risk ratios,
   odds ratios, subdistribution hazard ratios), so parameters align
   closely with differences seen in CIF curves.
-- **Coherent, Joint modeling of all competing events**: `polyreg()`
+- **Coherent, joint modeling of all competing events**: `polyreg()`
   models all cause-specific CIFs together, parameterizing the nuisance
   structure with polytomous log odds products and enforcing that their
   CIFs sum to at most one.
@@ -56,8 +56,8 @@ complications (`epsilon = 2`) on the right.
   `glance()`, and `augment()`, which integrate `polyreg()` smoothly with
   `modelsummary` and other broom-style tools.
 - **Publication-ready graphics** built on `ggsurvfit` and `ggplot2`,
-  including risk/estimate tables,
-  censoring/competing-risks/intercurrent-events marks, and multi-panel
+  including at-risk/CIF+CI tables,
+  censoring/competing-risk/intercurrent-event marks, and multi-panel
   layouts.
 
 ## Tools for survival and competing risks analysis
@@ -196,49 +196,26 @@ Cumulative incidence curves per each stratification variable
 
 </div>
 
-In the second figure, censoring marks are added along each curve
-(`add.censor.mark = TRUE`) to indicate individuals who were censored
-before experiencing any event. These marks visualize the timing and
-frequency of censoring, allowing a clearer understanding of
-loss-to-censoring patterns over follow-up. Here the workflow differs
-slightly from the previous code. First, we compute a survfit-compatible
-object `output1` using `cifcurve()` with `outcome.type="competing-risk"`
-by calculating the Aalen-Johansen estimator stratified by `fruitq1`.
-Then, `cifplot()` is used to generate the figure. The `label.y`,
-`label.x` and `limit.x` arguments are also used to customize the axis
-labels and limits.
+In the second figure, **competing-risk marks** are added
+(`add.competing.risk.mark = TRUE`) to indicate individuals who
+experienced the competing event (macrovascular complications) before
+diabetic retinopathy. Here we show a workflow slightly different from
+the previous code. First, we compute a survfit-compatible object
+`output1` using `cifcurve()` with `outcome.type="competing-risk"` by
+calculating Aalen–Johansen estimator stratified by `fruitq1`. The time
+points at which the macrovascular complications occurred were obtained
+as `output2` for each strata using a helper function
+`extract_time_to_event()`. Then, `cifplot()` is used to generate the
+figure. These marks help distinguish between events due to the primary
+cause and those attributable to competing causes. Note that the names of
+`competing.risk.time` and `intercurrent.event.time` must match the
+strata labels used in the plot if supplied by the user. The `label.y`,
+`label.x` and `limit.x` arguments are also used to customize **the axis
+labels and limits**.
 
 ``` r
 output1 <- cifcurve(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
                     outcome.type="competing-risk")
-cifplot(output1, add.conf=FALSE, add.risktable=FALSE, 
-        add.censor.mark=TRUE, add.competing.risk.mark=FALSE, 
-        label.y="CIF of diabetic retinopathy", label.x="Years from registration",
-        limits.x=c(0,8))
-```
-
-<div class="figure">
-
-<img src="man/figures/README-example04-1-2-1.png" alt="Cumulative incidence curves with censor marks and axis labels" width="70%" />
-<p class="caption">
-
-Cumulative incidence curves with censor marks and axis labels
-</p>
-
-</div>
-
-Next, competing risk marks are added (`add.competing.risk.mark = TRUE`)
-to indicate individuals who experienced the competing event
-(macrovascular complications) before diabetic retinopathy. The time
-points at which the macrovascular complications occurred were obtained
-as `output2` for each strata using a helper function
-`extract_time_to_event()`. These symbols help distinguish between events
-due to the primary cause and those attributable to competing causes.
-Note that the names of `competing.risk.time` and
-`intercurrent.event.time` must match the strata labels used in the plot
-if supplied by the user.
-
-``` r
 output2 <- extract_time_to_event(Event(t,epsilon)~fruitq1, 
                                  data=diabetes.complications, which.event="event2")
 cifplot(output1, add.conf=FALSE, add.risktable=FALSE, 
@@ -249,7 +226,7 @@ cifplot(output1, add.conf=FALSE, add.risktable=FALSE,
 
 <div class="figure">
 
-<img src="man/figures/README-example04-1-3-1.png" alt="Cumulative incidence curves with competing risk marks" width="70%" />
+<img src="man/figures/README-example04-1-2-1.png" alt="Cumulative incidence curves with competing risk marks" width="70%" />
 <p class="caption">
 
 Cumulative incidence curves with competing risk marks
@@ -261,11 +238,11 @@ The `label.strata` is another argument for customizing labels, but when
 inputting a survfit object, it becomes invalid because it does not
 contain stratum information. Therefore, the following code inputs the
 formula and data. `label.strata` is used by combining `level.strata` and
-`order.strata`. `level.strata` specifies the levels of the
-stratification variable corresponding to each label in `label.strata`.
+`order.strata`. The `level.strata` specifies **the levels of the
+stratification variable corresponding to each label** in `label.strata`.
 The levels specified in `level.strata` are then displayed in the figure
-in the order defined by `order.strata`. A figure enclosed in a square
-was generated, which is due to `style="framed"` specification.
+**in the order defined by `order.strata`**. A figure enclosed in a
+square was generated, which is due to `style="framed"` specification.
 
 ``` r
 cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
@@ -279,7 +256,7 @@ cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications,
 
 <div class="figure">
 
-<img src="man/figures/README-example04-1-4-1.png" alt="Cumulative incidence curves with strata labels and FRAMED style" width="70%" />
+<img src="man/figures/README-example04-1-3-1.png" alt="Cumulative incidence curves with strata labels and FRAMED style" width="70%" />
 <p class="caption">
 
 Cumulative incidence curves with strata labels and FRAMED style
@@ -287,14 +264,14 @@ Cumulative incidence curves with strata labels and FRAMED style
 
 </div>
 
-By specifying `add.estimate.table = TRUE`, the risks of diabetic
-retinopathy (estimates for CIFs) along with their CIs are shown in the
-table at the bottom of the figure. Risk ratios at a specific time point
-(e.g. 8 years) for all competing events can be jointly and coherently
-estimated using `polyreg()` with `outcome.type="competing-risk"`. In the
-code of `polyreg()` below, no covariates are included in the nuisance
-model (`~1` specifies intercept only). The effect of low fruit intake
-`fruitq1` is estimated as an unadjusted risk ratio
+By specifying `add.estimate.table = TRUE`, **the risks of diabetic
+retinopathy (estimates for CIFs) along with their CIs** are shown in the
+table at the bottom of the figure. The risk ratios at a specific time
+point (e.g. 8 years) for competing events can be jointly and coherently
+estimated using `polyreg()` with `outcome.type = "competing-risk"`. In
+the code of `polyreg()` below, no covariates are included in the
+nuisance model (`~1` specifies intercept only). The effect of low fruit
+intake `fruitq1` is estimated as **an unadjusted risk ratio**
 (`effect.measure1="RR"`) for diabetic retinopathy (event 1) and
 macrovascular complications (event 2) at 8 years (`time.point=8`).
 

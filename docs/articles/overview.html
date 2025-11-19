@@ -96,9 +96,10 @@ follows this convention. With <code>panel.per.event = TRUE</code>,
 (CIFs), with the CIF of diabetic retinopathy (<code>epsilon = 1</code>)
 shown on the left and the CIF of macrovascular complications
 (<code>epsilon = 2</code>) on the right.</p>
-<div class="section level3">
-<h3 id="why-cifmodeling">Why cifmodeling?<a class="anchor" aria-label="anchor" href="#why-cifmodeling"></a>
-</h3>
+</div>
+<div class="section level2">
+<h2 id="why-cifmodeling">Why cifmodeling?<a class="anchor" aria-label="anchor" href="#why-cifmodeling"></a>
+</h2>
 <ul>
 <li>
 <strong>Unified interface</strong> for Kaplan–Meier and
@@ -110,7 +111,7 @@ subdistribution hazards, <code><a href="../reference/polyreg.html">polyreg()</a>
 of CIFs (risk ratios, odds ratios, subdistribution hazard ratios), so
 parameters align closely with differences seen in CIF curves.</li>
 <li>
-<strong>Coherent, Joint modeling of all competing events</strong>:
+<strong>Coherent, joint modeling of all competing events</strong>:
 <code><a href="../reference/polyreg.html">polyreg()</a></code> models all cause-specific CIFs together,
 parameterizing the nuisance structure with polytomous log odds products
 and enforcing that their CIFs sum to at most one.</li>
@@ -121,11 +122,10 @@ and enforcing that their CIFs sum to at most one.</li>
 with <code>modelsummary</code> and other broom-style tools.</li>
 <li>
 <strong>Publication-ready graphics</strong> built on
-<code>ggsurvfit</code> and <code>ggplot2</code>, including risk/estimate
-tables, censoring/competing-risks/intercurrent-events marks, and
-multi-panel layouts.</li>
+<code>ggsurvfit</code> and <code>ggplot2</code>, including
+at-risk/CIF+CI tables, censoring/competing-risk/intercurrent-event
+marks, and multi-panel layouts.</li>
 </ul>
-</div>
 </div>
 <div class="section level2">
 <h2 id="tools-for-survival-and-competing-risks-analysis">Tools for survival and competing risks analysis<a class="anchor" aria-label="anchor" href="#tools-for-survival-and-competing-risks-analysis"></a>

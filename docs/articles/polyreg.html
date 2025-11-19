@@ -100,11 +100,14 @@ models for each cause have two drawbacks in competing risks settings:
 they may lose efficiency by ignoring the correlation between causes, and
 they can be <strong>incoherent</strong> in the sense that the implied
 cause-specific CIFs do not necessarily sum to at most one. Direct
-polytomous regression addresses these challenges by <strong>modeling all
-cause-specific CIFs via log odds products</strong>. It introduces a
-nuisance model specified as polytomous log odds products in addition to
-the model for effect measures (e.g., risk ratios for the exposure), so
-that the sum restriction on CIFs is enforced naturally. The same
+polytomous regression addresses these challenges by
+<strong>log-odds-product modeling of all cause-specific CIFs</strong>
+(Richardson, Robins and Wang 2017). It introduces a nuisance model
+specified as <strong>polytomous log odds products</strong> in addition
+to the model for effect measures (e.g., risk ratios for the exposure),
+so that the sum restriction on CIFs is enforced naturally. This model
+specification is equivalent to the Richardson model in the case of
+uncensored binary outcome (Richardson, Robins and Wang 2017). The same
 framework applies both to models with common multiplicative effects over
 time and to models targeting effects at specific time points.</p>
 <p>The models in <code>polyreg</code> are specified by three main
@@ -119,7 +122,7 @@ weighting to adjust for dependent censoring.</p></li>
 </ul>
 </div>
 <div class="section level2">
-<h2 id="nuisance-model">1. Nuisance Model<a class="anchor" aria-label="anchor" href="#nuisance-model"></a>
+<h2 id="nuisance-model">1. Nuisance model<a class="anchor" aria-label="anchor" href="#nuisance-model"></a>
 </h2>
 <p>The <code>nuisance.model</code> argument specifies the formula
 linking the outcome to covariates. Its format depends on the outcome
@@ -187,10 +190,10 @@ simple method based on <code>outcome.type</code>:</p>
 <ul>
 <li>
 <code>"competing-risk"</code>, <code>"survival"</code>,
-<code>"binomial"</code> — Wald CIs based on sandwich variance</li>
+<code>"binomial"</code>: Wald CIs based on sandwich variance</li>
 <li>
 <code>"proportional-competing-risk"</code>,
-<code>"proportional-survival"</code> — Bootstrap CIs (normal
+<code>"proportional-survival"</code>: Bootstrap CIs (normal
 approximation)</li>
 </ul>
 <p>For time-point (non-proportional) models, the default is Wald CIs
@@ -211,14 +214,14 @@ flags.</p>
 <p>This function returns an object of class <code>"polyreg"</code> with
 the following main components:</p>
 <ul>
-<li><p><code>coef</code> — regression coefficients on the chosen
+<li><p><code>coef</code>: regression coefficients on the chosen
 effect-measure scale.</p></li>
-<li><p><code>vcov</code> — variance–covariance matrix for the regression
+<li><p><code>vcov</code>: variance–covariance matrix for the regression
 coefficients.</p></li>
-<li><p><code>diagnostic.statistics</code> — a data frame containing
+<li><p><code>diagnostic.statistics</code>: a data frame containing
 inverse probability weights, influence functions, and predicted
 potential outcomes for individual observations.</p></li>
-<li><p><code>summary</code> — a list of event-wise <em>tidy</em> and
+<li><p><code>summary</code>: a list of event-wise <em>tidy</em> and
 <em>glance</em> tables summarising the estimated exposure
 effects.</p></li>
 </ul>
