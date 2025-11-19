@@ -221,23 +221,23 @@ convergence summaries are returned (default <code>FALSE</code>).</p></dd>
 
 <dt id="arg-report-sandwich-conf">report.sandwich.conf<a class="anchor" aria-label="anchor" href="#arg-report-sandwich-conf"></a></dt>
 <dd><p>Logical or <code>NULL</code>. When <code>TRUE</code>,
-confidence intervals based on sandwich variance are computed.
+CIs based on sandwich variance are computed.
 When <code>FALSE</code>, they are omitted (default <code>TRUE</code>).
-This confidence interval is default for time-point models
+This CI is default for time-point models
 (<code>"outcome.type=competing-risk"</code>, <code>"survival"</code> or <code>"binomial"</code>) and
 is not available otherwise.</p></dd>
 
 
 <dt id="arg-report-boot-conf">report.boot.conf<a class="anchor" aria-label="anchor" href="#arg-report-boot-conf"></a></dt>
 <dd><p>Logical or <code>NULL</code>. When <code>TRUE</code>, bootstrap
-confidence intervals are computed. When <code>FALSE</code>, they are omitted.
+CIs are computed. When <code>FALSE</code>, they are omitted.
 If <code>NULL</code>, the function chooses based on <code>outcome.type</code> (default <code>NULL</code>).
-This confidence interval is default for proportional models
+This CI is default for proportional models
 (<code>outcome.type="proportional-competing-risk"</code> or <code>"proportional-survival"</code>).</p></dd>
 
 
 <dt id="arg-boot-bca">boot.bca<a class="anchor" aria-label="anchor" href="#arg-boot-bca"></a></dt>
-<dd><p>Logical indicating the bootstrap confidence interval method.
+<dd><p>Logical indicating the bootstrap CI method.
 Use <code>TRUE</code> for bias-corrected and accelerated intervals or <code>FALSE</code>
 for the normal approximation (default <code>FALSE</code>).</p></dd>
 
