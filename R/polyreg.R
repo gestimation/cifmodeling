@@ -62,9 +62,9 @@
 #' (`"outcome.type=competing-risk"`, `"survival"` or `"binomial"`) and
 #' is not available otherwise.
 #' @param report.boot.conf Logical or `NULL`. When `TRUE`, bootstrap
-#' confidence intervals are computed. When `FALSE`, they are omitted.
+#' CIs are computed. When `FALSE`, they are omitted.
 #' If `NULL`, the function chooses based on `outcome.type` (default `NULL`).
-#' This confidence interval is default for proportional models
+#' This CI is default for proportional models
 #' (`outcome.type="proportional-competing-risk"` or `"proportional-survival"`).
 #' @param boot.bca Logical indicating the bootstrap CI method.
 #'   Use `TRUE` for bias-corrected and accelerated intervals or `FALSE`

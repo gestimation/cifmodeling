@@ -113,9 +113,9 @@ This CI is default for time-point models
 is not available otherwise.}
 
 \item{report.boot.conf}{Logical or \code{NULL}. When \code{TRUE}, bootstrap
-confidence intervals are computed. When \code{FALSE}, they are omitted.
+CIs are computed. When \code{FALSE}, they are omitted.
 If \code{NULL}, the function chooses based on \code{outcome.type} (default \code{NULL}).
-This confidence interval is default for proportional models
+This CI is default for proportional models
 (\code{outcome.type="proportional-competing-risk"} or \code{"proportional-survival"}).}
 
 \item{boot.bca}{Logical indicating the bootstrap CI method.

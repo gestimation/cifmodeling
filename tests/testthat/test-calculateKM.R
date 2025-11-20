@@ -145,7 +145,10 @@ test_that("drop-in replacement: with strata - weights", {
 test_that("engine routing works and schemas align", {
   skip_on_cran()
   data(diabetes.complications, package = "cifmodeling")
-  f <- Event(t, epsilon) ~ fruitq1
+  diabetes.complications$d <- as.integer(diabetes.complications$epsilon>0)
+
+  f <- Event(t, d) ~ fruitq1
+  g <- Event(t, epsilon) ~ fruitq1
 
   out_km <- cifcurve(f, data = diabetes.complications,
                      outcome.type = "survival", engine = "calculateKM", error = "greenwood")
@@ -153,9 +156,9 @@ test_that("engine routing works and schemas align", {
                      outcome.type = "survival", engine = "calculateAJ_Rcpp", error = "greenwood", report.influence.function = FALSE)
   #expect_equal(out_km$surv, out_rc$surv, tolerance = 1e-8)
 
-  out_ajR <- cifcurve(f, data = diabetes.complications,
+  out_ajR <- cifcurve(g, data = diabetes.complications,
                       outcome.type = "competing-risk", engine = "calculateAJ", error = "aalen")
-  out_ajC <- cifcurve(f, data = diabetes.complications,
+  out_ajC <- cifcurve(g, data = diabetes.complications,
                       outcome.type = "competing-risk", engine = "calculateAJ_Rcpp", error = "aalen", report.influence.function = FALSE)
   #expect_equal(out_ajR$`std.err.cif`, out_ajC$`std.err.cif`, tolerance = 1e-5)
 

@@ -587,25 +587,24 @@ optimization convergence summaries are returned (default
 <code>FALSE</code>).</li>
 <li>
 <code>report.sandwich.conf</code> Logical or <code>NULL</code>. When
-<code>TRUE</code>, confidence intervals based on sandwich variance are
-computed. When <code>FALSE</code>, they are omitted (default
-<code>TRUE</code>). This confidence interval is default for time-point
-models (<code>"outcome.type=COMPETING-RISK"</code>,
-<code>"survival"</code> or <code>"binomial"</code>) and is not available
-otherwise.</li>
+<code>TRUE</code>, CIs based on sandwich variance are computed. When
+<code>FALSE</code>, they are omitted (default <code>TRUE</code>). This
+CI is default for time-point models
+(<code>"outcome.type=COMPETING-RISK"</code>, <code>"survival"</code> or
+<code>"binomial"</code>) and is not available otherwise.</li>
 <li>
 <code>report.boot.conf</code> Logical or <code>NULL</code>. When
-<code>TRUE</code>, bootstrap confidence intervals are computed. When
-<code>FALSE</code>, they are omitted. If <code>NULL</code>, the function
-chooses based on <code>outcome.type</code> (default <code>NULL</code>).
-This confidence interval is default for proportional models
+<code>TRUE</code>, bootstrap CIs are computed. When <code>FALSE</code>,
+they are omitted. If <code>NULL</code>, the function chooses based on
+<code>outcome.type</code> (default <code>NULL</code>). This CI is
+default for proportional models
 (<code>outcome.type="proportional-competing-risk"</code> or
 <code>"proportional-survival"</code>).</li>
 <li>
-<code>boot.bca</code> Logical indicating the bootstrap confidence
-interval method. Use <code>TRUE</code> for bias-corrected and
-accelerated intervals or <code>FALSE</code> for the normal approximation
-(default to <code>FALSE</code>).</li>
+<code>boot.bca</code> Logical indicating the bootstrap CI method.
+Use <code>TRUE</code> for bias-corrected and accelerated intervals or
+<code>FALSE</code> for the normal approximation (default to
+<code>FALSE</code>).</li>
 <li>
 <code>boot.multiplier</code> Character string specifying the wild
 bootstrap weight distribution. One of <code>"rademacher"</code>,

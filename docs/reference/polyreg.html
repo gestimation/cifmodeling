@@ -230,9 +230,9 @@ is not available otherwise.</p></dd>
 
 <dt id="arg-report-boot-conf">report.boot.conf<a class="anchor" aria-label="anchor" href="#arg-report-boot-conf"></a></dt>
 <dd><p>Logical or <code>NULL</code>. When <code>TRUE</code>, bootstrap
-confidence intervals are computed. When <code>FALSE</code>, they are omitted.
+CIs are computed. When <code>FALSE</code>, they are omitted.
 If <code>NULL</code>, the function chooses based on <code>outcome.type</code> (default <code>NULL</code>).
-This confidence interval is default for proportional models
+This CI is default for proportional models
 (<code>outcome.type="proportional-competing-risk"</code> or <code>"proportional-survival"</code>).</p></dd>
 
 
@@ -449,7 +449,7 @@ CIs and p-values, and return the underlying list of tidy/glance tables invisibly
 </ul><p>For backward compatibility, components named <code>coefficient</code> and <code>cov</code>
 may also be present and mirror <code>coef</code> and <code>vcov</code>, respectively.
 The <code>summary</code> component can be passed to external functions such as
-<code>modelsummary()</code> for further formatting, if desired.</p>
+<code><a href="https://modelsummary.com/man/modelsummary.html" class="external-link">modelsummary()</a></code> for further formatting, if desired.</p>
 </div>
 
 <div class="section">
