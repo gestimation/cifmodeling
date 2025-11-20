@@ -165,7 +165,7 @@ p-values. Internally, a `"polyreg"` object also supports the **generics** API:
 
 This means that `polyreg()` fits integrate naturally with the broader `broom/modelsummary` ecosystem. For publication-ready tables, you can pass `polyreg` objects directly to `modelsummary::msummary()` and `modelsummary::modelplot()`, including exponentiated summaries (risk ratios, odds ratios, subdistribution hazard ratios) via the `exponentiate = TRUE` option. 
 
-```{r example04-1-5, fig.cap="Unadjusted risk ratios at 2, 4, 6 and 8 years by polyreg()", warning=FALSE, message=FALSE}
+```{r example04-1-5, fig.cap="Visualizaton of risk ratios at 2, 4, 6 and 8 years using polyreg() and modelplot()", warning=FALSE, message=FALSE}
 output4 <- polyreg(nuisance.model=Event(t,epsilon)~1, exposure="fruitq1", 
                    data=diabetes.complications, effect.measure1="RR", effect.measure2="RR", 
                    time.point=2, outcome.type="competing-risk")
