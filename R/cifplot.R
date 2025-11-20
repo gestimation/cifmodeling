@@ -1255,7 +1255,7 @@ call_ggsurvfit <- function(
   )
 
   y_limits_auto <- out_cg$ylim_auto
-  
+
   p <- out_cg$out_survfit_object +
     ggplot2::labs(
       x = label.x.user %||% "Time",
@@ -1391,8 +1391,709 @@ call_ggsurvfit <- function(
   return(p)
 }
 
-
 check_ggsurvfit <- function(
+    survfit_object,
+    survfit.info = NULL,
+    axis.info    = NULL,
+    visual.info  = NULL,
+    style.info   = NULL,
+    out_readSurv = NULL
+){
+  survfit.info <- survfit.info %||% list()
+  axis.info    <- axis.info    %||% list()
+  visual.info  <- visual.info  %||% list()
+  style.info   <- style.info   %||% list()
+
+  conf.type <- survfit.info$conf.type
+  conf.int  <- survfit.info$conf.int
+  label.y   <- axis.info$label.y
+
+  ## ---- outcome.type を survfit_object から推定 --------------------------
+  ## survfit_object$type は "kaplan-meier" / "aalen-johansen" を想定
+  outcome.type <- switch(
+    tolower(survfit_object$type),
+    "aalen-johansen" = "competing-risk",
+    "kaplan-meier"   = "survival",
+    ## 念のためのフォールバック
+    "competing-risk" = "competing-risk",
+    "survival"       = "survival",
+    "survival"
+  )
+
+  ## 1) 生の type.y を拾う（元仕様と同じ）
+  type.y.raw <- axis.info$type.y
+
+  ## 2) 「新しいタイプ」と「従来タイプ」を分ける
+  new_modes <- c("difference", "nnt", "cumhaz", "cloglog")
+  type.y    <- NULL
+
+  if (!is.null(type.y.raw)) {
+    ty_chr   <- as.character(type.y.raw)
+    ty_lower <- tolower(trimws(ty_chr))
+
+    if (any(ty_lower %in% new_modes)) {
+      ## 新モード: difference / nnt / cumhaz / cloglog
+      ## → 最初の要素だけ採用（ベクトルを潰す）
+      idx    <- which(ty_lower %in% new_modes)[1L]
+      type.y <- ty_lower[[idx]]
+    } else {
+      ## 従来モード: surv / risk (+エイリアス)
+      ## → util_check_type_y() で正規化（"surv" or "risk"）
+      type.y <- util_check_type_y(type.y.raw)
+    }
+  }
+
+  ## ---- outcome.type × type.y の仕様に基づく分岐 ------------------------
+  ## ユーザー指定仕様：
+  ##  - CR かつ type.y NULL or "risk"   → "risk" 結果
+  ##  - CR かつ type.y "survival"       → "survival" 結果
+  ##  - CR かつ 上記以外                → エラー
+  ##  - SURV かつ type.y NULL           → "survival" 結果
+  ##  - SURV かつ type.y 非 NULL        → type.y に従う
+  ##
+  ## util_check_type_y() の出力では:
+  ##   "survival" 系は "surv"
+  ##   "risk" 系は "risk"
+  ## になっている前提
+
+  if (identical(outcome.type, "competing-risk")) {
+    ## CR: NULL or "risk" → CIF (risk)、"surv" → 生存、その他はエラー
+    if (is.null(type.y)) {
+      type.y <- "risk"
+    } else if (identical(type.y, "risk")) {
+      # OK (CIF)
+    } else if (identical(type.y, "surv")) {
+      # OK ("survival" 指定)
+    } else {
+      first_raw <- as.character(type.y.raw)[1L]
+      stop(
+        sprintf(
+          "Invalid `type.y` = '%s' for COMPETING-RISK outcomes.\nSupported values are NULL/'risk' (CIF) or 'survival'.",
+          first_raw
+        ),
+        call. = FALSE
+      )
+    }
+  } else { ## outcome.type == "survival"
+    if (is.null(type.y)) {
+      ## SURV + type.y NULL → "survival"
+      type.y <- "surv"
+    }
+    ## type.y が non-NULL のときは difference / nnt / cumhaz / cloglog を含め、
+    ## そのまま後続のロジックで扱う（元の方針どおり）
+  }
+
+  ## 3) label.y のデフォルト設定
+  if (is.null(label.y)) {
+    if (!is.null(type.y) && type.y %in% new_modes) {
+      ## difference/nnt/cumhaz/cloglog 用のラベル
+      label.y <- switch(
+        type.y,
+        difference = "Risk difference",
+        nnt        = "Number needed to treat (absolute)",
+        cumhaz     = "Cumulative hazard",
+        cloglog    = "Complementary log-log"
+      )
+    } else {
+      ## 従来仕様どおり：plot_default_y_label() に渡す
+      auto_label <- plot_default_y_label(survfit_object$type, type.y)
+      if (!is.null(auto_label)) label.y <- auto_label
+    }
+  }
+
+  ## ★ここで label.y を axis.info$label.y で上書きしない！
+
+  limits.x            <- axis.info$limits.x
+  limits.y            <- axis.info$limits.y
+  breaks.x            <- axis.info$breaks.x
+  breaks.y            <- axis.info$breaks.y
+  use.coord.cartesian <- isTRUE(axis.info$use.coord.cartesian)
+
+  add.conf                      <- visual.info$add.conf
+  add.censor.mark               <- visual.info$add.censor.mark
+  add.competing.risk.mark       <- visual.info$add.competing.risk.mark
+  add.intercurrent.event.mark   <- visual.info$add.intercurrent.event.mark
+  shape.censor.mark             <- visual.info$shape.censor.mark
+  shape.competing.risk.mark     <- visual.info$shape.competing.risk.mark
+  shape.intercurrent.event.mark <- visual.info$shape.intercurrent.event.mark
+
+  style     <- style.info$style
+  palette   <- style.info$palette
+  linewidth <- style.info$linewidth
+  linetype  <- style.info$linetype
+
+  if (isTRUE(add.censor.mark) && isTRUE(add.intercurrent.event.mark) &&
+      identical(shape.censor.mark, shape.intercurrent.event.mark)) {
+    .warn("shape_identical", a = "shape.censor.mark", b = "shape.intercurrent.event.mark")
+  }
+  if (isTRUE(add.censor.mark) && isTRUE(add.competing.risk.mark) &&
+      identical(shape.censor.mark, shape.competing.risk.mark)) {
+    .warn("shape_identical", a = "shape.censor.mark", b = "shape.competing.risk.mark")
+  }
+  if (isTRUE(add.competing.risk.mark) && isTRUE(add.intercurrent.event.mark) &&
+      identical(shape.competing.risk.mark, shape.intercurrent.event.mark)) {
+    .warn("shape_identical", a = "shape.competing.risk.mark", b = "shape.intercurrent.event.mark")
+  }
+
+  is_len2_num <- function(x) is.numeric(x) && length(x) == 2L && all(is.finite(x))
+  is_nondec   <- function(x) all(diff(x) >= 0, na.rm = TRUE)
+
+  resolve_conf_level <- function(ci) {
+    if (isFALSE(ci) || is.null(ci)) return(0)
+    if (isTRUE(ci)) return(0.95)
+    if (identical(ci, 0)) return(0)
+    if (is.numeric(ci) && length(ci) == 1L && is.finite(ci) && ci > 0 && ci < 1) return(ci)
+    0
+  }
+  conf_int_level <- resolve_conf_level(conf.int)
+  z_alpha <- if (conf_int_level > 0) stats::qnorm(1 - (1 - conf_int_level) / 2) else 0
+
+  if (!is.null(limits.x)) {
+    if (!(is.numeric(limits.x) && length(limits.x) == 2L && all(is.finite(limits.x)))) {
+      .warn("limits_len2", arg = "limits.x")
+    } else if (!all(diff(limits.x) > 0)) {
+      .warn("limits_increasing", arg = "limits.x")
+    }
+    tmax <- suppressWarnings(max(survfit_object$time, na.rm = TRUE))
+    if (is.finite(tmax)) {
+      if (tmax < limits.x[1] || tmax > limits.x[2]) {
+        .warn("limits_x_outside", tmax = signif(tmax, 6), arg = "limits.x",
+              a = signif(limits.x[1], 6), b = signif(limits.x[2], 6))
+      }
+    }
+  } else if (!is.null(out_readSurv) && !is.null(out_readSurv$t)) {
+    tmax <- suppressWarnings(max(out_readSurv$t, na.rm = TRUE))
+    if (!is.finite(tmax) || tmax <= 0) .warn("ors_tmax_bad")
+  }
+
+  ## limits.y のチェックは surv / risk のときだけ
+  if (!is.null(limits.y) && (is.null(type.y) || type.y %in% c("surv", "risk"))) {
+    if (!(is.numeric(limits.y) && length(limits.y) == 2L && all(is.finite(limits.y)))) {
+      .warn("limits_len2", arg = "limits.y")
+    } else if (!all(diff(limits.y) > 0)) {
+      .warn("limits_increasing", arg = "limits.y")
+    }
+
+    surv  <- survfit_object$surv
+    upper <- survfit_object$upper
+    lower <- survfit_object$lower
+
+    if (identical(type.y, "risk")) {
+      surv  <- 1 - surv
+      if (!is.null(upper)) upper <- 1 - upper
+      if (!is.null(lower)) lower <- 1 - lower
+    }
+
+    if (any(surv < limits.y[1] | surv > limits.y[2], na.rm = TRUE))
+      .warn("est_outside_limits_y", arg = "limits.y", a = limits.y[1], b = limits.y[2])
+
+    if (isTRUE(add.conf)) {
+      if (!is.null(upper) && any(upper < limits.y[1] | upper > limits.y[2], na.rm = TRUE))
+        .warn("upper_outside_limits_y", arg = "limits.y", a = limits.y[1], b = limits.y[2])
+      if (!is.null(lower) && any(lower < limits.y[1] | lower > limits.y[2], na.rm = TRUE))
+        .warn("lower_outside_limits_y", arg = "limits.y", a = limits.y[1], b = limits.y[2])
+    }
+  }
+
+  check_breaks <- function(bk, nm, lims) {
+    if (is.null(bk) || is.function(bk)) return(invisible())
+    if (!is.numeric(bk)) {
+      warning(sprintf("`%s` should be numeric (or a function).", nm), call. = FALSE); return(invisible())
+    }
+    if (!is_nondec(bk)) {
+      warning(sprintf("`%s` must be non-decreasing.", nm), call. = FALSE)
+    }
+    if (!is.null(lims) && is_len2_num(lims)) {
+      if (any(bk < lims[1] | bk > lims[2], na.rm = TRUE)) {
+        warning(sprintf("Some `%s` are outside plotting range [%g, %g].", nm, lims[1], lims[2]), call. = FALSE)
+      }
+    }
+    invisible()
+  }
+  check_breaks(breaks.x, "breaks.x", limits.x)
+  check_breaks(breaks.y, "breaks.y", limits.y)
+
+  ## デフォルトの y 軸ラベルを先に計算（type.y は outcome 仕様で確定済み）
+  default_label_y <- plot_default_y_label(survfit_object$type, type.y)
+
+  ## type.y = NULL はここまでで "surv" or "risk" に潰れている想定
+  if (!is.null(type.y) && type.y %in% new_modes) {
+    label.y <- label.y %||% switch(
+      type.y,
+      difference = "Risk difference",
+      nnt        = "Number needed to treat (absolute)",
+      cumhaz     = "Cumulative hazard",
+      cloglog    = "Complementary log-log",
+      default_label_y
+    )
+  } else {
+    label.y <- label.y %||% default_label_y
+  }
+
+  coerce_conf <- function(survfit_object, conf.type) {
+    if (!is.null(survfit_object$lower) && !is.null(survfit_object$upper)) return(survfit_object)
+    if (conf.type %in% c("none", "n") || length(survfit_object$strata) > 2) {
+      x <- survfit_object
+      x$lower <- x$surv
+      x$upper <- x$surv
+      return(x)
+    }
+    survfit_object
+  }
+
+  ## --- difference / nnt 専用の分岐 ----------------------
+  if (identical(type.y, "difference") || identical(type.y, "nnt")) {
+    if (!identical(tolower(survfit_object$type), "kaplan-meier")) {
+      stop("y.type = '", type.y, "' is only available for survival outcomes.", call. = FALSE)
+    }
+
+    strata_vec <- survfit_object$strata
+    if (is.null(strata_vec) || length(strata_vec) != 2L) {
+      stop("y.type = '", type.y, "' requires exactly two strata.", call. = FALSE)
+    }
+
+    if (is.null(survfit_object$std.err)) {
+      stop("y.type = '", type.y, "' requires std.err in survfit_object.", call. = FALSE)
+    }
+
+    ## ① 2群 KM を共通 time 軸に揃える
+    align_obj <- cifplot_km_align_two_strata(survfit_object)
+
+    ## ② RD とその CI を計算
+    rd_obj <- cifplot_km_risk_difference(align_obj, z_alpha = z_alpha)
+
+    if (identical(type.y, "difference")) {
+      ## RD 用の survfit もどきを作成して ggsurvfit に渡す
+      fake_fit <- survfit_object
+      fake_fit$time    <- rd_obj$time
+      fake_fit$surv    <- rd_obj$rd
+      fake_fit$std.err <- rd_obj$se_rd
+      fake_fit$lower   <- rd_obj$lower
+      fake_fit$upper   <- rd_obj$upper
+      fake_fit$strata  <- structure(length(rd_obj$time), names = "difference")
+
+      fake_fit$n.risk <- rep(1L, length(rd_obj$rd))
+      fake_fit$n.event  <- rep(0L, length(rd_obj$rd))
+      fake_fit$n.censor <- rep(0L, length(rd_obj$rd))
+
+      out_plot <- ggsurvfit(
+        fake_fit,
+        type         = "risk",
+        linewidth    = linewidth,
+        linetype_aes = linetype
+      )
+      return(list(
+        out_survfit_object = out_plot,
+        label.y            = label.y,
+        type.y             = type.y
+      ))
+    }
+
+    ## ③ NNT の場合：RD から NNT に変換
+    nnt_obj <- cifplot_km_nnt_from_rd(rd_obj, z_alpha = z_alpha, limits.y = limits.y)
+
+    fake_fit_nnt <- survfit_object
+    fake_fit_nnt$time    <- nnt_obj$time
+    fake_fit_nnt$surv    <- nnt_obj$nnt
+    fake_fit_nnt$std.err <- nnt_obj$se_nnt
+    fake_fit_nnt$lower   <- nnt_obj$lower
+    fake_fit_nnt$upper   <- nnt_obj$upper
+    fake_fit_nnt$strata  <- structure(length(nnt_obj$time), names = "NNT")
+    fake_fit_nnt$n.risk   <- rep(NA_integer_, length(nnt_obj$time))
+    fake_fit_nnt$n.event  <- rep(NA_integer_, length(nnt_obj$time))
+    fake_fit_nnt$n.censor <- rep(NA_integer_, length(nnt_obj$time))
+
+    out_plot <- ggsurvfit(
+      fake_fit_nnt,
+      type         = "survival",
+      linewidth    = linewidth,
+      linetype_aes = linetype
+    )
+
+    return(list(
+      out_survfit_object = out_plot,
+      label.y            = label.y,
+      type.y             = type.y,
+      ylim_auto          = nnt_obj$ylim_auto
+    ))
+  }
+  ## ----------------------------------------------------
+
+  survfit_object <- coerce_conf(survfit_object, conf.type)
+
+  ## ここから先の type.y は NULL ではなく、"surv"/"risk"/"cumhaz"/"cloglog" のいずれか
+  if (is.null(type.y)) {
+    ## ここには通常来ない想定だが、保険として残しておく
+    target_type <- switch(
+      survfit_object$type,
+      "kaplan-meier"   = "surv",
+      "aalen-johansen" = "risk",
+      "surv"
+    )
+    type.y <- target_type
+  } else if (type.y %in% c("surv", "risk", "cumhaz", "cloglog")) {
+    target_type <- type.y
+  } else {
+    target_type <- "surv"
+  }
+
+  out_plot <- ggsurvfit(
+    survfit_object,
+    type         = target_type,
+    linewidth    = linewidth,
+    linetype_aes = linetype
+  )
+
+  list(
+    out_survfit_object = out_plot,
+    label.y            = label.y,
+    type.y             = type.y
+  )
+}
+
+check_ggsurvfit_ <- function(
+    survfit_object,
+    survfit.info = NULL,
+    axis.info    = NULL,
+    visual.info  = NULL,
+    style.info   = NULL,
+    out_readSurv = NULL
+){
+  survfit.info <- survfit.info %||% list()
+  axis.info    <- axis.info    %||% list()
+  visual.info  <- visual.info  %||% list()
+  style.info   <- style.info   %||% list()
+
+  conf.type <- survfit.info$conf.type
+  conf.int  <- survfit.info$conf.int
+  label.y   <- axis.info$label.y
+
+  ## 1) 生の type.y を拾う（元仕様と同じ）
+  type.y.raw <- axis.info$type.y
+
+  ## 2) ここで「新しいタイプ」と「従来タイプ」を分ける
+  new_modes <- c("difference", "nnt", "cumhaz", "cloglog")
+  type.y    <- NULL
+
+  if (!is.null(type.y.raw)) {
+    ty_lower <- tolower(trimws(as.character(type.y.raw)))
+
+    if (any(ty_lower %in% new_modes)) {
+      ## 新モード: difference / nnt / cumhaz / cloglog
+      ## → 最初の要素だけ採用（ベクトルを潰す）
+      idx    <- which(ty_lower %in% new_modes)[1L]
+      type.y <- ty_lower[[idx]]
+    } else {
+      ## 従来モード: surv / risk (+エイリアス)
+      ## → ここで util_check_type_y() を通す（元仕様と整合）
+      type.y <- util_check_type_y(type.y.raw)
+    }
+  }
+
+  ## 3) label.y のデフォルト設定
+  if (is.null(label.y)) {
+    if (!is.null(type.y) && type.y %in% new_modes) {
+      ## difference/nnt/cumhaz/cloglog 用のラベル
+      label.y <- switch(
+        type.y,
+        difference = "Risk difference",
+        nnt        = "Number needed to treat (absolute)",
+        cumhaz     = "Cumulative hazard",
+        cloglog    = "Complementary log-log"
+      )
+    } else {
+      ## 従来仕様どおり：plot_default_y_label() に渡す
+      auto_label <- plot_default_y_label(survfit_object$type, type.y)
+      if (!is.null(auto_label)) label.y <- auto_label
+    }
+  }
+
+  ## ★ここで label.y を上書きしないことが重要！
+  limits.x            <- axis.info$limits.x
+  limits.y            <- axis.info$limits.y
+  breaks.x            <- axis.info$breaks.x
+  breaks.y            <- axis.info$breaks.y
+  use.coord.cartesian <- isTRUE(axis.info$use.coord.cartesian)
+
+  add.conf                      <- visual.info$add.conf
+  add.censor.mark               <- visual.info$add.censor.mark
+  add.competing.risk.mark       <- visual.info$add.competing.risk.mark
+  add.intercurrent.event.mark   <- visual.info$add.intercurrent.event.mark
+  shape.censor.mark             <- visual.info$shape.censor.mark
+  shape.competing.risk.mark     <- visual.info$shape.competing.risk.mark
+  shape.intercurrent.event.mark <- visual.info$shape.intercurrent.event.mark
+
+  style     <- style.info$style
+  palette   <- style.info$palette
+  linewidth <- style.info$linewidth
+  linetype  <- style.info$linetype
+
+  if (isTRUE(add.censor.mark) && isTRUE(add.intercurrent.event.mark) &&
+      identical(shape.censor.mark, shape.intercurrent.event.mark)) {
+    .warn("shape_identical", a = "shape.censor.mark", b = "shape.intercurrent.event.mark")
+  }
+  if (isTRUE(add.censor.mark) && isTRUE(add.competing.risk.mark) &&
+      identical(shape.censor.mark, shape.competing.risk.mark)) {
+    .warn("shape_identical", a = "shape.censor.mark", b = "shape.competing.risk.mark")
+  }
+  if (isTRUE(add.competing.risk.mark) && isTRUE(add.intercurrent.event.mark) &&
+      identical(shape.competing.risk.mark, shape.intercurrent.event.mark)) {
+    .warn("shape_identical", a = "shape.competing.risk.mark", b = "shape.intercurrent.event.mark")
+  }
+
+  is_len2_num <- function(x) is.numeric(x) && length(x) == 2L && all(is.finite(x))
+  is_nondec   <- function(x) all(diff(x) >= 0, na.rm = TRUE)
+
+  resolve_conf_level <- function(ci) {
+    if (isFALSE(ci) || is.null(ci)) return(0)
+    if (isTRUE(ci)) return(0.95)
+    if (identical(ci, 0)) return(0)
+    if (is.numeric(ci) && length(ci) == 1L && is.finite(ci) && ci > 0 && ci < 1) return(ci)
+    0
+  }
+  conf_int_level <- resolve_conf_level(conf.int)
+  z_alpha <- if (conf_int_level > 0) stats::qnorm(1 - (1 - conf_int_level) / 2) else 0
+
+  if (!is.null(limits.x)) {
+    if (!(is.numeric(limits.x) && length(limits.x) == 2L && all(is.finite(limits.x)))) {
+      .warn("limits_len2", arg = "limits.x")
+    } else if (!all(diff(limits.x) > 0)) {
+      .warn("limits_increasing", arg = "limits.x")
+    }
+    tmax <- suppressWarnings(max(survfit_object$time, na.rm = TRUE))
+    if (is.finite(tmax)) {
+      if (tmax < limits.x[1] || tmax > limits.x[2]) {
+        .warn("limits_x_outside", tmax = signif(tmax, 6), arg = "limits.x",
+              a = signif(limits.x[1], 6), b = signif(limits.x[2], 6))
+      }
+    }
+  } else if (!is.null(out_readSurv) && !is.null(out_readSurv$t)) {
+    tmax <- suppressWarnings(max(out_readSurv$t, na.rm = TRUE))
+    if (!is.finite(tmax) || tmax <= 0) .warn("ors_tmax_bad")
+  }
+
+  ## limits.y のチェックは surv / risk のときだけ
+  if (!is.null(limits.y) && (is.null(type.y) || type.y %in% c("surv", "risk"))) {
+    if (!(is.numeric(limits.y) && length(limits.y) == 2L && all(is.finite(limits.y)))) {
+      .warn("limits_len2", arg = "limits.y")
+    } else if (!all(diff(limits.y) > 0)) {
+      .warn("limits_increasing", arg = "limits.y")
+    }
+
+    surv  <- survfit_object$surv
+    upper <- survfit_object$upper
+    lower <- survfit_object$lower
+
+    if (identical(type.y, "risk")) {
+      surv  <- 1 - surv
+      if (!is.null(upper)) upper <- 1 - upper
+      if (!is.null(lower)) lower <- 1 - lower
+    }
+
+    if (any(surv < limits.y[1] | surv > limits.y[2], na.rm = TRUE))
+      .warn("est_outside_limits_y", arg = "limits.y", a = limits.y[1], b = limits.y[2])
+
+    if (isTRUE(add.conf)) {
+      if (!is.null(upper) && any(upper < limits.y[1] | upper > limits.y[2], na.rm = TRUE))
+        .warn("upper_outside_limits_y", arg = "limits.y", a = limits.y[1], b = limits.y[2])
+      if (!is.null(lower) && any(lower < limits.y[1] | lower > limits.y[2], na.rm = TRUE))
+        .warn("lower_outside_limits_y", arg = "limits.y", a = limits.y[1], b = limits.y[2])
+    }
+  }
+
+  check_breaks <- function(bk, nm, lims) {
+    if (is.null(bk) || is.function(bk)) return(invisible())
+    if (!is.numeric(bk)) {
+      warning(sprintf("`%s` should be numeric (or a function).", nm), call. = FALSE); return(invisible())
+    }
+    if (!is_nondec(bk)) {
+      warning(sprintf("`%s` must be non-decreasing.", nm), call. = FALSE)
+    }
+    if (!is.null(lims) && is_len2_num(lims)) {
+      if (any(bk < lims[1] | bk > lims[2], na.rm = TRUE)) {
+        warning(sprintf("Some `%s` are outside plotting range [%g, %g].", nm, lims[1], lims[2]), call. = FALSE)
+      }
+    }
+    invisible()
+  }
+  check_breaks(breaks.x, "breaks.x", limits.x)
+  check_breaks(breaks.y, "breaks.y", limits.y)
+
+  ## デフォルトの y 軸ラベルを先に計算
+  default_label_y <- plot_default_y_label(survfit_object$type, type.y)
+
+  ## type.y が NULL のときは switch を呼ばずにデフォルトラベルだけ使う
+  if (is.null(type.y)) {
+    label.y <- label.y %||% default_label_y
+  } else {
+    label.y <- label.y %||% switch(
+      type.y,
+      difference = "Risk difference",
+      nnt        = "Number needed to treat (absolute)",
+      cumhaz     = "Cumulative hazard",
+      cloglog    = "Complementary log-log",
+      default_label_y
+    )
+  }
+
+  coerce_conf <- function(survfit_object, conf.type) {
+    if (!is.null(survfit_object$lower) && !is.null(survfit_object$upper)) return(survfit_object)
+    if (conf.type %in% c("none", "n") || length(survfit_object$strata) > 2) {
+      x <- survfit_object
+      x$lower <- x$surv
+      x$upper <- x$surv
+      return(x)
+    }
+    survfit_object
+  }
+
+  ## --- difference / nnt 専用の分岐 ----------------------
+  if (identical(type.y, "difference") || identical(type.y, "nnt")) {
+    if (!identical(tolower(survfit_object$type), "kaplan-meier")) {
+      stop("y.type = '", type.y, "' is only available for survival outcomes.", call. = FALSE)
+    }
+
+    strata_vec <- survfit_object$strata
+    if (is.null(strata_vec) || length(strata_vec) != 2L) {
+      stop("y.type = '", type.y, "' requires exactly two strata.", call. = FALSE)
+    }
+
+    n1 <- strata_vec[1]
+    n2 <- strata_vec[2]
+
+    S     <- survfit_object$surv
+    se_S  <- survfit_object$std.err
+    times <- survfit_object$time
+
+    idx1 <- seq_len(n1)
+    idx2 <- seq.int(n1 + 1L, n1 + n2)
+
+    S1  <- S[idx1]
+    S2  <- S[idx2]
+    se1 <- se_S[idx1]
+    se2 <- se_S[idx2]
+    t1  <- times[idx1]
+
+    risk1 <- 1 - S1
+    risk0 <- 1 - S2
+    rd    <- risk1 - risk0
+    se_rd <- sqrt(se1^2 + se2^2)
+
+    rd_low  <- rd - z_alpha * se_rd
+    rd_high <- rd + z_alpha * se_rd
+
+    fake_fit <- survfit_object
+    fake_fit$time    <- t1
+    fake_fit$surv    <- rd
+    fake_fit$std.err <- se_rd
+    fake_fit$lower   <- rd_low
+    fake_fit$upper   <- rd_high
+    fake_fit$strata  <- structure(length(rd), names = "difference")
+    fake_fit$n.risk  <- survfit_object$n.risk[seq_len(length(rd))]
+    fake_fit$n.event  <- rep(NA_integer_, length(rd))
+    fake_fit$n.censor <- rep(NA_integer_, length(rd))
+
+    if (identical(type.y, "difference")) {
+      out_plot <- ggsurvfit(
+        fake_fit,
+        type         = "risk",
+        linewidth    = linewidth,
+        linetype_aes = linetype
+      )
+      return(list(
+        out_survfit_object = out_plot,
+        label.y            = label.y,
+        type.y             = type.y
+      ))
+    }
+
+    ## NNT の場合
+    tol <- 1 / 100000
+    sign_rd <- sign(rd)
+    sign_rd[abs(rd) < tol] <- 0
+    nonzero_signs <- unique(sign_rd[sign_rd != 0])
+    if (length(nonzero_signs) > 1L) {
+      stop("y.type = 'nnt' is not allowed when the risk difference changes sign over time.", call. = FALSE)
+    }
+
+    nnt    <- 1 / rd
+    nnt    <- abs(nnt)
+    se_nnt <- abs(1 / (rd^2)) * se_rd
+
+    nnt_low  <- nnt - z_alpha * se_nnt
+    nnt_high <- nnt + z_alpha * se_nnt
+
+    cap_idx <- abs(rd) < tol
+    nnt[cap_idx]      <- 100000
+    nnt_low[cap_idx]  <- NA_real_
+    nnt_high[cap_idx] <- NA_real_
+    se_nnt[cap_idx]   <- NA_real_
+
+    ymax_auto <- NULL
+    if (is.null(limits.y)) {
+      ymax_auto <- suppressWarnings(max(nnt, na.rm = TRUE))
+      if (!is.finite(ymax_auto)) ymax_auto <- NULL
+    }
+
+    fake_fit_nnt <- survfit_object
+    fake_fit_nnt$time    <- t1
+    fake_fit_nnt$surv    <- nnt
+    fake_fit_nnt$std.err <- se_nnt
+    fake_fit_nnt$lower   <- nnt_low
+    fake_fit_nnt$upper   <- nnt_high
+    fake_fit_nnt$strata  <- structure(length(nnt), names = "NNT")
+    fake_fit_nnt$n.risk   <- survfit_object$n.risk[seq_len(length(nnt))]
+    fake_fit_nnt$n.event  <- rep(NA_integer_, length(nnt))
+    fake_fit_nnt$n.censor <- rep(NA_integer_, length(nnt))
+
+    out_plot <- ggsurvfit(
+      fake_fit_nnt,
+      type         = "survival",
+      linewidth    = linewidth,
+      linetype_aes = linetype
+    )
+
+    return(list(
+      out_survfit_object = out_plot,
+      label.y            = label.y,
+      type.y             = type.y,
+      ylim_auto          = ymax_auto
+    ))
+  }
+  ## ----------------------------------------------------
+
+  survfit_object <- coerce_conf(survfit_object, conf.type)
+
+  ## ここから先の type.y も、必ずスカラー（NULL or 長さ1）になっている
+  if (is.null(type.y)) {
+    target_type <- switch(
+      survfit_object$type,
+      "kaplan-meier"   = "surv",
+      "aalen-johansen" = "risk",
+      "surv"
+    )
+    type.y <- target_type
+  } else if (type.y %in% c("surv", "risk", "cumhaz", "cloglog")) {
+    target_type <- type.y
+  } else {
+    target_type <- "surv"
+  }
+
+  out_plot <- ggsurvfit(
+    survfit_object,
+    type         = target_type,
+    linewidth    = linewidth,
+    linetype_aes = linetype
+  )
+
+  list(
+    out_survfit_object = out_plot,
+    label.y            = label.y,
+    type.y             = type.y
+  )
+}
+
+check_ggsurvfit_old <- function(
     survfit_object,
     survfit.info = NULL,
     axis.info    = NULL,
@@ -1407,7 +2108,8 @@ check_ggsurvfit <- function(
 
   conf.type           <- survfit.info$conf.type
   conf.int            <- survfit.info$conf.int
-  type.y              <- util_check_type_y(axis.info$type.y)
+#  type.y              <- util_check_type_y(axis.info$type.y)
+  type.y              <- axis.info$type.y
   label.y             <- axis.info$label.y
   limits.x            <- axis.info$limits.x
   limits.y            <- axis.info$limits.y

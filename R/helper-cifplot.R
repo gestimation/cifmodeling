@@ -1122,3 +1122,136 @@ cifplot_build_info <- function(
     ggsave.info  = ggsave.info
   )
 }
+
+
+## 2群の KM 曲線を共通の time 軸に揃える --------------------------------
+cifplot_km_align_two_strata <- function(survfit_object) {
+  strata_vec <- survfit_object$strata
+  if (is.null(strata_vec) || length(strata_vec) != 2L) {
+    stop("Internal error: expected exactly 2 strata in survfit_object.", call. = FALSE)
+  }
+
+  n1 <- strata_vec[1]
+  n2 <- strata_vec[2]
+
+  S     <- survfit_object$surv
+  se_S  <- survfit_object$std.err
+  times <- survfit_object$time
+
+  if (is.null(S) || is.null(se_S) || is.null(times)) {
+    stop("Internal error: survfit_object must have surv, std.err, and time.", call. = FALSE)
+  }
+
+  idx1 <- seq_len(n1)
+  idx2 <- seq.int(n1 + 1L, n1 + n2)
+
+  t1  <- times[idx1]
+  t2  <- times[idx2]
+  S1  <- S[idx1]
+  S2  <- S[idx2]
+  se1 <- se_S[idx1]
+  se2 <- se_S[idx2]
+
+  ## 共通グリッド：両群の union を昇順ソート
+  all_t <- sort(unique(c(t1, t2)))
+
+  ## last observation carried forward で揃える
+  ix1 <- findInterval(all_t, t1)
+  ix2 <- findInterval(all_t, t2)
+
+  S1_all  <- ifelse(ix1 == 0L, 1,  S1[ix1])
+  S2_all  <- ifelse(ix2 == 0L, 1,  S2[ix2])
+  se1_all <- ifelse(ix1 == 0L, 0, se1[ix1])
+  se2_all <- ifelse(ix2 == 0L, 0, se2[ix2])
+
+  list(
+    time = all_t,
+    S1   = S1_all,
+    S2   = S2_all,
+    se1  = se1_all,
+    se2  = se2_all
+  )
+}
+
+## 整列済み KM から RD を計算 ----------------------------------------------
+cifplot_km_risk_difference <- function(align, z_alpha = 0) {
+  stopifnot(is.list(align),
+            !is.null(align$time),
+            !is.null(align$S1),
+            !is.null(align$S2),
+            !is.null(align$se1),
+            !is.null(align$se2))
+
+  risk1 <- 1 - align$S1
+  risk0 <- 1 - align$S2
+
+  rd    <- risk1 - risk0
+  se_rd <- sqrt(align$se1^2 + align$se2^2)
+
+  if (z_alpha > 0) {
+    rd_low  <- rd - z_alpha * se_rd
+    rd_high <- rd + z_alpha * se_rd
+  } else {
+    rd_low  <- rd
+    rd_high <- rd
+  }
+
+  list(
+    time   = align$time,
+    rd     = rd,
+    se_rd  = se_rd,
+    lower  = rd_low,
+    upper  = rd_high
+  )
+}
+
+## RD から NNT を計算 ------------------------------------------------------
+cifplot_km_nnt_from_rd <- function(rd_obj, z_alpha = 0, limits.y = NULL) {
+  rd    <- rd_obj$rd
+  se_rd <- rd_obj$se_rd
+  time  <- rd_obj$time
+
+  tol <- 1 / 100000
+
+  sign_rd <- sign(rd)
+  sign_rd[abs(rd) < tol] <- 0
+  nonzero_signs <- unique(sign_rd[sign_rd != 0])
+
+  if (length(nonzero_signs) > 1L) {
+    stop("y.type = 'nnt' is not allowed when the risk difference changes sign over time.", call. = FALSE)
+  }
+
+  nnt    <- 1 / rd
+  nnt    <- abs(nnt)
+  se_nnt <- abs(1 / (rd^2)) * se_rd
+
+  if (z_alpha > 0) {
+    nnt_low  <- nnt - z_alpha * se_nnt
+    nnt_high <- nnt + z_alpha * se_nnt
+  } else {
+    nnt_low  <- nnt
+    nnt_high <- nnt
+  }
+
+  ## rd ≈ 0 のところはキャップ
+  cap_idx <- abs(rd) < tol
+  nnt[cap_idx]      <- 100000
+  nnt_low[cap_idx]  <- NA_real_
+  nnt_high[cap_idx] <- NA_real_
+  se_nnt[cap_idx]   <- NA_real_
+
+  ymax_auto <- NULL
+  if (is.null(limits.y)) {
+    ymax_auto <- suppressWarnings(max(nnt, na.rm = TRUE))
+    if (!is.finite(ymax_auto)) ymax_auto <- NULL
+  }
+
+  list(
+    time      = time,
+    nnt       = nnt,
+    se_nnt    = se_nnt,
+    lower     = nnt_low,
+    upper     = nnt_high,
+    ylim_auto = ymax_auto
+  )
+}
