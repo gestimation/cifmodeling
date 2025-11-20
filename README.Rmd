@@ -165,7 +165,7 @@ p-values. Internally, a `"polyreg"` object also supports the **generics** API:
 
 This means that `polyreg()` fits integrate naturally with the broader `broom/modelsummary` ecosystem. For publication-ready tables, you can pass `polyreg` objects directly to `modelsummary::msummary()` and `modelsummary::modelplot()`, including exponentiated summaries (risk ratios, odds ratios, subdistribution hazard ratios) via the `exponentiate = TRUE` option. 
 
-```{r example04-1-5, fig.cap="Joint estimation of unadjusted risk ratios from 2 to 8 years using polyreg()", warning=FALSE, message=FALSE}
+```{r example04-1-5, fig.cap="Unadjusted risk ratios at 2, 4, 6 and 8 years by polyreg()", warning=FALSE, message=FALSE}
 output4 <- polyreg(nuisance.model=Event(t,epsilon)~1, exposure="fruitq1", 
                    data=diabetes.complications, effect.measure1="RR", effect.measure2="RR", 
                    time.point=2, outcome.type="competing-risk")
@@ -176,12 +176,15 @@ output6 <- polyreg(nuisance.model=Event(t,epsilon)~1, exposure="fruitq1",
                    data=diabetes.complications, effect.measure1="RR", effect.measure2="RR", 
                    time.point=6, outcome.type="competing-risk")
 summary <- list(
-  "RR at 2 years" = output4$summary$event1, 
-  "RR at 4 years" = output5$summary$event1, 
-  "RR at 6 years" = output6$summary$event1, 
-  "RR at 8 years" = output3$summary$event1
+  "RR of diabetes retinopathy at 2 years" = output4$summary$event1, 
+  "RR of diabetes retinopathy at 4 years" = output5$summary$event1, 
+  "RR of diabetes retinopathy at 6 years" = output6$summary$event1, 
+  "RR of diabetes retinopathy at 8 years" = output3$summary$event1,
+  "RR of marcovascular complications at 2 years" = output4$summary$event2, 
+  "RR of marcovascular complications at 4 years" = output5$summary$event2, 
+  "RR of marcovascular complications at 6 years" = output6$summary$event2, 
+  "RR of marcovascular complications at 8 years" = output3$summary$event2
 )
 library(modelsummary)
 modelplot(summary, coef_rename="", exponentiate = TRUE)
 ```
-

@@ -256,10 +256,10 @@ cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications,
 
 <div class="figure">
 
-<img src="man/figures/README-example04-1-3-1.png" alt="Cumulative incidence curves with strata labels and FRAMED style" width="70%" />
+<img src="man/figures/README-example04-1-3-1.png" alt="Cumulative incidence curves with strata labels and framed style" width="70%" />
 <p class="caption">
 
-Cumulative incidence curves with strata labels and FRAMED style
+Cumulative incidence curves with strata labels and framed style
 </p>
 
 </div>
@@ -336,10 +336,14 @@ output6 <- polyreg(nuisance.model=Event(t,epsilon)~1, exposure="fruitq1",
                    data=diabetes.complications, effect.measure1="RR", effect.measure2="RR", 
                    time.point=6, outcome.type="competing-risk")
 summary <- list(
-  "RR at 2 years" = output4$summary$event1, 
-  "RR at 4 years" = output5$summary$event1, 
-  "RR at 6 years" = output6$summary$event1, 
-  "RR at 8 years" = output3$summary$event1
+  "RR of diabetes retinopathy at 2 years" = output4$summary$event1, 
+  "RR of diabetes retinopathy at 4 years" = output5$summary$event1, 
+  "RR of diabetes retinopathy at 6 years" = output6$summary$event1, 
+  "RR of diabetes retinopathy at 8 years" = output3$summary$event1,
+  "RR of marcovascular complications at 2 years" = output4$summary$event2, 
+  "RR of marcovascular complications at 4 years" = output5$summary$event2, 
+  "RR of marcovascular complications at 6 years" = output6$summary$event2, 
+  "RR of marcovascular complications at 8 years" = output3$summary$event2
 )
 library(modelsummary)
 modelplot(summary, coef_rename="", exponentiate = TRUE)
@@ -347,11 +351,10 @@ modelplot(summary, coef_rename="", exponentiate = TRUE)
 
 <div class="figure">
 
-<img src="man/figures/README-example04-1-5-1.png" alt="Joint estimation of unadjusted risk ratios from 2 to 8 years using polyreg()" width="70%" />
+<img src="man/figures/README-example04-1-5-1.png" alt="Unadjusted risk ratios at 2, 4, 6 and 8 years by polyreg()" width="70%" />
 <p class="caption">
 
-Joint estimation of unadjusted risk ratios from 2 to 8 years using
-polyreg()
+Unadjusted risk ratios at 2, 4, 6 and 8 years by polyreg()
 </p>
 
 </div>

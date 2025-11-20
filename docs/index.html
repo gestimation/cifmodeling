@@ -177,8 +177,8 @@ Cumulative incidence curves with competing risk marks
 <span>        label.strata<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"High intake"</span>,<span class="st">"Low intake"</span><span class="op">)</span>, level.strata<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Q2 to Q4"</span>,<span class="st">"Q1"</span><span class="op">)</span>, </span>
 <span>        order.strata<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Q1"</span>, <span class="st">"Q2 to Q4"</span><span class="op">)</span>, style<span class="op">=</span><span class="st">"framed"</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="reference/figures/README-example04-1-3-1.png" alt="Cumulative incidence curves with strata labels and FRAMED style" width="70%"><p class="caption">
-Cumulative incidence curves with strata labels and FRAMED style
+<img src="reference/figures/README-example04-1-3-1.png" alt="Cumulative incidence curves with strata labels and framed style" width="70%"><p class="caption">
+Cumulative incidence curves with strata labels and framed style
 </p>
 </div>
 <p>By specifying <code>add.estimate.table = TRUE</code>, <strong>the risks of diabetic retinopathy (estimates for CIFs) along with their CIs</strong> are shown in the table at the bottom of the figure. The risk ratios at a specific time point (e.g. 8 years) for competing events can be jointly and coherently estimated using <code><a href="reference/polyreg.html">polyreg()</a></code> with <code>outcome.type = "competing-risk"</code>. In the code of <code><a href="reference/polyreg.html">polyreg()</a></code> below, no covariates are included in the nuisance model (<code>~1</code> specifies intercept only). The effect of low fruit intake <code>fruitq1</code> is estimated as <strong>an unadjusted risk ratio</strong> (<code>effect.measure1="RR"</code>) for diabetic retinopathy (event 1) and macrovascular complications (event 2) at 8 years (<code>time.point=8</code>).</p>
@@ -233,16 +233,20 @@ Cumulative incidence curves with strata labels and FRAMED style
 <span>                   data<span class="op">=</span><span class="va">diabetes.complications</span>, effect.measure1<span class="op">=</span><span class="st">"RR"</span>, effect.measure2<span class="op">=</span><span class="st">"RR"</span>, </span>
 <span>                   time.point<span class="op">=</span><span class="fl">6</span>, outcome.type<span class="op">=</span><span class="st">"competing-risk"</span><span class="op">)</span></span>
 <span><span class="va">summary</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>  <span class="st">"RR at 2 years"</span> <span class="op">=</span> <span class="va">output4</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event1</span>, </span>
-<span>  <span class="st">"RR at 4 years"</span> <span class="op">=</span> <span class="va">output5</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event1</span>, </span>
-<span>  <span class="st">"RR at 6 years"</span> <span class="op">=</span> <span class="va">output6</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event1</span>, </span>
-<span>  <span class="st">"RR at 8 years"</span> <span class="op">=</span> <span class="va">output3</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event1</span></span>
+<span>  <span class="st">"RR of diabetes retinopathy at 2 years"</span> <span class="op">=</span> <span class="va">output4</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event1</span>, </span>
+<span>  <span class="st">"RR of diabetes retinopathy at 4 years"</span> <span class="op">=</span> <span class="va">output5</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event1</span>, </span>
+<span>  <span class="st">"RR of diabetes retinopathy at 6 years"</span> <span class="op">=</span> <span class="va">output6</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event1</span>, </span>
+<span>  <span class="st">"RR of diabetes retinopathy at 8 years"</span> <span class="op">=</span> <span class="va">output3</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event1</span>,</span>
+<span>  <span class="st">"RR of marcovascular complications at 2 years"</span> <span class="op">=</span> <span class="va">output4</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event2</span>, </span>
+<span>  <span class="st">"RR of marcovascular complications at 4 years"</span> <span class="op">=</span> <span class="va">output5</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event2</span>, </span>
+<span>  <span class="st">"RR of marcovascular complications at 6 years"</span> <span class="op">=</span> <span class="va">output6</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event2</span>, </span>
+<span>  <span class="st">"RR of marcovascular complications at 8 years"</span> <span class="op">=</span> <span class="va">output3</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event2</span></span>
 <span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://modelsummary.com" class="external-link">modelsummary</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://modelsummary.com/man/modelplot.html" class="external-link">modelplot</a></span><span class="op">(</span><span class="va">summary</span>, coef_rename<span class="op">=</span><span class="st">""</span>, exponentiate <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="reference/figures/README-example04-1-5-1.png" alt="Joint estimation of unadjusted risk ratios from 2 to 8 years using polyreg()" width="70%"><p class="caption">
-Joint estimation of unadjusted risk ratios from 2 to 8 years using polyreg()
+<img src="reference/figures/README-example04-1-5-1.png" alt="Unadjusted risk ratios at 2, 4, 6 and 8 years by polyreg()" width="70%"><p class="caption">
+Unadjusted risk ratios at 2, 4, 6 and 8 years by polyreg()
 </p>
 </div>
 </div>
