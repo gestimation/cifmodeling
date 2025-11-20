@@ -208,7 +208,11 @@ util_check_type_y <- function(x = NULL) {
       surv = c("surv", "s", "survival", "km", "kaplan-meier", "kaplanmeier",
                "survival-probability", "survivalprobability"),
       risk = c("risk", "r", "cif", "ci", "cumulative-incidence", "cumulativeincidence",
-               "cuminc", "failure", "incidence")
+               "cuminc", "failure", "incidence"),
+      difference = c("difference", "diff", "rd", "riskdifference"),
+      nnt = c("nnt", "numberneededtotreat"),
+      cumhaz = c("cumhaz", "cumhazard", "cumulativehazard"),
+      cloglog = c("cloglog", "cll", "complementaryloglog")
     )
 
     ali_norm <- lapply(buckets, .norm)
