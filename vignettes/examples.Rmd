@@ -68,11 +68,7 @@ cifplot(output1, add.conf=FALSE, add.risktable=FALSE,
 
 The `label.strata` is another argument for customizing labels, but when inputting a survfit object, it becomes invalid because it does not contain stratum information. Therefore, the following code inputs the formula and data. `label.strata` is used by combining `level.strata` and `order.strata`. The `level.strata` specifies **the levels of the stratification variable corresponding to each label** in `label.strata`. The levels specified in `level.strata` are then displayed in the figure **in the order defined by `order.strata`**. A figure enclosed in a square was generated, which is due to `style="framed"` specification.
 
-<<<<<<< HEAD
-```{r example04-1-4, fig.cap="Cumulative incidence curves with strata labels and framed style", warning=FALSE, message=FALSE}
-=======
 ```{r example04-1-3, fig.cap="Cumulative incidence curves with strata labels and framed style", warning=FALSE, message=FALSE}
->>>>>>> 6deecd600a679eb257f53b63a8fbcf9be5517deb
 cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
         outcome.type="competing-risk", add.conf=FALSE, add.risktable=FALSE, 
         add.estimate.table=TRUE, add.censor.mark=FALSE, add.competing.risk.mark=TRUE, 

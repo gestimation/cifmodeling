@@ -351,10 +351,11 @@ modelplot(summary, coef_rename="", exponentiate = TRUE)
 
 <div class="figure">
 
-<img src="man/figures/README-example04-1-5-1.png" alt="Unadjusted risk ratios at 2, 4, 6 and 8 years by polyreg()" width="70%" />
+<img src="man/figures/README-example04-1-5-1.png" alt="Visualizaton of risk ratios at 2, 4, 6 and 8 years using polyreg() and modelplot()" width="70%" />
 <p class="caption">
 
-Unadjusted risk ratios at 2, 4, 6 and 8 years by polyreg()
+Visualizaton of risk ratios at 2, 4, 6 and 8 years using polyreg() and
+modelplot()
 </p>
 
 </div>
