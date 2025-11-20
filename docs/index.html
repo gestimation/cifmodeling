@@ -86,7 +86,7 @@ Aalen-Johansen cumulative incidence curves from cifplot()
 <li>
 <strong>Coherent, joint modeling of all competing events</strong>: <code><a href="reference/polyreg.html">polyreg()</a></code> models all cause-specific CIFs together, parameterizing the nuisance structure with polytomous log odds products and enforcing that their CIFs sum to at most one.</li>
 <li>
-<strong>Tidy summaries and reporting</strong>: support for <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">generics::tidy()</a></code>, <code>glance()</code>, and <code>augment()</code>, which integrate <code><a href="reference/polyreg.html">polyreg()</a></code> smoothly with <code>modelsummary</code> and other broom-style tools.</li>
+<strong>Tidy summaries and reporting</strong>: support for <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">generics::tidy()</a></code>, <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code>, and <code>augment()</code>, which integrate <code><a href="reference/polyreg.html">polyreg()</a></code> smoothly with <code>modelsummary</code> and other broom-style tools.</li>
 <li>
 <strong>Publication-ready graphics</strong> built on <code>ggsurvfit</code> and <code>ggplot2</code>, including at-risk/CIF+CI tables, censoring/competing-risk/intercurrent-event marks, and multi-panel layouts.</li>
 </ul>
@@ -185,8 +185,7 @@ Cumulative incidence curves with strata labels and FRAMED style
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">output3</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/polyreg.html">polyreg</a></span><span class="op">(</span>nuisance.model<span class="op">=</span><span class="fu"><a href="reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="fl">1</span>, exposure<span class="op">=</span><span class="st">"fruitq1"</span>, </span>
 <span>          data<span class="op">=</span><span class="va">diabetes.complications</span>, effect.measure1<span class="op">=</span><span class="st">"RR"</span>, effect.measure2<span class="op">=</span><span class="st">"RR"</span>, </span>
-<span>          time.point<span class="op">=</span><span class="fl">8</span>, outcome.type<span class="op">=</span><span class="st">"competing-risk"</span>, </span>
-<span>          report.nuisance.parameter<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
+<span>          time.point<span class="op">=</span><span class="fl">8</span>, outcome.type<span class="op">=</span><span class="st">"competing-risk"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">output3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] -1.38313159 -0.30043942 -3.99147406 -0.07582595</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="va">output3</span><span class="op">)</span></span>
@@ -199,11 +198,6 @@ Cumulative incidence curves with strata labels and FRAMED style
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;                       event1        event2      </span></span>
 <span><span class="co">#&gt; ---------------------------------------------- </span></span>
-<span><span class="co">#&gt; Intercept            </span></span>
-<span><span class="co">#&gt;                       0.251         0.018       </span></span>
-<span><span class="co">#&gt;                       [0.194, 0.324]  [0.012, 0.028]</span></span>
-<span><span class="co">#&gt;                       (p=0.000)     (p=0.000)   </span></span>
-<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; fruitq1, Q2 to Q4 vs Q1 </span></span>
 <span><span class="co">#&gt;                       0.740         0.927       </span></span>
 <span><span class="co">#&gt;                       [0.593, 0.924]  [0.583, 1.474]</span></span>
@@ -221,13 +215,36 @@ Cumulative incidence curves with strata labels and FRAMED style
 <p>The <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> method prints an event-wise table of point estimates, CIs, and p-values. Internally, a <code>"polyreg"</code> object also supports the <strong>generics</strong> API:</p>
 <ul>
 <li>
-<code>tidy()</code>: coefficient-level summaries (one row per term and per event),</li>
+<code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code>: coefficient-level summaries (one row per term and per event),</li>
 <li>
-<code>glance()</code>: model-level summaries (follow-up, convergence, number of events),</li>
+<code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code>: model-level summaries (follow-up, convergence, number of events),</li>
 <li>
 <code>augment()</code>: observation-level diagnostics (weights for IPCW, predicted CIFs, and influence-functions).</li>
 </ul>
-<p>This means that <code><a href="reference/polyreg.html">polyreg()</a></code> fits integrate naturally with the broader <code>broom/modelsummary</code> ecosystem. For publication-ready tables, you can pass <code>polyreg</code> objects directly to <code><a href="https://modelsummary.com/man/msummary.html" class="external-link">modelsummary::msummary()</a></code>, including exponentiated summaries (risk ratios, odds ratios, subdistribution hazard ratios) via the <code>exponentiate = TRUE</code> option.</p>
+<p>This means that <code><a href="reference/polyreg.html">polyreg()</a></code> fits integrate naturally with the broader <code>broom/modelsummary</code> ecosystem. For publication-ready tables, you can pass <code>polyreg</code> objects directly to <code><a href="https://modelsummary.com/man/msummary.html" class="external-link">modelsummary::msummary()</a></code> and <code><a href="https://modelsummary.com/man/modelplot.html" class="external-link">modelsummary::modelplot()</a></code>, including exponentiated summaries (risk ratios, odds ratios, subdistribution hazard ratios) via the <code>exponentiate = TRUE</code> option.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">output4</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/polyreg.html">polyreg</a></span><span class="op">(</span>nuisance.model<span class="op">=</span><span class="fu"><a href="reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="fl">1</span>, exposure<span class="op">=</span><span class="st">"fruitq1"</span>, </span>
+<span>                   data<span class="op">=</span><span class="va">diabetes.complications</span>, effect.measure1<span class="op">=</span><span class="st">"RR"</span>, effect.measure2<span class="op">=</span><span class="st">"RR"</span>, </span>
+<span>                   time.point<span class="op">=</span><span class="fl">2</span>, outcome.type<span class="op">=</span><span class="st">"competing-risk"</span><span class="op">)</span></span>
+<span><span class="va">output5</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/polyreg.html">polyreg</a></span><span class="op">(</span>nuisance.model<span class="op">=</span><span class="fu"><a href="reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="fl">1</span>, exposure<span class="op">=</span><span class="st">"fruitq1"</span>, </span>
+<span>                   data<span class="op">=</span><span class="va">diabetes.complications</span>, effect.measure1<span class="op">=</span><span class="st">"RR"</span>, effect.measure2<span class="op">=</span><span class="st">"RR"</span>, </span>
+<span>                   time.point<span class="op">=</span><span class="fl">4</span>, outcome.type<span class="op">=</span><span class="st">"competing-risk"</span><span class="op">)</span></span>
+<span><span class="va">output6</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/polyreg.html">polyreg</a></span><span class="op">(</span>nuisance.model<span class="op">=</span><span class="fu"><a href="reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="fl">1</span>, exposure<span class="op">=</span><span class="st">"fruitq1"</span>, </span>
+<span>                   data<span class="op">=</span><span class="va">diabetes.complications</span>, effect.measure1<span class="op">=</span><span class="st">"RR"</span>, effect.measure2<span class="op">=</span><span class="st">"RR"</span>, </span>
+<span>                   time.point<span class="op">=</span><span class="fl">6</span>, outcome.type<span class="op">=</span><span class="st">"competing-risk"</span><span class="op">)</span></span>
+<span><span class="va">summary</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  <span class="st">"RR at 2 years"</span> <span class="op">=</span> <span class="va">output4</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event1</span>, </span>
+<span>  <span class="st">"RR at 4 years"</span> <span class="op">=</span> <span class="va">output5</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event1</span>, </span>
+<span>  <span class="st">"RR at 6 years"</span> <span class="op">=</span> <span class="va">output6</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event1</span>, </span>
+<span>  <span class="st">"RR at 8 years"</span> <span class="op">=</span> <span class="va">output3</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event1</span></span>
+<span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://modelsummary.com" class="external-link">modelsummary</a></span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://modelsummary.com/man/modelplot.html" class="external-link">modelplot</a></span><span class="op">(</span><span class="va">summary</span>, coef_rename<span class="op">=</span><span class="st">""</span>, exponentiate <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="reference/figures/README-example04-1-5-1.png" alt="Joint estimation of unadjusted risk ratios from 2 to 8 years using polyreg()" width="70%"><p class="caption">
+Joint estimation of unadjusted risk ratios from 2 to 8 years using polyreg()
+</p>
+</div>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">

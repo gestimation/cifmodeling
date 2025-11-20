@@ -278,8 +278,7 @@ macrovascular complications (event 2) at 8 years (`time.point=8`).
 ``` r
 output3 <- polyreg(nuisance.model=Event(t,epsilon)~1, exposure="fruitq1", 
           data=diabetes.complications, effect.measure1="RR", effect.measure2="RR", 
-          time.point=8, outcome.type="competing-risk", 
-          report.nuisance.parameter=TRUE)
+          time.point=8, outcome.type="competing-risk")
 coef(output3)
 #> [1] -1.38313159 -0.30043942 -3.99147406 -0.07582595
 vcov(output3)
@@ -292,11 +291,6 @@ summary(output3)
 #> 
 #>                       event1        event2      
 #> ---------------------------------------------- 
-#> Intercept            
-#>                       0.251         0.018       
-#>                       [0.194, 0.324]  [0.012, 0.028]
-#>                       (p=0.000)     (p=0.000)   
-#> 
 #> fruitq1, Q2 to Q4 vs Q1 
 #>                       0.740         0.927       
 #>                       [0.593, 0.924]  [0.583, 1.474]
@@ -326,6 +320,38 @@ CIs, and p-values. Internally, a `"polyreg"` object also supports the
 
 This means that `polyreg()` fits integrate naturally with the broader
 `broom/modelsummary` ecosystem. For publication-ready tables, you can
-pass `polyreg` objects directly to `modelsummary::msummary()`, including
-exponentiated summaries (risk ratios, odds ratios, subdistribution
-hazard ratios) via the `exponentiate = TRUE` option.
+pass `polyreg` objects directly to `modelsummary::msummary()` and
+`modelsummary::modelplot()`, including exponentiated summaries (risk
+ratios, odds ratios, subdistribution hazard ratios) via the
+`exponentiate = TRUE` option.
+
+``` r
+output4 <- polyreg(nuisance.model=Event(t,epsilon)~1, exposure="fruitq1", 
+                   data=diabetes.complications, effect.measure1="RR", effect.measure2="RR", 
+                   time.point=2, outcome.type="competing-risk")
+output5 <- polyreg(nuisance.model=Event(t,epsilon)~1, exposure="fruitq1", 
+                   data=diabetes.complications, effect.measure1="RR", effect.measure2="RR", 
+                   time.point=4, outcome.type="competing-risk")
+output6 <- polyreg(nuisance.model=Event(t,epsilon)~1, exposure="fruitq1", 
+                   data=diabetes.complications, effect.measure1="RR", effect.measure2="RR", 
+                   time.point=6, outcome.type="competing-risk")
+summary <- list(
+  "RR at 2 years" = output4$summary$event1, 
+  "RR at 4 years" = output5$summary$event1, 
+  "RR at 6 years" = output6$summary$event1, 
+  "RR at 8 years" = output3$summary$event1
+)
+library(modelsummary)
+modelplot(summary, coef_rename="", exponentiate = TRUE)
+```
+
+<div class="figure">
+
+<img src="man/figures/README-example04-1-5-1.png" alt="Joint estimation of unadjusted risk ratios from 2 to 8 years using polyreg()" width="70%" />
+<p class="caption">
+
+Joint estimation of unadjusted risk ratios from 2 to 8 years using
+polyreg()
+</p>
+
+</div>
