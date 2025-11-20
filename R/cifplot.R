@@ -1129,7 +1129,9 @@ cifplot_single <- function(
 #' @param add.quantile Logical add \code{add_quantile()} to plot. It calls geom_segment() (default \code{TRUE}).
 #' @param level.quantile Numeric quantile level passed to \code{add_quantile()} (default \code{0.5}).
 
-#' @param type.y \code{NULL} (survival) or \code{"risk"} (display \code{1 - survival} i.e. CIF).
+#' @param type.y \code{NULL} (survival), \code{"risk"} (display \code{1 - survival} i.e. CIF),
+#'   \code{"difference"} (risk difference for two strata), \code{"nnt"} (absolute number needed to treat),
+#'   \code{"cumhaz"} (cumulative hazard), or \code{"cloglog"} (complementary log-log).
 #' @param label.x Character x-axis labels (default \code{"Time"}).
 #' @param label.y Character y-axis labels (default internally set to \code{"Survival"} or \code{"Cumulative incidence"}).
 #' @param label.strata Character vector of labels for strata.
@@ -1252,6 +1254,8 @@ call_ggsurvfit <- function(
     out_readSurv     = out_readSurv
   )
 
+  y_limits_auto <- out_cg$ylim_auto
+  
   p <- out_cg$out_survfit_object +
     ggplot2::labs(
       x = label.x.user %||% "Time",
@@ -1324,25 +1328,28 @@ call_ggsurvfit <- function(
   }
 
   x_max <- plot_make_x_max(survfit_object)
+  y_limits_auto <- if (!is.null(y_limits_auto) && is.finite(y_limits_auto)) y_limits_auto else NULL
+  default_y_limits <- NULL
+  if (is.null(limits.y)) {
+    if (!is.null(y_limits_auto)) {
+      default_y_limits <- c(0, y_limits_auto)
+    } else if (identical(out_cg$type.y, "risk") || identical(out_cg$type.y, "surv")) {
+      default_y_limits <- c(0, 1)
+    }
+  }
   if (isTRUE(use.coord.cartesian)) {
     if (!is.null(breaks.x)) p <- p + ggplot2::scale_x_continuous(breaks = breaks.x)
     if (!is.null(breaks.y)) p <- p + ggplot2::scale_y_continuous(breaks = breaks.y)
-    if (!is.null(limits.x) || !is.null(limits.y)) {
-      p <- p + ggplot2::coord_cartesian(xlim = limits.x, ylim = limits.y, expand = FALSE)
-    } else if (!is.null(limits.x)) {
-      p <- p + ggplot2::coord_cartesian(xlim = limits.x, ylim = limits.y, expand = FALSE)
-    } else if (!is.null(limits.y)) {
-      p <- p + ggplot2::coord_cartesian(xlim = c(0, x_max), ylim = limits.y, expand = FALSE)
-    } else {
-      p <- p + ggplot2::coord_cartesian(xlim = c(0, x_max), ylim = c(0, 1), expand = FALSE)
-    }
+    y_cartesian <- limits.y %||% default_y_limits
+    x_cartesian <- limits.x %||% c(0, x_max)
+    p <- p + ggplot2::coord_cartesian(xlim = x_cartesian, ylim = y_cartesian, expand = FALSE)
   } else {
     if (!is.null(breaks.y)) {
       p <- p + ggplot2::scale_y_continuous(breaks = breaks.y)
     } else if (!is.null(limits.y)) {
       p <- p + ggplot2::lims(y = limits.y)
-    } else {
-      p <- p + ggplot2::lims(y = c(0, 1))
+    } else if (!is.null(default_y_limits)) {
+      p <- p + ggplot2::lims(y = default_y_limits)
     }
     if (!is.null(breaks.x)) {
       p <- p + ggplot2::scale_x_continuous(breaks = breaks.x)
@@ -1399,7 +1406,8 @@ check_ggsurvfit <- function(
   style.info   <- style.info   %||% list()
 
   conf.type           <- survfit.info$conf.type
-  type.y              <- axis.info$type.y
+  conf.int            <- survfit.info$conf.int
+  type.y              <- util_check_type_y(axis.info$type.y)
   label.y             <- axis.info$label.y
   limits.x            <- axis.info$limits.x
   limits.y            <- axis.info$limits.y
@@ -1436,6 +1444,16 @@ check_ggsurvfit <- function(
   is_len2_num <- function(x) is.numeric(x) && length(x) == 2L && all(is.finite(x))
   is_nondec   <- function(x) all(diff(x) >= 0, na.rm = TRUE)
 
+  resolve_conf_level <- function(ci) {
+    if (isFALSE(ci) || is.null(ci)) return(0)
+    if (isTRUE(ci)) return(0.95)
+    if (identical(ci, 0)) return(0)
+    if (is.numeric(ci) && length(ci) == 1L && is.finite(ci) && ci > 0 && ci < 1) return(ci)
+    0
+  }
+  conf_int_level <- resolve_conf_level(conf.int)
+  z_alpha <- if (conf_int_level > 0) stats::qnorm(1 - (1 - conf_int_level) / 2) else 0
+
   if (!is.null(limits.x)) {
     if (!(is.numeric(limits.x) && length(limits.x) == 2L && all(is.finite(limits.x)))) {
       .warn("limits_len2", arg = "limits.x")
@@ -1454,7 +1472,7 @@ check_ggsurvfit <- function(
     if (!is.finite(tmax) || tmax <= 0) .warn("ors_tmax_bad")
   }
 
-  if (!is.null(limits.y)) {
+  if (!is.null(limits.y) && (is.null(type.y) || type.y %in% c("surv", "risk"))) {
     if (!(is.numeric(limits.y) && length(limits.y) == 2L && all(is.finite(limits.y)))) {
       .warn("limits_len2", arg = "limits.y")
     } else if (!all(diff(limits.y) > 0)) {
@@ -1500,10 +1518,14 @@ check_ggsurvfit <- function(
   check_breaks(breaks.x, "breaks.x", limits.x)
   check_breaks(breaks.y, "breaks.y", limits.y)
 
-  if (is.null(label.y)) {
-    auto_label <- plot_default_y_label(survfit_object$type, type.y)
-    if (!is.null(auto_label)) label.y <- auto_label
-  }
+  label.y <- label.y %||% switch(
+    type.y,
+    difference = "Risk difference",
+    nnt        = "Number needed to treat (absolute)",
+    cumhaz     = "Cumulative hazard",
+    cloglog    = "Complementary log-log",
+    plot_default_y_label(survfit_object$type, type.y)
+  )
 
   coerce_conf <- function(survfit_object, conf.type) {
     if (!is.null(survfit_object$lower) && !is.null(survfit_object$upper)) return(survfit_object)
@@ -1515,18 +1537,133 @@ check_ggsurvfit <- function(
     }
     survfit_object
   }
+  if (identical(type.y, "difference") || identical(type.y, "nnt")) {
+    if (!identical(tolower(survfit_object$type), "kaplan-meier")) {
+      stop("y.type = '", type.y, "' is only available for survival outcomes.", call. = FALSE)
+    }
+
+    strata_vec <- survfit_object$strata
+    if (is.null(strata_vec) || length(strata_vec) != 2L) {
+      stop("y.type = '", type.y, "' requires exactly two strata.", call. = FALSE)
+    }
+
+    n1 <- strata_vec[1]
+    n2 <- strata_vec[2]
+
+    S <- survfit_object$surv
+    se_S <- survfit_object$std.err
+    times <- survfit_object$time
+
+    idx1 <- seq_len(n1)
+    idx2 <- seq.int(n1 + 1L, n1 + n2)
+
+    S1 <- S[idx1]
+    S2 <- S[idx2]
+    se1 <- se_S[idx1]
+    se2 <- se_S[idx2]
+    t1 <- times[idx1]
+
+    risk1 <- 1 - S1
+    risk0 <- 1 - S2
+    rd <- risk1 - risk0
+    se_rd <- sqrt(se1^2 + se2^2)
+
+    rd_low <- rd - z_alpha * se_rd
+    rd_high <- rd + z_alpha * se_rd
+
+    fake_fit <- survfit_object
+    fake_fit$time <- t1
+    fake_fit$surv <- rd
+    fake_fit$std.err <- se_rd
+    fake_fit$lower <- rd_low
+    fake_fit$upper <- rd_high
+    fake_fit$strata <- structure(length(rd), names = "difference")
+    fake_fit$n.risk <- survfit_object$n.risk[seq_len(length(rd))]
+    fake_fit$n.event <- rep(NA_integer_, length(rd))
+    fake_fit$n.censor <- rep(NA_integer_, length(rd))
+
+    if (identical(type.y, "difference")) {
+      out_plot <- ggsurvfit(
+        fake_fit,
+        type         = "risk",
+        linewidth    = linewidth,
+        linetype_aes = linetype
+      )
+      return(list(
+        out_survfit_object = out_plot,
+        label.y            = label.y,
+        type.y             = type.y
+      ))
+    }
+
+    tol <- 1 / 100000
+    sign_rd <- sign(rd)
+    sign_rd[abs(rd) < tol] <- 0
+    nonzero_signs <- unique(sign_rd[sign_rd != 0])
+    if (length(nonzero_signs) > 1L) {
+      stop("y.type = 'nnt' is not allowed when the risk difference changes sign over time.", call. = FALSE)
+    }
+
+    nnt_raw <- 1 / rd
+    nnt <- abs(nnt_raw)
+    se_nnt <- abs(1 / (rd^2)) * se_rd
+
+    nnt_low <- nnt - z_alpha * se_nnt
+    nnt_high <- nnt + z_alpha * se_nnt
+
+    cap_idx <- abs(rd) < tol
+    nnt[cap_idx] <- 100000
+    nnt_low[cap_idx] <- NA_real_
+    nnt_high[cap_idx] <- NA_real_
+    se_nnt[cap_idx] <- NA_real_
+
+    ymax_auto <- NULL
+    if (is.null(limits.y)) {
+      ymax_auto <- suppressWarnings(max(nnt, na.rm = TRUE))
+      if (!is.finite(ymax_auto)) ymax_auto <- NULL
+    }
+
+    fake_fit_nnt <- survfit_object
+    fake_fit_nnt$time <- t1
+    fake_fit_nnt$surv <- nnt
+    fake_fit_nnt$std.err <- se_nnt
+    fake_fit_nnt$lower <- nnt_low
+    fake_fit_nnt$upper <- nnt_high
+    fake_fit_nnt$strata <- structure(length(nnt), names = "NNT")
+    fake_fit_nnt$n.risk <- survfit_object$n.risk[seq_len(length(nnt))]
+    fake_fit_nnt$n.event <- rep(NA_integer_, length(nnt))
+    fake_fit_nnt$n.censor <- rep(NA_integer_, length(nnt))
+
+    out_plot <- ggsurvfit(
+      fake_fit_nnt,
+      type         = "survival",
+      linewidth    = linewidth,
+      linetype_aes = linetype
+    )
+
+    return(list(
+      out_survfit_object = out_plot,
+      label.y            = label.y,
+      type.y             = type.y,
+      ylim_auto          = ymax_auto
+    ))
+  }
+
   survfit_object <- coerce_conf(survfit_object, conf.type)
 
-
-  type.y <- util_check_type_y(type.y)
-#  type.y <- plot_normalize_type_y(type.y)
-  target_type <- switch(
-    survfit_object$type,
-    "kaplan-meier"   = if (identical(type.y, "risk")) "risk" else "surv",
-    "aalen-johansen" = if (identical(type.y, "surv")) "surv" else "risk",
-    if (identical(type.y, "risk")) "risk" else "surv"
-  )
-  type.y <- if (identical(target_type, "risk")) "risk" else "surv"
+  if (is.null(type.y)) {
+    target_type <- switch(
+      survfit_object$type,
+      "kaplan-meier"   = "surv",
+      "aalen-johansen" = "risk",
+      "surv"
+    )
+    type.y <- target_type
+  } else if (type.y %in% c("surv", "risk", "cumhaz", "cloglog")) {
+    target_type <- type.y
+  } else {
+    target_type <- "surv"
+  }
 
   out_plot <- ggsurvfit(
     survfit_object,
