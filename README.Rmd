@@ -45,11 +45,12 @@ This package provides a unified, high-level interface for survival and competing
 - `polyreg()` fits **coherent regression models** on all cause-specific CIFs simultaneously.
 
 > **Explore the main features visually:**  
-> See the [Gallery](articles/Gallery.html) for a curated set of examples using `cifplot()` and `cifpanel()`.
+> See the [Gallery](articles/gallery.html) for a curated set of examples using `cifplot()` and `cifpanel()`.
 
 > **Learn the modeling framework with `polyreg()`:**  
 > See the [Direct polytomous regression](articles/polyreg.html) for coherent, joint modeling of all cause-specific CIFs.
 
+> Visit [Computational formulas in cifcurve()](articles/formulas.html).
 
 ## Quick start
 
