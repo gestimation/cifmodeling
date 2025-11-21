@@ -1,0 +1,140 @@
+---
+title: "Computational formulas in cifcurve()"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Computational formulas in cifcurve()}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+<!-- badges: start --> <!-- badges: end -->
+
+
+## Formulas for the Kaplan–Meier estimator
+
+Let $t_1 < t_2 < \cdots < t_D$ represent the distinct event times. For each event time $j=1,\ldots,D$, let $Y_j$ be the size of the risk set (the number of surviving observations) just prior to $t_j$.
+
+Survival data is expected when `outcome.type = "survival"`. Let $d_j$ be the number of failures at $t_j$. The Kaplan–Meier estimator of the survival function $S(t)$ is as below. 
+
+**Kaplan–Meier estimator**
+
+$$
+\hat{S}(t) = \prod_{t_j \le t} \left(1 - \frac{d_j}{Y_j} \right)
+$$
+Note that the estimator is defined to be right-continuous, so the events at $t_j$ are included in the estimate of $\hat{S}(t_j)$. 
+
+The variance or standard error of the Kaplan–Meier estimator is often calculated with the Greenwood formula. This formula is derived from a binomial argument, so extension to the weighted case is ad hoc. Alternatively, Tsiatis (1981) proposes a slightly different formula based on a counting process argument which includes the weighted case. 
+
+**Greenwood variance**
+$$
+\textrm{Var}\!\left\{\hat{S}(t)\right \}
+= \hat{S}(t)^2\sum_{t_j \le t} \frac{d_j}{Y_j\,(Y_j - d_j)}
+$$
+
+**Tsiatis variance**
+$$
+\textrm{Var}\!\left\{\hat{S}(t)\right \}
+= \hat{S}(t)^2\sum_{t_j \le t} \frac{d_j}{Y_j^2}
+$$
+
+Suppose that the survival data consists of $\{T_i, d_i, w_i\}$, independent sample of right-censored survival data with weights ($i=1,...,N$). Let $d_j^w$ and $Y_j^w$ be the weighted number of failures and the weighted number at risk, respectively, at time $t_j$. The weighted Kaplan–Meier estimator of the survival function $S(t)$ is
+
+$$
+\hat{S}(t) = \prod_{t_j \le t} \left( 1 - \frac{d_j^w}{Y_j^w} \right). 
+$$
+Xie and Liu (2005) proposed the Greenwood-type variance for the weighted Kaplan–Meier estimator. 
+
+**Greenwood variance for weighted Kaplan–Meier**
+$$
+\textrm{Var}\!\left\{\hat{S}(t)\right \}
+= \hat{S}(t)^2\sum_{t_j \le t} \frac{d_j^w Y_j}{M_j Y_j^w(Y_j^w - d_j^w)}, 
+$$
+where $M_j$ is an adjustment factor defined as 
+$$
+M_j = \frac{\left(\sum_{t_i \geq t_j} w_i \right)^2}{\sum_{t_i \geq t_j} w_i^2}. 
+$$
+The Tsiatis-type variance is calculated as follows in the same spirits. 
+
+**Tsiatis variance for weighted Kaplan–Meier**
+$$
+\textrm{Var}\!\left\{\hat{S}(t)\right \}
+= \hat{S}(t)^2\sum_{t_j \le t} \frac{d_j^w Y_j}{M_j (Y_j^w)^2}
+$$
+## Formulas for the Aalen-Johansen estimator
+
+Competing risks (`outcome.type = "competing-risk"`) arise in studies in which individuals are exposed to two or more mutually exclusive failure events. When a failure occurs, we observe the time to event $T$ and the cause of failure $\epsilon$. Suppose that $\epsilon=1$ and $\epsilon=2$ represent the event of interest and the competing risk, respectively. Let $d_{jk}$ be the number of failures of cause $k$ at time $t_j$, and now the total number of failures at $t_j$ is $d_j = d_{j1} + d_{j2}$. 
+
+The Aalen-Johansen estimator of CIF for cause $\epsilon=k$ is as below. 
+
+**Aalen-Johansen estimator**
+
+$$
+\hat{F}_k(t) = \sum_{t_j \le t} \frac{d_{jk}}{Y_j}\,\hat{S}(t_{j-1}).
+$$
+
+where $\hat{S}(t)$ is the overall survival function. 
+
+Two variance estimators of the Aalen-Johansen estimator are commonly used: one based on counting process theory (Aalen, 1978) and the other based on the delta method. 
+
+**Aalen variance**
+$$
+\begin{aligned}
+\textrm{Var}\!\left\{\hat{F}_k(t)\right \}
+&= \sum_{t_j \le t}
+\bigl[\hat{F}_k(t) - \hat{F}_k(t_j)\bigr]^2
+\frac{d_j}{(Y_j-1)(Y_j - d_j)}
+\\[2pt]
+&\quad + \sum_{t_j \le t}
+\hat{S}^2(t_{j-1})
+\frac{d_{jk}\,(Y_j - d_{jk})}{Y_j^2\,(Y_j-1)}
+\\[2pt]
+&\quad - 2 \sum_{t_j \le t}
+\bigl[\hat{F}_k(t) - \hat{F}_k(t_j)\bigr]\,
+\hat{S}(t_{j-1})
+\frac{d_{jk}\,(Y_j - d_{jk})}{Y_j\,(Y_j - d_j)\,(Y_j-1)}.
+\end{aligned}
+$$
+
+**Delta method variance**
+$$
+\begin{aligned}
+\textrm{Var}\!\left\{\hat{F}_k(t)\right \}
+&= \sum_{t_j \le t}
+\bigl[\hat{F}_k(t) - \hat{F}_k(t_j)\bigr]^2
+\frac{d_j}{Y_j\,(Y_j - d_j)}
+\\[2pt]
+&\quad + \sum_{t_j \le t}
+\hat{S}^2(t_{i-1})
+\frac{d_{jk}\,(Y_j - d_{jk})}{Y_j^3}
+\\[2pt]
+&\quad - 2 \sum_{t_j \le t}
+\bigl[\hat{F}_k(t) - \hat{F}_k(t_j)\bigr]\,
+\hat{S}(t_{j-1})
+\frac{d_{jk}}{Y_j^2}.
+\end{aligned}
+$$
+
+**Variance based on influence functions**
+
+Under regularity conditions, Aalen-Johansen estimator can be expanded as  
+$$
+  n^{1/2}\{\hat F_k(t) - F_k(t)\} = n^{-1/2} \sum_{i=1}^n IF_{ik}(t) + o_p(1)
+$$
+and the process $n^{1/2}\{\hat F_{ik}(t) - F_{ik}(t)\}$ converges weakly to a tight Gaussian process. Here $IF_{ik}(t)$ is the influence function, the contribution of $i$-th observation to the Aalen-Johansen estimator, and may be written as 
+$$
+  IF_{ik}(t) =
+  \int_0^t
+    \frac{n S(u^-)}{Y(u)}\,dM_i(u)
+  -
+  \int_0^t
+    \frac{n F_k(u^-)}{Y(u)}\,dM_{ik}(u), 
+$$
+
+where $M_i(t)$ and $M_{ik}(t)$ is the Martingale process of the total count and the count of cause $k$ of $i$-th observation, respectively, and $Y(t)$ is the at-risk process. A consistent variance estimator for $n^{1/2}\{\hat F_k(t) - F_k(t)\}$ is $n^{-1} \sum_{i=1}^n \{\widehat{IF}_{ik}(t)\}^2$.
+
+## Confidence interval options
+
+**Standard errors** The default in `cifcurve()` with `weights=NULL` is the Greenwood SE when `outcome.type="survival"` and the delta SE when `outcome.type="competing-risk"`. 
+The default in `cifcurve()` with weights is the SE based on influence functions. By default `cifcurve()` rescales the Greenwood/Tsiatis quantities so that `std.err` is reported on the probability scale; set `report.survfit.std.err = TRUE` to return the conventional log-survival SEs from `survival::survfit()`. 
+
+**Confidence intervals** `cifcurve()` constructs intervals on the probability scale using the requested transformation: `"arcsine-square root"`/`"arcsin"`/`"a"` (default), `"plain`, `"log"`, `"log-log"`, or `"logit"`. Passing `"none"`/`"n"` skips interval computation entirely. The function exponentiates back to the probability scale, clips bounds to [0, 1], and replaces undefined values with `NA` so that interval endpoints remain well behaved in plots and summaries.

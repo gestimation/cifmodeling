@@ -34,8 +34,8 @@ effect_label.polyreg(
   value.time = NULL,
   unit.time = NULL,
   digits = 2,
-  p_digits = 3,
-  p_cut = 0.001,
+  p_digits = 2,
+  p_cut = 0.05,
   ...
 )
 
