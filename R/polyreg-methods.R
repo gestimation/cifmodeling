@@ -214,13 +214,126 @@ print.summary.polyreg <- function(x,
 
 #' @export
 #' @rdname polyreg-methods
-tidy.polyreg <- function(x,
-                         type = c("event1", "event2", "both"),
-                         ...) {
+effect_label.polyreg <- function(x,
+                                 event               = c("event1", "event2"),
+                                 add.time.point      = TRUE,
+                                 add.outcome         = TRUE,
+                                 add.exposure.levels = TRUE,
+                                 add.conf            = TRUE,
+                                 add.p               = TRUE,
+                                 value.time          = NULL,
+                                 unit.time           = NULL,
+                                 digits              = 2,
+                                 p_digits            = 3,
+                                 p_cut               = 0.001,
+                                 ...) {
 
-  type <- match.arg(type)
-  s    <- x$summary
-  ot   <- x$outcome.type
+  event <- match.arg(event)
+
+  if (event == "event1") {
+    td <- generics::tidy(x, event = "event1")
+    eff <- x$estimand$effect.measure1
+    ev_id <- 1L
+  } else {
+    td <- generics::tidy(x, event = if (x$outcome.type %in% c("competing-risk",
+                                                              "proportional-competing-risk")) {
+      "event2"
+    } else {
+      "event1"
+    })
+    eff  <- x$estimand$effect.measure2
+    ev_id <- 2L
+  }
+
+  exposure <- x$exposure
+  is_exp <- grepl(paste0("^", exposure, ","), td$term)
+  td_exp <- td[is_exp, , drop = FALSE]
+
+  if (nrow(td_exp) == 0L) {
+    stop("No exposure effect terms were found in tidy(x) for this polyreg object.",
+         call. = FALSE)
+  }
+
+  if (is.null(value.time)) {
+    tp <- x$estimand$time.point
+    if (length(tp) == 1L && is.finite(tp)) {
+      value.time <- tp
+    }
+  }
+
+  if (is.null(unit.time)) {
+    unit.time <- if (!is.null(value.time)) "years" else ""
+  }
+
+  labels <- character(nrow(td_exp))
+
+  for (i in seq_len(nrow(td_exp))) {
+    est <- exp(td_exp$estimate[i])
+    lcl <- exp(td_exp$conf.low[i])
+    ucl <- exp(td_exp$conf.high[i])
+    p   <- td_exp$p.value[i]
+
+    level_str <- ""
+    if (add.exposure.levels) {
+      s <- td_exp$term[i]
+      s <- sub(paste0("^", exposure, ",\\s*"), "", s)
+      level_str <- s
+    }
+
+    eff_part <- eff
+    if (add.exposure.levels && nzchar(level_str)) {
+      eff_part <- sprintf("%s (%s)", eff, level_str)
+    }
+
+    prefix <- eff_part
+    if (add.outcome) {
+      prefix <- paste(prefix, sprintf("of event %d", ev_id))
+    }
+
+    if (add.time.point && !is.null(value.time)) {
+      if (nzchar(unit.time)) {
+        tp_txt <- sprintf("at %g %s", value.time, unit.time)
+      } else {
+        tp_txt <- sprintf("at %g", value.time)
+      }
+      prefix <- paste(prefix, tp_txt)
+    }
+
+    est_txt <- sprintf("%.*f", digits, est)
+    parts   <- character(0)
+
+    if (add.conf) {
+      ci_txt <- sprintf("%.*f to %.*f", digits, lcl, digits, ucl)
+      parts  <- c(parts, ci_txt)
+    }
+
+    if (add.p && !is.na(p)) {
+      if (p < p_cut) {
+        p_txt <- sprintf("p < %.*f", p_digits, p_cut)
+      } else {
+        p_txt <- sprintf("p = %.*f", p_digits, p)
+      }
+      parts <- c(parts, p_txt)
+    }
+
+    if (length(parts) > 0L) {
+      inner <- sprintf("%s (%s)", est_txt, paste(parts, collapse = ", "))
+    } else {
+      inner <- est_txt
+    }
+    labels[i] <- sprintf("%s = %s", prefix, inner)
+  }
+  paste(labels, collapse = "\n")
+}
+
+#' @export
+#' @rdname polyreg-methods
+tidy.polyreg <- function(x,
+                         event = c("event1", "event2", "both"),
+                         ...) {
+  event <- match.arg(event)
+  s     <- x$summary
+  ot    <- x$outcome.type
 
   if (ot %in% c("competing-risk", "proportional-competing-risk")) {
     s1 <- s$event1
@@ -237,36 +350,33 @@ tidy.polyreg <- function(x,
     df
   }
 
-  if (type == "event1") {
+  if (event == "event1") {
     return(make_df(s1, "event1"))
   }
 
-  if (type == "event2") {
+  if (event == "event2") {
     if (is.null(s2)) {
       stop("No competing event in this polyreg model.", call. = FALSE)
     }
     return(make_df(s2, "event2"))
   }
 
-  # type == "both"
   out <- rbind(
     make_df(s1, "event1"),
     make_df(s2, "event2")
   )
   rownames(out) <- NULL
-  out
+  return(out)
 }
 
 #' @export
 #' @rdname polyreg-methods
 glance.polyreg <- function(x,
-                           type = c("primary", "competing"),
+                           event = c("event1", "event2"),
                            ...) {
-
-
-  type <- match.arg(type)
-  s    <- x$summary
-  ot   <- x$outcome.type
+  event <- match.arg(event)
+  s     <- x$summary
+  ot    <- x$outcome.type
 
   if (ot %in% c("competing-risk", "proportional-competing-risk")) {
     s1 <- s$event1
@@ -283,18 +393,17 @@ glance.polyreg <- function(x,
     df
   }
 
-  if (type == "event1") {
+  if (event == "event1") {
     return(make_df(s1, "event1"))
   }
 
-  if (type == "event2") {
+  if (event == "event2") {
     if (is.null(s2)) {
       stop("No competing event in this polyreg model.", call. = FALSE)
     }
     return(make_df(s2, "event2"))
   }
 
-  # type == "both"
   out <- rbind(
     make_df(s1, "event1"),
     make_df(s2, "event2")

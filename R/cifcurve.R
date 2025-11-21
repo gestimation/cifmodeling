@@ -35,7 +35,7 @@
 #'
 #' | Argument | Description | Default |
 #' |---|---|---|
-#' | `error` | SE for KM: `"greenwood"`, `"tsiatis"`, `"if"`. For CIF: `"aalen"`, `"delta"`, `"if"`. | `"greenwood"` or `"delta"` |
+#' | `error` | SE for KM: `"greenwood"`, `"tsiatis"`, `"if"`. For CIF: `"aalen"`, `"delta"`, `"if"`. | `"greenwood"`, `"delta"` or `"if"` |
 #' | `conf.type` | Transformation for CIs: `"plain"`, `"log"`, `"log-log"`, `"arcsin"`, `"logit"`, or `"none"`. | `"arcsin"` |
 #' | `conf.int` | Two-sided CI level. | `0.95` |
 #'
@@ -93,29 +93,29 @@ cifcurve <- function(
     prob.bound = 1e-7
 ) {
   outcome.type  <- util_check_outcome_type(outcome.type, formula = formula, data = data)
-  out_readSurv  <- util_read_surv(formula, data, weights,
+  out_read_surv <- util_read_surv(formula, data, weights,
                                   code.event1, code.event2, code.censoring,
                                   subset.condition, na.action)
-  error <- curve_check_error(error, outcome.type)
+  error <- curve_check_error(error, outcome.type, weights)
   call <- match.call()
 
-  strata_fac   <- as.factor(out_readSurv$strata)
+  strata_fac   <- as.factor(out_read_surv$strata)
   strata_lvls  <- levels(strata_fac)
-  strata_var   <- out_readSurv$strata_name %||% NULL
+  strata_var   <- out_read_surv$strata_name %||% NULL
   if (!is.null(strata_var)) {
     strata_fullnames <- paste0(strata_var, "=", strata_lvls)
   } else {
     strata_fullnames <- strata_lvls
   }
 
-  epsilon_norm <- rep.int(0L, length(out_readSurv$epsilon))
-  epsilon_norm[out_readSurv$epsilon == code.event1]    <- 1L
-  epsilon_norm[out_readSurv$epsilon == code.event2]    <- 2L
-  epsilon_norm[out_readSurv$epsilon == code.censoring] <- 0L
+  epsilon_norm <- rep.int(0L, length(out_read_surv$epsilon))
+  epsilon_norm[out_read_surv$epsilon == code.event1]    <- 1L
+  epsilon_norm[out_read_surv$epsilon == code.event2]    <- 2L
+  epsilon_norm[out_read_surv$epsilon == code.censoring] <- 0L
 
   if (identical(outcome.type, "survival") && identical(engine, "calculateKM")) {
-    out_km <- calculateKM(out_readSurv$t, out_readSurv$d,
-                          out_readSurv$w, as.integer(out_readSurv$strata), error)
+    out_km <- calculateKM(out_read_surv$t, out_read_surv$d,
+                          out_read_surv$w, as.integer(out_read_surv$strata), error)
     out_km$std.err <- out_km$surv * out_km$std.err
     out_ci <- calculateCI(out_km, conf.int, conf.type, conf.lower = NULL)
     if (isTRUE(report.survfit.std.err))
@@ -137,7 +137,7 @@ cifcurve <- function(
       type      = "kaplan-meier",
       method    = "Kaplan-Meier"
     )
-    if (any(as.integer(out_readSurv$strata) != 1)) {
+    if (any(as.integer(out_read_surv$strata) != 1)) {
       names(out_km$strata) <- strata_fullnames
       survfit_object$strata <- out_km$strata
     }
@@ -146,16 +146,16 @@ cifcurve <- function(
     return(survfit_object)
 
   } else if (identical(outcome.type, "competing-risk") && identical(engine, "calculateKM")) {
-    out_aj <- calculateAJ(out_readSurv)
+    out_aj <- calculateAJ(out_read_surv)
     names(out_aj$strata1) <- strata_fullnames
 
-    if (any(as.integer(out_readSurv$strata) != 1)) {
-      n <- table(as.integer(out_readSurv$strata))
+    if (any(as.integer(out_read_surv$strata) != 1)) {
+      n <- table(as.integer(out_read_surv$strata))
       rep_list <- mapply(rep, n, out_aj$strata1, SIMPLIFY = FALSE)
       n.risk <- do.call(c, rep_list) -
         out_aj$n.cum.censor - out_aj$n.cum.event1 - out_aj$n.cum.event2
     } else {
-      n <- length(out_readSurv$strata)
+      n <- length(out_read_surv$strata)
       n.risk <- n - out_aj$n.cum.censor - out_aj$n.cum.event1 - out_aj$n.cum.event2
     }
 
@@ -187,7 +187,7 @@ cifcurve <- function(
       type        = "aalen-johansen",
       method      = "aalen-johansen"
     )
-    if (any(as.integer(out_readSurv$strata) != 1))
+    if (any(as.integer(out_read_surv$strata) != 1))
       survfit_object$strata <- out_aj$strata1
 
     survfit_object <- harmonize_engine_output(survfit_object)
@@ -196,10 +196,10 @@ cifcurve <- function(
   }
 
   out_cpp <- call_calculateAJ_Rcpp(
-    t = out_readSurv$t,
+    t = out_read_surv$t,
     epsilon = as.integer(epsilon_norm),
-    w = out_readSurv$w,
-    strata = as.integer(out_readSurv$strata),
+    w = out_read_surv$w,
+    strata = as.integer(out_read_surv$strata),
     error = error,
     conf.type = conf.type,
     conf.int = conf.int,
@@ -302,23 +302,56 @@ calculateAJ <- function(data) {
   )
 }
 
-curve_check_error <- function(x, outcome.type) {
+curve_check_error <- function(x, outcome.type, weights = NULL) {
   ot <- util_check_outcome_type(x = outcome.type, auto_message = FALSE)
-  choices <- switch(ot,
-                    "survival"          = c("greenwood", "tsiatis", "jackknife", "if"),
-                    "competing-risk"    = c("aalen", "delta", "jackknife", "if"),
-                    stop(sprintf("Invalid outcome.type: %s", outcome.type), call. = FALSE)
+
+  choices <- switch(
+    ot,
+    "survival"       = c("greenwood", "tsiatis", "jackknife", "if"),
+    "competing-risk" = c("aalen", "delta", "jackknife", "if"),
+    stop(sprintf("Invalid outcome.type: %s", outcome.type), call. = FALSE)
   )
-  fallback <- if (ot == "survival") "greenwood" else "delta"
+
+  has_weights <- !is.null(weights)
+  fallback <- if (has_weights) {
+    "if"
+  } else if (ot == "survival") {
+    "greenwood"
+  } else {
+    "delta"
+  }
 
   if (is.null(x)) return(fallback)
 
-  x_norm <- tolower(as.character(x))
+  normalize_error <- function(z) {
+    if (is.null(z)) return(NULL)
+    z <- tolower(trimws(as.character(z)))
+
+    if (z %in% c("g", "greenwood")) {
+      return("greenwood")
+    }
+    if (z %in% c("t", "tsiatis")) {
+      return("tsiatis")
+    }
+    if (z %in% c("if", "influence function", "influence_function", "influence curve", "ic")) {
+      return("if")
+    }
+
+    z
+  }
+
+  x_norm <- normalize_error(x)
+
   if (x_norm %in% choices) return(x_norm)
 
-  warning(sprintf("%s: unsupported error='%s'; falling back to '%s'.", ot, x_norm, fallback), call. = FALSE)
-  return(fallback)
+  warning(
+    sprintf("%s: unsupported error='%s'; falling back to '%s'.",
+            ot, as.character(x), fallback),
+    call. = FALSE
+  )
+  fallback
 }
+
 
 call_calculateAJ_Rcpp <- function(t, epsilon, w = NULL, strata = NULL,
                                    error = "greenwood",

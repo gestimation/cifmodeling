@@ -131,8 +131,9 @@ Mixed or ambiguous inputs (e.g., <code>c("S", "C")</code>) trigger automatic det
 
 <dt id="arg-error">error<a class="anchor" aria-label="anchor" href="#arg-error"></a></dt>
 <dd><p>Character string specifying the method for SEs and CIs used internally.
-For <code>"survival"</code>, choose one of <code>"greenwood"</code> (default), <code>"tsiatis"</code>, or <code>"if"</code>.
-For <code>"competing-risk"</code>, choose one of <code>"delta"</code> (default), <code>"aalen"</code>, or <code>"if"</code>.</p></dd>
+For <code>"survival"</code> without weights, choose one of <code>"greenwood"</code> (default), <code>"tsiatis"</code>, or <code>"if"</code>.
+For <code>"competing-risk"</code> without weights, choose one of <code>"delta"</code> (default), <code>"aalen"</code>, or <code>"if"</code>.
+SEs and CIs based on influence functions (<code>"if"</code>) is recommended for weighted analysis.</p></dd>
 
 
 <dt id="arg-conf-type">conf.type<a class="anchor" aria-label="anchor" href="#arg-conf-type"></a></dt>
@@ -190,7 +191,7 @@ estimator of CIF for <code>code.event1</code>. The returned <code>$surv</code> i
 
 <div class="section">
 <h3 id="standard-error-and-confidence-intervals">Standard error and confidence intervals<a class="anchor" aria-label="anchor" href="#standard-error-and-confidence-intervals"></a></h3>
-<table class="table table"><tr><td>Argument</td><td>Description</td><td>Default</td></tr><tr><td><code>error</code></td><td>SE for KM: <code>"greenwood"</code>, <code>"tsiatis"</code>, <code>"if"</code>. For CIF: <code>"aalen"</code>, <code>"delta"</code>, <code>"if"</code>.</td><td><code>"greenwood"</code> or <code>"delta"</code></td></tr><tr><td><code>conf.type</code></td><td>Transformation for CIs: <code>"plain"</code>, <code>"log"</code>, <code>"log-log"</code>, <code>"arcsin"</code>, <code>"logit"</code>, or <code>"none"</code>.</td><td><code>"arcsin"</code></td></tr><tr><td><code>conf.int</code></td><td>Two-sided CI level.</td><td><code>0.95</code></td></tr></table></div>
+<table class="table table"><tr><td>Argument</td><td>Description</td><td>Default</td></tr><tr><td><code>error</code></td><td>SE for KM: <code>"greenwood"</code>, <code>"tsiatis"</code>, <code>"if"</code>. For CIF: <code>"aalen"</code>, <code>"delta"</code>, <code>"if"</code>.</td><td><code>"greenwood"</code>, <code>"delta"</code> or <code>"if"</code></td></tr><tr><td><code>conf.type</code></td><td>Transformation for CIs: <code>"plain"</code>, <code>"log"</code>, <code>"log-log"</code>, <code>"arcsin"</code>, <code>"logit"</code>, or <code>"none"</code>.</td><td><code>"arcsin"</code></td></tr><tr><td><code>conf.int</code></td><td>Two-sided CI level.</td><td><code>0.95</code></td></tr></table></div>
 
     </div>
     <div class="section level2">

@@ -53,8 +53,9 @@ Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic detection
 \item{code.censoring}{Integer code of censoring (default \code{0}).}
 
 \item{error}{Character string specifying the method for SEs and CIs used internally.
-For \code{"survival"}, choose one of \code{"greenwood"} (default), \code{"tsiatis"}, or \code{"if"}.
-For \code{"competing-risk"}, choose one of \code{"delta"} (default), \code{"aalen"}, or \code{"if"}.}
+For \code{"survival"} without weights, choose one of \code{"greenwood"} (default), \code{"tsiatis"}, or \code{"if"}.
+For \code{"competing-risk"} without weights, choose one of \code{"delta"} (default), \code{"aalen"}, or \code{"if"}.
+SEs and CIs based on influence functions (\code{"if"}) is recommended for weighted analysis.}
 
 \item{conf.type}{Character specifying the method of transformation for CIs
 used internally (default \verb{arcsine-square root}).}
@@ -107,7 +108,7 @@ estimator of CIF for \code{code.event1}. The returned \code{$surv} is
 
 \subsection{Standard error and confidence intervals}{\tabular{lll}{
    Argument \tab Description \tab Default \cr
-   \code{error} \tab SE for KM: \code{"greenwood"}, \code{"tsiatis"}, \code{"if"}. For CIF: \code{"aalen"}, \code{"delta"}, \code{"if"}. \tab \code{"greenwood"} or \code{"delta"} \cr
+   \code{error} \tab SE for KM: \code{"greenwood"}, \code{"tsiatis"}, \code{"if"}. For CIF: \code{"aalen"}, \code{"delta"}, \code{"if"}. \tab \code{"greenwood"}, \code{"delta"} or \code{"if"} \cr
    \code{conf.type} \tab Transformation for CIs: \code{"plain"}, \code{"log"}, \code{"log-log"}, \code{"arcsin"}, \code{"logit"}, or \code{"none"}. \tab \code{"arcsin"} \cr
    \code{conf.int} \tab Two-sided CI level. \tab \code{0.95} \cr
 }

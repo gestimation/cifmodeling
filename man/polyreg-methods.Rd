@@ -7,6 +7,7 @@
 \alias{nobs.polyreg}
 \alias{summary.polyreg}
 \alias{print.summary.polyreg}
+\alias{effect_label.polyreg}
 \alias{tidy.polyreg}
 \alias{glance.polyreg}
 \alias{augment.polyreg}
@@ -22,9 +23,25 @@
 
 \method{print}{summary.polyreg}(x, digits = 3, ...)
 
-\method{tidy}{polyreg}(x, type = c("event1", "event2", "both"), ...)
+effect_label.polyreg(
+  x,
+  event = c("event1", "event2"),
+  add.time.point = TRUE,
+  add.outcome = TRUE,
+  add.exposure.levels = TRUE,
+  add.conf = TRUE,
+  add.p = TRUE,
+  value.time = NULL,
+  unit.time = NULL,
+  digits = 2,
+  p_digits = 3,
+  p_cut = 0.001,
+  ...
+)
 
-\method{glance}{polyreg}(x, type = c("primary", "competing"), ...)
+\method{tidy}{polyreg}(x, event = c("event1", "event2", "both"), ...)
+
+\method{glance}{polyreg}(x, event = c("event1", "event2"), ...)
 
 \method{augment}{polyreg}(x, ...)
 }

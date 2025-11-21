@@ -1094,7 +1094,7 @@ cifplot_single <- function(
 
   p <- call_ggsurvfit(
     survfit_object = formula_or_fit,
-    out_readSurv   = NULL,
+    out_read_surv  = NULL,
     survfit.info   = survfit.info,
     axis.info      = axis.info,
     visual.info    = visual.info,
@@ -1109,7 +1109,7 @@ cifplot_single <- function(
 #' Plot survival or cumulative incidence curves with ggsurvfit
 #'
 #' @param survfit_object A \code{survfit} object.
-#' @param out_readSurv (optional) List returned by your \code{util_read_surv()} to auto-set x limits.
+#' @param out_read_surv (optional) List returned by your \code{util_read_surv()} to auto-set x limits.
 #' @param conf.type Character transformation for CI on the probability scale (default \code{"arcsine-square root"}).
 
 #' @param add.conf Logical add \code{add_confidence_interval()} to plot. It calls geom_ribbon() (default \code{TRUE}).
@@ -1134,7 +1134,7 @@ cifplot_single <- function(
 #' @param label.y Character y-axis labels (default internally set to \code{"Survival"} or \code{"Cumulative incidence"}).
 #' @param label.strata Character vector of labels for strata.
 
-#' @param limits.x Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,max(out_readSurv$t))}.
+#' @param limits.x Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,max(out_read_surv$t))}.
 #' @param limits.y Numeric length-2 vectors for axis limits. If NULL it is internally set to \code{c(0,1)}.
 #' @param breaks.x Numeric vectors for axis breaks (default \code{NULL}).
 #' @param breaks.y Numeric vectors for axis breaks (default \code{NULL}).
@@ -1150,13 +1150,13 @@ cifplot_single <- function(
 #' @noRd
 call_ggsurvfit <- function(
     survfit_object,
-    out_readSurv = NULL,
-    survfit.info = NULL,
-    axis.info    = NULL,
-    visual.info  = NULL,
-    panel.info   = NULL,
-    style.info   = NULL,
-    ggsave.info  = NULL
+    out_read_surv = NULL,
+    survfit.info  = NULL,
+    axis.info     = NULL,
+    visual.info   = NULL,
+    panel.info    = NULL,
+    style.info    = NULL,
+    ggsave.info   = NULL
 ){
   survfit.info        <- survfit.info %||% list()
   axis.info           <- axis.info    %||% list()
@@ -1244,12 +1244,12 @@ call_ggsurvfit <- function(
   }
 
   out_cg <- check_ggsurvfit(
-    survfit_object   = survfit_object,
-    survfit.info     = survfit.info,
-    axis.info        = axis.info,
-    visual.info      = visual.info,
-    style.info       = style.info,
-    out_readSurv     = out_readSurv
+    survfit_object  = survfit_object,
+    survfit.info    = survfit.info,
+    axis.info       = axis.info,
+    visual.info     = visual.info,
+    style.info      = style.info,
+    out_read_surv   = out_read_surv
   )
 
   p <- out_cg$out_survfit_object +
@@ -1387,11 +1387,11 @@ call_ggsurvfit <- function(
 
 check_ggsurvfit <- function(
     survfit_object,
-    survfit.info = NULL,
-    axis.info    = NULL,
-    visual.info  = NULL,
-    style.info   = NULL,
-    out_readSurv = NULL
+    survfit.info  = NULL,
+    axis.info     = NULL,
+    visual.info   = NULL,
+    style.info    = NULL,
+    out_read_surv = NULL
 ){
   survfit.info <- survfit.info %||% list()
   axis.info    <- axis.info    %||% list()
@@ -1449,8 +1449,8 @@ check_ggsurvfit <- function(
               a = signif(limits.x[1], 6), b = signif(limits.x[2], 6))
       }
     }
-  } else if (!is.null(out_readSurv) && !is.null(out_readSurv$t)) {
-    tmax <- suppressWarnings(max(out_readSurv$t, na.rm = TRUE))
+  } else if (!is.null(out_read_surv) && !is.null(out_read_surv$t)) {
+    tmax <- suppressWarnings(max(out_read_surv$t, na.rm = TRUE))
     if (!is.finite(tmax) || tmax <= 0) .warn("ors_tmax_bad")
   }
 
@@ -1541,22 +1541,3 @@ check_ggsurvfit <- function(
     type.y             = type.y
   )
 }
-
-create_rr_text <- function(coefficient, cov, index, omit.conf.int=TRUE, conf.int=0.95) {
-  alpha <- 1 - conf.int
-  critical_value <- qnorm(1 - alpha / 2)
-  coef <- coefficient[index]
-  coef_se <- sqrt(diag(cov)[index])
-  conf_low <- coef - critical_value * coef_se
-  conf_high <- coef + critical_value * coef_se
-  p_value <- floor(2 * (1 - pnorm(abs(coef) / coef_se)))
-  if (omit.conf.int==TRUE) {
-    if (p_value<0.01) text <- paste0("RR=", round(exp(coef), digits=2), ", p<0.01")
-    else text <- paste0("RR=", round(exp(coef), digits=2), ", p=", p_value)
-  } else {
-    if (p_value<0.01) text <- paste0("RR=", round(exp(coef), digits=2), " (", round(exp(conf_low), digits=2), " to ", round(exp(conf_high), digits=2), ", p<0.01", ")")
-    else text <- paste0("RR=", round(exp(coef), digits=2), " (", round(exp(conf_low), digits=2), " to ", round(exp(conf_high), digits=2), ", p=", p_value, ")")
-  }
-  return(text)
-}
-

@@ -211,8 +211,9 @@ When supplied, it overrides <code>code.event1</code>, <code>code.event2</code>, 
 
 <dt id="arg-error">error<a class="anchor" aria-label="anchor" href="#arg-error"></a></dt>
 <dd><p>Character string specifying the method for SEs and CIs used internally.
-For <code>"survival"</code>, choose one of <code>"greenwood"</code> (default), <code>"tsiatis"</code>, or <code>"if"</code>.
-For <code>"competing-risk"</code>, choose one of <code>"delta"</code> (default), <code>"aalen"</code>, or <code>"if"</code>.</p></dd>
+For <code>"survival"</code> without weights, choose one of <code>"greenwood"</code> (default), <code>"tsiatis"</code>, or <code>"if"</code>.
+For <code>"competing-risk"</code> without weights, choose one of <code>"delta"</code> (default), <code>"aalen"</code>, or <code>"if"</code>.
+SEs and CIs based on influence functions (<code>"if"</code>) is recommended for weighted analysis.</p></dd>
 
 
 <dt id="arg-conf-type">conf.type<a class="anchor" aria-label="anchor" href="#arg-conf-type"></a></dt>

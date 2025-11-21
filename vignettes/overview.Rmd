@@ -55,7 +55,7 @@ In competing risks data, censoring is often coded as 0, the event of interest as
 - **Unified interface** for Kaplan–Meier and Aalen–Johansen curves, with survival and competing risks handled by the same `Event()` + formula + data syntax.
 - **Effects on the CIF scale**: while Fine-Gray models subdistribution hazards, `polyreg()` directly targets ratios of CIFs (risk ratios, odds ratios, subdistribution hazard ratios), so parameters align closely with differences seen in CIF curves.
 - **Coherent, joint modeling of all competing events**: `polyreg()` models all cause-specific CIFs together, parameterizing the nuisance structure with polytomous log odds products and enforcing that their CIFs sum to at most one.
-- **Tidy summaries and reporting**: support for `generics::tidy()`, `glance()`, and `augment()`, which integrate `polyreg()` smoothly with `modelsummary` and other broom-style tools.
+- **Tidy summaries and reporting**: support for `generics::tidy()`, `glance()`, and `augment()`, which integrates `polyreg()` smoothly with `modelsummary` and other broom-style tools.
 - **Publication-ready graphics** built on `ggsurvfit` and `ggplot2`, including at-risk/CIF+CI tables, censoring/competing-risk/intercurrent-event marks, and multi-panel layouts.
 
 ## Tools for survival and competing risks analysis
