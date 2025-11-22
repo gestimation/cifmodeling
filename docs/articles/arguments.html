@@ -35,7 +35,9 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/overview.html">Overview</a></li>
     <li><a class="dropdown-item" href="../articles/polyreg.html">Direct polytomous regression</a></li>
+    <li><a class="dropdown-item" href="../articles/formulas.html">Computational formulas in cifcurve()</a></li>
     <li><a class="dropdown-item" href="../articles/examples.html">Examples</a></li>
+    <li><a class="dropdown-item" href="../articles/gallery.html">Gallery</a></li>
     <li><a class="dropdown-item" href="../articles/information.html">Additional information</a></li>
     <li><a class="dropdown-item" href="../articles/arguments.html">Full lists of arguments</a></li>
   </ul>
@@ -117,11 +119,13 @@ coding.</li>
 <code>0</code>).</li>
 <li>
 <code>error</code> Character string specifying the method for SEs
-and CIs used internally. For <code>"survival"</code>, choose one of
-<code>"greenwood"</code> (default), <code>"tsiatis"</code>, or
-<code>"if"</code>. For <code>"competing-risk"</code>, choose one of
+and CIs used internally. For <code>"survival"</code> without weights,
+choose one of <code>"greenwood"</code> (default),
+<code>"tsiatis"</code>, or <code>"if"</code>. For
+<code>"competing-risk"</code> without weights, choose one of
 <code>"delta"</code> (default), <code>"aalen"</code>, or
-<code>"if"</code>.</li>
+<code>"if"</code>. SEs and CIs based on influence functions
+(<code>"if"</code>) is recommended for weighted analysis.</li>
 <li>
 <code>conf.type</code> Character specifying the method of
 transformation for CIs used internally (default
@@ -190,11 +194,13 @@ coding.</li>
 <code>0</code>).</li>
 <li>
 <code>error</code> Character string specifying the method for SEs
-and CIs used internally. For <code>"survival"</code>, choose one of
-<code>"greenwood"</code> (default), <code>"tsiatis"</code>, or
-<code>"if"</code>. For <code>"competing-risk"</code>, choose one of
+and CIs used internally. For <code>"survival"</code> without weights,
+choose one of <code>"greenwood"</code> (default),
+<code>"tsiatis"</code>, or <code>"if"</code>. For
+<code>"competing-risk"</code> without weights, choose one of
 <code>"delta"</code> (default), <code>"aalen"</code>, or
-<code>"if"</code>.</li>
+<code>"if"</code>. SEs and CIs based on influence functions
+(<code>"if"</code>) is recommended for weighted analysis.</li>
 <li>
 <code>conf.type</code> Character specifying the method of
 transformation for CIs used internally (default
@@ -203,16 +209,20 @@ transformation for CIs used internally (default
 <code>conf.int</code> Numeric two-sided level of CIs (default
 <code>0.95</code>).</li>
 <li>
-<code>type.y</code> Character string specifying the y-scale:
-<code>"surv"</code> for survival probabilities or <code>"risk"</code>
-for cumulative incidence (1 - survival in simple survival settings). If
-<code>NULL``, a default is chosen from</code>outcome.type`.</li>
+<code>type.y</code> Character string specifying the y-scale. For
+survival/CIF curves, <code>"surv"</code> implies survival probabilities
+and <code>"risk"</code> implies CIF (1-survival in simple survival
+settings). Specify <code>"cumhaz"</code> to plot cumulative hazard or
+<code>"cloglog"</code> to generate a complementary log-log plot. If
+<code>NULL</code>, a default is chosen from <code>outcome.type</code> or
+the survfit object.</li>
 <li>
 <code>label.x</code> Character x-axis labels (default
 <code>"Time"</code>).</li>
 <li>
-<code>label.y</code> Character y-axis labels (default internally set
-to <code>"Survival"</code> or <code>"Cumulative incidence"</code>).</li>
+<code>label.y</code> Character y-axis label (default is chosen
+automatically from <code>outcome.type</code> and <code>type.y</code>,
+e.g. “Survival”, “Cumulative incidence” or “Cumulative hazard”).</li>
 <li>
 <code>label.strata</code> Character vector of labels for
 strata.</li>
@@ -427,20 +437,25 @@ coding.</p></li>
 <code>code.censoring</code> (primarily used when <code><a href="../reference/cifpanel.html">cifpanel()</a></code>
 is called or when <code>panel.per.event = TRUE</code>).</p></li>
 <li><p><code>error</code> Character string specifying the method for SEs
-and CIs used internally. For <code>"survival"</code>, choose one of
-<code>"greenwood"</code> (default), <code>"tsiatis"</code>, or
-<code>"if"</code>. For <code>"competing-risk"</code>, choose one of
+and CIs used internally. For <code>"survival"</code> without weights,
+choose one of <code>"greenwood"</code> (default),
+<code>"tsiatis"</code>, or <code>"if"</code>. For
+<code>"competing-risk"</code> without weights, choose one of
 <code>"delta"</code> (default), <code>"aalen"</code>, or
-<code>"if"</code>.</p></li>
+<code>"if"</code>. SEs and CIs based on influence functions
+(<code>"if"</code>) is recommended for weighted analysis.</p></li>
 <li><p><code>conf.type</code> Character specifying the method of
 transformation for CIs used internally (default
 <code>"arcsine-square root"</code>).</p></li>
 <li><p><code>conf.int</code> Numeric two-sided level of CIs (default
 <code>0.95</code>).</p></li>
-<li><p><code>type.y</code> Character string specifying the y-scale:
-<code>"surv"</code> for survival probabilities or <code>"risk"</code>
-for cumulative incidence (1 - survival in simple survival settings). If
-<code>NULL``, a default is chosen from</code>outcome.type`.</p></li>
+<li><p><code>type.y</code> Character string specifying the y-scale. For
+survival/CIF curves, <code>"surv"</code> implies survival probabilities
+and <code>"risk"</code> implies CIF (1-survival in simple survival
+settings). Specify <code>"cumhaz"</code> to plot cumulative hazard or
+<code>"cloglog"</code> to generate a complementary log-log plot. If
+<code>NULL</code>, a default is chosen from <code>outcome.type</code> or
+the survfit object.</p></li>
 <li><p><code>label.x</code>, <code>label.y</code> Optional vectors/lists
 of axis labels per panel.</p></li>
 <li><p><code>label.strata</code> Optional list of character vectors for

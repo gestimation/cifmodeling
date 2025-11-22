@@ -4,12 +4,14 @@
 #' @name cif-visual-arguments
 #' @keywords internal
 #'
-#' @param type.y Character string specifying the y-scale: `"surv"` for survival probabilities
-#' or `"risk"` for cumulative incidence (1 - survival in simple survival settings).
-#' If `NULL``, a default is chosen from `outcome.type`.
+#' @param type.y Character string specifying the y-scale. For survival/CIF curves,
+#'  `"surv"` implies survival probabilities and `"risk"` implies CIF
+#'  (1-survival in simple survival settings). Specify `"cumhaz"` to plot cumulative hazard
+#'  or `"cloglog"` to generate a complementary log-log plot.
+#' If `NULL`, a default is chosen from `outcome.type` or the survfit object.
 #' @param label.x Character x-axis label (default `"Time"`).
 #' @param label.y Character y-axis label (default is chosen automatically from `outcome.type`
-#'   and `type.y`, e.g. "Survival" or "Cumulative incidence").
+#'   and `type.y`, e.g. "Survival", "Cumulative incidence" or "Cumulative hazard").
 #' @param limits.x Numeric length-2 vector specifying x-axis limits. If `NULL`, it is
 #'   set from the fitted object (typically `c(0, max(time))`).
 #' @param limits.y Numeric length-2 vector specifying y-axis limits. If `NULL`, it is

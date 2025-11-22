@@ -3,16 +3,16 @@
 #' Core estimation routine that computes a survfit-compatible object
 #' from a formula + data interface (`Event()` or `survival::Surv()` on
 #' the LHS, and a stratification variable on the RHS if necessary).
-#' Use this when you want **numbers only** (KM / CIF + SE + CI) and
-#' you will plot it yourself (for example with `ggsurvfit` or [cifplot()]).
+#' The back-end  C++ routine supports both weighted and stratified data. Use this
+#' when you want **numbers only** (e.g. estimates, SEs, CIs and influence functions)
+#' and will plot it yourself.
 #'
 #' @inheritParams cif-stat-arguments
 #'
 #' @param formula A model formula specifying the time-to-event outcome on the LHS
 #'   (typically `Event(time, status)` or `survival::Surv(time, status)`)
 #'   and, optionally, a stratification variable on the RHS.
-#'   Unlike [cifplot()], this function does not accept a fitted
-#'   `survfit` object.
+#'   Unlike [cifplot()], this function does not accept a fitted survfit object.
 #' @param report.influence.function Logical. When `TRUE` and `engine = "calculateAJ_Rcpp"`,
 #' the influence function is also computed and returned (default `FALSE`).
 #' @param report.survfit.std.err Logical. If `TRUE`, report SE on the log-survival
@@ -23,13 +23,11 @@
 #' @details
 #'
 #' ### Typical use cases
-#' - When \code{outcome.type = "survival"}, this is a thin wrapper around
+#' - When `outcome.type = "survival"`, this is a thin wrapper around
 #' the KM estimator with the chosen variance / CI transformation.
-#' - When \code{outcome.type = "competing-risk"}, this computes the AJ
-#'   estimator of CIF for \code{code.event1}. The returned \code{$surv} is
-#'   \code{1 - CIF}, i.e. in the format that \pkg{ggsurvfit} expects.
-#' - Use \code{\link{cifplot}} if you want to go straight to a figure; use
-#'   \code{cifcurve()} if you only want the numbers.
+#' - When `outcome.type = "competing-risk"`, this computes the AJ estimator of CIF for `code.event1`.
+#'  The returned `$surv` is **1 - CIF**, i.e. in the format that ggsurvfit expects.
+#' - Use [cifplot()] if you want to go straight to a figure; use [cifcurve()] if you only want the numbers.
 #'
 #' ### Standard error and confidence intervals
 #'
@@ -307,8 +305,8 @@ curve_check_error <- function(x, outcome.type, weights = NULL) {
 
   choices <- switch(
     ot,
-    "survival"       = c("greenwood", "tsiatis", "jackknife", "if"),
-    "competing-risk" = c("aalen", "delta", "jackknife", "if"),
+    "survival"       = c("greenwood", "tsiatis", "if"),
+    "competing-risk" = c("aalen", "delta", "if"),
     stop(sprintf("Invalid outcome.type: %s", outcome.type), call. = FALSE)
   )
 
@@ -333,14 +331,23 @@ curve_check_error <- function(x, outcome.type, weights = NULL) {
     if (z %in% c("t", "tsiatis")) {
       return("tsiatis")
     }
-    if (z %in% c("if", "influence function", "influence_function", "influence curve", "ic")) {
+    if (z %in% c("if", "influence function", "influence_function",
+                 "influence curve", "ic")) {
       return("if")
     }
-
     z
   }
 
   x_norm <- normalize_error(x)
+
+  if (has_weights && ot == "competing-risk" && x_norm %in% c("aalen", "delta")) {
+    warning(
+      sprintf("%s with weights: error='%s' is not supported; falling back to 'if'.",
+              ot, as.character(x)),
+      call. = FALSE
+    )
+    return("if")
+  }
 
   if (x_norm %in% choices) return(x_norm)
 
@@ -351,7 +358,6 @@ curve_check_error <- function(x, outcome.type, weights = NULL) {
   )
   fallback
 }
-
 
 call_calculateAJ_Rcpp <- function(t, epsilon, w = NULL, strata = NULL,
                                    error = "greenwood",

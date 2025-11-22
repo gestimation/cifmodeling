@@ -3,7 +3,7 @@
 \name{cifplot}
 \alias{cifplot}
 \title{Generate a survival/CIF curve with marks that represent
-censoring, competing risks and intermediate events}
+censoring, competing risks and intercurrent events}
 \usage{
 cifplot(
   formula_or_fit,
@@ -117,14 +117,16 @@ used internally (default \verb{arcsine-square root}).}
 
 \item{conf.int}{Numeric two-sided level of CIs (default \code{0.95}).}
 
-\item{type.y}{Character string specifying the y-scale: \code{"surv"} for survival probabilities
-or \code{"risk"} for cumulative incidence (1 - survival in simple survival settings).
-If \verb{NULL``, a default is chosen from }outcome.type`.}
+\item{type.y}{Character string specifying the y-scale. For survival/CIF curves,
+\code{"surv"} implies survival probabilities and \code{"risk"} implies CIF
+(1-survival in simple survival settings). Specify \code{"cumhaz"} to plot cumulative hazard
+or \code{"cloglog"} to generate a complementary log-log plot.
+If \code{NULL}, a default is chosen from \code{outcome.type} or the survfit object.}
 
 \item{label.x}{Character x-axis label (default \code{"Time"}).}
 
 \item{label.y}{Character y-axis label (default is chosen automatically from \code{outcome.type}
-and \code{type.y}, e.g. "Survival" or "Cumulative incidence").}
+and \code{type.y}, e.g. "Survival", "Cumulative incidence" or "Cumulative hazard").}
 
 \item{label.strata}{Character vector or named character vector specifying labels for strata.
 Names (if present) must match the (re-ordered) underlying strata levels.
@@ -138,7 +140,7 @@ When provided, both \code{order.strata} and \code{label.strata} are validated ag
 before application.}
 
 \item{order.strata}{Optional character vector specifying the display order of strata
-in the legend / risk table. Specify the levels of strata. Levels not listed are dropped.}
+in the legend/number-at-risk table. Specify the levels of strata. Levels not listed are dropped.}
 
 \item{limits.x}{Numeric length-2 vector specifying x-axis limits. If \code{NULL}, it is
 set from the fitted object (typically \code{c(0, max(time))}).}
@@ -279,18 +281,17 @@ The object is returned invisibly. When a panel mode is active and
 \code{print.panel = TRUE}, the panel is also printed in interactive sessions.
 }
 \description{
-This function generates a survival or CIF curve from a unified formula–data interface
-or from an existing survfit object. When a formula is supplied, the LHS is typically
-\code{Event()} or \code{survivai::Surv()}, and the RHS specifies an optional
-stratification variable. In addition to the curves themselves,
+This function generates a survival or CIF curve from a unified formula–data
+interface or from an existing survfit object. When a formula is supplied,
+the LHS is typically \code{Event()} or \code{survivai::Surv()}, and the RHS specifies
+an optional stratification variable. In addition to the curves themselves,
 \code{\link[=cifplot]{cifplot()}} can add numbers-at-risk tables, tables of point estimates and
-CIs, censoring marks, competing-risk marks, and
-intercurrent-event marks.
+CIs, censoring marks, competing-risk marks, and intercurrent-event marks.
 
 For more complex multi-panel displays, \code{\link[=cifplot]{cifplot()}} can internally call
 \code{\link[=cifpanel]{cifpanel()}} via several “panel modes” (per event, per variable, or
-censoring-focused). The function returns an object whose \code{plot}
-component is a regular ggplot object that can be further modified (compatible with \code{+} and \verb{\%+\%}).
+censoring-focused). The function returns an object whose \code{plot} component
+is a regular ggplot object that can be further modified (compatible with \code{+} and \verb{\%+\%}).
 }
 \details{
 \subsection{Typical use cases}{
@@ -298,7 +299,7 @@ component is a regular ggplot object that can be further modified (compatible wi
 \item Draw one survival/CIF curve set by exposure groups (e.g., treatment vs control).
 \item Call \code{cifpanel()} with a simplified code to create a panel displaying plots of multiple stratified survival/CIF curves or CIF curves for each event type.
 \item Add CIs and censor/competing-risk/intercurrent-event marks.
-\item Add a risk table to display the number at risk or the estimated survival probabilities or CIFs and CIs at each point in time.
+\item Add number-at-risk table to display the number at risk or the estimated survival probabilities or CIFs and CIs at each point in time.
 }
 }
 
@@ -429,6 +430,7 @@ The arguments below fine-tune internal estimation and figure appearance.
 \strong{Notes}
 \itemize{
 \item For CIF displays, set \code{type.y = "risk"}. For survival scale, use \code{type.y = NULL} or \verb{= "surv"}.
+For a cumulative hazard plot, use \code{type.y = "cumhaz"}. To generate a log-log plot, use \code{type.y = "cloglog"}.
 \item Event coding can be controlled via \code{code.event1}, \code{code.event2}, \code{code.censoring}.
 For ADaM-style data, use \code{code.event1 = 0}, \code{code.censoring = 1}.
 \item Per-stratum time lists should have names identical to plotted strata labels.

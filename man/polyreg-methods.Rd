@@ -34,8 +34,8 @@ effect_label.polyreg(
   value.time = NULL,
   unit.time = NULL,
   digits = 2,
-  p_digits = 3,
-  p_cut = 0.001,
+  p_digits = 2,
+  p_cut = 0.05,
   ...
 )
 
@@ -46,7 +46,7 @@ effect_label.polyreg(
 \method{augment}{polyreg}(x, ...)
 }
 \arguments{
-\item{object}{A \code{"polyreg"} object returned by \code{polyreg()}.}
+\item{object}{A polyreg object returned by \code{polyreg()}.}
 
 \item{...}{Further arguments passed to or from methods.}
 
@@ -56,10 +56,48 @@ sandwich and bootstrap variance based on the original \code{polyreg()}
 settings, using \code{outcome.type}, \code{report.sandwich.conf}, and
 \code{report.boot.conf}. (Used only by \code{vcov.polyreg()}.)}
 
-\item{x}{A \verb{"summary.polyreg"`` object, as returned by }summary.polyreg()`.}
+\item{x}{Object to be printed or summarised. Typically a
+\code{"summary.polyreg"} object for \code{print.summary.polyreg()}, or
+a \code{"polyreg"} object for \code{tidy.polyreg()}, \code{glance.polyreg()},
+\code{augment.polyreg()}, and \code{effect_label.polyreg()}.}
 
-\item{digits}{Number of digits to print for parameter estimates.
-(Used only by \code{print.summary.polyreg()}.)}
+\item{digits}{Number of digits to print for parameter estimates
+or effect measures. Used by \code{print.summary.polyreg()} and
+\code{effect_label.polyreg()}.}
+
+\item{event}{Character string indicating which event to extract.
+For \code{effect_label.polyreg()} and \code{glance.polyreg()} this is
+one of \code{"event1"} or \code{"event2"}. For \code{tidy.polyreg()} it can
+also be \code{"both"} to return rows for all events.}
+
+\item{add.time.point}{Logical; if \code{TRUE}, \code{effect_label.polyreg()}
+appends the time point to the label (e.g., “at 5 years”).}
+
+\item{add.outcome}{Logical; if \code{TRUE}, \code{effect_label.polyreg()}
+appends the outcome/event description (e.g., “of event 1”).}
+
+\item{add.exposure.levels}{Logical; if \code{TRUE}, \code{effect_label.polyreg()}
+includes the exposure level in the label (e.g., treatment group).}
+
+\item{add.conf}{Logical; if \code{TRUE}, \code{effect_label.polyreg()}
+includes a confidence interval in the label.}
+
+\item{add.p}{Logical; if \code{TRUE}, \code{effect_label.polyreg()}
+includes a p-value or thresholded p-value (e.g. p < 0.05).}
+
+\item{value.time}{Optional numeric value overriding the time point
+stored in the \code{"polyreg"} object when constructing labels in
+\code{effect_label.polyreg()}.}
+
+\item{unit.time}{Optional character string giving the time unit
+to display in labels constructed by \code{effect_label.polyreg()},
+such as \code{"years"} or \code{"months"}.}
+
+\item{p_digits}{Integer; number of digits used to format p-values
+in \code{effect_label.polyreg()}.}
+
+\item{p_cut}{Numeric threshold used by \code{effect_label.polyreg()}
+to decide between printing \code{p < p_cut} and an exact p-value.}
 }
 \value{
 \itemize{
@@ -72,9 +110,12 @@ summaries by event.
 \item \code{print.summary.polyreg()} is called for its side effect
 of printing a formatted, modelsummary-like table to the
 console and returns \code{x} invisibly.
-\item \code{tidy.polyreg()} returns a list of tidy by event.
-\item \code{glance.polyreg()} returns a list of glance by event.
-\item \code{augment.polyreg()} returns an augmented data frame.
+\item \code{tidy.polyreg()} returns a data frame of tidy coefficients
+by event.
+\item \code{glance.polyreg()} returns a data frame of model-level
+summaries by event.
+\item \code{augment.polyreg()} returns an augmented data frame
+containing diagnostics, weights, and predicted CIFs.
 }
 }
 \description{
@@ -83,5 +124,5 @@ sample size, formatted summaries, and tidy/glance/augment
 from objects returned by \code{polyreg()}.
 }
 \seealso{
-\code{\link[=polyreg]{polyreg()}} for log-odds product modeling of CIFs
+\code{\link[=polyreg]{polyreg()}} for log odds product modeling of CIFs
 }

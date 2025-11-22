@@ -27,8 +27,7 @@ cifcurve(
 \item{formula}{A model formula specifying the time-to-event outcome on the LHS
 (typically \code{Event(time, status)} or \code{survival::Surv(time, status)})
 and, optionally, a stratification variable on the RHS.
-Unlike \code{\link[=cifplot]{cifplot()}}, this function does not accept a fitted
-\code{survfit} object.}
+Unlike \code{\link[=cifplot]{cifplot()}}, this function does not accept a fitted survfit object.}
 
 \item{data}{A data frame containing variables in the formula.}
 
@@ -90,19 +89,18 @@ Note that some methods (e.g. \code{residuals.survfit}) may not be supported.
 Core estimation routine that computes a survfit-compatible object
 from a formula + data interface (\code{Event()} or \code{survival::Surv()} on
 the LHS, and a stratification variable on the RHS if necessary).
-Use this when you want \strong{numbers only} (KM / CIF + SE + CI) and
-you will plot it yourself (for example with \code{ggsurvfit} or \code{\link[=cifplot]{cifplot()}}).
+The back-end  C++ routine supports both weighted and stratified data. Use this
+when you want \strong{numbers only} (e.g. estimates, SEs, CIs and influence functions)
+and will plot it yourself.
 }
 \details{
 \subsection{Typical use cases}{
 \itemize{
 \item When \code{outcome.type = "survival"}, this is a thin wrapper around
 the KM estimator with the chosen variance / CI transformation.
-\item When \code{outcome.type = "competing-risk"}, this computes the AJ
-estimator of CIF for \code{code.event1}. The returned \code{$surv} is
-\code{1 - CIF}, i.e. in the format that \pkg{ggsurvfit} expects.
-\item Use \code{\link{cifplot}} if you want to go straight to a figure; use
-\code{cifcurve()} if you only want the numbers.
+\item When \code{outcome.type = "competing-risk"}, this computes the AJ estimator of CIF for \code{code.event1}.
+The returned \verb{$surv} is \strong{1 - CIF}, i.e. in the format that ggsurvfit expects.
+\item Use \code{\link[=cifplot]{cifplot()}} if you want to go straight to a figure; use \code{\link[=cifcurve]{cifcurve()}} if you only want the numbers.
 }
 }
 

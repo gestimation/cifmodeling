@@ -25,8 +25,12 @@ navbar:
           href: articles/overview.html
         - text: Direct polytomous regression
           href: articles/polyreg.html
+        - text: Computational formulas in cifcurve()
+          href: articles/formulas.html
         - text: Examples
           href: articles/examples.html
+        - text: Gallery
+          href: articles/gallery.html
         - text: Additional information
           href: articles/information.html
         - text: Full lists of arguments
@@ -43,9 +47,15 @@ articles:
   - title: Direct polytomous regression
     contents:
       - polyreg
+  - title: Computational formulas in cifcurve()
+    contents:
+      - formulas
   - title: Examples
     contents:
       - examples
+  - title: Gallery
+    contents:
+      - gallery
   - title: Additional information
     contents:
       - information
