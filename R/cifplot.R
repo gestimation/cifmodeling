@@ -41,7 +41,7 @@
 #'   When provided, both `order.strata` and `label.strata` are validated against it
 #'   before application.
 #' @param order.strata Optional character vector specifying the display order of strata
-#'   in the legend / risk table. Specify the levels of strata. Levels not listed are dropped.
+#'   in the legend/number-at-risk table. Specify the levels of strata. Levels not listed are dropped.
 #' @param legend.position Character specifying the legend position:
 #'   `"top"`, `"right"`, `"bottom"`, `"left"`, or `"none"` (default `"top"`).
 #' @param panel.per.event Logical. **Explicit panel mode.** If `TRUE` and
@@ -72,7 +72,7 @@
 #' -   Draw one survival/CIF curve set by exposure groups (e.g., treatment vs control).
 #' -   Call `cifpanel()` with a simplified code to create a panel displaying plots of multiple stratified survival/CIF curves or CIF curves for each event type.
 #' -   Add CIs and censor/competing-risk/intercurrent-event marks.
-#' -   Add a risk table to display the number at risk or the estimated survival probabilities or CIFs and CIs at each point in time.
+#' -   Add number-at-risk table to display the number at risk or the estimated survival probabilities or CIFs and CIs at each point in time.
 #'
 #' ### Key arguments shared with cifcurve()
 #' -   **Outcome type and estimator**
@@ -183,6 +183,7 @@
 #'
 #' **Notes**
 #' - For CIF displays, set `type.y = "risk"`. For survival scale, use `type.y = NULL` or `= "surv"`.
+#' For a cumulative hazard plot, use `type.y = "cumhaz"`. To generate a log-log plot, use `type.y = "cloglog"`.
 #' - Event coding can be controlled via `code.event1`, `code.event2`, `code.censoring`.
 #'   For ADaM-style data, use `code.event1 = 0`, `code.censoring = 1`.
 #' - Per-stratum time lists should have names identical to plotted strata labels.
@@ -716,15 +717,6 @@ plot_panel.per.event <- function(
   ce_panel <- plot_check_code_events(c(code.event1, code.event2, code.censoring))
 
   if (!is.null(dots$title.plot)) dots$title.plot <- NULL
-
-#  ylabs_vec <- axis.info$label.y
-#  if (is.null(ylabs_vec) && !is.null(dots$label.y)) ylabs_vec <- dots$label.y
-#  if (is.null(ylabs_vec)) {
-#    ylabs_vec <- plot_default_event_y_labels()
-#  } else {
-#    if (length(ylabs_vec) == 1L) ylabs_vec <- rep(ylabs_vec, 2L)
-#    if (length(ylabs_vec)  > 2L) ylabs_vec <- ylabs_vec[1:2]
-#  }
   if (!is.null(dots$label.y)) dots$label.y <- NULL
   ylabs_vec <- c("Cumulative incidence of interest", "Cumulative incidence of competing risk")
 
@@ -1081,6 +1073,7 @@ cifplot_single <- function(
   } else {
     outcome.type <- match.arg(outcome.type, c("competing-risk","survival"))
   }
+  survfit.info$outcome.type <- outcome.type
 
   if (!inherits(formula_or_fit, "survfit")) {
     if (is.null(data)) stop("When `formula` is a formula, `data` must be provided.")
@@ -1251,6 +1244,35 @@ call_ggsurvfit <- function(
     style.info      = style.info,
     out_read_surv   = out_read_surv
   )
+  if (identical(type.y,"cloglog")) {
+    p <- out_cg$out_survfit_object
+    if (!identical(style, "ggsurvfit")) {
+      p <- plot_apply_style(
+        p,
+        style               = style,
+        font.family         = font.family,
+        font.size           = font.size,
+        legend.position     = legend.position,
+        n_strata            = n_strata_effective,
+        palette_colors      = palette,
+        strata_levels_final = strata_levels_final,
+        strata_labels_final = strata_labels_final
+      )
+    }
+    p <- plot_apply_all_scales(
+      p,
+      style               = style,
+      palette             = palette,
+      n_strata            = n_strata_effective,
+      strata_levels_final = strata_levels_final,
+      strata_labels_final = strata_labels_final,
+      limits_arg          = limits_arg
+    )
+    p <- p + ggplot2::guides(fill = "none", alpha = "none", shape = "none") +
+      ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(fill = NA)))
+    p <- plot_fix_palette_vector_arg(p)
+    return(p)
+  }
 
   p <- out_cg$out_survfit_object +
     ggplot2::labs(
@@ -1398,6 +1420,7 @@ check_ggsurvfit <- function(
   visual.info  <- visual.info  %||% list()
   style.info   <- style.info   %||% list()
 
+  outcome.type        <- survfit.info$outcome.type %||% NULL
   conf.type           <- survfit.info$conf.type
   type.y              <- axis.info$type.y
   label.y             <- axis.info$label.y
@@ -1500,11 +1523,6 @@ check_ggsurvfit <- function(
   check_breaks(breaks.x, "breaks.x", limits.x)
   check_breaks(breaks.y, "breaks.y", limits.y)
 
-  if (is.null(label.y)) {
-    auto_label <- plot_default_y_label(survfit_object$type, type.y)
-    if (!is.null(auto_label)) label.y <- auto_label
-  }
-
   coerce_conf <- function(survfit_object, conf.type) {
     if (!is.null(survfit_object$lower) && !is.null(survfit_object$upper)) return(survfit_object)
     if (conf.type %in% c("none", "n") || length(survfit_object$strata) > 2) {
@@ -1517,20 +1535,34 @@ check_ggsurvfit <- function(
   }
   survfit_object <- coerce_conf(survfit_object, conf.type)
 
-
-  type.y <- util_check_type_y(type.y)
-#  type.y <- plot_normalize_type_y(type.y)
-  target_type <- switch(
-    survfit_object$type,
-    "kaplan-meier"   = if (identical(type.y, "risk")) "risk" else "surv",
-    "aalen-johansen" = if (identical(type.y, "surv")) "surv" else "risk",
-    if (identical(type.y, "risk")) "risk" else "surv"
+  type.y <- util_check_type_y(
+    x            = type.y,
+    outcome.type = outcome.type,
+    survfit_type = survfit_object$type
   )
-  type.y <- if (identical(target_type, "risk")) "risk" else "surv"
 
+  if (is.null(label.y)) {
+    if (!is.null(type.y)) {
+      label.y <- switch(
+        type.y,
+        surv    = "Survival",
+        risk    = "Cumulative incidence",
+        cumhaz  = "Cumulative hazard",
+        cloglog = "Complementary log-log",
+        NULL
+      )
+    }
+    if (is.null(label.y)) {
+      auto_label <- plot_default_y_label(
+        fit_type = survfit_object$type,
+        type.y   = type.y
+      )
+      if (!is.null(auto_label)) label.y <- auto_label
+    }
+  }
   out_plot <- ggsurvfit(
     survfit_object,
-    type         = target_type,
+    type         = type.y,
     linewidth    = linewidth,
     linetype_aes = linetype
   )

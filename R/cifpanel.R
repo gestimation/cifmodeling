@@ -5,7 +5,7 @@
 #' It takes one or more model formulas (or, alternatively, one formula and several
 #' event-coding specifications) and returns a multi-panel figure, typically as a
 #' patchwork-compatible object. Most display options (axis labels, marks, style, ggsave options)
-#' are shared with [cifplot()], but per-panel legends and risk tables are
+#' are shared with [cifplot()], but per-panel legends and number-at-risk tables are
 #' suppressed to avoid duplicated display. Typical use cases are:
 #'
 #' -   Compare CIF (event 1) vs CIF (event 2) in a 1×2 layout.

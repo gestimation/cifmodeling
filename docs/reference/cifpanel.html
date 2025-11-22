@@ -3,7 +3,7 @@
 It takes one or more model formulas (or, alternatively, one formula and several
 event-coding specifications) and returns a multi-panel figure, typically as a
 patchwork-compatible object. Most display options (axis labels, marks, style, ggsave options)
-are shared with cifplot(), but per-panel legends and risk tables are
+are shared with cifplot(), but per-panel legends and number-at-risk tables are
 suppressed to avoid duplicated display. Typical use cases are:
 Compare CIF (event 1) vs CIF (event 2) in a 1×2 layout.
 Compare survival/CIF curves across strata with a shared legend and matched axes.
@@ -13,7 +13,7 @@ Display a plot with an enlarged y-axis inside a full-scale plot.
 It takes one or more model formulas (or, alternatively, one formula and several
 event-coding specifications) and returns a multi-panel figure, typically as a
 patchwork-compatible object. Most display options (axis labels, marks, style, ggsave options)
-are shared with cifplot(), but per-panel legends and risk tables are
+are shared with cifplot(), but per-panel legends and number-at-risk tables are
 suppressed to avoid duplicated display. Typical use cases are:
 Compare CIF (event 1) vs CIF (event 2) in a 1×2 layout.
 Compare survival/CIF curves across strata with a shared legend and matched axes.
@@ -68,7 +68,7 @@ Display a plot with an enlarged y-axis inside a full-scale plot.
 It takes one or more model formulas (or, alternatively, one formula and several
 event-coding specifications) and returns a multi-panel figure, typically as a
 patchwork-compatible object. Most display options (axis labels, marks, style, ggsave options)
-are shared with <code><a href="cifplot.html">cifplot()</a></code>, but per-panel legends and risk tables are
+are shared with <code><a href="cifplot.html">cifplot()</a></code>, but per-panel legends and number-at-risk tables are
 suppressed to avoid duplicated display. Typical use cases are:</p><ul><li><p>Compare CIF (event 1) vs CIF (event 2) in a 1×2 layout.</p></li>
 <li><p>Compare survival/CIF curves across strata with a shared legend and matched axes.</p></li>
 <li><p>Display a plot with an enlarged y-axis inside a full-scale plot.</p></li>
@@ -228,9 +228,11 @@ used internally (default <code>arcsine-square root</code>).</p></dd>
 
 
 <dt id="arg-type-y">type.y<a class="anchor" aria-label="anchor" href="#arg-type-y"></a></dt>
-<dd><p>Character string specifying the y-scale: <code>"surv"</code> for survival probabilities
-or <code>"risk"</code> for cumulative incidence (1 - survival in simple survival settings).
-If <code>NULL``, a default is chosen from </code>outcome.type`.</p></dd>
+<dd><p>Character string specifying the y-scale. For survival/CIF curves,
+<code>"surv"</code> implies survival probabilities and <code>"risk"</code> implies CIF
+(1-survival in simple survival settings). Specify <code>"cumhaz"</code> to plot cumulative hazard
+or <code>"cloglog"</code> to generate a complementary log-log plot.
+If <code>NULL</code>, a default is chosen from <code>outcome.type</code> or the survfit object.</p></dd>
 
 
 <dt id="arg-label-x">label.x<a class="anchor" aria-label="anchor" href="#arg-label-x"></a></dt>
@@ -239,7 +241,7 @@ If <code>NULL``, a default is chosen from </code>outcome.type`.</p></dd>
 
 <dt id="arg-label-y">label.y<a class="anchor" aria-label="anchor" href="#arg-label-y"></a></dt>
 <dd><p>Character y-axis label (default is chosen automatically from <code>outcome.type</code>
-and <code>type.y</code>, e.g. "Survival" or "Cumulative incidence").</p></dd>
+and <code>type.y</code>, e.g. "Survival", "Cumulative incidence" or "Cumulative hazard").</p></dd>
 
 
 <dt id="arg-limits-x">limits.x<a class="anchor" aria-label="anchor" href="#arg-limits-x"></a></dt>

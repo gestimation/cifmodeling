@@ -209,16 +209,20 @@ transformation for CIs used internally (default
 <code>conf.int</code> Numeric two-sided level of CIs (default
 <code>0.95</code>).</li>
 <li>
-<code>type.y</code> Character string specifying the y-scale:
-<code>"surv"</code> for survival probabilities or <code>"risk"</code>
-for cumulative incidence (1 - survival in simple survival settings). If
-<code>NULL``, a default is chosen from</code>outcome.type`.</li>
+<code>type.y</code> Character string specifying the y-scale. For
+survival/CIF curves, <code>"surv"</code> implies survival probabilities
+and <code>"risk"</code> implies CIF (1-survival in simple survival
+settings). Specify <code>"cumhaz"</code> to plot cumulative hazard or
+<code>"cloglog"</code> to generate a complementary log-log plot. If
+<code>NULL</code>, a default is chosen from <code>outcome.type</code> or
+the survfit object.</li>
 <li>
 <code>label.x</code> Character x-axis labels (default
 <code>"Time"</code>).</li>
 <li>
-<code>label.y</code> Character y-axis labels (default internally set
-to <code>"Survival"</code> or <code>"Cumulative incidence"</code>).</li>
+<code>label.y</code> Character y-axis label (default is chosen
+automatically from <code>outcome.type</code> and <code>type.y</code>,
+e.g. “Survival”, “Cumulative incidence” or “Cumulative hazard”).</li>
 <li>
 <code>label.strata</code> Character vector of labels for
 strata.</li>
@@ -445,10 +449,13 @@ transformation for CIs used internally (default
 <code>"arcsine-square root"</code>).</p></li>
 <li><p><code>conf.int</code> Numeric two-sided level of CIs (default
 <code>0.95</code>).</p></li>
-<li><p><code>type.y</code> Character string specifying the y-scale:
-<code>"surv"</code> for survival probabilities or <code>"risk"</code>
-for cumulative incidence (1 - survival in simple survival settings). If
-<code>NULL``, a default is chosen from</code>outcome.type`.</p></li>
+<li><p><code>type.y</code> Character string specifying the y-scale. For
+survival/CIF curves, <code>"surv"</code> implies survival probabilities
+and <code>"risk"</code> implies CIF (1-survival in simple survival
+settings). Specify <code>"cumhaz"</code> to plot cumulative hazard or
+<code>"cloglog"</code> to generate a complementary log-log plot. If
+<code>NULL</code>, a default is chosen from <code>outcome.type</code> or
+the survfit object.</p></li>
 <li><p><code>label.x</code>, <code>label.y</code> Optional vectors/lists
 of axis labels per panel.</p></li>
 <li><p><code>label.strata</code> Optional list of character vectors for

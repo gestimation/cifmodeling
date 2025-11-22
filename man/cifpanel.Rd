@@ -127,14 +127,16 @@ used internally (default \verb{arcsine-square root}).}
 
 \item{conf.int}{Numeric two-sided level of CIs (default \code{0.95}).}
 
-\item{type.y}{Character string specifying the y-scale: \code{"surv"} for survival probabilities
-or \code{"risk"} for cumulative incidence (1 - survival in simple survival settings).
-If \verb{NULL``, a default is chosen from }outcome.type`.}
+\item{type.y}{Character string specifying the y-scale. For survival/CIF curves,
+\code{"surv"} implies survival probabilities and \code{"risk"} implies CIF
+(1-survival in simple survival settings). Specify \code{"cumhaz"} to plot cumulative hazard
+or \code{"cloglog"} to generate a complementary log-log plot.
+If \code{NULL}, a default is chosen from \code{outcome.type} or the survfit object.}
 
 \item{label.x}{Character x-axis label (default \code{"Time"}).}
 
 \item{label.y}{Character y-axis label (default is chosen automatically from \code{outcome.type}
-and \code{type.y}, e.g. "Survival" or "Cumulative incidence").}
+and \code{type.y}, e.g. "Survival", "Cumulative incidence" or "Cumulative hazard").}
 
 \item{limits.x}{Numeric length-2 vector specifying x-axis limits. If \code{NULL}, it is
 set from the fitted object (typically \code{c(0, max(time))}).}
@@ -285,7 +287,7 @@ sessions in addition to being returned.
 It takes one or more model formulas (or, alternatively, one formula and several
 event-coding specifications) and returns a multi-panel figure, typically as a
 patchwork-compatible object. Most display options (axis labels, marks, style, ggsave options)
-are shared with \code{\link[=cifplot]{cifplot()}}, but per-panel legends and risk tables are
+are shared with \code{\link[=cifplot]{cifplot()}}, but per-panel legends and number-at-risk tables are
 suppressed to avoid duplicated display. Typical use cases are:
 \itemize{
 \item Compare CIF (event 1) vs CIF (event 2) in a 1×2 layout.

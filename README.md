@@ -27,8 +27,6 @@ three tightly connected functions:
 > See the [Direct polytomous regression](articles/polyreg.html) for
 > coherent, joint modeling of all cause-specific CIFs.
 
-> Visit [Computational formulas in cifcurve()](articles/formulas.html).
-
 ## Quick start
 
 ``` r
@@ -128,9 +126,7 @@ if (requireNamespace("CBPS", quietly = TRUE)) {
    + sbp + ldl + hdl + tg + current_smoker + alcohol_drinker + ltpa,
   data = diabetes.complications, ATT=0
  )
-
  diabetes.complications$ipw <- output2$weights
-
  cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
          outcome.type="competing-risk", weights = "ipw", 
          add.conf=TRUE, add.risktable=FALSE, add.censor.mark=FALSE,
@@ -276,7 +272,7 @@ data. The tools assist users in the following ways:
   `glance()`, and `augment()`, which integrate `polyreg()` smoothly with
   `modelsummary` and other broom-style tools.
 - **Publication-ready graphics** built on `ggsurvfit` and `ggplot2`,
-  including at-risk/CIF+CI tables,
+  including number-at-risk/CIF+CI tables,
   censoring/competing-risk/intercurrent-event marks, and multi-panel
   layouts.
 

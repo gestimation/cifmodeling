@@ -78,9 +78,6 @@ See the <a href="articles/gallery.html">Gallery</a> for a curated set of example
 <p><strong>Learn the modeling framework with <code><a href="reference/polyreg.html">polyreg()</a></code>:</strong><br>
 See the <a href="articles/polyreg.html">Direct polytomous regression</a> for coherent, joint modeling of all cause-specific CIFs.</p>
 </blockquote>
-<blockquote>
-<p>Visit <a href="articles/formulas.html">Computational formulas in cifcurve()</a>.</p>
-</blockquote>
 <div class="section level2">
 <h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
@@ -141,9 +138,7 @@ Cumulative incidence curves with competing risk marks
 <span>   <span class="op">+</span> <span class="va">sbp</span> <span class="op">+</span> <span class="va">ldl</span> <span class="op">+</span> <span class="va">hdl</span> <span class="op">+</span> <span class="va">tg</span> <span class="op">+</span> <span class="va">current_smoker</span> <span class="op">+</span> <span class="va">alcohol_drinker</span> <span class="op">+</span> <span class="va">ltpa</span>,</span>
 <span>  data <span class="op">=</span> <span class="va">diabetes.complications</span>, ATT<span class="op">=</span><span class="fl">0</span></span>
 <span> <span class="op">)</span></span>
-<span></span>
 <span> <span class="va">diabetes.complications</span><span class="op">$</span><span class="va">ipw</span> <span class="op">&lt;-</span> <span class="va">output2</span><span class="op">$</span><span class="va">weights</span></span>
-<span></span>
 <span> <span class="fu"><a href="reference/cifplot.html">cifplot</a></span><span class="op">(</span><span class="fu"><a href="reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="va">fruitq1</span>, data<span class="op">=</span><span class="va">diabetes.complications</span>, </span>
 <span>         outcome.type<span class="op">=</span><span class="st">"competing-risk"</span>, weights <span class="op">=</span> <span class="st">"ipw"</span>, </span>
 <span>         add.conf<span class="op">=</span><span class="cn">TRUE</span>, add.risktable<span class="op">=</span><span class="cn">FALSE</span>, add.censor.mark<span class="op">=</span><span class="cn">FALSE</span>,</span>
@@ -253,7 +248,7 @@ Visualizaton of risk ratios at 2, 4, 6 and 8 years using polyreg() and modelplot
 <li>
 <strong>Tidy summaries and reporting</strong>: support for <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">generics::tidy()</a></code>, <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code>, and <code>augment()</code>, which integrate <code><a href="reference/polyreg.html">polyreg()</a></code> smoothly with <code>modelsummary</code> and other broom-style tools.</li>
 <li>
-<strong>Publication-ready graphics</strong> built on <code>ggsurvfit</code> and <code>ggplot2</code>, including at-risk/CIF+CI tables, censoring/competing-risk/intercurrent-event marks, and multi-panel layouts.</li>
+<strong>Publication-ready graphics</strong> built on <code>ggsurvfit</code> and <code>ggplot2</code>, including number-at-risk/CIF+CI tables, censoring/competing-risk/intercurrent-event marks, and multi-panel layouts.</li>
 </ul>
 </div>
 <div class="section level2">

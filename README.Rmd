@@ -102,9 +102,7 @@ if (requireNamespace("CBPS", quietly = TRUE)) {
    + sbp + ldl + hdl + tg + current_smoker + alcohol_drinker + ltpa,
   data = diabetes.complications, ATT=0
  )
-
  diabetes.complications$ipw <- output2$weights
-
  cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications, 
          outcome.type="competing-risk", weights = "ipw", 
          add.conf=TRUE, add.risktable=FALSE, add.censor.mark=FALSE,
@@ -182,7 +180,7 @@ In clinical and epidemiologic research, analysts often need to handle censoring,
 - **Effects on the CIF scale**: while Fine-Gray models subdistribution hazards, `polyreg()` directly targets ratios of CIFs (risk ratios, odds ratios, subdistribution hazard ratios), so parameters align closely with differences seen in CIF curves.
 - **Coherent, joint modeling of all competing events**: `polyreg()` models all cause-specific CIFs together, parameterizing the nuisance structure with polytomous log odds products and enforcing that their CIFs sum to at most one.
 - **Tidy summaries and reporting**: support for `generics::tidy()`, `glance()`, and `augment()`, which integrate `polyreg()` smoothly with `modelsummary` and other broom-style tools.
-- **Publication-ready graphics** built on `ggsurvfit` and `ggplot2`, including at-risk/CIF+CI tables, censoring/competing-risk/intercurrent-event marks, and multi-panel layouts.
+- **Publication-ready graphics** built on `ggsurvfit` and `ggplot2`, including number-at-risk/CIF+CI tables, censoring/competing-risk/intercurrent-event marks, and multi-panel layouts.
 
 ## Position in the survival ecosystem
 

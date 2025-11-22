@@ -158,7 +158,6 @@ util_check_outcome_type <- function(
     ifelse(z %in% names(map), unname(map[z]), z)
   }
 
-  ## 内部ヘルパー：formula + data から "survival" / "competing-risk" を検出
   detect_from_formula <- function(formula, data, na.action, auto_message = TRUE) {
     if (is.null(formula) || is.null(data)) {
       stop("Provide either `outcome.type` or both `formula` and `data` for automatic detection.", call. = FALSE)
@@ -185,7 +184,6 @@ util_check_outcome_type <- function(
     }
   }
 
-  ## 1) x が与えられている場合：正規化＋整合性チェック -----------------
   if (!is.null(x)) {
     canon <- normalize(x)
     invalid <- is.na(canon) | !nzchar(canon) | !(canon %in% ok)
@@ -199,15 +197,11 @@ util_check_outcome_type <- function(
 
     u <- unique(canon)
     if (length(u) == 1L) {
-
-      ## ここで formula + data があれば、Event()/Surv() から自動検出して整合性チェック
       if (!is.null(formula) && !is.null(data)) {
         detected <- tryCatch(
           detect_from_formula(formula, data, na.action, auto_message = FALSE),
           error = function(e) NULL
         )
-
-        # survival / competing-risk の場合だけ厳密な整合性をチェック
         if (!is.null(detected) &&
             u %in% c("survival", "competing-risk") &&
             !identical(u, detected)) {
@@ -230,65 +224,97 @@ util_check_outcome_type <- function(
     stop("`outcome.type` is ambiguous and matched multiple types: ",
          paste(u, collapse = ", "), call. = FALSE)
   }
-
-  ## 2) x が NULL の場合：従来どおり自動検出 ---------------------------
   detect_from_formula(formula, data, na.action, auto_message = auto_message)
 }
 
 
-
-
-util_check_type_y <- function(x = NULL) {
+util_check_type_y <- function(x = NULL,
+                              outcome.type = NULL,
+                              survfit_type = NULL) {
   .norm <- function(s) gsub("[^A-Z0-9]+", "", toupper(trimws(as.character(s))))
 
-  if (!is.null(x)) {
-    buckets <- list(
-      surv = c("surv", "s", "survival", "km", "kaplan-meier", "kaplanmeier",
-               "survival-probability", "survivalprobability"),
-      risk = c("risk", "r", "cif", "ci", "cumulative-incidence", "cumulativeincidence",
-               "cuminc", "failure", "incidence")
-    )
-
-    ali_norm <- lapply(buckets, .norm)
-    names(ali_norm) <- names(buckets)
-    alias_rev <- stats::setNames(
-      rep(names(ali_norm), lengths(ali_norm)),
-      unlist(ali_norm, use.names = FALSE)
-    )
-
-    ux <- .norm(x)
-    ux <- ux[!is.na(ux) & nzchar(ux)]
-
-    canon <- unique(stats::na.omit(vapply(
-      ux,
-      function(u) {
-        if (u %in% .norm(names(buckets))) {
-          idx <- match(u, .norm(names(buckets)))
-          names(buckets)[idx]
-        } else {
-          cn <- unname(alias_rev[u])
-          if (length(cn) == 0L || is.na(cn)) NA_character_ else cn
-        }
-      },
-      FUN.VALUE = character(1)
-    )))
-
-    if (length(canon) == 1L) {
-      return(canon)
-    } else if (length(canon) > 1L) {
-      stop("`type.y` is ambiguous and matched multiple types: ",
-           paste(canon, collapse = ", "), call. = FALSE)
-    } else {
-      allowed <- sort(unique(c(
-        names(buckets),
-        unlist(buckets, use.names = FALSE)
-      )))
-      stop("Invalid `type.y`. Allowed values are: ",
-           paste(allowed, collapse = ", "), call. = FALSE)
+  ## --- x が NULL の場合： outcome.type / survfit_type から自動判定
+  if (is.null(x)) {
+    # outcome.type 優先で自動判定
+    if (!is.null(outcome.type)) {
+      ot <- util_check_outcome_type(x = outcome.type, auto_message = FALSE)
+      if (ot == "survival")       return("surv")
+      if (ot == "competing-risk") return("risk")
+      # proportional-* とかはとりあえず survival スケールに倒す
+      return("surv")
     }
-    return(canon)
+
+    # survfit_object$type からの自動判定
+    if (!is.null(survfit_type)) {
+      ft <- tolower(as.character(survfit_type))
+      if (ft %in% c("kaplan-meier", "kaplan_meier", "km"))
+        return("surv")
+      if (ft %in% c("aalen-johansen", "aalen_johansen", "aj"))
+        return("risk")
+    }
+
+    # どちらもない → 何も決めない
+    return(NULL)
   }
-  return(NULL)
+
+  ## --- x が非 NULL の場合：エイリアス解決
+  buckets <- list(
+    surv = c(
+      "surv", "s", "survival", "km", "kaplan-meier", "kaplanmeier",
+      "survival-probability", "survivalprobability"
+    ),
+    risk = c(
+      "risk", "r", "cif", "ci", "cumulative-incidence", "cumulativeincidence",
+      "cuminc", "failure", "incidence"
+    ),
+    cumhaz = c(
+      "cumhaz", "cum-haz", "cumulative-hazard", "cumulativehazard",
+      "h", "hazard", "cumulativehazardfunction"
+    ),
+    cloglog = c(
+      "cloglog", "cll", "complementary-log-log", "complementaryloglog",
+      "logminuslog", "log(-log)"
+    )
+  )
+
+  ali_norm <- lapply(buckets, .norm)
+  names(ali_norm) <- names(buckets)
+  alias_rev <- stats::setNames(
+    rep(names(ali_norm), lengths(ali_norm)),
+    unlist(ali_norm, use.names = FALSE)
+  )
+
+  ux <- .norm(x)
+  ux <- ux[!is.na(ux) & nzchar(ux)]
+
+  canon <- unique(stats::na.omit(vapply(
+    ux,
+    function(u) {
+      # バケット名そのもの（surv, risk, cumhaz, cloglog）のケース
+      if (u %in% .norm(names(buckets))) {
+        idx <- match(u, .norm(names(buckets)))
+        names(buckets)[idx]
+      } else {
+        cn <- unname(alias_rev[u])
+        if (length(cn) == 0L || is.na(cn)) NA_character_ else cn
+      }
+    },
+    FUN.VALUE = character(1)
+  )))
+
+  if (length(canon) == 1L) {
+    return(canon)
+  } else if (length(canon) > 1L) {
+    stop("`type.y` is ambiguous and matched multiple types: ",
+         paste(canon, collapse = ", "), call. = FALSE)
+  } else {
+    allowed <- sort(unique(c(
+      names(buckets),
+      unlist(buckets, use.names = FALSE)
+    )))
+    stop("Invalid `type.y`. Allowed values are: ",
+         paste(allowed, collapse = ", "), call. = FALSE)
+  }
 }
 
 check_weights <- function(w) {

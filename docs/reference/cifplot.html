@@ -222,9 +222,11 @@ used internally (default <code>arcsine-square root</code>).</p></dd>
 
 
 <dt id="arg-type-y">type.y<a class="anchor" aria-label="anchor" href="#arg-type-y"></a></dt>
-<dd><p>Character string specifying the y-scale: <code>"surv"</code> for survival probabilities
-or <code>"risk"</code> for cumulative incidence (1 - survival in simple survival settings).
-If <code>NULL``, a default is chosen from </code>outcome.type`.</p></dd>
+<dd><p>Character string specifying the y-scale. For survival/CIF curves,
+<code>"surv"</code> implies survival probabilities and <code>"risk"</code> implies CIF
+(1-survival in simple survival settings). Specify <code>"cumhaz"</code> to plot cumulative hazard
+or <code>"cloglog"</code> to generate a complementary log-log plot.
+If <code>NULL</code>, a default is chosen from <code>outcome.type</code> or the survfit object.</p></dd>
 
 
 <dt id="arg-label-x">label.x<a class="anchor" aria-label="anchor" href="#arg-label-x"></a></dt>
@@ -233,7 +235,7 @@ If <code>NULL``, a default is chosen from </code>outcome.type`.</p></dd>
 
 <dt id="arg-label-y">label.y<a class="anchor" aria-label="anchor" href="#arg-label-y"></a></dt>
 <dd><p>Character y-axis label (default is chosen automatically from <code>outcome.type</code>
-and <code>type.y</code>, e.g. "Survival" or "Cumulative incidence").</p></dd>
+and <code>type.y</code>, e.g. "Survival", "Cumulative incidence" or "Cumulative hazard").</p></dd>
 
 
 <dt id="arg-label-strata">label.strata<a class="anchor" aria-label="anchor" href="#arg-label-strata"></a></dt>
@@ -253,7 +255,7 @@ before application.</p></dd>
 
 <dt id="arg-order-strata">order.strata<a class="anchor" aria-label="anchor" href="#arg-order-strata"></a></dt>
 <dd><p>Optional character vector specifying the display order of strata
-in the legend / risk table. Specify the levels of strata. Levels not listed are dropped.</p></dd>
+in the legend/number-at-risk table. Specify the levels of strata. Levels not listed are dropped.</p></dd>
 
 
 <dt id="arg-limits-x">limits.x<a class="anchor" aria-label="anchor" href="#arg-limits-x"></a></dt>
@@ -482,7 +484,7 @@ internal lists storing the fitted curves and display settings</p></li>
 <ul><li><p>Draw one survival/CIF curve set by exposure groups (e.g., treatment vs control).</p></li>
 <li><p>Call <code><a href="cifpanel.html">cifpanel()</a></code> with a simplified code to create a panel displaying plots of multiple stratified survival/CIF curves or CIF curves for each event type.</p></li>
 <li><p>Add CIs and censor/competing-risk/intercurrent-event marks.</p></li>
-<li><p>Add a risk table to display the number at risk or the estimated survival probabilities or CIFs and CIs at each point in time.</p></li>
+<li><p>Add number-at-risk table to display the number at risk or the estimated survival probabilities or CIFs and CIs at each point in time.</p></li>
 </ul></div>
 
 <div class="section">
@@ -553,7 +555,8 @@ nine or more distinct numeric values are split at the median into
 
 <div class="section">
 <h4 id="export">Export<a class="anchor" aria-label="anchor" href="#export"></a></h4>
-<table class="table table"><tr><td>Argument</td><td>Description</td><td>Default</td></tr><tr><td><code>filename.ggsave</code></td><td>If non-<code>NULL</code>, save the plot using <code>ggsave()</code></td><td><code>NULL</code></td></tr><tr><td><code>width.ggsave</code></td><td>Size passed to <code>ggsave()</code></td><td><code>6</code></td></tr><tr><td><code>height.ggsave</code></td><td>Size passed to <code>ggsave()</code></td><td><code>6</code></td></tr><tr><td><code>dpi.ggsave</code></td><td>DPI passed to <code>ggsave()</code></td><td><code>300</code></td></tr></table><p><strong>Notes</strong></p><ul><li><p>For CIF displays, set <code>type.y = "risk"</code>. For survival scale, use <code>type.y = NULL</code> or <code>= "surv"</code>.</p></li>
+<table class="table table"><tr><td>Argument</td><td>Description</td><td>Default</td></tr><tr><td><code>filename.ggsave</code></td><td>If non-<code>NULL</code>, save the plot using <code>ggsave()</code></td><td><code>NULL</code></td></tr><tr><td><code>width.ggsave</code></td><td>Size passed to <code>ggsave()</code></td><td><code>6</code></td></tr><tr><td><code>height.ggsave</code></td><td>Size passed to <code>ggsave()</code></td><td><code>6</code></td></tr><tr><td><code>dpi.ggsave</code></td><td>DPI passed to <code>ggsave()</code></td><td><code>300</code></td></tr></table><p><strong>Notes</strong></p><ul><li><p>For CIF displays, set <code>type.y = "risk"</code>. For survival scale, use <code>type.y = NULL</code> or <code>= "surv"</code>.
+For a cumulative hazard plot, use <code>type.y = "cumhaz"</code>. To generate a log-log plot, use <code>type.y = "cloglog"</code>.</p></li>
 <li><p>Event coding can be controlled via <code>code.event1</code>, <code>code.event2</code>, <code>code.censoring</code>.
 For ADaM-style data, use <code>code.event1 = 0</code>, <code>code.censoring = 1</code>.</p></li>
 <li><p>Per-stratum time lists should have names identical to plotted strata labels.</p></li>

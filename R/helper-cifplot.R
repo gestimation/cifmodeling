@@ -280,10 +280,6 @@ plot_default_y_label <- function(fit_type, type.y = NULL) {
   NULL
 }
 
-plot_default_event_y_labels <- function() {
-  unname(unlist(plot_default_labels$event_panels, use.names = FALSE))
-}
-
 plot_normalize_strata <- function(x, median_threshold = 9L) {
   res <- list(strategy = "factor", threshold = median_threshold)
   if (is.factor(x)) {
