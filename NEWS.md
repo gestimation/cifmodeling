@@ -1,5 +1,7 @@
 # cifmodeling 0.9.0
 
+* Third CRAN submission.
+
 # cifmodeling 0.8.2
 
 * Bug fixes
@@ -23,12 +25,12 @@
 
 # cifmodeling 0.7.0
 
-* Second CRAN submission.
+* Bug fixes
+* README.Rmd, Vignettes and site were updated. 
 
 # cifmodeling 0.6.0
 
-* Bug fixes
-* README.Rmd, Vignettes and site were updated. 
+* Second CRAN submission.
 
 # cifmodeling 0.5.0
 
