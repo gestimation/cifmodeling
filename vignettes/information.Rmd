@@ -20,7 +20,7 @@ vignette: >
 
 -   In `cifcurve()` the RHS of the formula specifies the grouping variable whose curves are estimated; weights (if any) are supplied separately. There is no dedicated exposure argument because all strata are handled through the formula term that is turned into a factor for plotting and estimation.
 -   In `polyreg()` the `nuisance.model` formula describes only the outcome and nuisance covariates (i.e. confounders), while **the exposure is passed separately** through the `exposure` argument. The exposure design matrix, reference level handling, and scaling of nuisance covariates are handled explicitly for regression fitting.
--   `cifcurve()` focuses on two estimands, selecting between the Kaplan–Meier and Aalen–Johansen estimators via `outcome.type = "survival"` or `"competing-risk"`. In contrast, `polyreg()` supports additional **time-constant and binomial estimands** (`"proportional-survival"`, `"proportional-competing-risk"`, `"binomial"`) and enforces time-point requirements accordingly—for example `time.point` is mandatory for the effects at a fixed time, while time-constant-effect (e.g. proportional subdistribution hazards) models can either use all observed event times or a user-specified grid supplied via a (vector) `time.point`.
+-   `cifcurve()` focuses on two estimands, selecting between the Kaplan-Meier and Aalen-Johansen estimators via `outcome.type = "survival"` or `"competing-risk"`. In contrast, `polyreg()` supports additional **time-constant and binomial estimands** (`"proportional-survival"`, `"proportional-competing-risk"`, `"binomial"`) and enforces time-point requirements accordingly—for example `time.point` is mandatory for the effects at a fixed time, while time-constant-effect (e.g. proportional subdistribution hazards) models can either use all observed event times or a user-specified grid supplied via a (vector) `time.point`.
 
 ## Event coding conventions incifmodeling and CDISC ADaM ADTTE
 
@@ -43,7 +43,7 @@ You can also supply multiple model summaries as a named list to compare estimate
 
 ## Processing pipeline of cifcurve()
 
-A user-specified model formula in `Event()` or `Surv()` is first parsed by `util_read_surv()` to extract the time-to-event, the event indicator, optional weights, and any stratification variables. Those components are then passed to the back-end estimators implemented in `src/calculateAJ_Rcpp.cpp`. The C++ routine supports both weighted and stratified data, so the heavy lifting for the Kaplan–Meier or Aalen–Johansen estimates (and associated at-risk, event, censor counts and influence functions) happens efficiently regardless of how the input was specified. The `error` argument determines how SEs are computed. 
+A user-specified model formula in `Event()` or `Surv()` is first parsed by `util_read_surv()` to extract the time-to-event, the event indicator, optional weights, and any stratification variables. Those components are then passed to the back-end estimators implemented in `src/calculateAJ_Rcpp.cpp`. The C++ routine supports both weighted and stratified data, so the heavy lifting for the Kaplan-Meier or Aalen-Johansen estimates (and associated at-risk, event, censor counts and influence functions) happens efficiently regardless of how the input was specified. The `error` argument determines how SEs are computed. 
 
 ## Processing pipeline of polyreg()
 

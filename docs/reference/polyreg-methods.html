@@ -101,7 +101,7 @@ from objects returned by <code><a href="polyreg.html">polyreg()</a></code>.</p>
 
 
 <dl><dt id="arg-object">object<a class="anchor" aria-label="anchor" href="#arg-object"></a></dt>
-<dd><p>A <code>"polyreg"</code> object returned by <code><a href="polyreg.html">polyreg()</a></code>.</p></dd>
+<dd><p>A polyreg object returned by <code><a href="polyreg.html">polyreg()</a></code>.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -117,12 +117,70 @@ settings, using <code>outcome.type</code>, <code>report.sandwich.conf</code>, an
 
 
 <dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>A <code>"summary.polyreg"`` object, as returned by </code>summary.polyreg()`.</p></dd>
+<dd><p>Object to be printed or summarised. Typically a
+<code>"summary.polyreg"</code> object for <code>print.summary.polyreg()</code>, or
+a <code>"polyreg"</code> object for <code>tidy.polyreg()</code>, <code>glance.polyreg()</code>,
+<code>augment.polyreg()</code>, and <code>effect_label.polyreg()</code>.</p></dd>
 
 
 <dt id="arg-digits">digits<a class="anchor" aria-label="anchor" href="#arg-digits"></a></dt>
-<dd><p>Number of digits to print for parameter estimates.
-(Used only by <code>print.summary.polyreg()</code>.)</p></dd>
+<dd><p>Number of digits to print for parameter estimates
+or effect measures. Used by <code>print.summary.polyreg()</code> and
+<code>effect_label.polyreg()</code>.</p></dd>
+
+
+<dt id="arg-event">event<a class="anchor" aria-label="anchor" href="#arg-event"></a></dt>
+<dd><p>Character string indicating which event to extract.
+For <code>effect_label.polyreg()</code> and <code>glance.polyreg()</code> this is
+one of <code>"event1"</code> or <code>"event2"</code>. For <code>tidy.polyreg()</code> it can
+also be <code>"both"</code> to return rows for all events.</p></dd>
+
+
+<dt id="arg-add-time-point">add.time.point<a class="anchor" aria-label="anchor" href="#arg-add-time-point"></a></dt>
+<dd><p>Logical; if <code>TRUE</code>, <code>effect_label.polyreg()</code>
+appends the time point to the label (e.g., “at 5 years”).</p></dd>
+
+
+<dt id="arg-add-outcome">add.outcome<a class="anchor" aria-label="anchor" href="#arg-add-outcome"></a></dt>
+<dd><p>Logical; if <code>TRUE</code>, <code>effect_label.polyreg()</code>
+appends the outcome/event description (e.g., “of event 1”).</p></dd>
+
+
+<dt id="arg-add-exposure-levels">add.exposure.levels<a class="anchor" aria-label="anchor" href="#arg-add-exposure-levels"></a></dt>
+<dd><p>Logical; if <code>TRUE</code>, <code>effect_label.polyreg()</code>
+includes the exposure level in the label (e.g., treatment group).</p></dd>
+
+
+<dt id="arg-add-conf">add.conf<a class="anchor" aria-label="anchor" href="#arg-add-conf"></a></dt>
+<dd><p>Logical; if <code>TRUE</code>, <code>effect_label.polyreg()</code>
+includes a confidence interval in the label.</p></dd>
+
+
+<dt id="arg-add-p">add.p<a class="anchor" aria-label="anchor" href="#arg-add-p"></a></dt>
+<dd><p>Logical; if <code>TRUE</code>, <code>effect_label.polyreg()</code>
+includes a p-value or thresholded p-value (e.g. p &lt; 0.05).</p></dd>
+
+
+<dt id="arg-value-time">value.time<a class="anchor" aria-label="anchor" href="#arg-value-time"></a></dt>
+<dd><p>Optional numeric value overriding the time point
+stored in the <code>"polyreg"</code> object when constructing labels in
+<code>effect_label.polyreg()</code>.</p></dd>
+
+
+<dt id="arg-unit-time">unit.time<a class="anchor" aria-label="anchor" href="#arg-unit-time"></a></dt>
+<dd><p>Optional character string giving the time unit
+to display in labels constructed by <code>effect_label.polyreg()</code>,
+such as <code>"years"</code> or <code>"months"</code>.</p></dd>
+
+
+<dt id="arg-p-digits">p_digits<a class="anchor" aria-label="anchor" href="#arg-p-digits"></a></dt>
+<dd><p>Integer; number of digits used to format p-values
+in <code>effect_label.polyreg()</code>.</p></dd>
+
+
+<dt id="arg-p-cut">p_cut<a class="anchor" aria-label="anchor" href="#arg-p-cut"></a></dt>
+<dd><p>Numeric threshold used by <code>effect_label.polyreg()</code>
+to decide between printing <code>p &lt; p_cut</code> and an exact p-value.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -137,13 +195,16 @@ summaries by event.</p></li>
 <li><p><code>print.summary.polyreg()</code> is called for its side effect
 of printing a formatted, modelsummary-like table to the
 console and returns <code>x</code> invisibly.</p></li>
-<li><p><code>tidy.polyreg()</code> returns a list of tidy by event.</p></li>
-<li><p><code>glance.polyreg()</code> returns a list of glance by event.</p></li>
-<li><p><code>augment.polyreg()</code> returns an augmented data frame.</p></li>
+<li><p><code>tidy.polyreg()</code> returns a data frame of tidy coefficients
+by event.</p></li>
+<li><p><code>glance.polyreg()</code> returns a data frame of model-level
+summaries by event.</p></li>
+<li><p><code>augment.polyreg()</code> returns an augmented data frame
+containing diagnostics, weights, and predicted CIFs.</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="polyreg.html">polyreg()</a></code> for log-odds product modeling of CIFs</p></div>
+    <div class="dont-index"><p><code><a href="polyreg.html">polyreg()</a></code> for log odds product modeling of CIFs</p></div>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

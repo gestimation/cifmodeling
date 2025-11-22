@@ -105,7 +105,7 @@ level handling, and scaling of nuisance covariates are handled
 explicitly for regression fitting.</li>
 <li>
 <code><a href="../reference/cifcurve.html">cifcurve()</a></code> focuses on two estimands, selecting between
-the Kaplan–Meier and Aalen–Johansen estimators via
+the Kaplan-Meier and Aalen-Johansen estimators via
 <code>outcome.type = "survival"</code> or <code>"competing-risk"</code>.
 In contrast, <code><a href="../reference/polyreg.html">polyreg()</a></code> supports additional
 <strong>time-constant and binomial estimands</strong>
@@ -177,8 +177,8 @@ extract the time-to-event, the event indicator, optional weights, and
 any stratification variables. Those components are then passed to the
 back-end estimators implemented in
 <code>src/calculateAJ_Rcpp.cpp</code>. The C++ routine supports both
-weighted and stratified data, so the heavy lifting for the Kaplan–Meier
-or Aalen–Johansen estimates (and associated at-risk, event, censor
+weighted and stratified data, so the heavy lifting for the Kaplan-Meier
+or Aalen-Johansen estimates (and associated at-risk, event, censor
 counts and influence functions) happens efficiently regardless of how
 the input was specified. The <code>error</code> argument determines how
 SEs are computed.</p>

@@ -1,19 +1,18 @@
 #' @title Generate a survival/CIF curve with marks that represent
-#' censoring, competing risks and intermediate events
+#' censoring, competing risks and intercurrent events
 #'
 #' @description
-#' This function generates a survival or CIF curve from a unified formula–data interface
-#' or from an existing survfit object. When a formula is supplied, the LHS is typically
-#' `Event()` or `survivai::Surv()`, and the RHS specifies an optional
-#' stratification variable. In addition to the curves themselves,
+#' This function generates a survival or CIF curve from a unified formula–data
+#' interface or from an existing survfit object. When a formula is supplied,
+#' the LHS is typically `Event()` or `survivai::Surv()`, and the RHS specifies
+#' an optional stratification variable. In addition to the curves themselves,
 #' [cifplot()] can add numbers-at-risk tables, tables of point estimates and
-#' CIs, censoring marks, competing-risk marks, and
-#' intercurrent-event marks.
+#' CIs, censoring marks, competing-risk marks, and intercurrent-event marks.
 #'
 #' For more complex multi-panel displays, [cifplot()] can internally call
 #' [cifpanel()] via several “panel modes” (per event, per variable, or
-#' censoring-focused). The function returns an object whose `plot`
-#' component is a regular ggplot object that can be further modified (compatible with `+` and `%+%`).
+#' censoring-focused). The function returns an object whose `plot` component
+#' is a regular ggplot object that can be further modified (compatible with `+` and `%+%`).
 #'
 #' @inheritParams cif-stat-arguments
 #' @inheritParams cif-visual-arguments

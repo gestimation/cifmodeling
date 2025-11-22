@@ -3,7 +3,7 @@
 \name{cifplot}
 \alias{cifplot}
 \title{Generate a survival/CIF curve with marks that represent
-censoring, competing risks and intermediate events}
+censoring, competing risks and intercurrent events}
 \usage{
 cifplot(
   formula_or_fit,
@@ -281,18 +281,17 @@ The object is returned invisibly. When a panel mode is active and
 \code{print.panel = TRUE}, the panel is also printed in interactive sessions.
 }
 \description{
-This function generates a survival or CIF curve from a unified formula–data interface
-or from an existing survfit object. When a formula is supplied, the LHS is typically
-\code{Event()} or \code{survivai::Surv()}, and the RHS specifies an optional
-stratification variable. In addition to the curves themselves,
+This function generates a survival or CIF curve from a unified formula–data
+interface or from an existing survfit object. When a formula is supplied,
+the LHS is typically \code{Event()} or \code{survivai::Surv()}, and the RHS specifies
+an optional stratification variable. In addition to the curves themselves,
 \code{\link[=cifplot]{cifplot()}} can add numbers-at-risk tables, tables of point estimates and
-CIs, censoring marks, competing-risk marks, and
-intercurrent-event marks.
+CIs, censoring marks, competing-risk marks, and intercurrent-event marks.
 
 For more complex multi-panel displays, \code{\link[=cifplot]{cifplot()}} can internally call
 \code{\link[=cifpanel]{cifpanel()}} via several “panel modes” (per event, per variable, or
-censoring-focused). The function returns an object whose \code{plot}
-component is a regular ggplot object that can be further modified (compatible with \code{+} and \verb{\%+\%}).
+censoring-focused). The function returns an object whose \code{plot} component
+is a regular ggplot object that can be further modified (compatible with \code{+} and \verb{\%+\%}).
 }
 \details{
 \subsection{Typical use cases}{
