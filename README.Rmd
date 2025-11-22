@@ -50,8 +50,6 @@ This package provides a unified, high-level interface for survival and competing
 > **Learn the modeling framework with `polyreg()`:**  
 > See the [Direct polytomous regression](articles/polyreg.html) for coherent, joint modeling of all cause-specific CIFs.
 
-> Visit [Computational formulas in cifcurve()](articles/formulas.html).
-
 ## Quick start
 
 ```{r example01, fig.cap="Aalen-Johansen cumulative incidence curves from cifplot()", warning=FALSE, message=FALSE}

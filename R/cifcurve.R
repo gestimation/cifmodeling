@@ -307,8 +307,8 @@ curve_check_error <- function(x, outcome.type, weights = NULL) {
 
   choices <- switch(
     ot,
-    "survival"       = c("greenwood", "tsiatis", "jackknife", "if"),
-    "competing-risk" = c("aalen", "delta", "jackknife", "if"),
+    "survival"       = c("greenwood", "tsiatis", "if"),
+    "competing-risk" = c("aalen", "delta", "if"),
     stop(sprintf("Invalid outcome.type: %s", outcome.type), call. = FALSE)
   )
 
@@ -333,14 +333,23 @@ curve_check_error <- function(x, outcome.type, weights = NULL) {
     if (z %in% c("t", "tsiatis")) {
       return("tsiatis")
     }
-    if (z %in% c("if", "influence function", "influence_function", "influence curve", "ic")) {
+    if (z %in% c("if", "influence function", "influence_function",
+                 "influence curve", "ic")) {
       return("if")
     }
-
     z
   }
 
   x_norm <- normalize_error(x)
+
+  if (has_weights && ot == "competing-risk" && x_norm %in% c("aalen", "delta")) {
+    warning(
+      sprintf("%s with weights: error='%s' is not supported; falling back to 'if'.",
+              ot, as.character(x)),
+      call. = FALSE
+    )
+    return("if")
+  }
 
   if (x_norm %in% choices) return(x_norm)
 
@@ -351,7 +360,6 @@ curve_check_error <- function(x, outcome.type, weights = NULL) {
   )
   fallback
 }
-
 
 call_calculateAJ_Rcpp <- function(t, epsilon, w = NULL, strata = NULL,
                                    error = "greenwood",

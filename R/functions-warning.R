@@ -235,86 +235,8 @@ util_check_outcome_type <- function(
   detect_from_formula(formula, data, na.action, auto_message = auto_message)
 }
 
-util_check_outcome_type_old <- function(
-    x = NULL,
-    formula = NULL,
-    data = NULL,
-    na.action = stats::na.omit,
-    auto_message = TRUE,
-    allow_multiple = FALSE
-) {
-  normalize_na_action <- function(na) {
-    if (is.function(na)) return(na)
-    if (is.character(na) && length(na) == 1L) {
-      if (na %in% c("na.omit", "na.exclude", "na.pass", "na.fail")) {
-        return(get(na, envir = asNamespace("stats"), inherits = FALSE))
-      }
-    }
-    stats::na.omit
-  }
-  na.action <- normalize_na_action(na.action)
 
-  ok <- c("competing-risk", "survival", "binomial",
-          "proportional-competing-risk", "proportional-survival")
 
-  normalize <- function(z) {
-    if (is.null(z)) return(character())
-    z <- as.character(z)
-    z <- tolower(trimws(z))
-    z <- gsub("[[:space:]_.]+", "-", z)
-    z <- gsub("-{2,}", "-", z)
-    z <- gsub("^-|-$", "", z)
-    map <- c(
-      "c"   = "competing-risk", "cr"  = "competing-risk", "competing" = "competing-risk",
-      "s"   = "survival",       "surv" = "survival",
-      "b"   = "binomial",       "bin" = "binomial",
-      "pc"  = "proportional-competing-risk", "pcr" = "proportional-competing-risk",
-      "ps"  = "proportional-survival"
-    )
-    ifelse(z %in% names(map), unname(map[z]), z)
-  }
-
-  if (!is.null(x)) {
-    canon <- normalize(x)
-    invalid <- is.na(canon) | !nzchar(canon) | !(canon %in% ok)
-    if (any(invalid)) {
-      bad <- unique(canon[invalid])
-      bad <- bad[!is.na(bad)]
-      stop(sprintf("Invalid outcome.type: '%s'. Allowed: %s",
-                   paste(bad, collapse = ", "), paste(ok, collapse = ", ")),
-           call. = FALSE)
-    }
-    u <- unique(canon)
-    if (length(u) == 1L) return(u)
-    if (isTRUE(allow_multiple)) return(canon)
-    stop("`outcome.type` is ambiguous and matched multiple types: ",
-         paste(u, collapse = ", "), call. = FALSE)
-  }
-
-  if (is.null(formula) || is.null(data)) {
-    stop("Provide either `outcome.type` or both `formula` and `data` for automatic detection.", call. = FALSE)
-  }
-
-  Terms <- stats::terms(formula, specials = c("strata", "offset", "cluster"), data = data)
-  mf <- tryCatch(
-    stats::model.frame(Terms, data = data, na.action = na.action),
-    error = function(e) stats::model.frame(Terms, data = data, na.action = stats::na.omit)
-  )
-
-  Y <- stats::model.extract(mf, "response")
-  if (!inherits(Y, c("Event", "Surv")))
-    stop("Response must be Event() or Surv().", call. = FALSE)
-
-  status <- suppressWarnings(as.numeric(Y[, 2]))
-  n_levels <- length(unique(stats::na.omit(status)))
-  if (n_levels > 2L) {
-    if (isTRUE(auto_message)) message("Detected >2 status levels; outcome.type set to 'competing-risk'.")
-    "competing-risk"
-  } else {
-    if (isTRUE(auto_message)) message("Detected <= 2 status levels; outcome.type set to 'survival'.")
-    "survival"
-  }
-}
 
 util_check_type_y <- function(x = NULL) {
   .norm <- function(s) gsub("[^A-Z0-9]+", "", toupper(trimws(as.character(s))))

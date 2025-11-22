@@ -60,6 +60,7 @@ $$
 \textrm{Var}\!\left\{\hat{S}(t)\right \}
 = \hat{S}(t)^2\sum_{t_j \le t} \frac{d_j^w Y_j}{M_j (Y_j^w)^2}
 $$
+
 ## Formulas for the Aalen-Johansen estimator
 
 Competing risks (`outcome.type = "competing-risk"`) arise in studies in which individuals are exposed to two or more mutually exclusive failure events. When a failure occurs, we observe the time to event $T$ and the cause of failure $\epsilon$. Suppose that $\epsilon=1$ and $\epsilon=2$ represent the event of interest and the competing risk, respectively. Let $d_{jk}$ be the number of failures of cause $k$ at time $t_j$, and now the total number of failures at $t_j$ is $d_j = d_{j1} + d_{j2}$. 
