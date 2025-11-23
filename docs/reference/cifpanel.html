@@ -27,7 +27,7 @@ Display a plot with an enlarged y-axis inside a full-scale plot.
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.9.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.9.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -264,12 +264,12 @@ set to <code>c(0, 1)</code> for probability-type outcomes.</p></dd>
 
 <dt id="arg-add-conf">add.conf<a class="anchor" aria-label="anchor" href="#arg-add-conf"></a></dt>
 <dd><p>Logical; if <code>TRUE</code>, adds a CI ribbon
-(via <code><a href="https://rdrr.io/pkg/ggsurvfit/man/add_confidence_interval.html" class="external-link">ggsurvfit::add_confidence_interval()</a></code>). Default <code>TRUE</code>.</p></dd>
+(via <code><a href="http://www.danieldsjoberg.com/ggsurvfit/reference/add_confidence_interval.html" class="external-link">ggsurvfit::add_confidence_interval()</a></code>). Default <code>TRUE</code>.</p></dd>
 
 
 <dt id="arg-add-censor-mark">add.censor.mark<a class="anchor" aria-label="anchor" href="#arg-add-censor-mark"></a></dt>
 <dd><p>Logical; if <code>TRUE</code>, draws censoring marks on each curve
-(via <code><a href="https://rdrr.io/pkg/ggsurvfit/man/add_censor_mark.html" class="external-link">ggsurvfit::add_censor_mark()</a></code>). Default <code>TRUE</code>.</p></dd>
+(via <code><a href="http://www.danieldsjoberg.com/ggsurvfit/reference/add_censor_mark.html" class="external-link">ggsurvfit::add_censor_mark()</a></code>). Default <code>TRUE</code>.</p></dd>
 
 
 <dt id="arg-shape-censor-mark">shape.censor.mark<a class="anchor" aria-label="anchor" href="#arg-shape-censor-mark"></a></dt>
@@ -322,7 +322,7 @@ times per stratum. Default <code>FALSE</code>.</p></dd>
 
 <dt id="arg-add-quantile">add.quantile<a class="anchor" aria-label="anchor" href="#arg-add-quantile"></a></dt>
 <dd><p>Logical; if <code>TRUE</code>, adds a quantile reference line (via
-<code><a href="https://rdrr.io/pkg/ggsurvfit/man/add_quantile.html" class="external-link">ggsurvfit::add_quantile()</a></code>). Default <code>FALSE</code>.</p></dd>
+<code><a href="http://www.danieldsjoberg.com/ggsurvfit/reference/add_quantile.html" class="external-link">ggsurvfit::add_quantile()</a></code>). Default <code>FALSE</code>.</p></dd>
 
 
 <dt id="arg-level-quantile">level.quantile<a class="anchor" aria-label="anchor" href="#arg-level-quantile"></a></dt>
@@ -433,15 +433,15 @@ invisibly for further modification (default <code>FALSE</code>).</p></dd>
 
 
 <dt id="arg-width-ggsave">width.ggsave<a class="anchor" aria-label="anchor" href="#arg-width-ggsave"></a></dt>
-<dd><p>Numeric width passed to <code><a href="https://rdrr.io/pkg/ggplot2/man/ggsave.html" class="external-link">ggplot2::ggsave()</a></code> (default <code>6</code>).</p></dd>
+<dd><p>Numeric width passed to <code><a href="https://ggplot2.tidyverse.org/reference/ggsave.html" class="external-link">ggplot2::ggsave()</a></code> (default <code>6</code>).</p></dd>
 
 
 <dt id="arg-height-ggsave">height.ggsave<a class="anchor" aria-label="anchor" href="#arg-height-ggsave"></a></dt>
-<dd><p>Numeric height passed to <code><a href="https://rdrr.io/pkg/ggplot2/man/ggsave.html" class="external-link">ggplot2::ggsave()</a></code> (default <code>6</code>).</p></dd>
+<dd><p>Numeric height passed to <code><a href="https://ggplot2.tidyverse.org/reference/ggsave.html" class="external-link">ggplot2::ggsave()</a></code> (default <code>6</code>).</p></dd>
 
 
 <dt id="arg-dpi-ggsave">dpi.ggsave<a class="anchor" aria-label="anchor" href="#arg-dpi-ggsave"></a></dt>
-<dd><p>Numeric DPI passed to <code><a href="https://rdrr.io/pkg/ggplot2/man/ggsave.html" class="external-link">ggplot2::ggsave()</a></code> (default <code>300</code>).</p></dd>
+<dd><p>Numeric DPI passed to <code><a href="https://ggplot2.tidyverse.org/reference/ggsave.html" class="external-link">ggplot2::ggsave()</a></code> (default <code>300</code>).</p></dd>
 
 
 <dt id="arg-survfit-info-axis-info-visual-info-panel-info-style-info-print-info-ggsave-info-inset-info">survfit.info, axis.info, visual.info, panel.info, style.info, print.info, ggsave.info, inset.info<a class="anchor" aria-label="anchor" href="#arg-survfit-info-axis-info-visual-info-panel-info-style-info-print-info-ggsave-info-inset-info"></a></dt>
@@ -579,7 +579,7 @@ element of <code>list.plot</code> or to the composed <code>patchwork</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="polyreg.html">polyreg()</a></code> for log-odds product modeling of CIFs; <code><a href="cifcurve.html">cifcurve()</a></code> for KM/AJ estimators; <code><a href="cifplot.html">cifplot()</a></code> for display of a CIF; <a href="https://rdrr.io/pkg/ggsurvfit/man/ggsurvfit.html" class="external-link">ggsurvfit::ggsurvfit</a>, <a href="https://patchwork.data-imaginist.com/reference/patchwork-package.html" class="external-link">patchwork::patchwork</a> and <a href="https://modelsummary.com/man/modelsummary.html" class="external-link">modelsummary::modelsummary</a> for display helpers.</p></div>
+    <div class="dont-index"><p><code><a href="polyreg.html">polyreg()</a></code> for log-odds product modeling of CIFs; <code><a href="cifcurve.html">cifcurve()</a></code> for KM/AJ estimators; <code><a href="cifplot.html">cifplot()</a></code> for display of a CIF; <a href="http://www.danieldsjoberg.com/ggsurvfit/reference/ggsurvfit.html" class="external-link">ggsurvfit::ggsurvfit</a>, <a href="https://patchwork.data-imaginist.com/reference/patchwork-package.html" class="external-link">patchwork::patchwork</a> and <a href="https://modelsummary.com/man/modelsummary.html" class="external-link">modelsummary::modelsummary</a> for display helpers.</p></div>
     </div>
 
     <div class="section level2">
