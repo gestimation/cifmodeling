@@ -5,7 +5,7 @@
 
 <!-- badges: end -->
 
-# Modern Visualization and Polytomous Modeling of Survival and Competing Risks with Minimal Code — cifmodeling
+# Visualization and Polytomous Modeling of Survival and Competing Risks with Minimal Code — cifmodeling
 
 This package provides a unified, high-level interface for survival and
 competing risks analysis, combining nonparametric estimation, regression
