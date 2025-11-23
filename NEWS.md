@@ -1,3 +1,11 @@
+# cifmodeling 0.9.2
+
+* Fourth CRAN submission.
+* Invalid file URLs  
+  (articles/gallery.html, articles/polyreg.html, articles/formulas.html)
+  were replaced by URLs in the web and verified using urlchecker::url_check(). 
+  Rebuilt and resubmitted.
+
 # cifmodeling 0.9.1
 
 * Third CRAN submission.
