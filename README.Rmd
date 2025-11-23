@@ -36,7 +36,7 @@ data("diabetes.complications", package = "cifmodeling")
 set.seed(1)
 ```
 
-# Modern Visualization and Modeling of Survival & Competing Risks with Minimal Code — cifmodeling
+# Modern Visualization and Polytomous Modeling of Survival and Competing Risks with Minimal Code — cifmodeling
 
 This package provides a unified, high-level interface for survival and competing risks analysis, combining nonparametric estimation, regression modeling, and publication-ready visualization. It is centered around three tightly connected functions:
 

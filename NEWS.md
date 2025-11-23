@@ -1,6 +1,13 @@
-# cifmodeling 0.9.0
+# cifmodeling 0.9.1
 
 * Third CRAN submission.
+* The DOI reported by CRAN (`10.21105/joss.00510`) does not appear to be present
+  in the package source. Verified using recursive search and a freshly created
+  tarball. Rebuilt and resubmitted.
+
+# cifmodeling 0.9.0
+
+* Second CRAN submission.
 
 # cifmodeling 0.8.2
 
@@ -11,7 +18,7 @@
 # cifmodeling 0.8.1
 
 * README.Rmd, Vignettes and site were updated. 
-* polyreg methods were implemented
+* polyreg S3 methods were implemented
 
 # cifmodeling 0.8.0
 
@@ -30,7 +37,7 @@
 
 # cifmodeling 0.6.0
 
-* Second CRAN submission.
+* Initial CRAN submission.
 
 # cifmodeling 0.5.0
 
@@ -42,7 +49,7 @@
 
 # cifmodeling 0.3.0
 
-* `cifpanel()` and panel mode of * `cifplot()` were implemented.
+* `cifpanel()` and panel mode of * `cifplot()` were developed.
 
 # cifmodeling 0.2.0
 
@@ -50,4 +57,4 @@
 
 # cifmodeling 0.1.0
 
-* Initial CRAN submission.
+* `cifcurve()`, `cifplot()` and `polyreg()` were developed.
