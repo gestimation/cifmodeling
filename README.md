@@ -20,12 +20,14 @@ three tightly connected functions:
   CIFs simultaneously.
 
 > **Explore the main features visually:**  
-> See the [Gallery](articles/gallery.html) for a curated set of examples
-> using `cifplot()` and `cifpanel()`.
+> See the
+> [Gallery](https://gestimation.github.io/cifmodeling/articles/gallery.html)
+> for a curated set of examples using `cifplot()` and `cifpanel()`.
 
 > **Learn the modeling framework with `polyreg()`:**  
-> See the [Direct polytomous regression](articles/polyreg.html) for
-> coherent, joint modeling of all cause-specific CIFs.
+> See the [Direct polytomous
+> regression](https://gestimation.github.io/cifmodeling/articles/polyreg.html)
+> for coherent, joint modeling of all cause-specific CIFs.
 
 ## Quick start
 
@@ -320,7 +322,8 @@ are excellent choices.
 
 > **Interested in the precise variance formulas and influence functions
 > for the Aalen-Johansen estimator?**  
-> Visit [Computational formulas in cifcurve()](articles/formulas.html).
+> Visit [Computational formulas in
+> cifcurve()](https://gestimation.github.io/cifmodeling/articles/formulas.html).
 
 ## Installation
 
