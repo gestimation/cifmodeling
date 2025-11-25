@@ -39,11 +39,11 @@ set.seed(1)
 # Visualization and Polytomous Modeling of Survival and Competing Risks with Minimal Code — cifmodeling
 
 Are you comfortable writing `Surv(time, status) ~ strata` but hesitant to dive into the Fine-Gray models or custom `ggplot2` code? **cifmodeling** helps clinicians, epidemiologists, and applied researchers move
-from basic Kaplan–Meier curves to clear, publication-ready survival and competing-risks plots – with just a few lines of R. 
+from basic Kaplan–Meier curves to clear, publication-ready survival and competing risk plots – with just a few lines of R. 
 
 This package provides a unified, high-level interface for survival and competing-risks analysis, combining nonparametric estimation, regression modeling, and visualization. It is centered around three tightly connected functions:
 
-- `cifplot()` generates a survival or CIF curve. The visualization is built on top of `ggsurvfit` and `ggplot2`.
+- `cifplot()` generates a survival or cumulative incidence function (CIF) curve. The visualization is built on top of `ggsurvfit` and `ggplot2`.
 - `cifpanel()` creates multi-panel displays for survival/CIF curves, arranged either **in a grid layout or as an inset overlay**.
 - `polyreg()` fits **coherent regression models** on all cause-specific CIFs simultaneously.
 
@@ -62,7 +62,7 @@ cifplot(Event(t,epsilon)~fruitq, data=diabetes.complications,
         outcome.type="competing-risk", panel.per.event=TRUE)
 ```
 
-In competing risks data, censoring is often coded as 0, the event of interest as 1, and competing risks as 2. In the `diabetes.complications` data frame, `epsilon` follows this convention. With `panel.per.event = TRUE`, `cifplot()` visualizes the cumulative incidence functions (CIFs), with the CIF of diabetic retinopathy (`epsilon = 1`) shown on the left and the CIF of macrovascular complications (`epsilon = 2`) on the right.
+In competing risks data, censoring is often coded as 0, the event of interest as 1, and competing risks as 2. In the `diabetes.complications` data frame, `epsilon` follows this convention. With `panel.per.event = TRUE`, `cifplot()` visualizes both competing events, with the CIF of diabetic retinopathy (`epsilon = 1`) shown on the left and the CIF of macrovascular complications (`epsilon = 2`) on the right.
 
 ## A workflow of competing risks analysis
 
@@ -79,7 +79,7 @@ We use the `diabetes.complications` data throughout, focusing on diabetic retino
 
 The first snippet is plotting the CIF of diabetic retinopathy with **marks indicating individuals who experienced macrovascular complications first** (`add.competing.risk.mark = TRUE`). Here we show a workflow slightly different from the code at the beginning. First, the time points at which the macrovascular complications occurred were obtained as `output1` for each strata using a helper function `extract_time_to_event()`. Then, `cifplot()` is used to generate the figure. The `label.y`, `label.x`, `label.strata` and `limit.x` arguments are also used to customize **the labels and axis limits**. 
 
-```{r example02, fig.cap="Cumulative incidence curves with competing risk marks", warning=FALSE, message=FALSE}
+```{r example02, fig.cap="Cumulative incidence curves with competing-risk marks", warning=FALSE, message=FALSE}
 data(diabetes.complications)
 output1 <- extract_time_to_event(Event(t,epsilon)~fruitq1, 
                                  data=diabetes.complications, which.event="event2")
