@@ -179,8 +179,8 @@ if (requireNamespace("modelsummary", quietly = TRUE)) {
 
 In clinical and epidemiologic research, analysts often need to handle censoring, competing risks, and intercurrent events (e.g. treatment switching), but existing R packages typically separate these tasks across different interfaces. `cifmodeling` provides a unified, publication-ready toolkit that integrates nonparametric estimation, regression modeling, and visualization for survival and competing risks data. The tools assist users in the following ways:
 
-- **Unified interface** for Kaplan–Meier and Aalen–Johansen curves, with survival and competing risks handled by the same `Event()` + formula + data syntax.
-- **Effects on the CIF scale**: while Fine-Gray models subdistribution hazards, `polyreg()` directly targets ratios of CIFs (risk ratios, odds ratios, subdistribution hazard ratios), so parameters align closely with differences seen in CIF curves.
+- **Unified interface** for the Kaplan–Meier and Aalen–Johansen curves, with survival and competing risks handled by the same `Event()` + formula + data syntax.
+- **Effects on the CIF scale**: while the Fine-Gray models subdistribution hazards, `polyreg()` directly targets ratios of CIFs (risk ratios, odds ratios, subdistribution hazard ratios), so parameters align closely with differences seen in CIF curves.
 - **Coherent, joint modeling of all competing events**: `polyreg()` models all cause-specific CIFs together, parameterizing the nuisance structure with polytomous log odds products and enforcing that their CIFs sum to at most one.
 - **Tidy summaries and reporting**: support for `generics::tidy()`, `glance()`, and `augment()`, which integrate `polyreg()` smoothly with `modelsummary` and other broom-style tools.
 - **Publication-ready graphics** built on `ggsurvfit` and `ggplot2`, including number-at-risk/CIF+CI tables, censoring/competing-risk/intercurrent-event marks, and multi-panel layouts.
@@ -197,7 +197,9 @@ If you need very fine-grained plot customization, you can compute the estimator 
 - use `cifplot()` / `cifpanel()` for quick, high-quality figures, and
 - fall back to the `ggplot` ecosystem when you want full artistic control.
 
-The **mets** package is a more specialised toolkit that provides advanced methods for competing risks analysis. `cifmodeling::polyreg()` focuses on coherent modeling of all CIFs simultaneously to estimate the exposure effects in terms of RR/OR/SHR. This coherence can come with longer runtimes for large problems. If you prefer fitting separate regression models for each competing event or specifically need the Fine-Gray models (Fine and Gray 1999) and the direct binomial models (Scheike, Zhang and Gerds 2008), `mets::cifreg()` and `mets::binreg()` are excellent choices.
+The **causalRisk** focuses on *causal* cumulative risk and hazard estimation using IPW and related estimators. It allows users to specify treatment, outcome, censoring, and missingness models via a dedicated syntax (`specify_models()`, `identify_*()`), and then estimate counterfactual cumulative risks and risk differences/ratios under complex censoring and confounding structures, with built-in plotting and table-making utilities. 
+
+The **mets** package is a more specialized toolkit that provides advanced methods for competing risks analysis. `cifmodeling::polyreg()` focuses on coherent modeling of all CIFs simultaneously to estimate the exposure effects in terms of RR/OR/SHR. This coherence can come with longer runtimes for large problems. If you prefer fitting separate regression models for each competing event or specifically need the Fine-Gray models (Fine and Gray 1999) and the direct binomial models (Scheike, Zhang and Gerds 2008), `mets::cifreg()` and `mets::binreg()` are excellent choices.
 
 > **Interested in the precise variance formulas and influence functions for the Aalen-Johansen estimator?**  
 > Visit [Computational formulas in cifcurve()](https://gestimation.github.io/cifmodeling/articles/formulas.html).
