@@ -656,10 +656,10 @@ cifpanel <- function(
   use_formula_list <- !is.null(formulas)
   if (use_formula_list) {
     stopifnot(is.list(formulas))
-    formulas <- lapply(formulas, panel_as_formula_global)
+    formulas <- lapply(formulas, panel_as_formula)
     formulas <- panel_recycle_to(formulas, K)
   } else {
-    formula  <- panel_as_formula_global(formula)
+    formula  <- panel_as_formula(formula)
     formulas <- rep(list(formula), K)
   }
 

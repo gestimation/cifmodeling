@@ -115,11 +115,13 @@ panel_prepare <- function(
   list(curves = curves, plot_args = plot_args, K = K)
 }
 
-panel_as_formula_global <- function(f) {
-  if (is.character(f))   return(stats::as.formula(f, env = .GlobalEnv))
-  if (inherits(f, "formula")) return(stats::as.formula(f, env = .GlobalEnv))
+panel_as_formula <- function(f) {
+  env <- parent.frame()
+  if (is.character(f))   return(stats::as.formula(f, env = env))
+  if (inherits(f, "formula")) return(stats::as.formula(f, env = env))
   .err("formula_must_be")
 }
+
 
 panel_recycle_to <- function(x, n) {
   if (length(x) == n) return(x)
