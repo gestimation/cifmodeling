@@ -1,3 +1,9 @@
+# cifmodeling 0.9.3
+
+* Fifth CRAN submission.
+* Invalid DESCRIPTION file, software names single quoted. 
+  Rebuilt and resubmitted.
+
 # cifmodeling 0.9.2
 
 * Fourth CRAN submission.

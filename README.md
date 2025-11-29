@@ -7,10 +7,10 @@
 
 # Visualization and Polytomous Modeling of Survival and Competing Risks with Minimal Code — cifmodeling
 
-This package provides a unified, high-level interface for survival and
-competing risks analysis, combining nonparametric estimation, regression
-modeling, and publication-ready visualization. It is centered around
-three tightly connected functions:
+This package provides a minimal, formula-based interface for survival
+and competing risks analysis, combining nonparametric estimation,
+regression modeling, and publication-ready visualization. It is centered
+around three tightly connected functions:
 
 - `cifplot()` generates a survival or CIF curve. The visualization is
   built on top of `ggsurvfit` and `ggplot2`.
