@@ -7,13 +7,21 @@
 
 # Visualization and Polytomous Modeling of Survival and Competing Risks with Minimal Code — cifmodeling
 
-This package provides a unified, high-level interface for survival and
-competing risks analysis, combining nonparametric estimation, regression
-modeling, and publication-ready visualization. It is centered around
-three tightly connected functions:
+Are you comfortable writing `Surv(time, status) ~ strata` but hesitant
+to dive into the Fine-Gray models or custom `ggplot2` code?
+**cifmodeling** helps clinicians, epidemiologists, and applied
+researchers move from basic Kaplan–Meier curves to clear,
+publication-ready survival and competing risk plots – with just a few
+lines of R.
 
-- `cifplot()` generates a survival or CIF curve. The visualization is
-  built on top of `ggsurvfit` and `ggplot2`.
+This package provides a unified, high-level interface for survival and
+competing-risks analysis, combining nonparametric estimation, regression
+modeling, and visualization. It is centered around three tightly
+connected functions:
+
+- `cifplot()` generates a survival or cumulative incidence function
+  (CIF) curve. The visualization is built on top of `ggsurvfit` and
+  `ggplot2`.
 - `cifpanel()` creates multi-panel displays for survival/CIF curves,
   arranged either **in a grid layout or as an inset overlay**.
 - `polyreg()` fits **coherent regression models** on all cause-specific
@@ -51,10 +59,9 @@ Aalen-Johansen cumulative incidence curves from cifplot()
 In competing risks data, censoring is often coded as 0, the event of
 interest as 1, and competing risks as 2. In the `diabetes.complications`
 data frame, `epsilon` follows this convention. With
-`panel.per.event = TRUE`, `cifplot()` visualizes the cumulative
-incidence functions (CIFs), with the CIF of diabetic retinopathy
-(`epsilon = 1`) shown on the left and the CIF of macrovascular
-complications (`epsilon = 2`) on the right.
+`panel.per.event = TRUE`, `cifplot()` visualizes both competing events,
+with the CIF of diabetic retinopathy (`epsilon = 1`) shown on the left
+and the CIF of macrovascular complications (`epsilon = 2`) on the right.
 
 ## A workflow of competing risks analysis
 
@@ -99,10 +106,10 @@ cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications,
 
 <div class="figure">
 
-<img src="man/figures/README-example02-1.png" alt="Cumulative incidence curves with competing risk marks" width="70%" />
+<img src="man/figures/README-example02-1.png" alt="Cumulative incidence curves with competing-risk marks" width="70%" />
 <p class="caption">
 
-Cumulative incidence curves with competing risk marks
+Cumulative incidence curves with competing-risk marks
 </p>
 
 </div>
@@ -259,13 +266,13 @@ publication-ready toolkit that integrates nonparametric estimation,
 regression modeling, and visualization for survival and competing risks
 data. The tools assist users in the following ways:
 
-- **Unified interface** for Kaplan–Meier and Aalen–Johansen curves, with
-  survival and competing risks handled by the same `Event()` + formula +
-  data syntax.
-- **Effects on the CIF scale**: while Fine-Gray models subdistribution
-  hazards, `polyreg()` directly targets ratios of CIFs (risk ratios,
-  odds ratios, subdistribution hazard ratios), so parameters align
-  closely with differences seen in CIF curves.
+- **Unified interface** for the Kaplan–Meier and Aalen–Johansen curves,
+  with survival and competing risks handled by the same `Event()` +
+  formula + data syntax.
+- **Effects on the CIF scale**: while the Fine-Gray models
+  subdistribution hazards, `polyreg()` directly targets ratios of CIFs
+  (risk ratios, odds ratios, subdistribution hazard ratios), so
+  parameters align closely with differences seen in CIF curves.
 - **Coherent, joint modeling of all competing events**: `polyreg()`
   models all cause-specific CIFs together, parameterizing the nuisance
   structure with polytomous log odds products and enforcing that their
@@ -310,7 +317,15 @@ supply your own survfit object) and then style it using
 - fall back to the `ggplot` ecosystem when you want full artistic
   control.
 
-The **mets** package is a more specialised toolkit that provides
+The **causalRisk** focuses on *causal* cumulative risk and hazard
+estimation using IPW and related estimators. It allows users to specify
+treatment, outcome, censoring, and missingness models via a dedicated
+syntax (`specify_models()`, `identify_*()`), and then estimate
+counterfactual cumulative risks and risk differences/ratios under
+complex censoring and confounding structures, with built-in plotting and
+table-making utilities.
+
+The **mets** package is a more specialized toolkit that provides
 advanced methods for competing risks analysis. `cifmodeling::polyreg()`
 focuses on coherent modeling of all CIFs simultaneously to estimate the
 exposure effects in terms of RR/OR/SHR. This coherence can come with
