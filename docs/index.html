@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.9.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.9.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -35,13 +35,13 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="articles/overview.html">Overview</a></li>
-    <li><a class="dropdown-item" href="articles/polyreg.html">Direct polytomous regression</a></li>
-    <li><a class="dropdown-item" href="articles/formulas.html">Computational formulas in cifcurve()</a></li>
-    <li><a class="dropdown-item" href="articles/examples.html">Examples</a></li>
-    <li><a class="dropdown-item" href="articles/gallery.html">Gallery</a></li>
-    <li><a class="dropdown-item" href="articles/information.html">Additional information</a></li>
-    <li><a class="dropdown-item" href="articles/arguments.html">Full lists of arguments</a></li>
+<li><a class="dropdown-item" href="articles/v1_overview.html">Overview</a></li>
+    <li><a class="dropdown-item" href="articles/v2_polyreg.html">Direct polytomous regression</a></li>
+    <li><a class="dropdown-item" href="articles/v3_formulas.html">Computational formulas in cifcurve()</a></li>
+    <li><a class="dropdown-item" href="articles/v4_examples.html">Examples</a></li>
+    <li><a class="dropdown-item" href="articles/v5_gallery.html">Gallery</a></li>
+    <li><a class="dropdown-item" href="articles/v6_information.html">Additional information</a></li>
+    <li><a class="dropdown-item" href="articles/v7_arguments.html">Full lists of arguments</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -58,17 +58,20 @@
   </div>
 </nav><div class="container template-home">
 <div class="row">
-  <main id="main" class="col-md-9"><div class="section level1">
+  <main id="main" class="col-md-9">
+<!-- badges: end -->
+<div class="section level1">
 <div class="page-header"><h1 id="visualization-and-polytomous-modeling-of-survival-and-competing-risks-with-minimal-code--cifmodeling">Visualization and Polytomous Modeling of Survival and Competing Risks with Minimal Code — cifmodeling<a class="anchor" aria-label="anchor" href="#visualization-and-polytomous-modeling-of-survival-and-competing-risks-with-minimal-code--cifmodeling"></a>
 </h1></div>
-<p>This package provides a unified, high-level interface for survival and competing risks analysis, combining nonparametric estimation, regression modeling, and publication-ready visualization. It is centered around three tightly connected functions:</p>
+<p>Are you comfortable writing <code>Surv(time, status) ~ strata</code> but hesitant to dive into the Fine-Gray models or custom <code>ggplot2</code> code? <strong>cifmodeling</strong> helps clinicians, epidemiologists, and applied researchers move from basic Kaplan-Meier curves to clear, publication-ready survival and competing risk plots – with just a few lines of R.</p>
+<p>It provides a unified, high-level interface for survival and competing risks analysis, combining nonparametric estimation, regression modeling, and visualization. It is centered around three tightly connected functions:</p>
 <ul>
 <li>
-<code><a href="reference/cifplot.html">cifplot()</a></code> generates a survival or CIF curve. The visualization is built on top of <code>ggsurvfit</code> and <code>ggplot2</code>.</li>
+<code><a href="reference/cifplot.html">cifplot()</a></code> generates a survival or cumulative incidence function (CIF) curve. The visualization is built on top of <code>ggsurvfit</code> and <code>ggplot2</code>.</li>
 <li>
 <code><a href="reference/cifpanel.html">cifpanel()</a></code> creates multi-panel displays for survival/CIF curves, arranged either <strong>in a grid layout or as an inset overlay</strong>.</li>
 <li>
-<code><a href="reference/polyreg.html">polyreg()</a></code> fits <strong>coherent regression models</strong> on all cause-specific CIFs simultaneously.</li>
+<code><a href="reference/polyreg.html">polyreg()</a></code> fits <strong>coherent regression models</strong> on all cause-specific CIFs simultaneously to estimate RR/OR/SHR, offering a practical complement to Fine-Gray.</li>
 </ul>
 <blockquote>
 <p><strong>Explore the main features visually:</strong><br>
@@ -77,6 +80,10 @@ See the <a href="https://gestimation.github.io/cifmodeling/articles/gallery.html
 <blockquote>
 <p><strong>Learn the modeling framework with <code><a href="reference/polyreg.html">polyreg()</a></code>:</strong><br>
 See the <a href="https://gestimation.github.io/cifmodeling/articles/polyreg.html">Direct polytomous regression</a> for coherent, joint modeling of all cause-specific CIFs.</p>
+</blockquote>
+<blockquote>
+<p><strong>Prefer to build intuition before diving into code?</strong><br>
+Visit the <em>Coffee and Research – Story and Quiz</em> series for narrative-style introductions to study design, survival and competing risks analysis, and frequentist and causality thinking: <a href="https://gestimation.github.io/coffee-and-research/en/" class="external-link uri">https://gestimation.github.io/coffee-and-research/en/</a></p>
 </blockquote>
 <div class="section level2">
 <h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
@@ -91,7 +98,7 @@ See the <a href="https://gestimation.github.io/cifmodeling/articles/polyreg.html
 Aalen-Johansen cumulative incidence curves from cifplot()
 </p>
 </div>
-<p>In competing risks data, censoring is often coded as 0, the event of interest as 1, and competing risks as 2. In the <code>diabetes.complications</code> data frame, <code>epsilon</code> follows this convention. With <code>panel.per.event = TRUE</code>, <code><a href="reference/cifplot.html">cifplot()</a></code> visualizes the cumulative incidence functions (CIFs), with the CIF of diabetic retinopathy (<code>epsilon = 1</code>) shown on the left and the CIF of macrovascular complications (<code>epsilon = 2</code>) on the right.</p>
+<p>In competing risks data, censoring is often coded as 0, the event of interest as 1, and competing risks as 2. In the <code>diabetes.complications</code> data frame, <code>epsilon</code> follows this convention. With <code>panel.per.event = TRUE</code>, <code><a href="reference/cifplot.html">cifplot()</a></code> visualizes both competing events, with the CIF of diabetic retinopathy (<code>epsilon = 1</code>) shown on the left and the CIF of macrovascular complications (<code>epsilon = 2</code>) on the right.</p>
 </div>
 <div class="section level2">
 <h2 id="a-workflow-of-competing-risks-analysis">A workflow of competing risks analysis<a class="anchor" aria-label="anchor" href="#a-workflow-of-competing-risks-analysis"></a>
@@ -120,8 +127,8 @@ Aalen-Johansen cumulative incidence curves from cifplot()
 <span>        limits.x<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">8</span><span class="op">)</span>, label.strata<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"High intake"</span>,<span class="st">"Low intake"</span><span class="op">)</span>, </span>
 <span>        level.strata<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span>, order.strata<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="reference/figures/README-example02-1.png" alt="Cumulative incidence curves with competing risk marks" width="70%"><p class="caption">
-Cumulative incidence curves with competing risk marks
+<img src="reference/figures/README-example02-1.png" alt="Cumulative incidence curves with competing-risk marks" width="70%"><p class="caption">
+Cumulative incidence curves with competing-risk marks
 </p>
 </div>
 </div>
@@ -237,12 +244,12 @@ Visualizaton of risk ratios at 2, 4, 6 and 8 years using polyreg() and modelplot
 <div class="section level2">
 <h2 id="why-cifmodeling">Why cifmodeling?<a class="anchor" aria-label="anchor" href="#why-cifmodeling"></a>
 </h2>
-<p>In clinical and epidemiologic research, analysts often need to handle censoring, competing risks, and intercurrent events (e.g. treatment switching), but existing R packages typically separate these tasks across different interfaces. <code>cifmodeling</code> provides a unified, publication-ready toolkit that integrates nonparametric estimation, regression modeling, and visualization for survival and competing risks data. The tools assist users in the following ways:</p>
+<p>In clinical and epidemiologic research, analysts often need to handle censoring, competing risks, and intercurrent events (e.g. treatment switching), but existing R packages typically separate these tasks across different interfaces. <strong>cifmodeling</strong> provides a unified, publication-ready toolkit that integrates nonparametric estimation, regression modeling, and visualization for survival and competing risks data. The tools assist users in the following ways:</p>
 <ul>
 <li>
-<strong>Unified interface</strong> for Kaplan–Meier and Aalen–Johansen curves, with survival and competing risks handled by the same <code><a href="reference/Event.html">Event()</a></code> + formula + data syntax.</li>
+<strong>Unified interface</strong> for the Kaplan–Meier and Aalen–Johansen curves, with survival and competing risks handled by the same <code><a href="reference/Event.html">Event()</a></code> + formula + data syntax.</li>
 <li>
-<strong>Effects on the CIF scale</strong>: while Fine-Gray models subdistribution hazards, <code><a href="reference/polyreg.html">polyreg()</a></code> directly targets ratios of CIFs (risk ratios, odds ratios, subdistribution hazard ratios), so parameters align closely with differences seen in CIF curves.</li>
+<strong>Effects on the CIF scale</strong>: while the Fine-Gray models subdistribution hazards, <code><a href="reference/polyreg.html">polyreg()</a></code> directly targets ratios of CIFs (risk ratios, odds ratios, subdistribution hazard ratios), so parameters align closely with differences seen in CIF curves.</li>
 <li>
 <strong>Coherent, joint modeling of all competing events</strong>: <code><a href="reference/polyreg.html">polyreg()</a></code> models all cause-specific CIFs together, parameterizing the nuisance structure with polytomous log odds products and enforcing that their CIFs sum to at most one.</li>
 <li>
@@ -254,7 +261,7 @@ Visualizaton of risk ratios at 2, 4, 6 and 8 years using polyreg() and modelplot
 <div class="section level2">
 <h2 id="position-in-the-survival-ecosystem">Position in the survival ecosystem<a class="anchor" aria-label="anchor" href="#position-in-the-survival-ecosystem"></a>
 </h2>
-<p>Several excellent R packages exist for survival and competing risks analysis. The <strong>survival</strong> package provides the canonical API for survival data. In combination with the <strong>ggsurvfit</strong> package, <code><a href="https://rdrr.io/pkg/survival/man/survfit.html" class="external-link">survival::survfit()</a></code> can produce publication-ready survival plots. For CIF plots, however, integration in the general ecosystem is less streamlined. <code>cifmodeling</code> fills this gap by offering <code><a href="reference/cifplot.html">cifplot()</a></code> for survival/CIF plots and multi-panel figures via a single, unified interface.</p>
+<p>Several excellent R packages exist for survival and competing risks analysis. The <strong>survival</strong> package provides the canonical API for survival data. In combination with the <strong>ggsurvfit</strong> package, <code><a href="https://rdrr.io/pkg/survival/man/survfit.html" class="external-link">survival::survfit()</a></code> can produce publication-ready survival plots. For CIF plots, however, integration in the general ecosystem is less streamlined. <strong>cifmodeling</strong> fills this gap by offering <code><a href="reference/cifplot.html">cifplot()</a></code> for survival/CIF plots and multi-panel figures via a single, unified interface.</p>
 <p>Beyond providing a unified interface, <code><a href="reference/cifcurve.html">cifcurve()</a></code> also extends <code>survfit()</code> in a few targeted ways. For unweighted survival data, it reproduces the standard Kaplan-Meier estimator with <strong>Greenwood and Tsiatis SEs</strong> and a unified set of CI transformations. For competing risks data, it computes Aalen-Johansen CIFs with both <strong>Aalen-type and delta-method SEs</strong>. For weighted survival or competing risks data (e.g. inverse probability weighting), it implements <strong>influence-function based SEs</strong> (Deng and Wang 2025) as well as <strong>modified Greenwood- and Tsiatis-type SEs</strong> (Xie and Liu 2005), which are valid under general positive weights.</p>
 <p>If you need very fine-grained plot customization, you can compute the estimator and keep a survfit-compatible object with <code><a href="reference/cifcurve.html">cifcurve()</a></code> (or supply your own survfit object) and then style it using <code>ggsurvfit/ggplot2</code> layers. In other words:</p>
 <ul>
@@ -262,22 +269,114 @@ Visualizaton of risk ratios at 2, 4, 6 and 8 years using polyreg() and modelplot
 <li>use <code><a href="reference/cifplot.html">cifplot()</a></code> / <code><a href="reference/cifpanel.html">cifpanel()</a></code> for quick, high-quality figures, and</li>
 <li>fall back to the <code>ggplot</code> ecosystem when you want full artistic control.</li>
 </ul>
-<p>The <strong>mets</strong> package is a more specialised toolkit that provides advanced methods for competing risks analysis. <code><a href="reference/polyreg.html">cifmodeling::polyreg()</a></code> focuses on coherent modeling of all CIFs simultaneously to estimate the exposure effects in terms of RR/OR/SHR. This coherence can come with longer runtimes for large problems. If you prefer fitting separate regression models for each competing event or specifically need the Fine-Gray models (Fine and Gray 1999) and the direct binomial models (Scheike, Zhang and Gerds 2008), <code><a href="http://kkholst.github.io/mets/reference/cifreg.html" class="external-link">mets::cifreg()</a></code> and <code><a href="http://kkholst.github.io/mets/reference/binreg.html" class="external-link">mets::binreg()</a></code> are excellent choices.</p>
+<p>The <strong>causalRisk</strong> package offers IPW-based estimation of counterfactual cumulative risks and hazards. It is most relevant when treatment, censoring, and missingness mechanisms must be modeled explicitly. In contrast, <strong>cifmodeling</strong> focuses on nonparametric estimation and direct CIF regression rather than structural causal models.</p>
+<p>The <strong>mets</strong> package is a more specialized toolkit that provides advanced methods for competing risks analysis. <code><a href="reference/polyreg.html">cifmodeling::polyreg()</a></code> focuses on coherent modeling of all CIFs simultaneously to estimate the exposure effects in terms of RR/OR/SHR. This coherence can come with longer runtimes for large problems. If you prefer fitting separate regression models for each competing event or specifically need the Fine-Gray models (Fine and Gray 1999) and the direct binomial models (Scheike, Zhang and Gerds 2008), <code><a href="http://kkholst.github.io/mets/reference/cifreg.html" class="external-link">mets::cifreg()</a></code> and <code><a href="http://kkholst.github.io/mets/reference/binreg.html" class="external-link">mets::binreg()</a></code> are excellent choices.</p>
+<p>In short, <strong>cifmodeling</strong> provides a unified high-level grammar for estimation, visualization, and direct CIF regression — something no existing package currently offers in one place.</p>
 <blockquote>
 <p><strong>Interested in the precise variance formulas and influence functions for the Aalen-Johansen estimator?</strong><br>
 Visit <a href="https://gestimation.github.io/cifmodeling/articles/formulas.html">Computational formulas in cifcurve()</a>.</p>
 </blockquote>
+<table style="width:100%;" class="table">
+<colgroup>
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+</colgroup>
+<thead><tr>
+<th>Function</th>
+<th>cifmodeling</th>
+<th>survival</th>
+<th>cmprsk</th>
+<th>mets</th>
+<th>ggsurvfit</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>AJ estimator</td>
+<td>Yes</td>
+<td>Yes (multistate <code>survfit</code>)</td>
+<td>Yes (<code>cuminc</code>)</td>
+<td>Yes</td>
+<td>Depends on input</td>
+</tr>
+<tr>
+<td>Weighted AJ estimator and valid SE</td>
+<td>Yes (IPW + IF-based SE)</td>
+<td>Yes (case weights / robust SE)</td>
+<td>No</td>
+<td>Yes (IPW + IF-based SE)</td>
+<td>Depends on input</td>
+</tr>
+<tr>
+<td>Gray test</td>
+<td>No</td>
+<td>No (only log-rank via <code>survdiff</code>)</td>
+<td>Yes (<code>cuminc</code>)</td>
+<td>No</td>
+<td>
+<code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">tidycmprsk::glance()</a></code> + <code>add_pvalue()</code>
+</td>
+</tr>
+<tr>
+<td>Fine–Gray model</td>
+<td>No</td>
+<td>
+<code>finegray</code>+<code>coxph</code>
+</td>
+<td><code>crr</code></td>
+<td><code>cifregFG</code></td>
+<td>No</td>
+</tr>
+<tr>
+<td>Direct CIF regression</td>
+<td><code>polyreg</code></td>
+<td>No</td>
+<td>No</td>
+<td>
+<code>cifreg</code>, <code>binreg</code>
+</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Surv()/Event() interface</td>
+<td>Yes (<code>Event</code>, <code>Surv</code>)</td>
+<td>Yes (<code>Surv</code>)</td>
+<td>No (<code>ftime</code>/<code>fstatus</code>)</td>
+<td>Yes (<code>Event</code>, <code>Surv</code>)</td>
+<td>Yes (<code>Surv</code>, <code>ggcuminc</code> + tidiers)</td>
+</tr>
+<tr>
+<td>Publication-ready survival/CIF plot</td>
+<td>Yes (<code>cifplot</code>, <code>cifpanel</code>)</td>
+<td>
+<code>plot</code> (base)</td>
+<td>
+<code>plot.cuminc</code> (base)</td>
+<td>
+<code>plot</code> (base)</td>
+<td>Designed for publication</td>
+</tr>
+<tr>
+<td>Support for tidy/glance/augment</td>
+<td>Yes (<code>polyreg</code> + methods)</td>
+<td>Yes (via <strong>broom</strong>)</td>
+<td>Yes (via <strong>tidycmprsk</strong>)</td>
+<td>No</td>
+<td>Yes (via <strong>broom</strong>)</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <p>The package is implemented in R and relies on <code>Rcpp</code>, <code>nleqslv</code> and <code>boot</code> for its numerical back-end. The examples in this document also use <code>ggplot2</code>, <code>ggsurvfit</code>, <code>patchwork</code> and <code>modelsummary</code> for tabulation and plotting. Install the core package and these companion packages with:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Install cifmodeling from GitHub</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"gestimation/cifmodeling"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Core dependencies</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Rcpp"</span>, <span class="st">"nleqslv"</span>, <span class="st">"boot"</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># Install cifmodeling with core dependencies</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"cifmodeling"</span>, <span class="st">"Rcpp"</span>, <span class="st">"nleqslv"</span>, <span class="st">"boot"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Recommended packages for plotting and tabulation in this README</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ggplot2"</span>, <span class="st">"ggsurvfit"</span>, <span class="st">"patchwork"</span>, <span class="st">"modelsummary"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -285,12 +384,14 @@ Visit <a href="https://gestimation.github.io/cifmodeling/articles/formulas.html"
 <div class="section level2">
 <h2 id="quality-control">Quality control<a class="anchor" aria-label="anchor" href="#quality-control"></a>
 </h2>
-<p><code>cifmodeling</code> includes an extensive test suite built with <strong>testthat</strong>, which checks the numerical accuracy and graphical consistency of all core functions (<code><a href="reference/cifcurve.html">cifcurve()</a></code>, <code><a href="reference/cifplot.html">cifplot()</a></code>, <code><a href="reference/cifpanel.html">cifpanel()</a></code>, and <code><a href="reference/polyreg.html">polyreg()</a></code>). The estimators are routinely compared against related functions in <strong>survival</strong>, <strong>cmprsk</strong> and <strong>mets</strong> packages to ensure consistency. The package is continuously tested on GitHub Actions (Windows, macOS, Linux) to maintain reproducibility and CRAN-level compliance.</p>
+<p><strong>cifmodeling</strong> includes an extensive test suite built with <strong>testthat</strong>, which checks the numerical accuracy and graphical consistency of all core functions (<code><a href="reference/cifcurve.html">cifcurve()</a></code>, <code><a href="reference/cifplot.html">cifplot()</a></code>, <code><a href="reference/cifpanel.html">cifpanel()</a></code>, and <code><a href="reference/polyreg.html">polyreg()</a></code>). The estimators are routinely compared against related functions in <strong>survival</strong>, <strong>cmprsk</strong> and <strong>mets</strong> packages to ensure consistency. The package is continuously tested on GitHub Actions (Windows, macOS, Linux) to maintain reproducibility and CRAN-level compliance.</p>
 </div>
 </div>
+
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
+<li><a href="https://cloud.r-project.org/package=cifmodeling" class="external-link">View on CRAN</a></li>
 <li><a href="https://github.com/gestimation/cifmodeling/" class="external-link">Browse source code</a></li>
 <li><a href="https://github.com/gestimation/cifmodeling/issues" class="external-link">Report a bug</a></li>
 </ul>

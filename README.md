@@ -3,21 +3,37 @@
 
 <!-- badges: start -->
 
+[![CRAN
+status](https://www.r-pkg.org/badges/version/cifmodeling)](https://CRAN.R-project.org/package=cifmodeling)
+[![CRAN downloads per
+month](https://cranlogs.r-pkg.org/badges/last-month/cifmodeling)](https://cranlogs.r-pkg.org/badges/last-month/cifmodeling)
+[![CRAN downloads
+total](https://cranlogs.r-pkg.org/badges/grand-total/cifmodeling)](https://cranlogs.r-pkg.org/badges/grand-total/cifmodeling)
+
 <!-- badges: end -->
 
 # Visualization and Polytomous Modeling of Survival and Competing Risks with Minimal Code — cifmodeling
 
-This package provides a minimal, formula-based interface for survival
-and competing risks analysis, combining nonparametric estimation,
-regression modeling, and publication-ready visualization. It is centered
-around three tightly connected functions:
+Are you comfortable writing `Surv(time, status) ~ strata` but hesitant
+to dive into the Fine-Gray models or custom `ggplot2` code?
+**cifmodeling** helps clinicians, epidemiologists, and applied
+researchers move from basic Kaplan-Meier curves to clear,
+publication-ready survival and competing risk plots – with just a few
+lines of R.
 
-- `cifplot()` generates a survival or CIF curve. The visualization is
-  built on top of `ggsurvfit` and `ggplot2`.
+It provides a unified, high-level interface for survival and competing
+risks analysis, combining nonparametric estimation, regression modeling,
+and visualization. It is centered around three tightly connected
+functions:
+
+- `cifplot()` generates a survival or cumulative incidence function
+  (CIF) curve. The visualization is built on top of `ggsurvfit` and
+  `ggplot2`.
 - `cifpanel()` creates multi-panel displays for survival/CIF curves,
   arranged either **in a grid layout or as an inset overlay**.
 - `polyreg()` fits **coherent regression models** on all cause-specific
-  CIFs simultaneously.
+  CIFs simultaneously to estimate RR/OR/SHR, offering a practical
+  complement to Fine-Gray.
 
 > **Explore the main features visually:**  
 > See the
@@ -28,6 +44,12 @@ around three tightly connected functions:
 > See the [Direct polytomous
 > regression](https://gestimation.github.io/cifmodeling/articles/polyreg.html)
 > for coherent, joint modeling of all cause-specific CIFs.
+
+> **Prefer to build intuition before diving into code?**  
+> Visit the *Coffee and Research – Story and Quiz* series for
+> narrative-style introductions to study design, survival and competing
+> risks analysis, and frequentist and causality thinking:
+> <https://gestimation.github.io/coffee-and-research/en/>
 
 ## Quick start
 
@@ -51,10 +73,9 @@ Aalen-Johansen cumulative incidence curves from cifplot()
 In competing risks data, censoring is often coded as 0, the event of
 interest as 1, and competing risks as 2. In the `diabetes.complications`
 data frame, `epsilon` follows this convention. With
-`panel.per.event = TRUE`, `cifplot()` visualizes the cumulative
-incidence functions (CIFs), with the CIF of diabetic retinopathy
-(`epsilon = 1`) shown on the left and the CIF of macrovascular
-complications (`epsilon = 2`) on the right.
+`panel.per.event = TRUE`, `cifplot()` visualizes both competing events,
+with the CIF of diabetic retinopathy (`epsilon = 1`) shown on the left
+and the CIF of macrovascular complications (`epsilon = 2`) on the right.
 
 ## A workflow of competing risks analysis
 
@@ -99,10 +120,10 @@ cifplot(Event(t,epsilon)~fruitq1, data=diabetes.complications,
 
 <div class="figure">
 
-<img src="man/figures/README-example02-1.png" alt="Cumulative incidence curves with competing risk marks" width="70%" />
+<img src="man/figures/README-example02-1.png" alt="Cumulative incidence curves with competing-risk marks" width="70%" />
 <p class="caption">
 
-Cumulative incidence curves with competing risk marks
+Cumulative incidence curves with competing-risk marks
 </p>
 
 </div>
@@ -254,18 +275,18 @@ modelplot()
 In clinical and epidemiologic research, analysts often need to handle
 censoring, competing risks, and intercurrent events (e.g. treatment
 switching), but existing R packages typically separate these tasks
-across different interfaces. `cifmodeling` provides a unified,
+across different interfaces. **cifmodeling** provides a unified,
 publication-ready toolkit that integrates nonparametric estimation,
 regression modeling, and visualization for survival and competing risks
 data. The tools assist users in the following ways:
 
-- **Unified interface** for Kaplan–Meier and Aalen–Johansen curves, with
-  survival and competing risks handled by the same `Event()` + formula +
-  data syntax.
-- **Effects on the CIF scale**: while Fine-Gray models subdistribution
-  hazards, `polyreg()` directly targets ratios of CIFs (risk ratios,
-  odds ratios, subdistribution hazard ratios), so parameters align
-  closely with differences seen in CIF curves.
+- **Unified interface** for the Kaplan–Meier and Aalen–Johansen curves,
+  with survival and competing risks handled by the same `Event()` +
+  formula + data syntax.
+- **Effects on the CIF scale**: while the Fine-Gray models
+  subdistribution hazards, `polyreg()` directly targets ratios of CIFs
+  (risk ratios, odds ratios, subdistribution hazard ratios), so
+  parameters align closely with differences seen in CIF curves.
 - **Coherent, joint modeling of all competing events**: `polyreg()`
   models all cause-specific CIFs together, parameterizing the nuisance
   structure with polytomous log odds products and enforcing that their
@@ -285,7 +306,7 @@ analysis. The **survival** package provides the canonical API for
 survival data. In combination with the **ggsurvfit** package,
 `survival::survfit()` can produce publication-ready survival plots. For
 CIF plots, however, integration in the general ecosystem is less
-streamlined. `cifmodeling` fills this gap by offering `cifplot()` for
+streamlined. **cifmodeling** fills this gap by offering `cifplot()` for
 survival/CIF plots and multi-panel figures via a single, unified
 interface.
 
@@ -310,7 +331,13 @@ supply your own survfit object) and then style it using
 - fall back to the `ggplot` ecosystem when you want full artistic
   control.
 
-The **mets** package is a more specialised toolkit that provides
+The **causalRisk** package offers IPW-based estimation of counterfactual
+cumulative risks and hazards. It is most relevant when treatment,
+censoring, and missingness mechanisms must be modeled explicitly. In
+contrast, **cifmodeling** focuses on nonparametric estimation and direct
+CIF regression rather than structural causal models.
+
+The **mets** package is a more specialized toolkit that provides
 advanced methods for competing risks analysis. `cifmodeling::polyreg()`
 focuses on coherent modeling of all CIFs simultaneously to estimate the
 exposure effects in terms of RR/OR/SHR. This coherence can come with
@@ -320,10 +347,25 @@ Fine-Gray models (Fine and Gray 1999) and the direct binomial models
 (Scheike, Zhang and Gerds 2008), `mets::cifreg()` and `mets::binreg()`
 are excellent choices.
 
+In short, **cifmodeling** provides a unified high-level grammar for
+estimation, visualization, and direct CIF regression — something no
+existing package currently offers in one place.
+
 > **Interested in the precise variance formulas and influence functions
 > for the Aalen-Johansen estimator?**  
 > Visit [Computational formulas in
 > cifcurve()](https://gestimation.github.io/cifmodeling/articles/formulas.html).
+
+| Function | cifmodeling | survival | cmprsk | mets | ggsurvfit |
+|----|----|----|----|----|----|
+| AJ estimator | Yes | Yes (multistate `survfit`) | Yes (`cuminc`) | Yes | Depends on input |
+| Weighted AJ estimator and valid SE | Yes (IPW + IF-based SE) | Yes (case weights / robust SE) | No | Yes (IPW + IF-based SE) | Depends on input |
+| Gray test | No | No (only log-rank via `survdiff`) | Yes (`cuminc`) | No | `tidycmprsk::glance()` + `add_pvalue()` |
+| Fine–Gray model | No | `finegray`+`coxph` | `crr` | `cifregFG` | No |
+| Direct CIF regression | `polyreg` | No | No | `cifreg`, `binreg` | No |
+| Surv()/Event() interface | Yes (`Event`, `Surv`) | Yes (`Surv`) | No (`ftime`/`fstatus`) | Yes (`Event`, `Surv`) | Yes (`Surv`, `ggcuminc` + tidiers) |
+| Publication-ready survival/CIF plot | Yes (`cifplot`, `cifpanel`) | `plot` (base) | `plot.cuminc` (base) | `plot` (base) | Designed for publication |
+| Support for tidy/glance/augment | Yes (`polyreg` + methods) | Yes (via **broom**) | Yes (via **tidycmprsk**) | No | Yes (via **broom**) |
 
 ## Installation
 
@@ -334,11 +376,8 @@ tabulation and plotting. Install the core package and these companion
 packages with:
 
 ``` r
-# Install cifmodeling from GitHub
-devtools::install_github("gestimation/cifmodeling")
-
-# Core dependencies
-install.packages(c("Rcpp", "nleqslv", "boot"))
+# Install cifmodeling with core dependencies
+install.packages(c("cifmodeling", "Rcpp", "nleqslv", "boot"))
 
 # Recommended packages for plotting and tabulation in this README
 install.packages(c("ggplot2", "ggsurvfit", "patchwork", "modelsummary"))
@@ -346,11 +385,11 @@ install.packages(c("ggplot2", "ggsurvfit", "patchwork", "modelsummary"))
 
 ## Quality control
 
-`cifmodeling` includes an extensive test suite built with **testthat**,
-which checks the numerical accuracy and graphical consistency of all
-core functions (`cifcurve()`, `cifplot()`, `cifpanel()`, and
-`polyreg()`). The estimators are routinely compared against related
-functions in **survival**, **cmprsk** and **mets** packages to ensure
-consistency. The package is continuously tested on GitHub Actions
-(Windows, macOS, Linux) to maintain reproducibility and CRAN-level
-compliance.
+**cifmodeling** includes an extensive test suite built with
+**testthat**, which checks the numerical accuracy and graphical
+consistency of all core functions (`cifcurve()`, `cifplot()`,
+`cifpanel()`, and `polyreg()`). The estimators are routinely compared
+against related functions in **survival**, **cmprsk** and **mets**
+packages to ensure consistency. The package is continuously tested on
+GitHub Actions (Windows, macOS, Linux) to maintain reproducibility and
+CRAN-level compliance.

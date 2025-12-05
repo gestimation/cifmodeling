@@ -1,8 +1,28 @@
+# cifmodeling 0.9.5
+
+* First CRAN release.
+* Documentation and tests were polished for CRAN submission.
+
+# cifmodeling 0.9.4
+
+* Sixth CRAN submission.
+
+Invalid DESCRIPTION file, software names were single quoted. Rebuilt and resubmitted.
+
 # cifmodeling 0.9.3
 
 * Fifth CRAN submission.
-* Invalid DESCRIPTION file, software names single quoted. 
-  Rebuilt and resubmitted.
+
+Addressed CRAN feedback regarding file-system and environment management.
+Removed development-time scripts under tools/ that performed bulk renaming
+and wrote to the package directory or the current working directory.
+These files are no longer included in the source tarball.
+Eliminated the remaining use of .GlobalEnv in internal helpers.
+panel_as_formula_global() now evaluates formulas in the calling environment
+(parent.frame()) instead of .GlobalEnv, fully complying with the
+“no modification of the .GlobalEnv” CRAN policy.
+No user-visible changes; only internal cleanup for CRAN compliance.
+>>>>>>> d7a80ad7267e1786d6a8dbb7001f1915d56255a7
 
 # cifmodeling 0.9.2
 

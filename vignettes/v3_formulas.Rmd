@@ -117,7 +117,7 @@ $$
 
 **Variance based on influence functions**
 
-Under regularity conditions, Aalen-Johansen estimator can be expanded as  
+It is known that the Aalen-Johansen estimator can be expanded under regularity conditions as  
 $$
   n^{1/2}\{\hat F_k(t) - F_k(t)\} = n^{-1/2} \sum_{i=1}^n IF_{ik}(t) + o_p(1)
 $$

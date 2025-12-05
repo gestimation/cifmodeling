@@ -133,12 +133,12 @@ Rcpp::List calculateAJ_Rcpp(
   const int K = guniq.size();
 
   if (has_competing) {
-      if (error_tsiatis || (!error_delta && !error_if && !error_aalen)) {
+    if (error_tsiatis || (!error_delta && !error_if && !error_aalen)) {
       error_tsiatis = false;
-        error_aalen = false;
-        error_delta = true;
-      }
-      error_cif = (error_aalen || error_delta || error_if);
+      error_aalen = false;
+      error_delta = true;
+    }
+    error_cif = (error_aalen || error_delta || error_if);
   }
 
   int gmax2 = 0; for (int i=0;i<N;++i) if (G[i] > gmax2) gmax2 = G[i];
@@ -394,7 +394,7 @@ Rcpp::List calculateAJ_Rcpp(
       }
 
       double sum_w = 0.0; for (int ii = 0; ii < n_g; ++ii) sum_w += W[ ids[ii] ];
-//      const double denom = (sum_w > 0.0 ? sum_w : (double)n_g);
+      //      const double denom = (sum_w > 0.0 ? sum_w : (double)n_g);
 
       std::vector<long double> ss(Uall, 0.0L);
 
@@ -409,8 +409,8 @@ Rcpp::List calculateAJ_Rcpp(
       for (int j=0; j<Uall; ++j)
         se_cif_if[j] = std::sqrt((double)ss[j]);
 
-//      for (int j=0; j<Uall; ++j)
-//        se_cif_if[j] = std::sqrt((double)(ss[j] / ((long double)denom * denom)));
+      //      for (int j=0; j<Uall; ++j)
+      //        se_cif_if[j] = std::sqrt((double)(ss[j] / ((long double)denom * denom)));
     }
     IF_AJ_output[kg] = (error_if && return_if) ? IF_AJ_all : Rcpp::NumericMatrix(0,0);
 
@@ -511,14 +511,14 @@ Rcpp::List calculateAJ_Rcpp(
 
     if (Uall >= 2) {
       if (error_aalen) {
-        std::vector<double> tmp = se_cif_aalen;
-        for (int j = 0; j < Uall - 1; ++j) se_cif_aalen[j] = tmp[j + 1];
-        se_cif_aalen[Uall - 1] = tmp[Uall - 1];
+        for (int j = 0; j < Uall - 1; ++j) {
+          se_cif_aalen[j] = se_cif_aalen[j + 1];
+        }
       }
       if (error_delta) {
-        std::vector<double> tmp = se_cif_delta;
-        for (int j = 0; j < Uall - 1; ++j) se_cif_delta[j] = tmp[j + 1];
-        se_cif_delta[Uall - 1] = tmp[Uall - 1];
+        for (int j = 0; j < Uall - 1; ++j) {
+          se_cif_delta[j] = se_cif_delta[j + 1];
+        }
       }
     }
 

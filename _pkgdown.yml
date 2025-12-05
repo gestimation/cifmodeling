@@ -22,19 +22,19 @@ navbar:
       text: Articles
       menu:
         - text: Overview
-          href: articles/overview.html
+          href: articles/v1_overview.html
         - text: Direct polytomous regression
-          href: articles/polyreg.html
+          href: articles/v2_polyreg.html
         - text: Computational formulas in cifcurve()
-          href: articles/formulas.html
+          href: articles/v3_formulas.html
         - text: Examples
-          href: articles/examples.html
+          href: articles/v4_examples.html
         - text: Gallery
-          href: articles/gallery.html
+          href: articles/v5_gallery.html
         - text: Additional information
-          href: articles/information.html
+          href: articles/v6_information.html
         - text: Full lists of arguments
-          href: articles/arguments.html
+          href: articles/v7_arguments.html
     github:
       icon: fa-github
       aria-label: GitHub repository
@@ -43,25 +43,25 @@ navbar:
 articles:
   - title: Overview
     contents:
-      - overview
+      - v1_overview
   - title: Direct polytomous regression
     contents:
-      - polyreg
+      - v2_polyreg
   - title: Computational formulas in cifcurve()
     contents:
-      - formulas
+      - v3_formulas
   - title: Examples
     contents:
-      - examples
+      - v4_examples
   - title: Gallery
     contents:
-      - gallery
+      - v5_gallery
   - title: Additional information
     contents:
-      - information
+      - v6_information
   - title: Full lists of arguments
     contents:
-      - arguments
+      - v7_arguments
 
 reference:
   - title: Nonparametric estimation and visualization
