@@ -19,20 +19,18 @@ knitr::opts_chunk$set(
 <!-- badges: end -->
 
 ```{r setup, eval=FALSE, include=FALSE, warning=FALSE, message=FALSE}
-#devtools::install_github("gestimation/cifmodeling") 
-#install.packages(c("Rcpp","nleqslv","boot","ggplot2","ggsurvfit","patchwork","modelsummary"))
-if (requireNamespace("cifmodeling", quietly = TRUE)) {
-  library(cifmodeling)
-} else {
-  stop("Package 'cifmodeling' is not available during vignette build.")
+#install.packages(c("cifmodeling", "Rcpp", "nleqslv", "boot", "ggplot2", "ggsurvfit", "patchwork", "modelsummary"))
+
+if (!requireNamespace("cifmodeling", quietly = TRUE)) {
+  stop("Package 'cifmodeling' is not available. Please install it from CRAN first.")
 }
+library(cifmodeling)
 library(nleqslv)
 library(boot)
 library(ggplot2)
 library(ggsurvfit)
 library(patchwork)
 library(modelsummary)
-data("diabetes.complications", package = "cifmodeling")
 set.seed(1)
 ```
 
@@ -52,6 +50,10 @@ This package provides a unified, high-level interface for survival and competing
 
 > **Learn the modeling framework with `polyreg()`:**  
 > See the [Direct polytomous regression](https://gestimation.github.io/cifmodeling/articles/polyreg.html) for coherent, joint modeling of all cause-specific CIFs.
+
+> **Prefer to build intuition before diving into code?**  
+> Visit the *Coffee and Research – Story and Quiz* series for narrative-style introductions to study design, survival and competing risks analysis, and frequentist and causality thinking: 
+> <https://gestimation.github.io/coffee-and-research/en/>
 
 ## Quick start
 
@@ -209,11 +211,8 @@ The **mets** package is a more specialized toolkit that provides advanced method
 The package is implemented in R and relies on `Rcpp`, `nleqslv` and `boot` for its numerical back-end. The examples in this document also use `ggplot2`, `ggsurvfit`, `patchwork` and `modelsummary` for tabulation and plotting. Install the core package and these companion packages with:
 
 ``` r
-# Install cifmodeling from GitHub
-devtools::install_github("gestimation/cifmodeling")
-
-# Core dependencies
-install.packages(c("Rcpp", "nleqslv", "boot"))
+# Install cifmodeling with core dependencies
+install.packages(c("cifmodeling", "Rcpp", "nleqslv", "boot"))
 
 # Recommended packages for plotting and tabulation in this README
 install.packages(c("ggplot2", "ggsurvfit", "patchwork", "modelsummary"))

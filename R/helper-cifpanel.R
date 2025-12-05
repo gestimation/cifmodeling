@@ -123,16 +123,30 @@ panel_as_formula <- function(f) {
 }
 
 
-panel_recycle_to <- function(x, n) {
-  if (length(x) == n) return(x)
-  if (length(x) == 0L) .err("recycle_empty")
-  rep_len(x, n)
-}
 panel_to_list <- function(x) if (is.null(x)) NULL else if (is.list(x)) x else as.list(x)
 panel_drop_nulls <- function(lst) lst[!vapply(lst, is.null, logical(1))]
 panel_strip_overrides_from_dots <- function(dots, override_names) {
   if (length(override_names) == 0L) return(dots)
   dots[setdiff(names(dots), override_names)]
+}
+panel_recycle_to <- function(x, n, arg_name = deparse(substitute(x))) {
+  len <- length(x)
+  if (len == n) {
+    return(x)
+  }
+  if (len == 0L) {
+    .err("recycle_empty")
+  }
+  if (len == 1L) {
+    return(rep_len(x, n))
+  }
+  stop(
+    sprintf(
+      "Length mismatch for %s: got %d, but expected length 1 or %d (number of panels).",
+      arg_name, len, n
+    ),
+    call. = FALSE
+  )
 }
 
 panel_is_surv <- function(x) {
@@ -217,7 +231,7 @@ panel_modify_list <- function(x, y, keep.null = FALSE) {
     val <- y[[nm]]
     if (is.null(val) && !keep.null) x[[nm]] <- NULL else x[[nm]] <- val
 
-      }
+  }
   x
 }
 

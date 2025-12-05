@@ -1,3 +1,8 @@
+# cifmodeling 0.9.4
+
+* First CRAN release.
+* Documentation and tests were polished for CRAN submission.
+
 # cifmodeling 0.9.3
 
 * Fifth CRAN submission.
