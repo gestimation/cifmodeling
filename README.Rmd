@@ -48,7 +48,7 @@ It provides a unified, high-level interface for survival and competing risks ana
 
 - `cifplot()` generates a survival or cumulative incidence function (CIF) curve. The visualization is built on top of `ggsurvfit` and `ggplot2`.
 - `cifpanel()` creates multi-panel displays for survival/CIF curves, arranged either **in a grid layout or as an inset overlay**.
-- `polyreg()` fits **coherent regression models** on all cause-specific CIFs simultaneously.
+- `polyreg()` fits **coherent regression models** on all cause-specific CIFs simultaneously to estimate RR/OR/SHR, offering a practical complement to Fine-Gray.
 
 > **Explore the main features visually:**  
 > See the [Gallery](https://gestimation.github.io/cifmodeling/articles/gallery.html) for a curated set of examples using `cifplot()` and `cifpanel()`.
