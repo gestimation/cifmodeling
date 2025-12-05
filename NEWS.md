@@ -1,7 +1,13 @@
-# cifmodeling 0.9.4
+# cifmodeling 0.9.5
 
 * First CRAN release.
 * Documentation and tests were polished for CRAN submission.
+
+# cifmodeling 0.9.4
+
+* Sixth CRAN submission.
+
+Invalid DESCRIPTION file, software names were single quoted. Rebuilt and resubmitted.
 
 # cifmodeling 0.9.3
 
