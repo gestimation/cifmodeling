@@ -17,7 +17,7 @@ total](https://cranlogs.r-pkg.org/badges/grand-total/cifmodeling)](https://cranl
 Are you comfortable writing `Surv(time, status) ~ strata` but hesitant
 to dive into the Fine-Gray models or custom `ggplot2` code?
 **cifmodeling** helps clinicians, epidemiologists, and applied
-researchers move from basic Kaplan–Meier curves to clear,
+researchers move from basic Kaplan-Meier curves to clear,
 publication-ready survival and competing risk plots – with just a few
 lines of R.
 
@@ -274,7 +274,7 @@ modelplot()
 In clinical and epidemiologic research, analysts often need to handle
 censoring, competing risks, and intercurrent events (e.g. treatment
 switching), but existing R packages typically separate these tasks
-across different interfaces. `cifmodeling` provides a unified,
+across different interfaces. **cifmodeling** provides a unified,
 publication-ready toolkit that integrates nonparametric estimation,
 regression modeling, and visualization for survival and competing risks
 data. The tools assist users in the following ways:
@@ -305,7 +305,7 @@ analysis. The **survival** package provides the canonical API for
 survival data. In combination with the **ggsurvfit** package,
 `survival::survfit()` can produce publication-ready survival plots. For
 CIF plots, however, integration in the general ecosystem is less
-streamlined. `cifmodeling` fills this gap by offering `cifplot()` for
+streamlined. **cifmodeling** fills this gap by offering `cifplot()` for
 survival/CIF plots and multi-panel figures via a single, unified
 interface.
 
@@ -330,13 +330,11 @@ supply your own survfit object) and then style it using
 - fall back to the `ggplot` ecosystem when you want full artistic
   control.
 
-The **causalRisk** focuses on *causal* cumulative risk and hazard
-estimation using IPW and related estimators. It allows users to specify
-treatment, outcome, censoring, and missingness models via a dedicated
-syntax (`specify_models()`, `identify_*()`), and then estimate
-counterfactual cumulative risks and risk differences/ratios under
-complex censoring and confounding structures, with built-in plotting and
-table-making utilities.
+The **causalRisk** package offers IPW-based estimation of counterfactual
+cumulative risks and hazards. It is most relevant when treatment,
+censoring, and missingness mechanisms must be modeled explicitly. In
+contrast, **cifmodeling** focuses on nonparametric estimation and direct
+CIF regression rather than structural causal models.
 
 The **mets** package is a more specialized toolkit that provides
 advanced methods for competing risks analysis. `cifmodeling::polyreg()`
@@ -348,10 +346,25 @@ Fine-Gray models (Fine and Gray 1999) and the direct binomial models
 (Scheike, Zhang and Gerds 2008), `mets::cifreg()` and `mets::binreg()`
 are excellent choices.
 
+In short, **cifmodeling** provides a unified high-level grammar for
+estimation, visualization, and direct CIF regression — something no
+existing package currently offers in one place.
+
 > **Interested in the precise variance formulas and influence functions
 > for the Aalen-Johansen estimator?**  
 > Visit [Computational formulas in
 > cifcurve()](https://gestimation.github.io/cifmodeling/articles/formulas.html).
+
+| Function | cifmodeling | survival | cmprsk | mets | ggsurvfit |
+|----|----|----|----|----|----|
+| AJ estimator | Yes | Yes (multistate `survfit`) | Yes (`cuminc`) | Yes | Depends on input |
+| Weighted AJ estimator and valid SE | Yes (IPW + IF-based SE) | Yes (case weights / robust SE) | No | Yes (IPW + IF-based SE) | Depends on input |
+| Gray test | No | No (only log-rank via `survdiff`) | Yes (`cuminc`) | No | `tidycmprsk::glance()` + `add_pvalue()` |
+| Fine–Gray model | No | `finegray`+`coxph` | `crr` | `cifregFG` | No |
+| Direct CIF regression | `polyreg` | No | No | `cifreg`, `binreg` | No |
+| Surv()/Event() interface | Yes (`Event`, `Surv`) | Yes (`Surv`) | No (`ftime`/`fstatus`) | Yes (`Event`, `Surv`) | Yes (`Surv`, `ggcuminc` + tidiers) |
+| Publication-ready survival/CIF plot | Yes (`cifplot`, `cifpanel`) | `plot` (base) | `plot.cuminc` (base) | `plot` (base) | Designed for publication |
+| Support for tidy/glance/augment | Yes (`polyreg` + methods) | Yes (via **broom**) | Yes (via **tidycmprsk**) | No | Yes (via **broom**) |
 
 ## Installation
 
@@ -371,11 +384,11 @@ install.packages(c("ggplot2", "ggsurvfit", "patchwork", "modelsummary"))
 
 ## Quality control
 
-`cifmodeling` includes an extensive test suite built with **testthat**,
-which checks the numerical accuracy and graphical consistency of all
-core functions (`cifcurve()`, `cifplot()`, `cifpanel()`, and
-`polyreg()`). The estimators are routinely compared against related
-functions in **survival**, **cmprsk** and **mets** packages to ensure
-consistency. The package is continuously tested on GitHub Actions
-(Windows, macOS, Linux) to maintain reproducibility and CRAN-level
-compliance.
+**cifmodeling** includes an extensive test suite built with
+**testthat**, which checks the numerical accuracy and graphical
+consistency of all core functions (`cifcurve()`, `cifplot()`,
+`cifpanel()`, and `polyreg()`). The estimators are routinely compared
+against related functions in **survival**, **cmprsk** and **mets**
+packages to ensure consistency. The package is continuously tested on
+GitHub Actions (Windows, macOS, Linux) to maintain reproducibility and
+CRAN-level compliance.
