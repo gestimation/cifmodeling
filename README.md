@@ -3,6 +3,13 @@
 
 <!-- badges: start -->
 
+[![CRAN
+status](https://www.r-pkg.org/badges/version/cifmodeling)](https://CRAN.R-project.org/package=cifmodeling)
+[![CRAN downloads per
+month](https://cranlogs.r-pkg.org/badges/last-month/cifmodeling)](https://cranlogs.r-pkg.org/badges/last-month/cifmodeling)
+[![CRAN downloads
+total](https://cranlogs.r-pkg.org/badges/grand-total/cifmodeling)](https://cranlogs.r-pkg.org/badges/grand-total/cifmodeling)
+
 <!-- badges: end -->
 
 # Visualization and Polytomous Modeling of Survival and Competing Risks with Minimal Code — cifmodeling

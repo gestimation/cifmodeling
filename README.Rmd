@@ -16,6 +16,11 @@ knitr::opts_chunk$set(
 ```
 
 <!-- badges: start -->
+
+[![CRAN status](https://www.r-pkg.org/badges/version/cifmodeling)](https://CRAN.R-project.org/package=cifmodeling)
+[![CRAN downloads per month](https://cranlogs.r-pkg.org/badges/last-month/cifmodeling)](https://cranlogs.r-pkg.org/badges/last-month/cifmodeling)
+[![CRAN downloads total](https://cranlogs.r-pkg.org/badges/grand-total/cifmodeling)](https://cranlogs.r-pkg.org/badges/grand-total/cifmodeling)
+
 <!-- badges: end -->
 
 ```{r setup, eval=FALSE, include=FALSE, warning=FALSE, message=FALSE}
