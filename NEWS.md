@@ -22,7 +22,6 @@ panel_as_formula_global() now evaluates formulas in the calling environment
 (parent.frame()) instead of .GlobalEnv, fully complying with the
 “no modification of the .GlobalEnv” CRAN policy.
 No user-visible changes; only internal cleanup for CRAN compliance.
->>>>>>> d7a80ad7267e1786d6a8dbb7001f1915d56255a7
 
 # cifmodeling 0.9.2
 

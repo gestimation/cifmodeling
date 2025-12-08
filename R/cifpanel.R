@@ -26,23 +26,11 @@
 #'   **one panel**. This is the most common way to create “one variable per plot”
 #'   panels.
 #' @param code.events Optional specification of event/censoring codes.
-#'   For single-panel calls, supply a numeric vector. For competing-risk
-#'   outcomes, use \code{c(event1, event2, censoring)}. For survival
-#'   outcomes, a length-2 or length-3 vector is allowed:
-#'   \code{c(event, censoring)} or \code{c(event, *, censoring)}, where
-#'   any middle element is ignored. When supplied, this argument
-#'   overrides \code{code.event1}, \code{code.event2}, and
-#'   \code{code.censoring} for the purpose of estimation.
-#'   For panel displays (e.g. \code{\link{cifpanel}()} or when
-#'   \code{panel.per.event = TRUE} or \code{panel.censoring = TRUE}),
-#'   \code{code.events} may also be a \emph{list} of such numeric
-#'   vectors, one per panel.
-#' @param code.events Optional specification of event/censoring codes.
 #'   For single-panel calls, supply a numeric vector. For competing-risk outcomes, use `c(event1, event2, censoring)`.
 #'   For survival outcomes, a length-2 or length-3 vector is allowed:
 #'   `c(event, censoring)` or `c(event, *, censoring)`, where any middle element is ignored.
 #'   When supplied, this argument overrides `code.event1`, `code.event2`, and `code.censoring` for the purpose of estimation.
-#'   For panel displays (e.g. `cifpanel}()` or when `panel.per.event = TRUE` or
+#'   For panel displays (e.g. `cifpanel()` or when `panel.per.event = TRUE` or
 #'   `panel.censoring = TRUE`), `code.events` may also be a list of such numeric vectors, one per panel.
 #' @param legend.collect Logical; if `TRUE`, try to collect a single legend
 #'   for all panels (passed to \pkg{patchwork}). Default `TRUE`.

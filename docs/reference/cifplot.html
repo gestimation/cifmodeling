@@ -197,9 +197,13 @@ Mixed or ambiguous inputs (e.g., <code>c("S", "C")</code>) trigger automatic det
 
 
 <dt id="arg-code-events">code.events<a class="anchor" aria-label="anchor" href="#arg-code-events"></a></dt>
-<dd><p>Optional numeric length-3 vector <code>c(event1, event2, censoring)</code>.
-When supplied, it overrides <code>code.event1</code>, <code>code.event2</code>, and <code>code.censoring</code>
-(primarily used when <code><a href="cifpanel.html">cifpanel()</a></code> is called or when <code>panel.per.event = TRUE</code>).</p></dd>
+<dd><p>Optional specification of event/censoring codes.
+For single-panel calls, supply a numeric vector. For competing-risk outcomes, use <code>c(event1, event2, censoring)</code>.
+For survival outcomes, a length-2 or length-3 vector is allowed:
+<code>c(event, censoring)</code> or <code>c(event, *, censoring)</code>, where any middle element is ignored.
+When supplied, this argument overrides <code>code.event1</code>, <code>code.event2</code>, and <code>code.censoring</code> for the purpose of estimation.
+For panel displays (e.g. <code><a href="cifpanel.html">cifpanel()</a></code> or when <code>panel.per.event = TRUE</code> or
+<code>panel.censoring = TRUE</code>), <code>code.events</code> may also be a list of such numeric vectors, one per panel.</p></dd>
 
 
 <dt id="arg-error">error<a class="anchor" aria-label="anchor" href="#arg-error"></a></dt>

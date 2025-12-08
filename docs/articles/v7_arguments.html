@@ -193,6 +193,20 @@ coding.</li>
 <code>code.censoring</code> Integer code of censoring (default
 <code>0</code>).</li>
 <li>
+<code>code.events</code> code.events Optional specification of
+event/censoring codes. For single-panel calls, supply a numeric vector.
+For competing-risk outcomes, use
+<code>c(event1, event2, censoring)</code>. For survival outcomes, a
+length-2 or length-3 vector is allowed: <code>c(event, censoring)</code>
+or <code>c(event, *, censoring)</code>, where any middle element is
+ignored. When supplied, this argument overrides
+<code>code.event1</code>, <code>code.event2</code>, and
+<code>code.censoring</code> for the purpose of estimation. For panel
+displays (e.g. <code>cifpanel}()</code> or when
+<code>panel.per.event = TRUE</code> or
+<code>panel.censoring = TRUE</code>), <code>code.events</code> may also
+be a list of such numeric vectors, one per panel.</li>
+<li>
 <code>error</code> Character string specifying the method for SEs
 and CIs used internally. For <code>"survival"</code> without weights,
 choose one of <code>"greenwood"</code> (default),
@@ -431,6 +445,19 @@ coding.</p></li>
 (default <code>2</code>).</p></li>
 <li><p><code>code.censoring</code> Integer code of censoring (default
 <code>0</code>).</p></li>
+<li><p><code>code.events</code> code.events Optional specification of
+event/censoring codes. For single-panel calls, supply a numeric vector.
+For competing-risk outcomes, use
+<code>c(event1, event2, censoring)</code>. For survival outcomes, a
+length-2 or length-3 vector is allowed: <code>c(event, censoring)</code>
+or <code>c(event, *, censoring)</code>, where any middle element is
+ignored. When supplied, this argument overrides
+<code>code.event1</code>, <code>code.event2</code>, and
+<code>code.censoring</code> for the purpose of estimation. For panel
+displays (e.g. <code>cifpanel}()</code> or when
+<code>panel.per.event = TRUE</code> or
+<code>panel.censoring = TRUE</code>), <code>code.events</code> may also
+be a list of such numeric vectors, one per panel.</p></li>
 <li><p><code>code.events</code> Optional numeric length-3 vector
 <code>c(event1, event2, censoring)</code>. When supplied, it overrides
 <code>code.event1</code>, <code>code.event2</code>, and

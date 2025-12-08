@@ -85,8 +85,8 @@ let
 be the size of the risk set (the number of surviving observations) just
 prior to
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mi>j</mi></msub><annotation encoding="application/x-tex">t_j</annotation></semantics></math>.</p>
-<p>Survival data is expected when
-<code>outcome.type = "survival"</code>. Let
+<p>Survival data is assumed when <code>outcome.type = "survival"</code>.
+Let
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>d</mi><mi>j</mi></msub><annotation encoding="application/x-tex">d_j</annotation></semantics></math>
 be the number of failures at
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mi>j</mi></msub><annotation encoding="application/x-tex">t_j</annotation></semantics></math>.
@@ -117,11 +117,12 @@ case.</p>
 \textrm{Var}\!\left\{\hat{S}(t)\right \}
 = \hat{S}(t)^2\sum_{t_j \le t} \frac{d_j}{Y_j^2}
 </annotation></semantics></math></p>
-<p>Suppose that the survival data consists of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">{</mo><msub><mi>T</mi><mi>i</mi></msub><mo>,</mo><msub><mi>d</mi><mi>i</mi></msub><mo>,</mo><msub><mi>w</mi><mi>i</mi></msub><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">\{T_i, d_i, w_i\}</annotation></semantics></math>,
-independent sample of right-censored survival data with weights
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>i</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><mi>N</mi></mrow><annotation encoding="application/x-tex">i=1,...,N</annotation></semantics></math>).
-Let
+<p>Xie and Liu (2005) considered Greenwood-type variance for the
+weighted Kaplan–Meier estimator. Suppose that the survival data consists
+of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">{</mo><msub><mi>T</mi><mi>i</mi></msub><mo>,</mo><msub><mi>d</mi><mi>i</mi></msub><mo>,</mo><msub><mi>w</mi><mi>i</mi></msub><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">\{T_i, d_i, w_i\}</annotation></semantics></math>
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>i</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>.</mi><mi>.</mi><mi>.</mi><mo>,</mo><mi>N</mi></mrow><annotation encoding="application/x-tex">i=1,...,N</annotation></semantics></math>),
+an independent sample of right-censored survival data with weights. Let
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>d</mi><mi>j</mi><mi>w</mi></msubsup><annotation encoding="application/x-tex">d_j^w</annotation></semantics></math>
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>Y</mi><mi>j</mi><mi>w</mi></msubsup><annotation encoding="application/x-tex">Y_j^w</annotation></semantics></math>
@@ -133,8 +134,8 @@ The weighted Kaplan–Meier estimator of the survival function
 is</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>S</mi><mo accent="true">̂</mo></mover><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><munder><mo>∏</mo><mrow><msub><mi>t</mi><mi>j</mi></msub><mo>≤</mo><mi>t</mi></mrow></munder><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mfrac><msubsup><mi>d</mi><mi>j</mi><mi>w</mi></msubsup><msubsup><mi>Y</mi><mi>j</mi><mi>w</mi></msubsup></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \hat{S}(t) = \prod_{t_j \le t} \left( 1 - \frac{d_j^w}{Y_j^w} \right). 
-</annotation></semantics></math> Xie and Liu (2005) proposed the
-Greenwood-type variance for the weighted Kaplan–Meier estimator.</p>
+</annotation></semantics></math> The variance proposed by Xie and Liu
+(2005) is expressed as an adjusted Greenwood formula,</p>
 <p><strong>Greenwood variance for weighted Kaplan–Meier</strong>
 <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">Var</mtext><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">{</mo><mover><mi>S</mi><mo accent="true">̂</mo></mover><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">}</mo></mrow><mo>=</mo><mover><mi>S</mi><mo accent="true">̂</mo></mover><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><munder><mo>∑</mo><mrow><msub><mi>t</mi><mi>j</mi></msub><mo>≤</mo><mi>t</mi></mrow></munder><mfrac><mrow><msubsup><mi>d</mi><mi>j</mi><mi>w</mi></msubsup><msub><mi>Y</mi><mi>j</mi></msub></mrow><mrow><msub><mi>M</mi><mi>j</mi></msub><msubsup><mi>Y</mi><mi>j</mi><mi>w</mi></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>Y</mi><mi>j</mi><mi>w</mi></msubsup><mo>−</mo><msubsup><mi>d</mi><mi>j</mi><mi>w</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac><mo>,</mo></mrow><annotation encoding="application/x-tex">
 \textrm{Var}\!\left\{\hat{S}(t)\right \}
@@ -145,7 +146,7 @@ is an adjustment factor defined as
 <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>M</mi><mi>j</mi></msub><mo>=</mo><mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><munder><mo>∑</mo><mrow><msub><mi>t</mi><mi>i</mi></msub><mo>≥</mo><msub><mi>t</mi><mi>j</mi></msub></mrow></munder><msub><mi>w</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mrow><munder><mo>∑</mo><mrow><msub><mi>t</mi><mi>i</mi></msub><mo>≥</mo><msub><mi>t</mi><mi>j</mi></msub></mrow></munder><msubsup><mi>w</mi><mi>i</mi><mn>2</mn></msubsup></mrow></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
 M_j = \frac{\left(\sum_{t_i \geq t_j} w_i \right)^2}{\sum_{t_i \geq t_j} w_i^2}. 
 </annotation></semantics></math> The Tsiatis-type variance is calculated
-as follows in the same spirits.</p>
+as follows in the same spirit.</p>
 <p><strong>Tsiatis variance for weighted Kaplan–Meier</strong>
 <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">Var</mtext><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">{</mo><mover><mi>S</mi><mo accent="true">̂</mo></mover><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">}</mo></mrow><mo>=</mo><mover><mi>S</mi><mo accent="true">̂</mo></mover><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><munder><mo>∑</mo><mrow><msub><mi>t</mi><mi>j</mi></msub><mo>≤</mo><mi>t</mi></mrow></munder><mfrac><mrow><msubsup><mi>d</mi><mi>j</mi><mi>w</mi></msubsup><msub><mi>Y</mi><mi>j</mi></msub></mrow><mrow><msub><mi>M</mi><mi>j</mi></msub><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>Y</mi><mi>j</mi><mi>w</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup></mrow></mfrac></mrow><annotation encoding="application/x-tex">
 \textrm{Var}\!\left\{\hat{S}(t)\right \}
@@ -277,7 +278,7 @@ return the conventional log-survival SEs from
 constructs intervals on the probability scale using the requested
 transformation:
 <code>"arcsine-square root"</code>/<code>"arcsin"</code>/<code>"a"</code>
-(default), <code>"plain</code>, <code>"log"</code>,
+(default), <code>"plain"</code>, <code>"log"</code>,
 <code>"log-log"</code>, or <code>"logit"</code>. Passing
 <code>"none"</code>/<code>"n"</code> skips interval computation
 entirely. The function exponentiates back to the probability scale,

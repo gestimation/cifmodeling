@@ -85,6 +85,9 @@ suppressed to avoid duplicated display. Typical use cases are:</p><ul><li><p>Com
 <span>  subset.condition <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  na.action <span class="op">=</span> <span class="va">na.omit</span>,</span>
 <span>  outcome.type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  code.event1 <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  code.event2 <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  code.censoring <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  code.events <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  error <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  conf.type <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -205,10 +208,26 @@ otherwise, <code>"survival"</code> is used. You can also use abbreviations such 
 Mixed or ambiguous inputs (e.g., <code>c("S", "C")</code>) trigger automatic detection based on the event coding.</p></dd>
 
 
+<dt id="arg-code-event-">code.event1<a class="anchor" aria-label="anchor" href="#arg-code-event-"></a></dt>
+<dd><p>Integer code of the event of interest (default <code>1</code>).</p></dd>
+
+
+<dt id="arg-code-event-">code.event2<a class="anchor" aria-label="anchor" href="#arg-code-event-"></a></dt>
+<dd><p>Integer code of the competing risk (default <code>2</code>).</p></dd>
+
+
+<dt id="arg-code-censoring">code.censoring<a class="anchor" aria-label="anchor" href="#arg-code-censoring"></a></dt>
+<dd><p>Integer code of censoring (default <code>0</code>).</p></dd>
+
+
 <dt id="arg-code-events">code.events<a class="anchor" aria-label="anchor" href="#arg-code-events"></a></dt>
-<dd><p>Optional numeric length-3 vector <code>c(event1, event2, censoring)</code>.
-When supplied, it overrides <code>code.event1</code>, <code>code.event2</code>, and <code>code.censoring</code>
-(primarily used when <code>cifpanel()</code> is called or when <code>panel.per.event = TRUE</code>).</p></dd>
+<dd><p>Optional specification of event/censoring codes.
+For single-panel calls, supply a numeric vector. For competing-risk outcomes, use <code>c(event1, event2, censoring)</code>.
+For survival outcomes, a length-2 or length-3 vector is allowed:
+<code>c(event, censoring)</code> or <code>c(event, *, censoring)</code>, where any middle element is ignored.
+When supplied, this argument overrides <code>code.event1</code>, <code>code.event2</code>, and <code>code.censoring</code> for the purpose of estimation.
+For panel displays (e.g. <code>cifpanel()</code> or when <code>panel.per.event = TRUE</code> or
+<code>panel.censoring = TRUE</code>), <code>code.events</code> may also be a list of such numeric vectors, one per panel.</p></dd>
 
 
 <dt id="arg-error">error<a class="anchor" aria-label="anchor" href="#arg-error"></a></dt>
@@ -485,6 +504,9 @@ list in <code>formulas</code> (one per panel). When both are provided, <code>for
 <li><p>Alternatively, pass <code>code.events</code> per panel to infer the type:</p><ul><li><p>length 2 = survival: <code>c(event1, censor)</code></p></li>
 <li><p>length 3 = competing-risk: <code>c(event1, event2, censor)</code></p></li>
 </ul></li>
+<li><p>If <code>code.events</code> is <code>NULL</code>, <code>code.event1</code>, <code>code.event2</code>, <code>code.censoring</code>
+are combined into <code>code.events = list(c(code.event1, code.event2, code.censoring))</code>
+with <code>NA</code> values dropped.</p></li>
 <li><p>If <code>outcome.type</code> is <code>NULL</code>, the function infers each panel from its
 <code>code.events[[i]]</code> length. When both are given, <code>outcome.type</code> takes precedence.</p></li>
 </ul></div>

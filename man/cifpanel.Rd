@@ -13,6 +13,9 @@ cifpanel(
   subset.condition = NULL,
   na.action = na.omit,
   outcome.type = NULL,
+  code.event1 = 1,
+  code.event2 = 2,
+  code.censoring = 0,
   code.events = NULL,
   error = NULL,
   conf.type = NULL,
@@ -113,9 +116,19 @@ if the event variable has more than two unique levels, \code{"competing-risk"} i
 otherwise, \code{"survival"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
 Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic detection based on the event coding.}
 
-\item{code.events}{Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
-When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
-(primarily used when \code{\link[=cifpanel]{cifpanel()}} is called or when \code{panel.per.event = TRUE}).}
+\item{code.event1}{Integer code of the event of interest (default \code{1}).}
+
+\item{code.event2}{Integer code of the competing risk (default \code{2}).}
+
+\item{code.censoring}{Integer code of censoring (default \code{0}).}
+
+\item{code.events}{Optional specification of event/censoring codes.
+For single-panel calls, supply a numeric vector. For competing-risk outcomes, use \code{c(event1, event2, censoring)}.
+For survival outcomes, a length-2 or length-3 vector is allowed:
+\code{c(event, censoring)} or \verb{c(event, *, censoring)}, where any middle element is ignored.
+When supplied, this argument overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring} for the purpose of estimation.
+For panel displays (e.g. \code{cifpanel()} or when \code{panel.per.event = TRUE} or
+\code{panel.censoring = TRUE}), \code{code.events} may also be a list of such numeric vectors, one per panel.}
 
 \item{error}{Character string specifying the method for SEs and CIs used internally.
 For \code{"survival"} without weights, choose one of \code{"greenwood"} (default), \code{"tsiatis"}, or \code{"if"}.
@@ -312,6 +325,9 @@ list in \code{formulas} (one per panel). When both are provided, \code{formulas}
 \item length 2 = survival: \code{c(event1, censor)}
 \item length 3 = competing-risk: \code{c(event1, event2, censor)}
 }
+\item If \code{code.events} is \code{NULL}, \code{code.event1}, \code{code.event2}, \code{code.censoring}
+are combined into \code{code.events = list(c(code.event1, code.event2, code.censoring))}
+with \code{NA} values dropped.
 \item If \code{outcome.type} is \code{NULL}, the function infers each panel from its
 \code{code.events[[i]]} length. When both are given, \code{outcome.type} takes precedence.
 }
