@@ -39,6 +39,7 @@ vignette: >
 -   `code.event1` Integer code of the event of interest (default `1`).
 -   `code.event2` Integer code of the competing event (default `2`).
 -   `code.censoring` Integer code of censoring (default `0`).
+-   `code.events` code.events Optional specification of event/censoring codes. For single-panel calls, supply a numeric vector. For competing-risk outcomes, use `c(event1, event2, censoring)`. For survival outcomes, a length-2 or length-3 vector is allowed: `c(event, censoring)` or `c(event, *, censoring)`, where any middle element is ignored. When supplied, this argument overrides `code.event1`, `code.event2`, and `code.censoring` for the purpose of estimation. For panel displays (e.g. `cifpanel}()` or when `panel.per.event = TRUE` or `panel.censoring = TRUE`), `code.events` may also be a list of such numeric vectors, one per panel.
 -   `error` Character string specifying the method for SEs and CIs used internally. For `"survival"` without weights, choose one of `"greenwood"` (default), `"tsiatis"`, or `"if"`. For `"competing-risk"` without weights, choose one of `"delta"` (default), `"aalen"`, or `"if"`. SEs and CIs based on influence functions (`"if"`) is recommended for weighted analysis.
 -   `conf.type` Character specifying the method of transformation for CIs used internally (default `"arcsine-square root"`).
 -   `conf.int` Numeric two-sided level of CIs (default `0.95`).
@@ -100,6 +101,7 @@ vignette: >
 -   `code.event1` Integer code of the event of interest (default `1`).
 -   `code.event2` Integer code of the competing event (default `2`).
 -   `code.censoring` Integer code of censoring (default `0`).
+-   `code.events` code.events Optional specification of event/censoring codes. For single-panel calls, supply a numeric vector. For competing-risk outcomes, use `c(event1, event2, censoring)`. For survival outcomes, a length-2 or length-3 vector is allowed: `c(event, censoring)` or `c(event, *, censoring)`, where any middle element is ignored. When supplied, this argument overrides `code.event1`, `code.event2`, and `code.censoring` for the purpose of estimation. For panel displays (e.g. `cifpanel}()` or when `panel.per.event = TRUE` or `panel.censoring = TRUE`), `code.events` may also be a list of such numeric vectors, one per panel.
 -   `code.events` Optional numeric length-3 vector `c(event1, event2, censoring)`. When supplied, it overrides `code.event1`, `code.event2`, and `code.censoring` (primarily used when `cifpanel()` is called or when `panel.per.event = TRUE`).
 -   `error` Character string specifying the method for SEs and CIs used internally. For `"survival"` without weights, choose one of `"greenwood"` (default), `"tsiatis"`, or `"if"`. For `"competing-risk"` without weights, choose one of `"delta"` (default), `"aalen"`, or `"if"`. SEs and CIs based on influence functions (`"if"`) is recommended for weighted analysis.
 -   `conf.type` Character specifying the method of transformation for CIs used internally (default `"arcsine-square root"`).

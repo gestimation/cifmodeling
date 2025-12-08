@@ -25,9 +25,25 @@
 #' @param formulas Optional list of formulas. When given, each formula defines
 #'   **one panel**. This is the most common way to create “one variable per plot”
 #'   panels.
-#' @param code.events Optional numeric length-3 vector `c(event1, event2, censoring)`.
-#'   When supplied, it overrides `code.event1`, `code.event2`, and `code.censoring`
-#'   (primarily used when [cifpanel()] is called or when `panel.per.event = TRUE`).
+#' @param code.events Optional specification of event/censoring codes.
+#'   For single-panel calls, supply a numeric vector. For competing-risk
+#'   outcomes, use \code{c(event1, event2, censoring)}. For survival
+#'   outcomes, a length-2 or length-3 vector is allowed:
+#'   \code{c(event, censoring)} or \code{c(event, *, censoring)}, where
+#'   any middle element is ignored. When supplied, this argument
+#'   overrides \code{code.event1}, \code{code.event2}, and
+#'   \code{code.censoring} for the purpose of estimation.
+#'   For panel displays (e.g. \code{\link{cifpanel}()} or when
+#'   \code{panel.per.event = TRUE} or \code{panel.censoring = TRUE}),
+#'   \code{code.events} may also be a \emph{list} of such numeric
+#'   vectors, one per panel.
+#' @param code.events Optional specification of event/censoring codes.
+#'   For single-panel calls, supply a numeric vector. For competing-risk outcomes, use `c(event1, event2, censoring)`.
+#'   For survival outcomes, a length-2 or length-3 vector is allowed:
+#'   `c(event, censoring)` or `c(event, *, censoring)`, where any middle element is ignored.
+#'   When supplied, this argument overrides `code.event1`, `code.event2`, and `code.censoring` for the purpose of estimation.
+#'   For panel displays (e.g. `cifpanel}()` or when `panel.per.event = TRUE` or
+#'   `panel.censoring = TRUE`), `code.events` may also be a list of such numeric vectors, one per panel.
 #' @param legend.collect Logical; if `TRUE`, try to collect a single legend
 #'   for all panels (passed to \pkg{patchwork}). Default `TRUE`.
 #' @param inset.panel Logical. If `FALSE` (default), all panels are arranged
@@ -84,9 +100,11 @@
 #' - Alternatively, pass `code.events` per panel to infer the type:
 #'   - length 2 = survival: `c(event1, censor)`
 #'   - length 3 = competing-risk: `c(event1, event2, censor)`
+#' - If `code.events` is `NULL`, `code.event1`, `code.event2`, `code.censoring`
+#'   are combined into `code.events = list(c(code.event1, code.event2, code.censoring))`
+#'   with `NA` values dropped.
 #' - If `outcome.type` is `NULL`, the function infers each panel from its
 #'   `code.events[[i]]` length. When both are given, `outcome.type` takes precedence.
-#'
 #'
 #' ### Panel-wise vs shared arguments
 #'
@@ -254,6 +272,9 @@ cifpanel <- function(
     subset.condition              = NULL,
     na.action                     = na.omit,
     outcome.type                  = NULL,
+    code.event1                   = 1,
+    code.event2                   = 2,
+    code.censoring                = 0,
     code.events                   = NULL,
     error                         = NULL,
     conf.type                     = NULL,
@@ -633,8 +654,33 @@ cifpanel <- function(
   n_slots <- nrow * ncol
 
   if (is.null(data)) stop("data must be provided.")
-  if (is.null(code.events) || !is.list(code.events) || length(code.events) == 0)
-    .err("need_code_events")
+  if (is.null(code.events)) {
+    out_flag <- NULL
+    if (!is.null(outcome.type)) {
+      out0 <- if (is.list(outcome.type)) outcome.type[[1]] else outcome.type[1]
+      out_flag <- panel_norm_outcome(as.character(out0))
+    }
+
+    if (!is.null(out_flag) && identical(out_flag, "S")) {
+      base_codes <- c(code.event1, code.censoring)
+    } else {
+      base_codes <- c(code.event1, code.event2, code.censoring)
+    }
+    base_codes <- base_codes[!is.na(base_codes)]
+    if (length(base_codes) < 2L) {
+      .err("need_code_events")
+    }
+    code.events <- list(base_codes)
+
+  } else {
+    if (!is.list(code.events)) {
+      code.events <- list(code.events)
+    }
+    if (length(code.events) == 0L) {
+      .err("need_code_events")
+    }
+  }
+
   if (!is.null(formulas) && !is.null(formula))
     .warn("both_formula_forms")
   if (is.null(formulas) && is.null(formula))
@@ -761,10 +807,14 @@ cifpanel <- function(
     fonts           = fonts,
     na.action       = na.action
   )
-
   plots <- lapply(seq_len(prep$K), function(i) {
     pa <- prep$plot_args[[i]]
-
+    if (!is.null(typey.list)) {
+      ty_i <- typey.list[[i]]
+      if (!is.null(ty_i)) {
+        pa$axis.info$type.y <- ty_i
+      }
+    }
     pa$axis.info    <- panel_modify_list(axis.info,    pa$axis.info %||% list())
     pa$visual.info  <- panel_modify_list(visual.info,  pa$visual.info %||% list())
     pa$style.info   <- panel_modify_list(style.info,   pa$style.info %||% list())
