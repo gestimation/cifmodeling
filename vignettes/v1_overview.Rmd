@@ -69,7 +69,7 @@ The **cifmodeling** package is centered around three tightly connected functions
 
 - `cifplot()` generates a survival or cumulative incidence function (CIF) curve. The visualization is built on top of `ggsurvfit` and `ggplot2`.
 - `cifpanel()` creates multi-panel displays for survival/CIF curves, arranged either **in a grid layout or as an inset overlay**.
-- `polyreg()` fits **coherent regression models** on all cause-specific CIFs simultaneously.
+- `polyreg()` fits **coherent regression models** on all cause-specific CIFs simultaneously to estimate RR/OR/SHR, offering a practical complement to Fine-Gray.
 
 These functions adopt a formula + data syntax, return tidy, publication-ready outputs, and integrate seamlessly with `ggsurvfit` and `modelsummary` for visualization and reporting.
 

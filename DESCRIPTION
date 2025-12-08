@@ -7,7 +7,7 @@ Description: A publication-ready toolkit for modern survival and competing risks
     estimation and direct polytomous regression of cumulative incidence
     functions (CIFs) are supported. The main functions 'cifcurve()', 'cifplot()',
     and 'cifpanel()' estimate survival and CIF curves and produce high-quality
-    graphics with risk tables, censoring and competing-event marks, and
+    graphics with risk tables, censoring and competing-risk marks, and
     multi-panel or inset layouts built on 'ggplot2' and 'ggsurvfit'. The modeling
     function 'polyreg()' performs direct polytomous regression for coherent joint
     modeling of all cause-specific CIFs to estimate risk ratios, odds ratios, or
