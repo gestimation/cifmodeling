@@ -20,9 +20,13 @@
 #' @param formula_or_fit Either a model formula or a survfit object. When a formula is
 #'   supplied, the LHS must be `Event(time, status)` or `Surv(time, status)`.
 #'   The RHS specifies an optional stratification variable.
-#' @param code.events Optional numeric length-3 vector `c(event1, event2, censoring)`.
-#'   When supplied, it overrides `code.event1`, `code.event2`, and `code.censoring`
-#'   (primarily used when [cifpanel()] is called or when `panel.per.event = TRUE`).
+#' @param code.events Optional specification of event/censoring codes.
+#'   For single-panel calls, supply a numeric vector. For competing-risk outcomes, use `c(event1, event2, censoring)`.
+#'   For survival outcomes, a length-2 or length-3 vector is allowed:
+#'   `c(event, censoring)` or `c(event, *, censoring)`, where any middle element is ignored.
+#'   When supplied, this argument overrides `code.event1`, `code.event2`, and `code.censoring` for the purpose of estimation.
+#'   For panel displays (e.g. `cifpanel}()` or when `panel.per.event = TRUE` or
+#'   `panel.censoring = TRUE`), `code.events` may also be a list of such numeric vectors, one per panel.
 #' @param add.risktable Logical; if `TRUE`, adds a numbers-at-risk table under the plot.
 #'   Default `TRUE`. **Note:** when a panel mode is active, tables are suppressed.
 #' @param add.estimate.table Logical; if `TRUE`, adds a table of estimates and CIs.
@@ -414,18 +418,39 @@ cifplot <- function(
           which = "panel.per.variable, panel.per.event and panel.censoring")
 
   if (!inherits(formula_or_fit, "survfit")) {
-    outcome.type <- util_check_outcome_type(outcome.type, formula=formula_or_fit, data = data)
+    outcome.type <- util_check_outcome_type(
+      outcome.type,
+      formula = formula_or_fit,
+      data    = data
+    )
   }
 
   if (!is.null(code.events)) {
-    ce <- plot_check_code_events(code.events)
-    .assert(length(ce) == 3L, "code_events_len_vec")
-    .assert(all(ce == as.integer(ce)), "code_events_integer")
-    .assert(ce[1L] != ce[2L], "code_events_distinct")
-    code.event1    <- ce[1L]
-    code.event2    <- ce[2L]
-    code.censoring <- ce[3L]
+    ce <- code.events
+    if (is.list(ce)) {
+      .assert(length(ce) >= 1L, "code_events_len_vec")
+      ce <- ce[[1L]]
+    }
+
+    ce <- drop(as.vector(ce))
+
+    .assert(length(ce) >= 2L, "code_events_len_vec")
+    .assert(is.numeric(ce) || is.integer(ce), "code_events_integer")
+    ce <- as.integer(ce)
+    .assert(all(is.finite(ce)), "code_events_integer")
+
+    if (!is.null(outcome.type) && identical(outcome.type, "survival")) {
+      code.event1    <- ce[1L]
+      code.censoring <- ce[length(ce)]
+    } else {
+      .assert(length(ce) >= 3L, "code_events_len_vec")
+      code.event1    <- ce[1L]
+      code.event2    <- ce[2L]
+      code.censoring <- ce[3L]
+      .assert(code.event1 != code.event2, "code_events_distinct")
+    }
   }
+
 
   if (isTRUE(add.competing.risk.mark) && length(competing.risk.time) == 0) {
     visual.info$competing.risk.time <- extract_time_to_event(
@@ -1078,6 +1103,7 @@ cifplot_single <- function(
     if (is.null(data)) stop("When `formula` is a formula, `data` must be provided.")
     norm_inputs <- plot_normalize_formula_data(formula_or_fit, data)
     data_working <- norm_inputs$data
+
     formula_or_fit <- cifcurve(formula_or_fit, data = data_working, weights = weights, subset.condition = subset.condition, na.action = na.action,
                                outcome.type = outcome.type, code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
                                error = error, conf.type = conf.type, conf.int = conf.int)

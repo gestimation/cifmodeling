@@ -147,6 +147,7 @@ util_read_surv <- function(formula, data, weights = NULL,
                      subset.condition = NULL, na.action = stats::na.omit) {
   data <- createAnalysisDataset(formula, data, weights, subset.condition, na.action)
   allowed <- c(code.censoring, code.event1, code.event2)
+  allowed <- unique(stats::na.omit(allowed))
   old_opt <- getOption("cifmodeling.allowed", NULL)
   on.exit(options(cifmodeling.allowed = old_opt), add = TRUE)
   options(cifmodeling.allowed = allowed)
