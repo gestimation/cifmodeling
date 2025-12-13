@@ -21,10 +21,10 @@ researchers move from basic Kaplan-Meier curves to clear,
 publication-ready survival and competing risk plots – with just a few
 lines of R.
 
-This package provides a unified, high-level interface for survival and
-competing-risks analysis, combining nonparametric estimation, regression
-modeling, and visualization. It is centered around three tightly
-connected functions:
+It provides a unified, high-level interface for survival and competing
+risks analysis, combining nonparametric estimation, regression modeling,
+and visualization. It is centered around three tightly connected
+functions:
 
 - `cifplot()` generates a survival or cumulative incidence function
   (CIF) curve. The visualization is built on top of `ggsurvfit` and
@@ -32,7 +32,8 @@ connected functions:
 - `cifpanel()` creates multi-panel displays for survival/CIF curves,
   arranged either **in a grid layout or as an inset overlay**.
 - `polyreg()` fits **coherent regression models** on all cause-specific
-  CIFs simultaneously.
+  CIFs simultaneously to estimate RR/OR/SHR, offering a practical
+  complement to Fine-Gray.
 
 > **Explore the main features visually:**  
 > See the

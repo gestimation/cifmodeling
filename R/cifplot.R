@@ -25,7 +25,7 @@
 #'   For survival outcomes, a length-2 or length-3 vector is allowed:
 #'   `c(event, censoring)` or `c(event, *, censoring)`, where any middle element is ignored.
 #'   When supplied, this argument overrides `code.event1`, `code.event2`, and `code.censoring` for the purpose of estimation.
-#'   For panel displays (e.g. `cifpanel}()` or when `panel.per.event = TRUE` or
+#'   For panel displays (e.g. `cifpanel()` or when `panel.per.event = TRUE` or
 #'   `panel.censoring = TRUE`), `code.events` may also be a list of such numeric vectors, one per panel.
 #' @param add.risktable Logical; if `TRUE`, adds a numbers-at-risk table under the plot.
 #'   Default `TRUE`. **Note:** when a panel mode is active, tables are suppressed.

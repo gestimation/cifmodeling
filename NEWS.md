@@ -1,3 +1,8 @@
+# cifmodeling 0.9.6
+
+* Documentation and tests were polished for CRAN submission.
+* Fixed GCC r-devel warning (`-Wstringop-overread`) triggered in `calculateAJ_Rcpp` (no change to user-facing results).
+
 # cifmodeling 0.9.5
 
 * First CRAN release.
