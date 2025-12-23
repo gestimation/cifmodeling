@@ -1,3 +1,14 @@
+# cifmodeling 0.9.7
+
+* Modified the risk table of `cifplot()` to display integer values.
+* Refactored the internal plotting pipeline to consistently honor axis controls
+  (`limits.x`, `limits.y`, `breaks.x`, `breaks.y`) across `cifplot()` and `cifpanel()`,
+  including the `cumhaz` and `cloglog` transformations and both scale and
+  `coord_cartesian` code paths.
+* Simplified the special-case handling for `cloglog` by unifying axis-application
+  logic, improving maintainability without changing user-facing results.
+* Added/strengthened robust tests for axis limits and breaks behavior.
+
 # cifmodeling 0.9.6
 
 * Documentation and tests were polished for CRAN submission.

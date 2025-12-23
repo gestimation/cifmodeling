@@ -1118,3 +1118,138 @@ cifplot_build_info <- function(
     ggsave.info  = ggsave.info
   )
 }
+
+plot_apply_y_axis_controls <- function(p, limits.y = NULL, breaks.y = NULL, use.coord.cartesian = FALSE) {
+  if (is.null(limits.y) && is.null(breaks.y)) return(p)
+
+  # まず y スケール（存在すれば）を「破壊せず」更新する
+  p <- plot_update_existing_y_scale(p, limits.y = if (!isTRUE(use.coord.cartesian)) limits.y else NULL,
+                                    breaks.y = breaks.y)
+
+  # coord_cartesian 経路では ylim を coord に入れる（xlim は既存の設定を保持）
+  if (isTRUE(use.coord.cartesian) && !is.null(limits.y)) {
+    xlim0 <- NULL
+
+    coord <- p$coordinates
+    if (inherits(coord, "CoordCartesian")) {
+      # ggplot2 の内部表現はバージョン差があるので両方見る
+      xlim0 <- coord$limits$x %||% coord$xlim
+    }
+
+    p <- p + ggplot2::coord_cartesian(xlim = xlim0, ylim = limits.y)
+  }
+
+  p
+}
+
+plot_update_existing_y_scale <- function(p, limits.y = NULL, breaks.y = NULL) {
+  # y スケールがすでに登録されているか探す
+  idx <- which(vapply(p$scales$scales, function(s) {
+    aes <- s$aesthetics %||% character(0)
+    any(aes == "y")
+  }, logical(1)))
+
+  if (length(idx)) {
+    scy <- p$scales$scales[[idx[1]]]
+    if (!is.null(breaks.y)) scy$breaks <- breaks.y
+    if (!is.null(limits.y)) scy$limits <- limits.y
+    p$scales$scales[[idx[1]]] <- scy
+    return(p)
+  }
+
+  # なければ新規に足す（labels 等は call_ggsurvfit 側のデフォルトに任せる）
+  p + ggplot2::scale_y_continuous(limits = limits.y, breaks = breaks.y)
+}
+
+
+plot_clamp01 <- function(x, eps = 0) {
+  if (is.null(x)) return(NULL)
+
+  lo <- if (eps > 0) eps else 0
+  hi <- if (eps > 0) 1 - eps else 1
+
+  x <- as.numeric(x)
+
+  bad <- !is.finite(x)
+  if (any(bad)) x[bad] <- lo
+
+  x[x < lo] <- lo
+  x[x > hi] <- hi
+  x
+}
+
+apply_axis_limits_breaks <- function(p, type_y_eff, survfit_object,
+                                     limits.x, limits.y, breaks.x, breaks.y,
+                                     use.coord.cartesian) {
+
+  exp0  <- ggplot2::expansion(mult = 0, add = 0)
+  x_max <- plot_make_x_max(survfit_object)
+
+  `%||%` <- function(x, y) if (!is.null(x)) x else y
+
+  # 既存スケールがあれば「追加せずに」上書き（warn=2 対策）
+  set_or_add_scale <- function(p, axis = c("x","y"), breaks = NULL, limits = NULL, expand = NULL) {
+    axis <- match.arg(axis)
+    sc <- p$scales$get_scales(axis)
+
+    if (!is.null(sc)) {
+      if (!is.null(breaks)) sc$breaks <- breaks
+      if (!is.null(limits)) sc$limits <- limits
+      if (!is.null(expand)) sc$expand <- expand
+      return(p)
+    }
+
+    # 無ければ追加（この場合は warning 出ない）
+    if (axis == "x") {
+      p <- p + ggplot2::scale_x_continuous(breaks = breaks, limits = limits, expand = expand %||% ggplot2::waiver())
+    } else {
+      p <- p + ggplot2::scale_y_continuous(breaks = breaks, limits = limits, expand = expand %||% ggplot2::waiver())
+    }
+    p
+  }
+
+  if (isTRUE(use.coord.cartesian)) {
+    # coord_cartesian でも scale の expand が効くので、limits/breaks 指定時は expand=0 を強制
+    if (!is.null(breaks.x) || !is.null(limits.x)) {
+      p <- set_or_add_scale(p, "x", breaks = breaks.x, limits = NULL, expand = exp0)
+    }
+    if (!is.null(breaks.y) || !is.null(limits.y)) {
+      p <- set_or_add_scale(p, "y", breaks = breaks.y, limits = NULL, expand = exp0)
+    }
+
+    if (!is.null(limits.x) || !is.null(limits.y)) {
+      p <- p + ggplot2::coord_cartesian(xlim = limits.x, ylim = limits.y, expand = FALSE)
+    } else {
+      default_ylim <- if (is.null(type_y_eff) || type_y_eff %in% c("surv","risk")) c(0,1) else NULL
+      p <- p + ggplot2::coord_cartesian(xlim = c(0, x_max), ylim = default_ylim, expand = FALSE)
+    }
+    return(p)
+  }
+
+  # scale_*_continuous path
+  default_limits_y <- if (is.null(limits.y) && (is.null(type_y_eff) || type_y_eff %in% c("surv","risk"))) c(0,1) else limits.y
+
+  if (!is.null(breaks.y) || !is.null(limits.y)) {
+    p <- set_or_add_scale(
+      p, "y",
+      breaks = breaks.y,
+      limits = default_limits_y,
+      expand = if (!is.null(default_limits_y)) exp0 else NULL
+    )
+  } else if (is.null(type_y_eff) || type_y_eff %in% c("surv","risk")) {
+    p <- p + ggplot2::lims(y = c(0, 1))
+  }
+
+  if (!is.null(breaks.x) || !is.null(limits.x)) {
+    p <- set_or_add_scale(
+      p, "x",
+      breaks = breaks.x,
+      limits = limits.x %||% c(0, x_max),
+      expand = exp0
+    )
+  } else {
+    p <- p + ggplot2::lims(x = c(0, x_max))
+  }
+
+  p
+}

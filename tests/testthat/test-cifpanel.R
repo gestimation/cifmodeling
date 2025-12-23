@@ -523,7 +523,7 @@ test_that("cifpanel() accepts panel-wise list arguments (happy path)", {
     label.y      = list("CIF by treatment", "Overall CIF"),
 
     ## per-panel limits / breaks（実際の値はそこまで重要でない）
-    limits.y     = list(c(0, 1), c(0, 0.5)),
+    limits.y     = list(c(0, 1), c(0, 1)),
     breaks.y     = list(seq(0, 1, 0.25), seq(0, 0.5, 0.1)),
 
     ## per-panel トグル類
@@ -554,3 +554,178 @@ test_that("cifpanel() accepts panel-wise list arguments (happy path)", {
   ## ここまで来ていれば、list で渡した各種フラグや limits/breaks が
   ## 少なくともエラーなく処理されていることは確認できる
 })
+
+
+testthat::test_that("cifpanel returns a patchwork object for multi-panel inputs", {
+  testthat::skip_if_not_installed("ggplot2")
+  testthat::skip_if_not_installed("patchwork")
+  testthat::skip_if_not_installed("withr")
+
+  data(diabetes.complications, package = "cifmodeling")
+
+  withr::local_options(warn = 2)
+
+  res <- cifmodeling::cifpanel(
+    formulas = list(
+      cifmodeling::Event(t, epsilon) ~ fruitq,
+      cifmodeling::Event(t, epsilon) ~ sex
+    ),
+    data = diabetes.complications,
+    outcome.type = "competing-risk",
+    code.events = list(c(1, 2, 0), c(1, 2, 0)),
+    add.risktable = FALSE,
+    add.conf = FALSE,
+    add.censor.mark = FALSE
+  )
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_true(!is.null(res$patchwork))
+  testthat::expect_s3_class(res$patchwork, "patchwork")
+})
+
+# ---- helpers ---------------------------------------------------------------
+
+.extract_panel_range <- function(p, axis = c("x", "y")) {
+  axis <- match.arg(axis)
+  b <- ggplot2::ggplot_build(p)
+  pp <- b$layout$panel_params[[1]]
+
+  if (axis == "x") {
+    if (!is.null(pp$x.range)) return(pp$x.range)
+    if (!is.null(pp$x$range$range)) return(pp$x$range$range)
+    if (!is.null(pp$x$range)) return(pp$x$range)
+    if (!is.null(b$layout$panel_scales_x[[1]]$range$range)) return(b$layout$panel_scales_x[[1]]$range$range)
+  } else {
+    if (!is.null(pp$y.range)) return(pp$y.range)
+    if (!is.null(pp$y$range$range)) return(pp$y$range$range)
+    if (!is.null(pp$y$range)) return(pp$y$range)
+    if (!is.null(b$layout$panel_scales_y[[1]]$range$range)) return(b$layout$panel_scales_y[[1]]$range$range)
+  }
+
+  stop("Could not extract panel range from ggplot_build().")
+}
+
+.extract_cifpanel_plots <- function(res) {
+  pw <- NULL
+  if (is.list(res) && !is.null(res$patchwork)) pw <- res$patchwork
+  if (inherits(res, "patchwork")) pw <- res
+  if (is.null(pw) || !inherits(pw, "patchwork")) stop("No patchwork found in cifpanel result.")
+
+  plots <- pw$patches$plots
+  plots <- Filter(Negate(is.null), plots)
+  plots
+}
+
+# ---- axis regression tests -------------------------------------------------
+
+testthat::test_that("cifpanel respects limits.x even when breaks.x is supplied (scale_x_continuous path)", {
+  testthat::skip_if_not_installed("ggplot2")
+  testthat::skip_if_not_installed("patchwork")
+  testthat::skip_if_not_installed("withr")
+
+  data(diabetes.complications, package = "cifmodeling")
+  withr::local_options(warn = 2)
+
+  res <- cifmodeling::cifpanel(
+    formulas = list(
+      cifmodeling::Event(t, epsilon) ~ fruitq,
+      cifmodeling::Event(t, epsilon) ~ sex
+    ),
+    data = diabetes.complications,
+    outcome.type = "competing-risk",
+    code.events = list(c(1, 2, 0), c(1, 2, 0)),
+    rows.columns.panel = c(1, 2),            # 重要：2スロット確保
+    axis.info = list(use.coord.cartesian = FALSE),
+
+    limits.x = list(c(0, 120), c(0, 120)),
+    breaks.x = list(seq(0, 120, 12), seq(0, 120, 12)),
+
+    limits.y = list(c(0, 1), c(0, 1)),       # warn=2 対策
+    add.risktable = FALSE,
+    add.conf = FALSE,
+    add.censor.mark = FALSE
+  )
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_true(!is.null(res$list.plot))
+  testthat::expect_gte(length(res$list.plot), 2L)
+
+  plots <- res$list.plot[1:2]
+  for (p in plots) {
+    testthat::expect_s3_class(p, "ggplot")
+    b <- ggplot2::ggplot_build(p)
+    pp <- b$layout$panel_params[[1]]
+    xr <- pp$x.range %||% pp$x$range$range
+    testthat::expect_true(is.numeric(xr) && length(xr) == 2L)
+    testthat::expect_gte(xr[1], 0 - 1e-8)
+    testthat::expect_lte(xr[2], 120 + 1e-8)
+  }
+})
+
+testthat::test_that("cifpanel respects limits.x with breaks.x when coord_cartesian is used", {
+  testthat::skip_if_not_installed("ggplot2")
+  testthat::skip_if_not_installed("patchwork")
+  testthat::skip_if_not_installed("withr")
+
+  data(diabetes.complications, package = "cifmodeling")
+  withr::local_options(warn = 2)
+
+  res <- cifmodeling::cifpanel(
+    formulas = list(
+      cifmodeling::Event(t, epsilon) ~ fruitq,
+      cifmodeling::Event(t, epsilon) ~ sex
+    ),
+    data = diabetes.complications,
+    outcome.type = "competing-risk",
+    code.events = list(c(1, 2, 0), c(1, 2, 0)),
+    rows.columns.panel = c(1, 2),
+    axis.info = list(use.coord.cartesian = TRUE),
+
+    limits.x = list(c(0, 120), c(0, 120)),
+    breaks.x = list(seq(0, 120, 12), seq(0, 120, 12)),
+    limits.y = list(c(0, 1), c(0, 1)),
+
+    add.risktable = FALSE,
+    add.conf = FALSE,
+    add.censor.mark = FALSE
+  )
+
+  testthat::expect_gte(length(res$list.plot), 2L)
+  plots <- res$list.plot[1:2]
+
+  for (p in plots) {
+    b <- ggplot2::ggplot_build(p)
+    pp <- b$layout$panel_params[[1]]
+    xr <- pp$x.range %||% pp$x$range$range
+    testthat::expect_lte(xr[2], 120 + 1e-8)
+  }
+})
+
+testthat::test_that("cifpanel errors if a panel-wise list argument length is neither 1 nor K", {
+  testthat::skip_if_not_installed("withr")
+  data(diabetes.complications, package = "cifmodeling")
+  withr::local_options(warn = 2)
+
+  testthat::expect_error(
+    cifmodeling::cifpanel(
+      formulas = list(
+        cifmodeling::Event(t, epsilon) ~ fruitq,
+        cifmodeling::Event(t, epsilon) ~ sex
+      ),
+      data = diabetes.complications,
+      outcome.type = "competing-risk",
+      code.events = list(c(1, 2, 0), c(1, 2, 0)),
+      rows.columns.panel = c(1, 2),
+
+      # K=2 に対して長さ3（1でも2でもない）→ ここで落ちるのが期待
+      limits.x = list(c(0, 120), c(0, 120), c(0, 120)),
+      breaks.x = list(seq(0, 120, 12), seq(0, 120, 12)),
+      limits.y = list(c(0, 1), c(0, 1)),
+
+      add.risktable = FALSE,
+      add.conf = FALSE,
+      add.censor.mark = FALSE
+    )
+  )
+})
+

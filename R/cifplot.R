@@ -4,7 +4,7 @@
 #' @description
 #' This function generates a survival or CIF curve from a unified formula–data
 #' interface or from an existing survfit object. When a formula is supplied,
-#' the LHS is typically `Event()` or `survivai::Surv()`, and the RHS specifies
+#' the LHS is typically `Event()` or `survival::Surv()`, and the RHS specifies
 #' an optional stratification variable. In addition to the curves themselves,
 #' [cifplot()] can add numbers-at-risk tables, tables of point estimates and
 #' CIs, censoring marks, competing-risk marks, and intercurrent-event marks.
@@ -203,8 +203,7 @@
 #' - `version`: a character string giving the cifmodeling version used
 #' - `call`: the original function call
 #'
-#' The object is returned invisibly. When a panel mode is active and
-#' `print.panel = TRUE`, the panel is also printed in interactive sessions.
+#' When a panel mode is active and `print.panel = TRUE`, the panel is also printed in interactive sessions.
 #'
 #' @examples
 #' data(diabetes.complications)
@@ -216,14 +215,13 @@
 #'         label.x='Years from registration')
 #'
 #' @importFrom ggsurvfit ggsurvfit add_confidence_interval add_risktable add_risktable_strata_symbol add_censor_mark add_quantile
-#' @importFrom ggplot2 theme_classic theme_bw element_text  element_rect element_blank labs lims geom_point aes
-#' ggsave guides scale_color_discrete scale_fill_discrete scale_color_manual
-#' scale_fill_manual scale_linetype_manual scale_linetype_discrete scale_shape_discrete scale_shape_manual
+#' @importFrom ggplot2 theme_classic theme_bw element_text element_rect element_blank labs lims geom_point aes
+#' @importFrom ggplot2 ggsave guides scale_color_discrete scale_fill_discrete scale_color_manual
+#' @importFrom ggplot2 scale_fill_manual scale_linetype_manual scale_linetype_discrete scale_shape_discrete scale_shape_manual
 #' @importFrom grDevices gray
 #' @importFrom patchwork wrap_plots
 #'
 #' @name cifplot
-#' @keywords internal
 #' @section Lifecycle:
 #' \lifecycle{stable}
 #' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
@@ -300,21 +298,6 @@ cifplot <- function(
 ) {
   dots <- list(...)
   dots$print.panel <- dots$print.panel %||% print.panel
-
-  print_panel <- isTRUE(panel.per.variable) || isTRUE(panel.per.event) || isTRUE(panel.censoring)
-  if (print_panel) {
-    font.size <- font.size/2
-    if (!is.null(label.strata)) {
-      .warn("panel_disables_labelstrata")
-    }
-    if (isTRUE(add.risktable) || isTRUE(add.estimate.table)) {
-      .warn("panel_disables_tables")
-    }
-    label.strata     <- NULL
-    legend.position  <- "none"
-    add.risktable     <- FALSE
-    add.estimate.table <- FALSE
-  }
 
   infos <- cifplot_build_info(
     error                         = error,
@@ -413,9 +396,13 @@ cifplot <- function(
     }
   }
 
-  .assert(!(isTRUE(panel.info$panel.per.variable) && isTRUE(panel.info$panel.per.event) && isTRUE(panel.info$panel.censoring)),
-          "incompatible_flags",
-          which = "panel.per.variable, panel.per.event and panel.censoring")
+  .assert(
+    sum(isTRUE(panel.info$panel.per.variable),
+        isTRUE(panel.info$panel.per.event),
+        isTRUE(panel.info$panel.censoring)) <= 1,
+    "incompatible_flags",
+    which = "panel.per.variable, panel.per.event, panel.censoring"
+  )
 
   if (!inherits(formula_or_fit, "survfit")) {
     outcome.type <- util_check_outcome_type(
@@ -465,10 +452,25 @@ cifplot <- function(
     panel.info     = panel.info,
     panel.mode     = panel.mode
   )
+  panel.info$panel.per.variable <- identical(panel_mode, "each_var")
+  panel.info$panel.per.event    <- identical(panel_mode, "each_event")
+  panel.info$panel.censoring    <- identical(panel_mode, "censoring")
+  is_panel <- isTRUE(panel.info$panel.per.variable) ||
+    isTRUE(panel.info$panel.per.event) ||
+    isTRUE(panel.info$panel.censoring)
+  if (is_panel) {
+    font.size <- font.size/2
+    style.info$legend.position <- "none"
+    if (!is.null(axis.info$label.strata)) .warn("panel_disables_labelstrata")
+    if (isTRUE(visual.info$add.risktable) || isTRUE(visual.info$add.estimate.table)) .warn("panel_disables_tables")
+    axis.info$label.strata      <- NULL
+    visual.info$add.risktable   <- FALSE
+    visual.info$add.estimate.table <- FALSE
+  }
 
-  panel.info$panel.per.variable     <- identical(panel_mode, "each_var")
-  panel.info$panel.per.event   <- identical(panel_mode, "each_event")
-  panel.info$panel.censoring   <- identical(panel_mode, "censoring")
+  panel.info$panel.per.variable <- identical(panel_mode, "each_var")
+  panel.info$panel.per.event    <- identical(panel_mode, "each_event")
+  panel.info$panel.censoring    <- identical(panel_mode, "censoring")
 
   if (isTRUE(panel.info$panel.per.variable)) {
     style.info$legend.position <- "none"
@@ -874,7 +876,6 @@ plot_panel.censoring <- function(
   panel_out
 }
 
-
 cifplot_single <- function(
     formula_or_fit,
     data             = NULL,
@@ -894,6 +895,7 @@ cifplot_single <- function(
     ggsave.info      = NULL,
     ...
 ) {
+  panel.info <- panel.info %||% list()
   n_panel_flags <- sum(isTRUE(panel.info$panel.per.variable), isTRUE(panel.info$panel.per.event), isTRUE(panel.info$panel.censoring))
   .assert(n_panel_flags <= 1,
           "incompatible_flags",
@@ -1110,6 +1112,11 @@ cifplot_single <- function(
     formula_or_fit <- plot_survfit_short_strata_names(formula_or_fit)
   }
 
+  eps <- if (!is.null(axis.info$type.y) && axis.info$type.y %in% c("cumhaz", "cloglog")) 1e-12 else 0
+  formula_or_fit$surv  <- plot_clamp01(formula_or_fit$surv,  eps = eps)
+  formula_or_fit$lower <- plot_clamp01(formula_or_fit$lower, eps = eps)
+  formula_or_fit$upper <- plot_clamp01(formula_or_fit$upper, eps = eps)
+
   p <- call_ggsurvfit(
     survfit_object = formula_or_fit,
     out_read_surv  = NULL,
@@ -1119,6 +1126,12 @@ cifplot_single <- function(
     panel.info     = panel.info,
     style.info     = style.info,
     ggsave.info    = ggsave.info
+  )
+  p <- plot_apply_y_axis_controls(
+    p,
+    limits.y = limits.y,
+    breaks.y = breaks.y,
+    use.coord.cartesian = use.coord.cartesian
   )
   if (!is.null(filename.ggsave)) ggplot2::ggsave(filename.ggsave, plot = p, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave, units = ggsave.units)
   return(p)
@@ -1167,6 +1180,221 @@ cifplot_single <- function(
 #' @keywords internal
 #' @noRd
 call_ggsurvfit <- function(
+    survfit_object,
+    out_read_surv = NULL,
+    survfit.info  = NULL,
+    axis.info     = NULL,
+    visual.info   = NULL,
+    panel.info    = NULL,
+    style.info    = NULL,
+    ggsave.info   = NULL
+){
+  survfit.info        <- survfit.info %||% list()
+  axis.info           <- axis.info    %||% list()
+  visual.info         <- visual.info  %||% list()
+  panel.info          <- panel.info   %||% list()
+  style.info          <- style.info   %||% list()
+  ggsave.info         <- ggsave.info  %||% list()
+
+  type.y              <- axis.info$type.y
+  label.x.user        <- axis.info$label.x
+  label.y.user        <- axis.info$label.y
+  label.strata        <- axis.info$label.strata
+  level.strata        <- axis.info$level.strata
+  order.strata        <- axis.info$order.strata
+  limits.x            <- axis.info$limits.x
+  limits.y            <- axis.info$limits.y
+  breaks.x            <- axis.info$breaks.x
+  breaks.y            <- axis.info$breaks.y
+  use.coord.cartesian <- isTRUE(axis.info$use.coord.cartesian)
+
+  add.conf                      <- visual.info$add.conf
+  add.risktable                 <- visual.info$add.risktable
+  add.estimate.table            <- visual.info$add.estimate.table
+  symbol.risk.table             <- visual.info$symbol.risk.table
+  font.size.risk.table          <- visual.info$font.size.risk.table
+  add.censor.mark               <- visual.info$add.censor.mark
+  shape.censor.mark             <- visual.info$shape.censor.mark
+  size.censor.mark              <- visual.info$size.censor.mark
+  add.competing.risk.mark       <- visual.info$add.competing.risk.mark
+  competing.risk.time           <- visual.info$competing.risk.time
+  shape.competing.risk.mark     <- visual.info$shape.competing.risk.mark
+  size.competing.risk.mark      <- visual.info$size.competing.risk.mark
+  add.intercurrent.event.mark   <- visual.info$add.intercurrent.event.mark
+  intercurrent.event.time       <- visual.info$intercurrent.event.time
+  shape.intercurrent.event.mark <- visual.info$shape.intercurrent.event.mark
+  size.intercurrent.event.mark  <- visual.info$size.intercurrent.event.mark
+  add.quantile                  <- visual.info$add.quantile
+  level.quantile                <- visual.info$level.quantile
+
+  style              <- style.info$style
+  palette            <- style.info$palette
+  linewidth          <- style.info$linewidth
+  linetype           <- style.info$linetype
+  font.family        <- style.info$font.family
+  font.size          <- style.info$font.size
+  legend.position    <- style.info$legend.position
+
+  # --- strata label/order reconcile (元のまま) ---
+  if (!identical(legend.position, "none")) {
+    label.strata.map <- plot_make_label.strata.map(
+      survfit_object = survfit_object,
+      label.strata   = label.strata,
+      level.strata   = level.strata
+    )
+    res <- plot_reconcile_order_and_labels(
+      survfit_object   = survfit_object,
+      label.strata.map = label.strata.map,
+      level.strata     = level.strata,
+      order.strata     = order.strata
+    )
+    limits_arg          <- res$limits_arg
+    strata_levels_final <- res$strata_levels_final
+    strata_labels_final <- res$strata_labels_final
+    n_strata_effective  <- length(limits_arg)
+  } else {
+    limits_arg          <- NULL
+    strata_levels_final <- NULL
+    strata_labels_final <- NULL
+    n_strata_effective  <- NULL
+  }
+
+  out_cg <- check_ggsurvfit(
+    survfit_object  = survfit_object,
+    survfit.info    = survfit.info,
+    axis.info       = axis.info,
+    visual.info     = visual.info,
+    style.info      = style.info,
+    out_read_surv   = out_read_surv
+  )
+
+  type_y_eff <- out_cg$type.y
+  is_cloglog <- identical(type_y_eff, "cloglog") || identical(type.y, "cloglog")
+
+  # 1) ベースプロット
+  p <- out_cg$out_survfit_object +
+    ggplot2::labs(
+      x = label.x.user %||% "Time",
+      y = label.y.user %||% out_cg$label.y
+    )
+
+  # 2) 追加レイヤー（cloglog は従来どおりスキップしたいならここで抑制）
+  if (!isTRUE(is_cloglog)) {
+    if (isTRUE(add.conf)) {
+      p <- p + add_confidence_interval()
+    }
+    if (isTRUE(add.censor.mark)) {
+      p <- p + add_censor_mark(shape = shape.censor.mark, size = size.censor.mark)
+    }
+    if (isTRUE(add.quantile)) {
+      p <- p + add_quantile(y_value = level.quantile)
+    }
+
+    has_strata <- !is.null(survfit_object$strata) && length(survfit_object$strata) > 1L
+    apply_add_risktable_strata_symbol <- function (p, symbol.risk.table, has_strata) {
+      if (!isTRUE(has_strata)) return(p)
+      if (symbol.risk.table=="square")   p <- p + add_risktable_strata_symbol(symbol = "\U25A0", size = 14)
+      if (symbol.risk.table=="circle")   p <- p + add_risktable_strata_symbol(symbol = "\U25CF", size = 14)
+      if (symbol.risk.table=="triangle") p <- p + add_risktable_strata_symbol(symbol = "\U25B2", size = 14)
+      p
+    }
+
+    if (isTRUE(add.estimate.table) && isTRUE(add.risktable)) {
+      p <- p + add_risktable(
+        risktable_stats = c(
+          "{ceiling(n.risk)}",
+          "{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"
+        ),
+        stats_label     = c("No. at risk", "Estimate (95% CI)"),
+        theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size),
+        risktable_group = "risktable_stats",
+        size            = font.size.risk.table
+      )
+      p <- apply_add_risktable_strata_symbol(p, symbol.risk.table, has_strata)
+    } else if (isTRUE(add.estimate.table)) {
+      p <- p + add_risktable(
+        risktable_stats = c("{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"),
+        stats_label     = c("Estimate (95% CI)"),
+        theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size),
+        risktable_group = "risktable_stats",
+        size            = font.size.risk.table
+      )
+      p <- apply_add_risktable_strata_symbol(p, symbol.risk.table, has_strata)
+    } else if (isTRUE(add.risktable)) {
+      p <- p + add_risktable(
+        risktable_stats = c("{ceiling(n.risk)}"),
+        stats_label     = c("No. at risk"),
+        theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size),
+        risktable_group = "risktable_stats",
+        size            = font.size.risk.table
+      )
+      p <- apply_add_risktable_strata_symbol(p, symbol.risk.table, has_strata)
+    }
+
+    if (isTRUE(add.competing.risk.mark) && length(competing.risk.time)>0) {
+      p <- plot_draw_marks(
+        p, survfit_object,
+        competing.risk.time, type_y_eff,
+        shape = shape.competing.risk.mark,
+        size  = size.competing.risk.mark
+      )
+    }
+    if (isTRUE(add.intercurrent.event.mark) && length(intercurrent.event.time)>0) {
+      p <- plot_draw_marks(
+        p, survfit_object,
+        intercurrent.event.time, type_y_eff,
+        shape = shape.intercurrent.event.mark,
+        size  = size.intercurrent.event.mark
+      )
+    }
+  }
+
+  # 3) style / scales
+  if (!identical(style, "ggsurvfit")) {
+    p <- plot_apply_style(
+      p,
+      style               = style,
+      font.family         = font.family,
+      font.size           = font.size,
+      legend.position     = legend.position,
+      n_strata            = n_strata_effective,
+      palette_colors      = palette,
+      strata_levels_final = strata_levels_final,
+      strata_labels_final = strata_labels_final
+    )
+  }
+  p <- plot_apply_all_scales(
+    p,
+    style               = style,
+    palette             = palette,
+    n_strata            = n_strata_effective,
+    strata_levels_final = strata_levels_final,
+    strata_labels_final = strata_labels_final,
+    limits_arg          = limits_arg
+  )
+
+  # 4) ここで必ず axis 指定を最終上書き（cloglog含む）
+  p <- apply_axis_limits_breaks(
+    p,
+    type_y_eff          = type_y_eff,
+    survfit_object      = survfit_object,
+    limits.x            = limits.x,
+    limits.y            = limits.y,
+    breaks.x            = breaks.x,
+    breaks.y            = breaks.y,
+    use.coord.cartesian = use.coord.cartesian
+  )
+
+  # 5) guides / palette fix
+  p <- p +
+    ggplot2::guides(fill = "none", alpha = "none", shape = "none") +
+    ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(fill = NA)))
+  p <- plot_fix_palette_vector_arg(p)
+  return(p)
+}
+
+
+call_ggsurvfit_old <- function(
     survfit_object,
     out_read_surv = NULL,
     survfit.info  = NULL,
@@ -1269,36 +1497,6 @@ call_ggsurvfit <- function(
     style.info      = style.info,
     out_read_surv   = out_read_surv
   )
-  if (identical(type.y,"cloglog")) {
-    p <- out_cg$out_survfit_object
-    if (!identical(style, "ggsurvfit")) {
-      p <- plot_apply_style(
-        p,
-        style               = style,
-        font.family         = font.family,
-        font.size           = font.size,
-        legend.position     = legend.position,
-        n_strata            = n_strata_effective,
-        palette_colors      = palette,
-        strata_levels_final = strata_levels_final,
-        strata_labels_final = strata_labels_final
-      )
-    }
-    p <- plot_apply_all_scales(
-      p,
-      style               = style,
-      palette             = palette,
-      n_strata            = n_strata_effective,
-      strata_levels_final = strata_levels_final,
-      strata_labels_final = strata_labels_final,
-      limits_arg          = limits_arg
-    )
-    p <- p + ggplot2::guides(fill = "none", alpha = "none", shape = "none") +
-      ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(fill = NA)))
-    p <- plot_fix_palette_vector_arg(p)
-    return(p)
-  }
-
   p <- out_cg$out_survfit_object +
     ggplot2::labs(
       x = label.x.user %||% "Time",
@@ -1315,7 +1513,8 @@ call_ggsurvfit <- function(
     p <- p + add_quantile(y_value = level.quantile)
   }
 
-  apply_add_risktable_strata_symbol <- function (p, symbol.risk.table) {
+  apply_add_risktable_strata_symbol <- function (p, symbol.risk.table, has_strata) {
+    if (!isTRUE(has_strata)) return(p)
     if (symbol.risk.table=="square") {
       p <- p + add_risktable_strata_symbol(symbol = "\U25A0", size = 14)
     } else if (symbol.risk.table=="circle") {
@@ -1323,34 +1522,38 @@ call_ggsurvfit <- function(
     } else if (symbol.risk.table=="triangle") {
       p <- p + add_risktable_strata_symbol(symbol = "\U25B2", size = 14)
     }
-    p
+    return(p)
   }
+  has_strata <- !is.null(survfit_object$strata) && length(survfit_object$strata) > 1L
 
   if (isTRUE(add.estimate.table) && isTRUE(add.risktable)) {
     p <- p + add_risktable(
-      risktable_stats = c("n.risk", "{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"),
+      risktable_stats = c("{ceiling(n.risk)}", "{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"),
       stats_label     = c("No. at risk", "Estimate (95% CI)"),
       theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size),
       risktable_group = "risktable_stats",
       size            = font.size.risk.table
     )
-    p <- apply_add_risktable_strata_symbol(p, symbol.risk.table)
+    p <- apply_add_risktable_strata_symbol(p, symbol.risk.table, has_strata)
   } else if (isTRUE(add.estimate.table)) {
     p <- p + add_risktable(
       risktable_stats = c("{round(estimate, digits=2)} ({round(conf.low, digits=2)}, {round(conf.high, digits=2)})"),
       stats_label     = c("Estimate (95% CI)"),
       theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size),
+      risktable_group = "risktable_stats",
       size            = font.size.risk.table
     )
-    p <- apply_add_risktable_strata_symbol(p, symbol.risk.table)
+    p <- apply_add_risktable_strata_symbol(p, symbol.risk.table, has_strata)
   } else if (isTRUE(add.risktable)) {
     p <- p + add_risktable(
-      risktable_stats = c("n.risk"),
+      #risktable_stats = c("n.risk"),
+      risktable_stats = c("{ceiling(n.risk)}"),
       stats_label     = c("No. at risk"),
       theme           = plot_theme_risktable_font(font.family = font.family, plot.title.size = font.size),
+      risktable_group = "risktable_stats",
       size            = font.size.risk.table
     )
-    p <- apply_add_risktable_strata_symbol(p, symbol.risk.table)
+    p <- apply_add_risktable_strata_symbol(p, symbol.risk.table, has_strata)
   }
 
   if (isTRUE(add.competing.risk.mark) && length(competing.risk.time)>0) {
@@ -1370,35 +1573,44 @@ call_ggsurvfit <- function(
     )
   }
 
-  x_max <- plot_make_x_max(survfit_object)
-  if (isTRUE(use.coord.cartesian)) {
-    if (!is.null(breaks.x)) p <- p + ggplot2::scale_x_continuous(breaks = breaks.x)
-    if (!is.null(breaks.y)) p <- p + ggplot2::scale_y_continuous(breaks = breaks.y)
-    if (!is.null(limits.x) || !is.null(limits.y)) {
-      p <- p + ggplot2::coord_cartesian(xlim = limits.x, ylim = limits.y, expand = FALSE)
-    } else if (!is.null(limits.x)) {
-      p <- p + ggplot2::coord_cartesian(xlim = limits.x, ylim = limits.y, expand = FALSE)
-    } else if (!is.null(limits.y)) {
-      p <- p + ggplot2::coord_cartesian(xlim = c(0, x_max), ylim = limits.y, expand = FALSE)
-    } else {
-      p <- p + ggplot2::coord_cartesian(xlim = c(0, x_max), ylim = c(0, 1), expand = FALSE)
-    }
-  } else {
-    if (!is.null(breaks.y)) {
-      p <- p + ggplot2::scale_y_continuous(breaks = breaks.y)
-    } else if (!is.null(limits.y)) {
-      p <- p + ggplot2::lims(y = limits.y)
-    } else {
-      p <- p + ggplot2::lims(y = c(0, 1))
-    }
-    if (!is.null(breaks.x)) {
-      p <- p + ggplot2::scale_x_continuous(breaks = breaks.x)
-    } else if (!is.null(limits.x)) {
-      p <- p + ggplot2::lims(x = limits.x)
-    } else {
-      p <- p + ggplot2::lims(x = c(0, x_max))
-    }
-  }
+#  x_max <- plot_make_x_max(survfit_object)
+#  if (isTRUE(use.coord.cartesian)) {
+#    if (!is.null(breaks.x)) p <- p + ggplot2::scale_x_continuous(breaks = breaks.x)
+#    if (!is.null(breaks.y)) p <- p + ggplot2::scale_y_continuous(breaks = breaks.y)
+#    if (!is.null(limits.x) || !is.null(limits.y)) {
+#      p <- p + ggplot2::coord_cartesian(xlim = limits.x, ylim = limits.y, expand = FALSE)
+#    } else {
+#      p <- p + ggplot2::coord_cartesian(xlim = c(0, x_max), ylim = c(0, 1), expand = FALSE)
+#    }
+#  } else {
+#    type_y_eff <- out_cg$type.y
+#    default_limits_y <- if (is.null(limits.y) && (is.null(type_y_eff) || type_y_eff %in% c("surv", "risk"))) {
+#      c(0, 1)
+#    } else {
+#      limits.y
+#    }
+
+#    if (!is.null(breaks.y) || !is.null(limits.y)) {
+#      p <- p + ggplot2::scale_y_continuous(
+#        breaks = breaks.y,
+#        limits = default_limits_y,
+#        expand = if (!is.null(default_limits_y)) ggplot2::expansion(mult = 0, add = 0) else ggplot2::waiver()
+#      )
+#    } else {
+#      if (is.null(type_y_eff) || type_y_eff %in% c("surv", "risk")) {
+#        p <- p + ggplot2::lims(y = c(0, 1))
+#      }
+#    }
+#    if (!is.null(breaks.x) || !is.null(limits.x)) {
+#      p <- p + ggplot2::scale_x_continuous(
+#        breaks = breaks.x,
+#        limits = limits.x %||% c(0, x_max),
+#        expand = ggplot2::expansion(mult = 0, add = 0)
+#      )
+#    } else {
+#      p <- p + ggplot2::lims(x = c(0, x_max))
+#    }
+#  }
 
   if (!identical(style, "ggsurvfit")) {
     p <- plot_apply_style(
@@ -1413,7 +1625,6 @@ call_ggsurvfit <- function(
       strata_labels_final = strata_labels_final
     )
   }
-
   p <- plot_apply_all_scales(
     p,
     style               = style,
@@ -1424,13 +1635,23 @@ call_ggsurvfit <- function(
     limits_arg          = limits_arg
   )
 
+  p <- apply_axis_limits_breaks(
+    p,
+    type_y_eff          = out_cg$type.y,
+    survfit_object      = survfit_object,
+    limits.x            = limits.x,
+    limits.y            = limits.y,
+    breaks.x            = breaks.x,
+    breaks.y            = breaks.y,
+    use.coord.cartesian = use.coord.cartesian
+  )
+
   p <- p + ggplot2::guides(fill = "none", alpha = "none", shape = "none") +
     ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(fill = NA)))
 
   p <- plot_fix_palette_vector_arg(p)
   return(p)
 }
-
 
 check_ggsurvfit <- function(
     survfit_object,
