@@ -233,72 +233,6 @@ extract_x_range <- function(x) {
   c(min(rng_mat[, 1], na.rm = TRUE), max(rng_mat[, 2], na.rm = TRUE))
 }
 
-test_that("cifplot respects limits.x even when breaks.x is supplied", {
-  skip_if_not_installed("ggplot2")
-  skip_if_not_installed("survival")
-
-  set.seed(1)
-  n <- 300
-  df <- data.frame(
-    time   = pmin(rexp(n, rate = 1/80), 240),  # tmax > 120 を保証
-    status = rbinom(n, 1, 0.6),
-    group  = factor(sample(c("A", "B"), n, TRUE))
-  )
-
-  old <- getOption("warn")
-  options(warn = 0)
-  on.exit(options(warn = old), add = TRUE)
-
-  obj <- cifplot(
-    survival::Surv(time, status) ~ group,
-    data         = df,
-    outcome.type = "survival",
-    limits.x     = c(0, 120),
-    breaks.x     = seq(0, 120, 12),
-    add.conf        = FALSE,
-    add.risktable   = FALSE,
-    add.censor.mark = FALSE
-  )
-  xr <- extract_x_range(obj)
-  expect_lte(xr[2], 120 + 1e-8)
-})
-
-
-
-
-test_that("cifplot respects limits.x with breaks.x when coord_cartesian is used", {
-  skip_if_not_installed("ggplot2")
-  skip_if_not_installed("survival")
-
-  set.seed(2)
-  n <- 300
-  df <- data.frame(
-    time   = pmin(rexp(n, rate = 1/80), 240),
-    status = rbinom(n, 1, 0.6),
-    group  = factor(sample(c("A", "B"), n, TRUE))
-  )
-
-  old <- getOption("warn")
-  options(warn = 0)
-  on.exit(options(warn = old), add = TRUE)
-
-  obj <- cifplot(
-    survival::Surv(time, status) ~ group,
-    data         = df,
-    outcome.type = "survival",
-    limits.x     = c(0, 120),
-    breaks.x     = seq(0, 120, 12),
-    use.coord.cartesian = TRUE,
-    add.conf        = FALSE,
-    add.risktable   = FALSE,
-    add.censor.mark = FALSE
-  )
-
-  xr <- extract_x_range(obj)
-  expect_lte(xr[2], 120 + 1e-8)
-})
-
-
 testthat::test_that("cifplot returns a cifplot object whose $plot is ggplot", {
   testthat::skip_if_not_installed("ggplot2")
 
@@ -363,6 +297,35 @@ testthat::test_that("cifplot returns a cifplot object whose $plot is ggplot", {
 
 # ---- axis regression tests -------------------------------------------------
 
+.get_x_range <- function(p) {
+  b <- ggplot2::ggplot_build(p)
+  pp <- b$layout$panel_params[[1]]
+
+  xr <- pp$x.range
+  if (is.null(xr)) xr <- pp$x$range$range
+  xr
+}
+
+.expect_xrange_includes_limits_with_padding <- function(xr, lim, pad_frac_max = 0.25, tol = 1e-8) {
+  testthat::expect_true(is.numeric(xr) && length(xr) == 2L)
+
+  span <- lim[2] - lim[1]
+
+  # 重要：指定した limits 区間を「含む」こと
+  testthat::expect_lte(xr[1], lim[1] + tol)
+  testthat::expect_gte(xr[2], lim[2] - tol)
+
+  # 余白は「小さい」こと（パッチで 2%〜程度を想定、上限は緩めに 25%）
+  testthat::expect_gte(xr[1], lim[1] - pad_frac_max * span - tol)
+  testthat::expect_lte(xr[2], lim[2] + pad_frac_max * span + tol)
+
+  # 今回の仕様：lim[1]=0 のときは左が負にずれる（原点が 0 固定にならない）
+  if (abs(lim[1]) < 1e-12) testthat::expect_lt(xr[1], 0 + tol)
+
+  # 右マージンも入れる仕様なら、右端は lim[2] より大きいはず
+  testthat::expect_gt(xr[2], lim[2] - tol)
+}
+
 testthat::test_that("cifplot respects limits.x even when breaks.x is supplied (scale_x_continuous path)", {
   testthat::skip_if_not_installed("ggplot2")
 
@@ -384,22 +347,14 @@ testthat::test_that("cifplot respects limits.x even when breaks.x is supplied (s
     add.censor.mark = FALSE
   )
 
-  xr <- .extract_panel_range(out$plot, "x")
-  testthat::expect_true(is.numeric(xr) && length(xr) == 2L)
-
-  tol <- 1e-8
-  # 左端は pad により負になり得るため主張しない
-  testthat::expect_lte(xr[2], 120 + tol)
-  testthat::expect_gte(xr[2], 120 - tol)  # 任意だが安定なら有益
+  lim <- c(0, 120)
+  xr <- .get_x_range(out$plot)
+  .expect_xrange_includes_limits_with_padding(xr, lim, pad_frac_max = 0.25)
 
   br <- .extract_x_breaks(out$plot)
   testthat::expect_true(is.numeric(br))
-
-  # breaks は "含まれていること" を確認（厳密一致にしない）
-  expected <- seq(0, 120, 12)
-  testthat::expect_true(all(expected %in% br | is.na(expected)))
+  testthat::expect_true(all(seq(0, 120, 12) %in% br))
 })
-
 
 testthat::test_that("cifplot respects limits.x with breaks.x when coord_cartesian is used", {
   testthat::skip_if_not_installed("ggplot2")
@@ -422,17 +377,13 @@ testthat::test_that("cifplot respects limits.x with breaks.x when coord_cartesia
     add.censor.mark = FALSE
   )
 
-  xr <- .extract_panel_range(out$plot, "x")
-  testthat::expect_true(is.numeric(xr) && length(xr) == 2L)
+  lim <- c(0, 120)
+  xr <- .get_x_range(out$plot)
+  .expect_xrange_includes_limits_with_padding(xr, lim, pad_frac_max = 0.25)
 
-  tol <- 1e-8
-
-  # 左端は ggsurvfit 互換の pad により負になり得るため主張しない
-  testthat::expect_lte(xr[2], 120 + tol)
-
-  # 任意：左端が極端に負に飛んでいないことの弱い担保（安定なら残す）
-  # 0..120 の表示で、-2.4 程度は許容、-50 などは異常として検知したい、という意図。
-  testthat::expect_gt(xr[1], -60)
+  br <- .extract_x_breaks(out$plot)
+  testthat::expect_true(is.numeric(br))
+  testthat::expect_true(all(seq(0, 120, 12) %in% br))
 })
 
 

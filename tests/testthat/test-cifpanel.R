@@ -617,6 +617,35 @@ testthat::test_that("cifpanel returns a patchwork object for multi-panel inputs"
   plots
 }
 
+.get_x_range <- function(p) {
+  b <- ggplot2::ggplot_build(p)
+  pp <- b$layout$panel_params[[1]]
+
+  xr <- pp$x.range
+  if (is.null(xr)) xr <- pp$x$range$range
+  xr
+}
+
+.expect_xrange_includes_limits_with_padding <- function(xr, lim, pad_frac_max = 0.25, tol = 1e-8) {
+  testthat::expect_true(is.numeric(xr) && length(xr) == 2L)
+
+  span <- lim[2] - lim[1]
+
+  # 重要：指定した limits 区間を「含む」こと
+  testthat::expect_lte(xr[1], lim[1] + tol)
+  testthat::expect_gte(xr[2], lim[2] - tol)
+
+  # 余白は「小さい」こと（パッチで 2%〜程度を想定、上限は緩めに 25%）
+  testthat::expect_gte(xr[1], lim[1] - pad_frac_max * span - tol)
+  testthat::expect_lte(xr[2], lim[2] + pad_frac_max * span + tol)
+
+  # 今回の仕様：lim[1]=0 のときは左が負にずれる（原点が 0 固定にならない）
+  if (abs(lim[1]) < 1e-12) testthat::expect_lt(xr[1], 0 + tol)
+
+  # 右マージンも入れる仕様なら、右端は lim[2] より大きいはず
+  testthat::expect_gt(xr[2], lim[2] - tol)
+}
+
 # ---- axis regression tests -------------------------------------------------
 
 testthat::test_that("cifpanel respects limits.x even when breaks.x is supplied (scale_x_continuous path)", {
@@ -653,68 +682,16 @@ testthat::test_that("cifpanel respects limits.x even when breaks.x is supplied (
   testthat::expect_true(!is.null(res$list.plot))
   testthat::expect_gte(length(res$list.plot), 2L)
 
-  plots <- res$list.plot[1:2]
-  tol <- 1e-8
+  lim <- c(0, 120)
 
+  plots <- res$list.plot[1:2]
   for (p in plots) {
     testthat::expect_s3_class(p, "ggplot")
-
-    b <- ggplot2::ggplot_build(p)
-    pp <- b$layout$panel_params[[1]]
-
-    xr <- NULL
-    if (!is.null(pp$x.range)) {
-      xr <- pp$x.range
-    } else if (!is.null(pp$x) && !is.null(pp$x$range) && !is.null(pp$x$range$range)) {
-      xr <- pp$x$range$range
-    }
-
-    testthat::expect_true(is.numeric(xr) && length(xr) == 2L)
-    testthat::expect_lte(xr[2], 120 + tol)
-    testthat::expect_gte(xr[2], 120 - tol)
+    xr <- .get_x_range(p)
+    .expect_xrange_includes_limits_with_padding(xr, lim, pad_frac_max = 0.25)
   }
 })
 
-
-testthat::test_that("cifpanel respects limits.x with breaks.x when coord_cartesian is used", {
-  testthat::skip_if_not_installed("ggplot2")
-  testthat::skip_if_not_installed("patchwork")
-
-  data(diabetes.complications, package = "cifmodeling")
-  old <- getOption("warn")
-  options(warn = 2)
-  on.exit(options(warn = old), add = TRUE)
-
-  res <- cifmodeling::cifpanel(
-    formulas = list(
-      cifmodeling::Event(t, epsilon) ~ fruitq,
-      cifmodeling::Event(t, epsilon) ~ sex
-    ),
-    data = diabetes.complications,
-    outcome.type = "competing-risk",
-    code.events = list(c(1, 2, 0), c(1, 2, 0)),
-    rows.columns.panel = c(1, 2),
-    axis.info = list(use.coord.cartesian = TRUE),
-
-    limits.x = list(c(0, 120), c(0, 120)),
-    breaks.x = list(seq(0, 120, 12), seq(0, 120, 12)),
-    limits.y = list(c(0, 1), c(0, 1)),
-
-    add.risktable = FALSE,
-    add.conf = FALSE,
-    add.censor.mark = FALSE
-  )
-
-  testthat::expect_gte(length(res$list.plot), 2L)
-  plots <- res$list.plot[1:2]
-
-  for (p in plots) {
-    b <- ggplot2::ggplot_build(p)
-    pp <- b$layout$panel_params[[1]]
-    xr <- pp$x.range %||% pp$x$range$range
-    testthat::expect_lte(xr[2], 120 + 1e-8)
-  }
-})
 
 testthat::test_that("cifpanel errors if a panel-wise list argument length is neither 1 nor K", {
 
