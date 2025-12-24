@@ -266,7 +266,9 @@ invisibly for further modification (default \code{FALSE}).}
 
 \item{dpi.ggsave}{Numeric DPI passed to \code{ggplot2::ggsave()} (default \code{300}).}
 
-\item{survfit.info, axis.info, visual.info, panel.info, style.info, print.info, ggsave.info}{Internal lists used for programmatic control. Not intended for direct user input.}
+\item{survfit.info, axis.info, visual.info, panel.info, style.info, inset.info, print.info, ggsave.info}{Internal lists used for programmatic control. Not intended for direct user input.}
+
+\item{...}{Additional arguments passed to internal helper functions.}
 }
 \value{
 A \code{"cifplot"} object (a list) with at least the following elements:
@@ -281,13 +283,12 @@ internal lists storing the fitted curves and display settings
 \item \code{call}: the original function call
 }
 
-The object is returned invisibly. When a panel mode is active and
-\code{print.panel = TRUE}, the panel is also printed in interactive sessions.
+When a panel mode is active and \code{print.panel = TRUE}, the panel is also printed in interactive sessions.
 }
 \description{
 This function generates a survival or CIF curve from a unified formula–data
 interface or from an existing survfit object. When a formula is supplied,
-the LHS is typically \code{Event()} or \code{survivai::Surv()}, and the RHS specifies
+the LHS is typically \code{Event()} or \code{survival::Surv()}, and the RHS specifies
 an optional stratification variable. In addition to the curves themselves,
 \code{\link[=cifplot]{cifplot()}} can add numbers-at-risk tables, tables of point estimates and
 CIs, censoring marks, competing-risk marks, and intercurrent-event marks.
@@ -461,4 +462,3 @@ cifplot(Event(t,epsilon) ~ fruitq,
 \seealso{
 \code{\link[=polyreg]{polyreg()}} for log-odds product modeling of CIFs; \code{\link[=cifcurve]{cifcurve()}} for KM/AJ estimators; \code{\link[=cifpanel]{cifpanel()}} for display of multiple CIFs; \link[ggsurvfit:ggsurvfit]{ggsurvfit::ggsurvfit}, \link[patchwork:patchwork-package]{patchwork::patchwork} and \link[modelsummary:modelsummary]{modelsummary::modelsummary} for display helpers.
 }
-\keyword{internal}
