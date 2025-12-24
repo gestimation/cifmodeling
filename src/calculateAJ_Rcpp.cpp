@@ -21,10 +21,6 @@ inline double clamp01(double x, double eps=1e-12){
 inline double qnorm_from_conf(double conf) {
   return R::qnorm(0.5 + conf/2.0, 0.0, 1.0, /*lower*/1, /*log*/0);
 }
-inline double sdiv(double num, double den){
-  if (!R_finite(num) || !R_finite(den) || std::fabs(den) < 1e-12) return 0.0;
-  return num/den;
-}
 inline std::string to_lower(std::string s){
   std::transform(s.begin(), s.end(), s.begin(),
                  [](unsigned char c){ return std::tolower(c); });
@@ -76,23 +72,66 @@ Rcpp::List calculateAJ_Rcpp(
     return std::string("arcsine-square root");
   };
   const std::string canon_conf_type = canon_conf(conf_type);
-
   const std::string ERROR = to_lower(error);
 
-  bool error_tsiatis = (ERROR == "tsiatis");
-  bool error_aalen   = (ERROR == "aalen");
-  bool error_delta   = (ERROR == "delta");
-  bool error_if      = (ERROR == "if") || return_if;
-  bool error_cif     = error_aalen || error_delta || error_if;
-
+  // epsilon からイベント種別を判定（既存の any_of_int を流用）
   auto any_of_int = [](const IntegerVector& v, std::function<bool(int)> pred){
     for (int x : v) if (pred(x)) return true;
     return false;
   };
   const bool has_cause1    = any_of_int(epsilon, [](int e){ return e==1; });
   const bool has_competing = any_of_int(epsilon, [](int e){ return e>=2; });
-  const bool return_aj     = (has_cause1 && (has_competing || error_cif));
-  const bool need_any_cif  = return_aj;
+
+  // --- ここから整理版 ---
+  // SE方式としてIFを使うか（= error="if" の意味）
+  const bool use_if_se = (ERROR == "if");
+
+  // IF行列を「返す」か（返却要求）
+  const bool want_if_output = return_if;
+
+  // IFを「計算する」必要があるか（SEに使う or 返す）
+  const bool compute_if = (use_if_se || want_if_output) && has_cause1;
+
+  // 実際に用いるSE方式（文字列）を確定
+  std::string used_error;
+  if (has_competing) {
+    // competing risks がある場合：{aalen, delta, if} に寄せる
+    if (use_if_se) {
+      used_error = "if";
+    } else if (ERROR == "aalen" || ERROR == "a") {
+      used_error = "aalen";
+    } else {
+      used_error = "delta"; // default + fallback
+    }
+  } else {
+    // survival の場合：{greenwood, tsiatis, if}
+    if (use_if_se) {
+      used_error = "if";
+    } else if (ERROR == "tsiatis" || ERROR == "t") {
+      used_error = "tsiatis";
+    } else {
+      used_error = "greenwood"; // default + fallback
+    }
+  }
+
+  // used_error からフラグを作り直す（以降はこれだけを使う）
+  const bool error_tsiatis = (used_error == "tsiatis");
+  const bool error_aalen   = (used_error == "aalen");
+  const bool error_delta   = (used_error == "delta");
+  // use_if_se は上で確定済み
+
+  // AJ計算（= CIF/1-S を含む経路）を走らせるか
+  // - competing risks があるなら当然 AJ
+  // - survival でも IF をSEに使う or IF を返したいなら AJ 経路が必要（現行設計のIFがF1ベースのため）
+  const bool return_aj    = (has_cause1 && (has_competing || compute_if));
+  const bool need_any_cif = return_aj;
+  // --- ここまで整理版 ---
+
+  //  bool error_tsiatis = (ERROR == "tsiatis");
+  //  bool error_aalen   = (ERROR == "aalen");
+  //  bool error_delta   = (ERROR == "delta");
+  //  bool error_if      = (ERROR == "if") || return_if;
+  //  bool error_cif     = error_aalen || error_delta || error_if;
 
   std::vector<double> combined_aj;  combined_aj.reserve(N);
 
@@ -131,15 +170,6 @@ Rcpp::List calculateAJ_Rcpp(
     guniq = sort_unique(G);
   }
   const int K = guniq.size();
-
-  if (has_competing) {
-    if (error_tsiatis || (!error_delta && !error_if && !error_aalen)) {
-      error_tsiatis = false;
-      error_aalen = false;
-      error_delta = true;
-    }
-    error_cif = (error_aalen || error_delta || error_if);
-  }
 
   int gmax2 = 0; for (int i=0;i<N;++i) if (G[i] > gmax2) gmax2 = G[i];
   std::vector<int> lab2k(gmax2 + 1, -1);
@@ -363,15 +393,18 @@ Rcpp::List calculateAJ_Rcpp(
 
     std::vector<double> se_cif_if(Uall, 0.0);
     NumericMatrix IF_AJ_all;
-    if (error_if) {
+
+    if (compute_if) {
       NumericMatrix IF_AJ_any(n_g, M_any);
-      if (return_if) IF_AJ_all = NumericMatrix(n_g, Uall);
-      for (int r=0; r<n_g; ++r){
+      if (want_if_output) IF_AJ_all = NumericMatrix(n_g, Uall);
+
+      for (int r=0; r<n_g; ++r) {
         int i = ids[r];
         double Ti = t[i], wi = W[i];
         int Ei = epsilon[i];
         double xs_prev = 0.0, xf_prev = 0.0;
-        for (int m=0; m<M_any; ++m){
+
+        for (int m=0; m<M_any; ++m) {
           int j_all = ev_any_idx[m];
           double tj = t_all[j_all];
           double dlam_any = dl_any[m];
@@ -379,40 +412,32 @@ Rcpp::List calculateAJ_Rcpp(
 
           double dm_any = 0.0, dm_c1 = 0.0;
           if (Ti + prob_bound >= tj){
-            dm_any = wi * ((feq(Ti,tj) && (Ei >= 1)) ? (1.0 - dlam_any) : (0.0 - dlam_any));
-            dm_c1  = wi * ((feq(Ti,tj) && (Ei == 1)) ? (1.0 - dlam_c1 ) : (0.0 - dlam_c1 ));
+          dm_any = wi * ((feq(Ti,tj) && (Ei >= 1)) ? (1.0 - dlam_any) : (0.0 - dlam_any));
+            dm_c1 = wi * ((feq(Ti,tj) && (Ei == 1)) ? (1.0 - dlam_c1 ) : (0.0 - dlam_c1 ));
           }
           double invY = invY_all[j_all];
           double xs_now = xs_prev + dm_any * invY;
-          double term   = dm_c1  * invY - xs_prev * dlam_c1;
-          double Sprev  = (m==0? 1.0 : S_any[m-1]);
+          double term = dm_c1 * invY - xs_prev * dlam_c1;
+          double Sprev = (m==0? 1.0 : S_any[m-1]);
           double xf_now = xf_prev + Sprev * term;
-
-          xs_prev = xs_now; xf_prev = xf_now;
+          xs_prev = xs_now;
+          xf_prev = xf_now;
           IF_AJ_any(r, m) = xf_now;
         }
       }
-
-      double sum_w = 0.0; for (int ii = 0; ii < n_g; ++ii) sum_w += W[ ids[ii] ];
-      //      const double denom = (sum_w > 0.0 ? sum_w : (double)n_g);
-
       std::vector<long double> ss(Uall, 0.0L);
-
       for (int j = 0; j < Uall; ++j) {
         int c = all2any[j];
         for (int r = 0; r < n_g; ++r) {
           double v = (c==0 ? 0.0 : IF_AJ_any(r, c-1));
           ss[j] += (long double)v * v;
-          if (return_if) IF_AJ_all(r,j) = v;
+          if (want_if_output) IF_AJ_all(r,j) = v;
         }
       }
       for (int j=0; j<Uall; ++j)
         se_cif_if[j] = std::sqrt((double)ss[j]);
-
-      //      for (int j=0; j<Uall; ++j)
-      //        se_cif_if[j] = std::sqrt((double)(ss[j] / ((long double)denom * denom)));
     }
-    IF_AJ_output[kg] = (error_if && return_if) ? IF_AJ_all : Rcpp::NumericMatrix(0,0);
+    IF_AJ_output[kg] = (want_if_output && compute_if) ? IF_AJ_all : Rcpp::NumericMatrix(0,0);
 
     std::vector<double> se_cif_aalen(Uall, 0.0), se_cif_delta(Uall, 0.0);
 
@@ -525,7 +550,7 @@ Rcpp::List calculateAJ_Rcpp(
     std::vector<double> SE_aj(Uall, 0.0);
     if      (error_aalen) SE_aj = se_cif_aalen;
     else if (error_delta) SE_aj = se_cif_delta;
-    else if (error_if)    SE_aj = se_cif_if;
+    else if (use_if_se)   SE_aj = se_cif_if;
     else                  SE_aj = SE_all;
 
     std::vector<double> high_all(Uall, NA_REAL), low_all(Uall, NA_REAL);
@@ -547,26 +572,30 @@ Rcpp::List calculateAJ_Rcpp(
           if (canon_conf_type=="plain"){
             loF = std::max(0.0, Fj - z*SEj);
             hiF = std::min(1.0, Fj + z*SEj);
+
           } else if (canon_conf_type=="log"){
             double Sj = 1.0 - Fj;
             double se = SEj / Sj;
-            double lo = 1.0 - Sj * std::exp( z*se);
-            double hi = 1.0 - Sj * std::exp(-z*se);
-            low_all[j]=std::max(0.0, lo);
-            high_all[j]=std::min(1.0, hi);
+            loF = 1.0 - Sj * std::exp( z*se);
+            hiF = 1.0 - Sj * std::exp(-z*se);
+            loF = std::max(0.0, std::min(1.0, loF));
+            hiF = std::max(0.0, std::min(1.0, hiF));
+
           } else if (canon_conf_type=="log-log"){
             double Sj = 1.0 - Fj;
             double se = SEj / ( Sj * std::fabs(std::log(Sj)) );
-            double lo = 1.0 - std::exp( - std::exp( std::log(-std::log(Sj)) - z*se ) );
-            double hi = 1.0 - std::exp( - std::exp( std::log(-std::log(Sj)) + z*se ) );
-            low_all[j]=std::max(0.0, std::min(1.0, lo));
-            high_all[j]=std::max(0.0, std::min(1.0, hi));
+            loF = 1.0 - std::exp( - std::exp( std::log(-std::log(Sj)) - z*se ) );
+            hiF = 1.0 - std::exp( - std::exp( std::log(-std::log(Sj)) + z*se ) );
+            loF = std::max(0.0, std::min(1.0, loF));
+            hiF = std::max(0.0, std::min(1.0, hiF));
+
           } else if (canon_conf_type=="logit"){
             double se = SEj / std::max(1e-15, Fj*(1.0 - Fj));
             loF = Fj / ( Fj + (1.0 - Fj)*std::exp( z*se) );
             hiF = Fj / ( Fj + (1.0 - Fj)*std::exp(-z*se) );
             loF = std::max(0.0, std::min(1.0, loF));
             hiF = std::max(0.0, std::min(1.0, hiF));
+
           } else { // arcsine-square root
             double denom = 2.0 * std::sqrt( std::max(1e-15, Fj*(1.0-Fj)) );
             double se    = (denom>0.0 ? SEj/denom : R_PosInf);
@@ -655,7 +684,7 @@ Rcpp::List calculateAJ_Rcpp(
   }
 
   std::string out_type, out_method;
-  if (return_aj){
+  if (has_competing){
     out_type   = "aalen-johansen";
     out_method = "Aalen-Johansen";
   } else {
@@ -704,6 +733,7 @@ Rcpp::List calculateAJ_Rcpp(
     _["low"]                = wrap(combined_low),
     _["high"]               = wrap(combined_high),
     _["conf.type"]          = canon_conf_type,
+    _["error"]              = used_error,
     _["strata"]             = strata_out,
     _["strata.levels"]      = strata_levels_out_sexp,
     _["type"]               = out_type,

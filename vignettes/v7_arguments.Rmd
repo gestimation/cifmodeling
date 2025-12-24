@@ -87,6 +87,7 @@ vignette: >
 -   `width.ggsave` Numeric specify width of the `ggsurvfit` plot.
 -   `height.ggsave` Numeric specify height of the `ggsurvfit` plot.
 -   `dpi.ggsave` Numeric specify dpi of the `ggsurvfit` plot.
+-   `...` Additional arguments passed to internal helper functions.
 
 ## cifpanel()
 

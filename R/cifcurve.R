@@ -48,7 +48,9 @@
 #' -   `mean()`: restricted mean survival estimates with CIs
 #' -   `quantile()`: quantile estimates with CIs
 #'
-#' Note that some methods (e.g. `residuals.survfit`) may not be supported.
+#' Note that `$n.risk`, `$n.event`, and `$n.censor` are rounded up to the nearest integer
+#' regardless of whether the data is weighted or not.
+#' Some methods (e.g. `residuals.survfit`) may not be supported.
 #'
 #' @examples
 #' data(diabetes.complications)
@@ -90,11 +92,12 @@ cifcurve <- function(
     engine = "calculateAJ_Rcpp",
     prob.bound = 1e-7
 ) {
+  has_weights_user <- !(missing(weights) || is.null(weights))
   outcome.type  <- util_check_outcome_type(outcome.type, formula = formula, data = data)
   out_read_surv <- util_read_surv(formula, data, weights,
                                   code.event1, code.event2, code.censoring,
                                   subset.condition, na.action)
-  error <- curve_check_error(error, outcome.type, weights)
+  error <- curve_check_error(error, outcome.type, weights = out_read_surv$w, has_weights = has_weights_user)
   call <- match.call()
 
   strata_fac   <- as.factor(out_read_surv$strata)
@@ -123,9 +126,9 @@ cifcurve <- function(
       time      = out_km$time,
       surv      = out_km$surv,
       n         = out_km$n,
-      n.risk    = out_km$n.risk,
-      n.event   = out_km$n.event,
-      n.censor  = out_km$n.censor,
+      n.risk    = ceiling(out_km$n.risk),
+      n.event   = ceiling(out_km$n.event),
+      n.censor  = ceiling(out_km$n.censor),
       std.err   = out_km$std.err,
       std.err.cif = out_km$`std.err.cif`,
       upper     = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$upper,
@@ -173,9 +176,9 @@ cifcurve <- function(
       time        = out_aj$time1,
       surv        = out_aj$surv,
       n           = n,
-      n.risk      = n.risk,
-      n.event     = out_aj$n.event1,
-      n.censor    = out_aj$n.censor,
+      n.risk      = ceiling(n.risk),
+      n.event     = ceiling(out_aj$n.event1),
+      n.censor    = ceiling(out_aj$n.censor),
       std.err     = out_aj$std.err,
       std.err.cif = std_err_cif,
       upper       = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$upper,
@@ -196,7 +199,7 @@ cifcurve <- function(
   out_cpp <- call_calculateAJ_Rcpp(
     t = out_read_surv$t,
     epsilon = as.integer(epsilon_norm),
-    w = out_read_surv$w,
+    w = if (has_weights_user) out_read_surv$w else NULL,
     strata = as.integer(out_read_surv$strata),
     error = error,
     conf.type = conf.type,
@@ -212,9 +215,12 @@ cifcurve <- function(
   }
   out_cpp$call <- call
   out_cpp <- harmonize_engine_output(out_cpp)
+  out_cpp$n.risk <- ceiling(out_cpp$n.risk)
+  out_cpp$n.censor <- ceiling(out_cpp$n.censor)
+  out_cpp$n.event <- ceiling(out_cpp$n.event)
   if (isTRUE(report.survfit.std.err)) out_cpp$std.err <- out_cpp$std.err / out_cpp$surv
   class(out_cpp) <- "survfit"
-  out_cpp
+  return(out_cpp)
 }
 
 calculateAJ <- function(data) {
@@ -300,7 +306,7 @@ calculateAJ <- function(data) {
   )
 }
 
-curve_check_error <- function(x, outcome.type, weights = NULL) {
+curve_check_error <- function(x, outcome.type, weights = NULL, has_weights = NULL) {
   ot <- util_check_outcome_type(x = outcome.type, auto_message = FALSE)
 
   choices <- switch(
@@ -310,7 +316,10 @@ curve_check_error <- function(x, outcome.type, weights = NULL) {
     stop(sprintf("Invalid outcome.type: %s", outcome.type), call. = FALSE)
   )
 
-  has_weights <- !is.null(weights)
+  if (is.null(has_weights)) {
+    has_weights <- !is.null(weights) && length(weights) > 0
+  }
+
   fallback <- if (has_weights) {
     "if"
   } else if (ot == "survival") {
@@ -322,25 +331,18 @@ curve_check_error <- function(x, outcome.type, weights = NULL) {
   if (is.null(x)) return(fallback)
 
   normalize_error <- function(z) {
-    if (is.null(z)) return(NULL)
     z <- tolower(trimws(as.character(z)))
 
-    if (z %in% c("g", "greenwood")) {
-      return("greenwood")
-    }
-    if (z %in% c("t", "tsiatis")) {
-      return("tsiatis")
-    }
+    if (z %in% c("g", "greenwood")) return("greenwood")
+    if (z %in% c("t", "tsiatis"))   return("tsiatis")
     if (z %in% c("if", "influence function", "influence_function",
-                 "influence curve", "ic")) {
-      return("if")
-    }
+                 "influence curve", "ic")) return("if")
+    if (z %in% c("a", "aalen"))     return("aalen")
+    if (z %in% c("d", "delta"))     return("delta")
     z
   }
-
   x_norm <- normalize_error(x)
-
-  if (has_weights && ot == "competing-risk" && x_norm %in% c("aalen", "delta")) {
+  if (has_weights && x_norm != "if") {
     warning(
       sprintf("%s with weights: error='%s' is not supported; falling back to 'if'.",
               ot, as.character(x)),
@@ -358,6 +360,7 @@ curve_check_error <- function(x, outcome.type, weights = NULL) {
   )
   fallback
 }
+
 
 call_calculateAJ_Rcpp <- function(t, epsilon, w = NULL, strata = NULL,
                                    error = "greenwood",

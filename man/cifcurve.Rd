@@ -83,7 +83,9 @@ This enables an independent use of standard methods for \code{survfit} such as:
 \item \code{quantile()}: quantile estimates with CIs
 }
 
-Note that some methods (e.g. \code{residuals.survfit}) may not be supported.
+Note that \verb{$n.risk}, \verb{$n.event}, and \verb{$n.censor} are rounded up to the nearest integer
+regardless of whether the data is weighted or not.
+Some methods (e.g. \code{residuals.survfit}) may not be supported.
 }
 \description{
 Core estimation routine that computes a survfit-compatible object

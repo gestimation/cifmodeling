@@ -66,8 +66,9 @@
 #'   `panel.per.event = TRUE`; (iii) otherwise, if `outcome.type == "survival"`, it
 #'   behaves like `panel.censoring = TRUE`. If a panel mode is explicitly specified,
 #'   `panel.mode` is ignored.
-#' @param survfit.info,axis.info,visual.info,panel.info,style.info,print.info,ggsave.info
+#' @param survfit.info,axis.info,visual.info,panel.info,style.info,inset.info,print.info,ggsave.info
 #'   Internal lists used for programmatic control. Not intended for direct user input.
+#' @param ... Additional arguments passed to internal helper functions.
 #'
 #' @details
 #'
@@ -1235,7 +1236,6 @@ call_ggsurvfit <- function(
   font.size          <- style.info$font.size
   legend.position    <- style.info$legend.position
 
-  # --- strata label/order reconcile (元のまま) ---
   if (!identical(legend.position, "none")) {
     label.strata.map <- plot_make_label.strata.map(
       survfit_object = survfit_object,
@@ -1271,14 +1271,12 @@ call_ggsurvfit <- function(
   type_y_eff <- out_cg$type.y
   is_cloglog <- identical(type_y_eff, "cloglog") || identical(type.y, "cloglog")
 
-  # 1) ベースプロット
   p <- out_cg$out_survfit_object +
     ggplot2::labs(
       x = label.x.user %||% "Time",
       y = label.y.user %||% out_cg$label.y
     )
 
-  # 2) 追加レイヤー（cloglog は従来どおりスキップしたいならここで抑制）
   if (!isTRUE(is_cloglog)) {
     if (isTRUE(add.conf)) {
       p <- p + add_confidence_interval()

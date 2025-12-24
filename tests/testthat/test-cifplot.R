@@ -169,7 +169,6 @@ test_that("cifplot does not print by default", {
 })
 
 
-
 test_that("cifpanel returns list.plot and patchwork (no out_patchwork)", {
   data(diabetes.complications)
   res <- get_panel_from_cifpanel(
@@ -237,7 +236,6 @@ extract_x_range <- function(x) {
 test_that("cifplot respects limits.x even when breaks.x is supplied", {
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("survival")
-  skip_if_not_installed("withr")
 
   set.seed(1)
   n <- 300
@@ -247,8 +245,9 @@ test_that("cifplot respects limits.x even when breaks.x is supplied", {
     group  = factor(sample(c("A", "B"), n, TRUE))
   )
 
-  # “warning -> error” を確実に回避
-  withr::local_options(list(warn = 0))
+  old <- getOption("warn")
+  options(warn = 0)
+  on.exit(options(warn = old), add = TRUE)
 
   obj <- cifplot(
     survival::Surv(time, status) ~ group,
@@ -260,19 +259,16 @@ test_that("cifplot respects limits.x even when breaks.x is supplied", {
     add.risktable   = FALSE,
     add.censor.mark = FALSE
   )
-
   xr <- extract_x_range(obj)
-
-  # 期待：上限が 120 を超えない
   expect_lte(xr[2], 120 + 1e-8)
 })
+
 
 
 
 test_that("cifplot respects limits.x with breaks.x when coord_cartesian is used", {
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("survival")
-  skip_if_not_installed("withr")
 
   set.seed(2)
   n <- 300
@@ -282,7 +278,9 @@ test_that("cifplot respects limits.x with breaks.x when coord_cartesian is used"
     group  = factor(sample(c("A", "B"), n, TRUE))
   )
 
-  withr::local_options(list(warn = 0))
+  old <- getOption("warn")
+  options(warn = 0)
+  on.exit(options(warn = old), add = TRUE)
 
   obj <- cifplot(
     survival::Surv(time, status) ~ group,
@@ -367,11 +365,12 @@ testthat::test_that("cifplot returns a cifplot object whose $plot is ggplot", {
 
 testthat::test_that("cifplot respects limits.x even when breaks.x is supplied (scale_x_continuous path)", {
   testthat::skip_if_not_installed("ggplot2")
-  testthat::skip_if_not_installed("withr")
 
   data(diabetes.complications, package = "cifmodeling")
 
-  withr::local_options(warn = 2)  # fail fast if warnings reappear
+  old <- getOption("warn")
+  options(warn = 2)
+  on.exit(options(warn = old), add = TRUE)
 
   out <- cifmodeling::cifplot(
     cifmodeling::Event(t, epsilon) ~ fruitq,
@@ -392,17 +391,17 @@ testthat::test_that("cifplot respects limits.x even when breaks.x is supplied (s
 
   br <- .extract_x_breaks(out$plot)
   testthat::expect_true(is.numeric(br))
-  # breaks が全部入っていることまでは厳密に要求しない（NA/範囲外除外などに耐性を持たせる）
   testthat::expect_true(all(seq(0, 120, 12) %in% br | is.na(seq(0, 120, 12))))
 })
 
 testthat::test_that("cifplot respects limits.x with breaks.x when coord_cartesian is used", {
   testthat::skip_if_not_installed("ggplot2")
-  testthat::skip_if_not_installed("withr")
 
   data(diabetes.complications, package = "cifmodeling")
 
-  withr::local_options(warn = 2)
+  old <- getOption("warn")
+  options(warn = 2)
+  on.exit(options(warn = old), add = TRUE)
 
   out <- cifmodeling::cifplot(
     cifmodeling::Event(t, epsilon) ~ fruitq,
@@ -424,16 +423,16 @@ testthat::test_that("cifplot respects limits.x with breaks.x when coord_cartesia
 
 testthat::test_that("cifplot respects limits.y when breaks.y is supplied (no warnings; simple survival risk)", {
   testthat::skip_if_not_installed("ggplot2")
-  testthat::skip_if_not_installed("withr")
 
-  # 0イベントで risk=0 を作り、limits.y=[0,0.5] 内に確実に収める
   df0 <- data.frame(
     time  = c(1, 2, 3, 4, 5, 6),
     status = c(0, 0, 0, 0, 0, 0),
     grp = rep(c("A", "B"), each = 3)
   )
 
-  withr::local_options(warn = 2)
+  old <- getOption("warn")
+  options(warn = 2)
+  on.exit(options(warn = old), add = TRUE)
 
   out <- cifmodeling::cifplot(
     survival::Surv(time, status) ~ grp,
@@ -455,11 +454,12 @@ testthat::test_that("cifplot respects limits.y when breaks.y is supplied (no war
 
 testthat::test_that("cifplot warns when breaks.x are outside limits.x (optional behavior check)", {
   testthat::skip_if_not_installed("ggplot2")
-  testthat::skip_if_not_installed("withr")
 
   data(diabetes.complications, package = "cifmodeling")
 
-  withr::local_options(warn = 1)
+  old <- getOption("warn")
+  options(warn = 1)
+  on.exit(options(warn = old), add = TRUE)
 
   testthat::expect_warning(
     cifmodeling::cifplot(
@@ -482,18 +482,15 @@ testthat::test_that("cifplot warns when breaks.x are outside limits.x (optional 
 testthat::test_that("cifplot: type.y='cumhaz' matches -log(KM survival)", {
   testthat::skip_if_not_installed("ggplot2")
   testthat::skip_if_not_installed("survival")
-  testthat::skip_if_not_installed("withr")
 
-  `%||%` <- function(x, y) if (is.null(x)) y else x
-
-  # Deterministic toy data: 6 subjects, 5 events at t=1..5, 1 censored at t=6
-  # KM at t=5 is 1/6, so cumhaz = -log(1/6)
   df <- data.frame(
     time   = c(1,2,3,4,5,6),
     status = c(1,1,1,1,1,0)
   )
 
-  withr::local_options(warn = 2)
+  old <- getOption("warn")
+  options(warn = 2)
+  on.exit(options(warn = old), add = TRUE)
 
   sf <- survival::survfit(survival::Surv(time, status) ~ 1, data = df)
   surv5 <- base::summary(sf, times = 5)$surv
@@ -548,16 +545,11 @@ testthat::test_that("cifplot: type.y='cumhaz' matches -log(KM survival)", {
 testthat::test_that("cifplot: type.y='cloglog' matches log(-log(KM survival))", {
   testthat::skip_if_not_installed("ggplot2")
   testthat::skip_if_not_installed("survival")
-  testthat::skip_if_not_installed("withr")
-
-  `%||%` <- function(x, y) if (is.null(x)) y else x
 
   df <- data.frame(
     time   = c(1,2,3,4,5,6),
     status = c(1,1,1,1,1,0)
   )
-
-  withr::local_options(warn = 2)
 
   sf <- survival::survfit(survival::Surv(time, status) ~ 1, data = df)
   surv5 <- base::summary(sf, times = 5)$surv
@@ -611,16 +603,15 @@ testthat::test_that("cifpanel: per-panel type.y supports cumhaz and cloglog", {
   testthat::skip_if_not_installed("ggplot2")
   testthat::skip_if_not_installed("patchwork")
   testthat::skip_if_not_installed("survival")
-  testthat::skip_if_not_installed("withr")
-
-  `%||%` <- function(x, y) if (is.null(x)) y else x
 
   df <- data.frame(
     time   = c(1,2,3,4,5,6),
     status = c(1,1,1,1,1,0)
   )
 
-  withr::local_options(warn = 2)
+  old <- getOption("warn")
+  options(warn = 2)
+  on.exit(options(warn = old), add = TRUE)
 
   sf <- survival::survfit(survival::Surv(time, status) ~ 1, data = df)
   surv5 <- base::summary(sf, times = 5)$surv
@@ -679,14 +670,15 @@ testthat::test_that("cifpanel: per-panel type.y supports cumhaz and cloglog", {
 
 testthat::test_that("cifplot: cumhaz/cloglog respect limits.y and breaks.y (robust)", {
   testthat::skip_if_not_installed("ggplot2")
-  testthat::skip_if_not_installed("withr")
   testthat::skip_if_not_installed("survival")
 
   data(diabetes.complications, package = "cifmodeling")
   df <- diabetes.complications
   df$status1 <- ifelse(df$epsilon == 1, 1L, 0L)
 
-  withr::local_options(warn = 2)
+  old <- getOption("warn")
+  options(warn = 2)
+  on.exit(options(warn = old), add = TRUE)
 
   `%||%` <- function(x, y) if (!is.null(x)) x else y
 
@@ -762,14 +754,15 @@ testthat::test_that("cifplot: cumhaz/cloglog respect limits.y and breaks.y (robu
 testthat::test_that("cifpanel: per-panel cumhaz/cloglog respect limits.y and breaks.y (robust)", {
   testthat::skip_if_not_installed("ggplot2")
   testthat::skip_if_not_installed("patchwork")
-  testthat::skip_if_not_installed("withr")
   testthat::skip_if_not_installed("survival")
 
   data(diabetes.complications, package = "cifmodeling")
   df <- diabetes.complications
   df$status1 <- ifelse(df$epsilon == 1, 1L, 0L)
 
-  withr::local_options(warn = 2)
+  old <- getOption("warn")
+  options(warn = 2)
+  on.exit(options(warn = old), add = TRUE)
 
   `%||%` <- function(x, y) if (!is.null(x)) x else y
 

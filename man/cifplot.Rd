@@ -266,7 +266,9 @@ invisibly for further modification (default \code{FALSE}).}
 
 \item{dpi.ggsave}{Numeric DPI passed to \code{ggplot2::ggsave()} (default \code{300}).}
 
-\item{survfit.info, axis.info, visual.info, panel.info, style.info, print.info, ggsave.info}{Internal lists used for programmatic control. Not intended for direct user input.}
+\item{survfit.info, axis.info, visual.info, panel.info, style.info, inset.info, print.info, ggsave.info}{Internal lists used for programmatic control. Not intended for direct user input.}
+
+\item{...}{Additional arguments passed to internal helper functions.}
 }
 \value{
 A \code{"cifplot"} object (a list) with at least the following elements:

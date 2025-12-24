@@ -559,11 +559,12 @@ test_that("cifpanel() accepts panel-wise list arguments (happy path)", {
 testthat::test_that("cifpanel returns a patchwork object for multi-panel inputs", {
   testthat::skip_if_not_installed("ggplot2")
   testthat::skip_if_not_installed("patchwork")
-  testthat::skip_if_not_installed("withr")
 
   data(diabetes.complications, package = "cifmodeling")
 
-  withr::local_options(warn = 2)
+  old <- getOption("warn")
+  options(warn = 2)
+  on.exit(options(warn = old), add = TRUE)
 
   res <- cifmodeling::cifpanel(
     formulas = list(
@@ -621,10 +622,11 @@ testthat::test_that("cifpanel returns a patchwork object for multi-panel inputs"
 testthat::test_that("cifpanel respects limits.x even when breaks.x is supplied (scale_x_continuous path)", {
   testthat::skip_if_not_installed("ggplot2")
   testthat::skip_if_not_installed("patchwork")
-  testthat::skip_if_not_installed("withr")
 
   data(diabetes.complications, package = "cifmodeling")
-  withr::local_options(warn = 2)
+  old <- getOption("warn")
+  options(warn = 2)
+  on.exit(options(warn = old), add = TRUE)
 
   res <- cifmodeling::cifpanel(
     formulas = list(
@@ -665,10 +667,11 @@ testthat::test_that("cifpanel respects limits.x even when breaks.x is supplied (
 testthat::test_that("cifpanel respects limits.x with breaks.x when coord_cartesian is used", {
   testthat::skip_if_not_installed("ggplot2")
   testthat::skip_if_not_installed("patchwork")
-  testthat::skip_if_not_installed("withr")
 
   data(diabetes.complications, package = "cifmodeling")
-  withr::local_options(warn = 2)
+  old <- getOption("warn")
+  options(warn = 2)
+  on.exit(options(warn = old), add = TRUE)
 
   res <- cifmodeling::cifpanel(
     formulas = list(
@@ -702,9 +705,11 @@ testthat::test_that("cifpanel respects limits.x with breaks.x when coord_cartesi
 })
 
 testthat::test_that("cifpanel errors if a panel-wise list argument length is neither 1 nor K", {
-  testthat::skip_if_not_installed("withr")
+
   data(diabetes.complications, package = "cifmodeling")
-  withr::local_options(warn = 2)
+  old <- getOption("warn")
+  options(warn = 2)
+  on.exit(options(warn = old), add = TRUE)
 
   testthat::expect_error(
     cifmodeling::cifpanel(
