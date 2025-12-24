@@ -1157,7 +1157,6 @@ plot_update_existing_y_scale <- function(p, limits.y = NULL, breaks.y = NULL) {
     return(p)
   }
 
-  # なければ新規に足す（labels 等は call_ggsurvfit 側のデフォルトに任せる）
   p + ggplot2::scale_y_continuous(limits = limits.y, breaks = breaks.y)
 }
 
@@ -1182,7 +1181,8 @@ apply_axis_limits_breaks <- function(p, type_y_eff, survfit_object,
                                      limits.x, limits.y, breaks.x, breaks.y,
                                      use.coord.cartesian) {
 
-  exp_x <- ggplot2::expansion(mult = c(0.05, 0), add = 0)
+  pad_mult <- 0.05
+  exp_x <- ggplot2::expansion(mult = c(pad_mult, pad_mult), add = 0)
   exp0  <- ggplot2::expansion(mult = 0, add = 0)
 
   x_max <- plot_make_x_max(survfit_object)
@@ -1211,17 +1211,19 @@ apply_axis_limits_breaks <- function(p, type_y_eff, survfit_object,
 
   if (isTRUE(use.coord.cartesian)) {
 
+    xlim_eff <- limits.x %||% c(0, x_max)
+    if (length(xlim_eff) == 2 && is.finite(xlim_eff[1]) && is.finite(xlim_eff[2])) {
+      span <- xlim_eff[2] - xlim_eff[1]
+      padL <- max(1e-8, pad_mult * span)
+      padR <- max(1e-8, pad_mult * span)
+      if (abs(xlim_eff[1]) < 1e-12) xlim_eff[1] <- -padL
+      xlim_eff[2] <- xlim_eff[2] + padR
+    }
     if (!is.null(breaks.x) || !is.null(limits.x)) {
       p <- set_or_add_scale(p, "x", breaks = breaks.x, limits = NULL, expand = exp_x)
     }
     if (!is.null(breaks.y) || !is.null(limits.y)) {
       p <- set_or_add_scale(p, "y", breaks = breaks.y, limits = NULL, expand = exp0)
-    }
-    xlim_eff <- limits.x %||% c(0, x_max)
-    if (length(xlim_eff) == 2 && is.finite(xlim_eff[1]) && is.finite(xlim_eff[2])) {
-      span <- xlim_eff[2] - xlim_eff[1]
-      pad  <- max(1e-8, 0.02 * span)
-      if (abs(xlim_eff[1]) < 1e-12) xlim_eff[1] <- -pad
     }
 
     if (!is.null(limits.x) || !is.null(limits.y)) {
@@ -1233,6 +1235,7 @@ apply_axis_limits_breaks <- function(p, type_y_eff, survfit_object,
     return(p)
   }
 
+  # scale_*_continuous path
   default_limits_y <- if (is.null(limits.y) && (is.null(type_y_eff) || type_y_eff %in% c("surv","risk"))) c(0,1) else limits.y
 
   if (!is.null(breaks.y) || !is.null(limits.y)) {
@@ -1251,7 +1254,7 @@ apply_axis_limits_breaks <- function(p, type_y_eff, survfit_object,
       p, "x",
       breaks = breaks.x,
       limits = limits.x %||% c(0, x_max),
-      expand = exp_x   # ★ここを exp0 ではなく exp_x に
+      expand = exp_x
     )
   } else {
     p <- p + ggplot2::lims(x = c(0, x_max))

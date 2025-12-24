@@ -670,11 +670,7 @@ testthat::test_that("cifpanel respects limits.x even when breaks.x is supplied (
     }
 
     testthat::expect_true(is.numeric(xr) && length(xr) == 2L)
-
-    # 左端は ggsurvfit 互換の pad により負になり得るため主張しない
     testthat::expect_lte(xr[2], 120 + tol)
-
-    # 任意：右端が意図せず縮み過ぎないことの弱い担保（安定なら残す）
     testthat::expect_gte(xr[2], 120 - tol)
   }
 })
