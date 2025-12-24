@@ -141,7 +141,10 @@ Rcpp::List calculateAJ_Rcpp(
     IntegerVector gs = as<IntegerVector>(strata);
     if (gs.size() == N) {
       G = gs;
-      if (gs.hasAttribute("levels")) levs = gs.attr("levels");
+      SEXP levsSEXP = Rf_getAttrib((SEXP)gs, R_LevelsSymbol);
+      if (levsSEXP != R_NilValue) {
+        levs = Rcpp::CharacterVector(levsSEXP);
+      }
     } else if (gs.size() != 0) {
       stop("strata must have length 0 or N.");
     }
