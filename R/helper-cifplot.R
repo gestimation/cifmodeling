@@ -1182,12 +1182,11 @@ apply_axis_limits_breaks <- function(p, type_y_eff, survfit_object,
                                      limits.x, limits.y, breaks.x, breaks.y,
                                      use.coord.cartesian) {
 
+  exp_x <- ggplot2::expansion(mult = c(0.05, 0), add = 0)
   exp0  <- ggplot2::expansion(mult = 0, add = 0)
+
   x_max <- plot_make_x_max(survfit_object)
 
-  `%||%` <- function(x, y) if (!is.null(x)) x else y
-
-  # 既存スケールがあれば「追加せずに」上書き（warn=2 対策）
   set_or_add_scale <- function(p, axis = c("x","y"), breaks = NULL, limits = NULL, expand = NULL) {
     axis <- match.arg(axis)
     sc <- p$scales$get_scales(axis)
@@ -1199,34 +1198,41 @@ apply_axis_limits_breaks <- function(p, type_y_eff, survfit_object,
       return(p)
     }
 
-    # 無ければ追加（この場合は warning 出ない）
+    breaks2 <- if (is.null(breaks)) ggplot2::waiver() else breaks
+    expand2 <- expand %||% ggplot2::waiver()
+
     if (axis == "x") {
-      p <- p + ggplot2::scale_x_continuous(breaks = breaks, limits = limits, expand = expand %||% ggplot2::waiver())
+      p <- p + ggplot2::scale_x_continuous(breaks = breaks2, limits = limits, expand = expand2)
     } else {
-      p <- p + ggplot2::scale_y_continuous(breaks = breaks, limits = limits, expand = expand %||% ggplot2::waiver())
+      p <- p + ggplot2::scale_y_continuous(breaks = breaks2, limits = limits, expand = expand2)
     }
     p
   }
 
   if (isTRUE(use.coord.cartesian)) {
-    # coord_cartesian でも scale の expand が効くので、limits/breaks 指定時は expand=0 を強制
+
     if (!is.null(breaks.x) || !is.null(limits.x)) {
-      p <- set_or_add_scale(p, "x", breaks = breaks.x, limits = NULL, expand = exp0)
+      p <- set_or_add_scale(p, "x", breaks = breaks.x, limits = NULL, expand = exp_x)
     }
     if (!is.null(breaks.y) || !is.null(limits.y)) {
       p <- set_or_add_scale(p, "y", breaks = breaks.y, limits = NULL, expand = exp0)
     }
+    xlim_eff <- limits.x %||% c(0, x_max)
+    if (length(xlim_eff) == 2 && is.finite(xlim_eff[1]) && is.finite(xlim_eff[2])) {
+      span <- xlim_eff[2] - xlim_eff[1]
+      pad  <- max(1e-8, 0.02 * span)
+      if (abs(xlim_eff[1]) < 1e-12) xlim_eff[1] <- -pad
+    }
 
     if (!is.null(limits.x) || !is.null(limits.y)) {
-      p <- p + ggplot2::coord_cartesian(xlim = limits.x, ylim = limits.y, expand = FALSE)
+      p <- p + ggplot2::coord_cartesian(xlim = xlim_eff, ylim = limits.y, expand = FALSE)
     } else {
       default_ylim <- if (is.null(type_y_eff) || type_y_eff %in% c("surv","risk")) c(0,1) else NULL
-      p <- p + ggplot2::coord_cartesian(xlim = c(0, x_max), ylim = default_ylim, expand = FALSE)
+      p <- p + ggplot2::coord_cartesian(xlim = xlim_eff, ylim = default_ylim, expand = FALSE)
     }
     return(p)
   }
 
-  # scale_*_continuous path
   default_limits_y <- if (is.null(limits.y) && (is.null(type_y_eff) || type_y_eff %in% c("surv","risk"))) c(0,1) else limits.y
 
   if (!is.null(breaks.y) || !is.null(limits.y)) {
@@ -1245,11 +1251,10 @@ apply_axis_limits_breaks <- function(p, type_y_eff, survfit_object,
       p, "x",
       breaks = breaks.x,
       limits = limits.x %||% c(0, x_max),
-      expand = exp0
+      expand = exp_x   # ★ここを exp0 ではなく exp_x に
     )
   } else {
     p <- p + ggplot2::lims(x = c(0, x_max))
   }
-
-  p
+  return(p)
 }

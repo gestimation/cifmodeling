@@ -1347,7 +1347,6 @@ call_ggsurvfit <- function(
     }
   }
 
-  # 3) style / scales
   if (!identical(style, "ggsurvfit")) {
     p <- plot_apply_style(
       p,
@@ -1371,7 +1370,6 @@ call_ggsurvfit <- function(
     limits_arg          = limits_arg
   )
 
-  # 4) ここで必ず axis 指定を最終上書き（cloglog含む）
   p <- apply_axis_limits_breaks(
     p,
     type_y_eff          = type_y_eff,
@@ -1570,45 +1568,6 @@ call_ggsurvfit_old <- function(
       size  = size.intercurrent.event.mark
     )
   }
-
-#  x_max <- plot_make_x_max(survfit_object)
-#  if (isTRUE(use.coord.cartesian)) {
-#    if (!is.null(breaks.x)) p <- p + ggplot2::scale_x_continuous(breaks = breaks.x)
-#    if (!is.null(breaks.y)) p <- p + ggplot2::scale_y_continuous(breaks = breaks.y)
-#    if (!is.null(limits.x) || !is.null(limits.y)) {
-#      p <- p + ggplot2::coord_cartesian(xlim = limits.x, ylim = limits.y, expand = FALSE)
-#    } else {
-#      p <- p + ggplot2::coord_cartesian(xlim = c(0, x_max), ylim = c(0, 1), expand = FALSE)
-#    }
-#  } else {
-#    type_y_eff <- out_cg$type.y
-#    default_limits_y <- if (is.null(limits.y) && (is.null(type_y_eff) || type_y_eff %in% c("surv", "risk"))) {
-#      c(0, 1)
-#    } else {
-#      limits.y
-#    }
-
-#    if (!is.null(breaks.y) || !is.null(limits.y)) {
-#      p <- p + ggplot2::scale_y_continuous(
-#        breaks = breaks.y,
-#        limits = default_limits_y,
-#        expand = if (!is.null(default_limits_y)) ggplot2::expansion(mult = 0, add = 0) else ggplot2::waiver()
-#      )
-#    } else {
-#      if (is.null(type_y_eff) || type_y_eff %in% c("surv", "risk")) {
-#        p <- p + ggplot2::lims(y = c(0, 1))
-#      }
-#    }
-#    if (!is.null(breaks.x) || !is.null(limits.x)) {
-#      p <- p + ggplot2::scale_x_continuous(
-#        breaks = breaks.x,
-#        limits = limits.x %||% c(0, x_max),
-#        expand = ggplot2::expansion(mult = 0, add = 0)
-#      )
-#    } else {
-#      p <- p + ggplot2::lims(x = c(0, x_max))
-#    }
-#  }
 
   if (!identical(style, "ggsurvfit")) {
     p <- plot_apply_style(

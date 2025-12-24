@@ -624,6 +624,7 @@ testthat::test_that("cifpanel respects limits.x even when breaks.x is supplied (
   testthat::skip_if_not_installed("patchwork")
 
   data(diabetes.complications, package = "cifmodeling")
+
   old <- getOption("warn")
   options(warn = 2)
   on.exit(options(warn = old), add = TRUE)
@@ -636,13 +637,13 @@ testthat::test_that("cifpanel respects limits.x even when breaks.x is supplied (
     data = diabetes.complications,
     outcome.type = "competing-risk",
     code.events = list(c(1, 2, 0), c(1, 2, 0)),
-    rows.columns.panel = c(1, 2),            # 重要：2スロット確保
+    rows.columns.panel = c(1, 2),
     axis.info = list(use.coord.cartesian = FALSE),
 
     limits.x = list(c(0, 120), c(0, 120)),
     breaks.x = list(seq(0, 120, 12), seq(0, 120, 12)),
 
-    limits.y = list(c(0, 1), c(0, 1)),       # warn=2 対策
+    limits.y = list(c(0, 1), c(0, 1)),
     add.risktable = FALSE,
     add.conf = FALSE,
     add.censor.mark = FALSE
@@ -653,16 +654,31 @@ testthat::test_that("cifpanel respects limits.x even when breaks.x is supplied (
   testthat::expect_gte(length(res$list.plot), 2L)
 
   plots <- res$list.plot[1:2]
+  tol <- 1e-8
+
   for (p in plots) {
     testthat::expect_s3_class(p, "ggplot")
+
     b <- ggplot2::ggplot_build(p)
     pp <- b$layout$panel_params[[1]]
-    xr <- pp$x.range %||% pp$x$range$range
+
+    xr <- NULL
+    if (!is.null(pp$x.range)) {
+      xr <- pp$x.range
+    } else if (!is.null(pp$x) && !is.null(pp$x$range) && !is.null(pp$x$range$range)) {
+      xr <- pp$x$range$range
+    }
+
     testthat::expect_true(is.numeric(xr) && length(xr) == 2L)
-    testthat::expect_gte(xr[1], 0 - 1e-8)
-    testthat::expect_lte(xr[2], 120 + 1e-8)
+
+    # 左端は ggsurvfit 互換の pad により負になり得るため主張しない
+    testthat::expect_lte(xr[2], 120 + tol)
+
+    # 任意：右端が意図せず縮み過ぎないことの弱い担保（安定なら残す）
+    testthat::expect_gte(xr[2], 120 - tol)
   }
 })
+
 
 testthat::test_that("cifpanel respects limits.x with breaks.x when coord_cartesian is used", {
   testthat::skip_if_not_installed("ggplot2")
