@@ -17,7 +17,7 @@ and will plot it yourself."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.9.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.9.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -176,7 +176,9 @@ This enables an independent use of standard methods for <code>survfit</code> suc
 <li><p><code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code>: base R stepwise survival/CIF curves</p></li>
 <li><p><code><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean()</a></code>: restricted mean survival estimates with CIs</p></li>
 <li><p><code><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile()</a></code>: quantile estimates with CIs</p></li>
-</ul><p>Note that some methods (e.g. <code>residuals.survfit</code>) may not be supported.</p>
+</ul><p>Note that <code>$n.risk</code>, <code>$n.event</code>, and <code>$n.censor</code> are rounded up to the nearest integer
+regardless of whether the data is weighted or not.
+Some methods (e.g. <code>residuals.survfit</code>) may not be supported.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

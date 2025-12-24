@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.9.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.9.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,12 +43,24 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.9.7" id="cifmodeling-097">cifmodeling 0.9.7<a class="anchor" aria-label="anchor" href="#cifmodeling-097"></a></h2>
+<ul><li>Modified the risk table of <code><a href="../reference/cifplot.html">cifplot()</a></code> to display integer values.</li>
+<li>Refactored the internal plotting pipeline to consistently honor axis controls (<code>limits.x</code>, <code>limits.y</code>, <code>breaks.x</code>, <code>breaks.y</code>) across <code><a href="../reference/cifplot.html">cifplot()</a></code> and <code><a href="../reference/cifpanel.html">cifpanel()</a></code>, including the <code>cumhaz</code> and <code>cloglog</code> transformations and both scale and <code>coord_cartesian</code> code paths.</li>
+<li>Simplified the special-case handling for <code>cloglog</code> by unifying axis-application logic, improving maintainability without changing user-facing results.</li>
+<li>Added/strengthened robust tests for axis limits and breaks behavior.</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.9.6" id="cifmodeling-096">cifmodeling 0.9.6<a class="anchor" aria-label="anchor" href="#cifmodeling-096"></a></h2><p class="text-muted">CRAN release: 2025-12-13</p>
+<ul><li>Documentation and tests were polished for CRAN submission.</li>
+<li>Fixed GCC r-devel warning (<code>-Wstringop-overread</code>) triggered in <code>calculateAJ_Rcpp</code> (no change to user-facing results).</li>
+</ul></div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.9.5" id="cifmodeling-095">cifmodeling 0.9.5<a class="anchor" aria-label="anchor" href="#cifmodeling-095"></a></h2>
 <ul><li>First CRAN release.</li>
 <li>Documentation and tests were polished for CRAN submission.</li>
 </ul></div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.9.4" id="cifmodeling-094">cifmodeling 0.9.4<a class="anchor" aria-label="anchor" href="#cifmodeling-094"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.9.4" id="cifmodeling-094">cifmodeling 0.9.4<a class="anchor" aria-label="anchor" href="#cifmodeling-094"></a></h2><p class="text-muted">CRAN release: 2025-12-04</p>
 <ul><li>Sixth CRAN submission.</li>
 </ul><p>Invalid DESCRIPTION file, software names were single quoted. Rebuilt and resubmitted.</p>
 </div>
