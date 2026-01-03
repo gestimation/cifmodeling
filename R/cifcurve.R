@@ -17,20 +17,28 @@
 #' the influence function is also computed and returned (default `FALSE`).
 #' @param report.survfit.std.err Logical. If `TRUE`, report SE on the log-survival
 #' scale (survfit's convention). Otherwise SE is on the probability scale.
+#' @param n.risk.type Character string; one of `"weighted"`, `"unweighted"`, or `"ess"`.
+#'   Controls which risk set size is returned in `$n.risk` without affecting estimates
+#'   or standard errors. Defaults to `"weighted"` (the existing behavior).
 #' @param engine Character. One of `"auto"`, `"calculateKM"`, or `"calculateAJ_Rcpp"` (default `"calculateAJ_Rcpp"`).
 #' @param prob.bound Numeric lower bound used to internally truncate probabilities away from 0 and 1 (default `1e-7`).
-#'
+#' 
 #' @details
-#'
+#' 
 #' ### Typical use cases
 #' - When `outcome.type = "survival"`, this is a thin wrapper around
 #' the KM estimator with the chosen variance / CI transformation.
 #' - When `outcome.type = "competing-risk"`, this computes the AJ estimator of CIF for `code.event1`.
 #'  The returned `$surv` is **1 - CIF**, i.e. in the format that ggsurvfit expects.
 #' - Use [cifplot()] if you want to go straight to a figure; use [cifcurve()] if you only want the numbers.
-#'
+#' 
+#' ### Risk set display
+#' - Set `n.risk.type` to control whether `$n.risk` reflects weighted, unweighted,
+#'   or Kish effective sample size (ESS) counts. This only affects the reported
+#'   counts (e.g., for plotting or debugging) and leaves estimates and SEs unchanged.
+#' 
 #' ### Standard error and confidence intervals
-#'
+#' 
 #' | Argument | Description | Default |
 #' |---|---|---|
 #' | `error` | SE for KM: `"greenwood"`, `"tsiatis"`, `"if"`. For CIF: `"aalen"`, `"delta"`, `"if"`. | `"greenwood"`, `"delta"` or `"if"` |
@@ -78,6 +86,7 @@ cifcurve <- function(
     formula,
     data,
     weights = NULL,
+    n.risk.type = c("weighted","unweighted","ess"),
     subset.condition = NULL,
     na.action = na.omit,
     outcome.type = c("survival","competing-risk"),
@@ -93,6 +102,7 @@ cifcurve <- function(
     prob.bound = 1e-7
 ) {
   has_weights_user <- !(missing(weights) || is.null(weights))
+  n.risk.type <- match.arg(n.risk.type)
   outcome.type  <- util_check_outcome_type(outcome.type, formula = formula, data = data)
   out_read_surv <- util_read_surv(formula, data, weights,
                                   code.event1, code.event2, code.censoring,
@@ -142,6 +152,7 @@ cifcurve <- function(
       names(out_km$strata) <- strata_fullnames
       survfit_object$strata <- out_km$strata
     }
+    survfit_object$n.risk.type <- n.risk.type
     survfit_object <- harmonize_engine_output(survfit_object)
     class(survfit_object) <- "survfit"
     return(survfit_object)
@@ -191,6 +202,7 @@ cifcurve <- function(
     if (any(as.integer(out_read_surv$strata) != 1))
       survfit_object$strata <- out_aj$strata1
 
+    survfit_object$n.risk.type <- n.risk.type
     survfit_object <- harmonize_engine_output(survfit_object)
     class(survfit_object) <- "survfit"
     return(survfit_object)
@@ -205,7 +217,8 @@ cifcurve <- function(
     conf.type = conf.type,
     conf.int = conf.int,
     report.influence.function = report.influence.function,
-    prob.bound = prob.bound
+    prob.bound = prob.bound,
+    n.risk.type = n.risk.type
   )
   if (length(strata_fullnames) && length(out_cpp$strata)) {
     names(out_cpp$strata) <- strata_fullnames
@@ -218,6 +231,7 @@ cifcurve <- function(
   out_cpp$n.risk <- ceiling(out_cpp$n.risk)
   out_cpp$n.censor <- ceiling(out_cpp$n.censor)
   out_cpp$n.event <- ceiling(out_cpp$n.event)
+  out_cpp$n.risk.type <- n.risk.type
   if (isTRUE(report.survfit.std.err)) out_cpp$std.err <- out_cpp$std.err / out_cpp$surv
   class(out_cpp) <- "survfit"
   return(out_cpp)
@@ -367,7 +381,8 @@ call_calculateAJ_Rcpp <- function(t, epsilon, w = NULL, strata = NULL,
                                    conf.type = "arcsin",
                                    conf.int = 0.95,
                                    report.influence.function = FALSE,
-                                   prob.bound = 1e-5) {
+                                   prob.bound = 1e-5,
+                                   n.risk.type = "weighted") {
   calculateAJ_Rcpp(
     t = t,
     epsilon = epsilon,
@@ -377,7 +392,8 @@ call_calculateAJ_Rcpp <- function(t, epsilon, w = NULL, strata = NULL,
     conf_type = conf.type,
     conf_int = conf.int,
     return_if = isTRUE(report.influence.function),
-    prob_bound = prob.bound
+    prob_bound = prob.bound,
+    n_risk_type = n.risk.type
   )
 }
 
@@ -395,4 +411,3 @@ harmonize_engine_output <- function(out) {
   out$`conf.type`          <- out$`conf.type`          %||% "arcsine-square root"
   out
 }
-
