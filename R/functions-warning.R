@@ -325,6 +325,24 @@ check_weights <- function(w) {
   invisible(TRUE)
 }
 
+util_check_n_risk_type <- function(n.risk.type = c("weighted", "unweighted", "ess")) {
+  if (length(n.risk.type) > 1L) n.risk.type <- n.risk.type[1L]
+  if (is.null(n.risk.type) || (is.character(n.risk.type) && length(n.risk.type) == 1L && nchar(n.risk.type) == 0L)) {
+    n.risk.type <- "weighted"
+  }
+  if (!is.character(n.risk.type) || length(n.risk.type) != 1L) {
+    stop("`n.risk.type` must be a single character string.", call. = FALSE)
+  }
+  x <- tolower(trimws(n.risk.type))
+  if (x %in% c("w", "weight", "weights")) x <- "weighted"
+  if (x %in% c("u", "unweight", "unweighted", "unweights")) x <- "unweighted"
+  if (x %in% c("e", "ess", "kish", "effective", "effective-sample-size", "effective sample size")) x <- "ess"
+  if (!x %in% c("weighted", "unweighted", "ess")) {
+    stop("`n.risk.type` must be one of 'weighted', 'unweighted', or 'ess'.", call. = FALSE)
+  }
+  x
+}
+
 reg_check_effect.measure <- function(effect.measure1, effect.measure2) {
   normalize_effect_measure <- function(x, which = "effect.measure") {
     ux <- toupper(x)

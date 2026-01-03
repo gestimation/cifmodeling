@@ -99,15 +99,16 @@ cifcurve <- function(
     prob.bound = 1e-7
 ) {
   outcome.type <- util_check_outcome_type(outcome.type, formula = formula, data = data)
-  weights_expr <- substitute(weights)
-  has_weights_user <- !(missing(weights) || identical(weights_expr, quote(NULL)))
+  n.risk.type <- util_check_n_risk_type(n.risk.type)
+  substitute_weights <- substitute(weights)
+  has_weights_user <- !(missing(weights) || identical(substitute_weights, quote(NULL)))
   out_read_surv <- eval(substitute(
     util_read_surv(
-      formula = formula, data = data, weights = W,
+      formula = formula, data = data, weights = arg_weights,
       code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
       subset.condition = subset.condition, na.action = na.action
     ),
-    list(W = weights_expr)
+    list(arg_weights = substitute_weights)
   ))
   error <- curve_check_error(error, outcome.type, weights = out_read_surv$w, has_weights = has_weights_user)
   call <- match.call()
