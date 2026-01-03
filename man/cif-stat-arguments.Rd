@@ -9,6 +9,10 @@
 
 \item{weights}{Optional name of the weight variable in \code{data}. Weights must be nonnegative.}
 
+\item{n.risk.type}{Character string; one of \code{"weighted"}, \code{"unweighted"}, or \code{"ess"}.
+Controls which risk set size is returned in \verb{$n.risk} without affecting estimates
+or standard errors. (default \code{"weighted"}).}
+
 \item{subset.condition}{Optional character string giving a logical condition to subset
 \code{data} (default \code{NULL}).}
 

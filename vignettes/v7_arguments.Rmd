@@ -14,6 +14,7 @@ vignette: >
 -   `formula` A model formula specifying the time-to-event outcome on the left-hand side (typically `Event(time, status)` or `survival::Surv(time, status)`) and, optionally, a stratification variable on the right-hand side. Unlike `cifplot()`, this function does not accept a fitted `survfit` object. 
 -   `data` A data frame containing variables in `formula`.
 -   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative.
+-   `n.risk.type` Character string; one of `"weighted"`, `"unweighted"`, or `"ess"`. Controls which risk set size is returned in `$n.risk` without affecting estimates or standard errors (default `"weighted"`).
 -   `subset.condition` Optional character expression to subset `data` before analysis.
 -   `na.action` A function specifying the action to take on missing values (default `na.omit`).
 -   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"survival"` (Kaplan-Meier) or `"competing-risk"` (Aalen-Johansen). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"competing-risk"` is assumed; otherwise, `"survival"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding.
@@ -33,6 +34,7 @@ vignette: >
 -   `formula_or_fit` A model formula or a survfit object. Note: When a formula is supplied, the left-hand side must be `Event(time, status)` or `survival::Surv(time, status)`.
 -   `data` A data frame containing variables in `formula`.
 -   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative.
+-   `n.risk.type` Character string; one of `"weighted"`, `"unweighted"`, or `"ess"`. Controls which risk set size is returned in `$n.risk` without affecting estimates or standard errors (default `"weighted"`).
 -   `subset.condition` Optional character expression to subset `data` before analysis.
 -   `na.action` A function specifying the action to take on missing values (default `na.omit`).
 -   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"survival"` (Kaplan-Meier) or `"competing-risk"` (Aalen-Johansen). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"competing-risk"` is assumed; otherwise, `"survival"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding.
@@ -96,6 +98,7 @@ vignette: >
 -   `formulas` A list of formulas (one per panel). If provided, overrides `formula`.
 -   `data` A data frame containing variables in `formula`.
 -   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative.
+-   `n.risk.type` Character string; one of `"weighted"`, `"unweighted"`, or `"ess"`. Controls which risk set size is returned in `$n.risk` without affecting estimates or standard errors (default `"weighted"`).
 -   `subset.condition` Optional character expression to subset `data` before analysis.
 -   `na.action` A function specifying the action to take on missing values (default `na.omit`).
 -   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"survival"` (Kaplan-Meier) or `"competing-risk"` (Aalen-Johansen). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"competing-risk"` is assumed; otherwise, `"survival"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding.

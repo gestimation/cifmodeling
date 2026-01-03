@@ -141,9 +141,9 @@ used internally (default \verb{arcsine-square root}).}
 
 \item{conf.int}{Numeric two-sided level of CIs (default \code{0.95}).}
 
-\item{n.risk.type}{Character scalar or list (recycled per panel); each entry is normalized to one of
-\code{"weighted"}, \code{"unweighted"}, or \code{"ess"} and forwarded to \code{cifcurve()} to choose which
-risk set size is stored in \code{$n.risk}. Ignored when using precomputed \code{plots}.}
+\item{n.risk.type}{Character string; one of \code{"weighted"}, \code{"unweighted"}, or \code{"ess"}.
+Controls which risk set size is returned in \verb{$n.risk} without affecting estimates
+or standard errors. (default \code{"weighted"}).}
 
 \item{type.y}{Character string specifying the y-scale. For survival/CIF curves,
 \code{"surv"} implies survival probabilities and \code{"risk"} implies CIF
@@ -335,6 +335,9 @@ are combined into \code{code.events = list(c(code.event1, code.event2, code.cens
 with \code{NA} values dropped.
 \item If \code{outcome.type} is \code{NULL}, the function infers each panel from its
 \code{code.events[[i]]} length. When both are given, \code{outcome.type} takes precedence.
+\item Control risk-set displays via \code{n.risk.type}, which is recycled per panel and
+forwarded to \code{\link[=cifcurve]{cifcurve()}} to decide which risk set size populates \verb{$n.risk}
+(e.g., weighted vs. unweighted counts).
 }
 }
 

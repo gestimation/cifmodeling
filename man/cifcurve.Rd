@@ -8,7 +8,7 @@ cifcurve(
   formula,
   data,
   weights = NULL,
-  n.risk.type = c("weighted", "unweighted", "ess"),
+  n.risk.type = "weighted",
   subset.condition = NULL,
   na.action = na.omit,
   outcome.type = c("survival", "competing-risk"),
@@ -35,8 +35,8 @@ Unlike \code{\link[=cifplot]{cifplot()}}, this function does not accept a fitted
 \item{weights}{Optional name of the weight variable in \code{data}. Weights must be nonnegative.}
 
 \item{n.risk.type}{Character string; one of \code{"weighted"}, \code{"unweighted"}, or \code{"ess"}.
-Controls which risk set size is reported in \verb{$n.risk} without affecting estimates or SEs.
-Defaults to \code{"weighted"} (the existing behavior).}
+Controls which risk set size is returned in \verb{$n.risk} without affecting estimates
+or standard errors. (default \code{"weighted"}).}
 
 \item{subset.condition}{Optional character string giving a logical condition to subset
 \code{data} (default \code{NULL}).}
@@ -113,9 +113,9 @@ The returned \verb{$surv} is \strong{1 - CIF}, i.e. in the format that ggsurvfit
 
 \subsection{Risk set display}{
 \itemize{
-\item Set \code{n.risk.type} to control whether \verb{$n.risk} reflects weighted,
-unweighted, or Kish effective sample size (ESS) counts. This only changes the
-displayed counts (e.g., for plotting or debugging) and leaves estimates and SEs unchanged.
+\item Set \code{n.risk.type} to control whether \verb{$n.risk} reflects weighted, unweighted,
+or Kish effective sample size (ESS) counts. This only affects the reported
+counts (e.g., for plotting or debugging) and leaves estimates and SEs unchanged.
 }
 }
 
