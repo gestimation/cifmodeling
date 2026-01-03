@@ -9,10 +9,12 @@
 #' [cifplot()] can add numbers-at-risk tables, tables of point estimates and
 #' CIs, censoring marks, competing-risk marks, and intercurrent-event marks.
 #'
+#' For usual single-panel mode, the function returns an object whose `plot`
+#' component is a regular ggplot object that can be further modified
+#' (compatible with `+` and `%+%`).
 #' For more complex multi-panel displays, [cifplot()] can internally call
 #' [cifpanel()] via several “panel modes” (per event, per variable, or
-#' censoring-focused). The function returns an object whose `plot` component
-#' is a regular ggplot object that can be further modified (compatible with `+` and `%+%`).
+#' censoring-focused).
 #'
 #' @inheritParams cif-stat-arguments
 #' @inheritParams cif-visual-arguments
@@ -470,7 +472,7 @@ cifplot <- function(
     isTRUE(panel.info$panel.per.event) ||
     isTRUE(panel.info$panel.censoring)
   if (is_panel) {
-    font.size <- font.size/2
+    style.info$font.size <- style.info$font.size / 2
     style.info$legend.position <- "none"
     if (!is.null(axis.info$label.strata)) .warn("panel_disables_labelstrata")
     if (isTRUE(visual.info$add.risktable) || isTRUE(visual.info$add.estimate.table)) .warn("panel_disables_tables")
@@ -593,7 +595,10 @@ cifplot <- function(
     dots_clean
   )
 
+
   out_plot <- do.call(cifplot_single, args_single)
+  fit_single <- attr(out_plot, "cifmodeling_survfit")
+  attr(out_plot, "cifmodeling_survfit") <- NULL
   out_plot <- apply_strata_to_plots(
     list(out_plot),
     order_data = axis.info$order.strata,
@@ -607,8 +612,16 @@ cifplot <- function(
   survfit.info$code.censoring <- survfit.info$code.censoring %||% code.censoring
   survfit.info$code.events    <- survfit.info$code.events    %||% code.events
   survfit.info$data.name      <- survfit.info$data.name      %||% deparse(substitute(data))
-  survfit.info$n.risk.type    <- survfit.info$n.risk.type    %||% (if (inherits(formula_or_fit, "survfit")) formula_or_fit$n.risk.type else n.risk.type)
-  survfit.info$survfit        <- survfit.info$survfit        %||% formula_or_fit
+
+  survfit_obj <- NULL
+  if (inherits(formula_or_fit, "survfit")) {
+    survfit_obj <- formula_or_fit
+  } else if (inherits(fit_single, "survfit")) {
+    survfit_obj <- fit_single
+  }
+  survfit.info$survfit <- survfit.info$survfit %||% survfit_obj
+  survfit.info$n.risk.type <- survfit.info$n.risk.type %||%
+  (if (inherits(survfit_obj, "survfit")) survfit_obj$n.risk.type else n.risk.type)
 
   print.info <- print.info %||% list()
   print.info$print.panel <- isTRUE(print.panel)
@@ -1166,6 +1179,7 @@ cifplot_single <- function(
     use.coord.cartesian = use.coord.cartesian
   )
   if (!is.null(filename.ggsave)) ggplot2::ggsave(filename.ggsave, plot = p, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave, units = ggsave.units)
+  attr(p, "cifmodeling_survfit") <- formula_or_fit
   return(p)
 }
 

@@ -336,12 +336,6 @@ cifpanel <- function(
     engine                        = "cifplot",
     ...
 ){
-#  if (!is.null(label.strata)) {
-#    .warn("panel_disables_labelstrata")
-#  }
-#  if (isTRUE(add.risktable) || isTRUE(add.estimate.table)) {
-#    .warn("panel_disables_tables")
-#  }
   legend.position  <- "none"
   add.risktable     <- FALSE
   add.estimate.table <- FALSE
@@ -698,7 +692,7 @@ cifpanel <- function(
     n.risk.type.list <- panel_recycle_to(n.risk.type.list, K)
     n.risk.type.list <- lapply(n.risk.type.list, util_check_n_risk_type)
   }
-  survfit.info$n.risk.type <- survfit.info$n.risk.type %||% n.risk.type.list
+  survfit.info$n.risk.type <- n.risk.type.list
 
   use_formula_list <- !is.null(formulas)
   if (use_formula_list) {

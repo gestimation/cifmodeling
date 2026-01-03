@@ -105,17 +105,17 @@ panel_prepare <- function(
     data_i      <- norm_inputs$data
 
     args_est <- panel_drop_nulls(c(
-      list(
-        formula        = cur_formula,
-        data           = data_i,
-        outcome.type   = if (!is.null(outcome.list)) outcome.list[[i]] else NULL,
-        code.event1    = ce1,
-        code.event2    = ce2,
-        code.censoring = cc,
-        n.risk.type    = nrt_i,
-        na.action      = na.action
-      ),
-      survfit.info
+        survfit.info,
+        list(
+            formula        = cur_formula,
+            data           = data_i,
+            outcome.type   = if (!is.null(outcome.list)) outcome.list[[i]] else NULL,
+            code.event1    = ce1,
+            code.event2    = ce2,
+            code.censoring = cc,
+            n.risk.type    = nrt_i,
+            na.action      = na.action
+          )
     ))
 
     ot <- args_est$outcome.type
@@ -127,6 +127,7 @@ panel_prepare <- function(
       na.action    = na.action
     )
 
+    args_est <- panel_dedupe_named_args(args_est)
     fit_i <- do.call(cifcurve, args_est)
     curves[[i]] <- fit_i
 
@@ -160,6 +161,17 @@ panel_prepare <- function(
   }
 
   list(curves = curves, plot_args = plot_args, K = K)
+}
+
+# keep the *last* occurrence of each named argument; keep all unnamed args intact
+panel_dedupe_named_args <- function(x) {
+  nm <- names(x)
+  if (is.null(nm)) return(x)
+
+  dup <- duplicated(nm, fromLast = TRUE) & nzchar(nm)
+  if (!any(dup)) return(x)
+
+  x[!dup]
 }
 
 panel_as_formula <- function(f) {
