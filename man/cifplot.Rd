@@ -19,6 +19,7 @@ cifplot(
   error = NULL,
   conf.type = "arcsine-square root",
   conf.int = 0.95,
+  n.risk.type = c("weighted", "unweighted", "ess"),
   type.y = NULL,
   label.x = "Time",
   label.y = NULL,
@@ -120,6 +121,10 @@ SEs and CIs based on influence functions (\code{"if"}) is recommended for weight
 used internally (default \verb{arcsine-square root}).}
 
 \item{conf.int}{Numeric two-sided level of CIs (default \code{0.95}).}
+
+\item{n.risk.type}{Character string; one of \code{"weighted"}, \code{"unweighted"}, or \code{"ess"}.
+Forwarded to \code{cifcurve()} to choose which risk set size is stored in \code{$n.risk}}
+for tables; estimates and SEs are unchanged. Ignored when a fitted \code{survfit} object is supplied.}
 
 \item{type.y}{Character string specifying the y-scale. For survival/CIF curves,
 \code{"surv"} implies survival probabilities and \code{"risk"} implies CIF

@@ -42,6 +42,7 @@ Rcpp::List calculateAJ_Rcpp(
     Rcpp::IntegerVector epsilon,
     Rcpp::Nullable<Rcpp::NumericVector> w       = R_NilValue,
     Rcpp::Nullable<Rcpp::IntegerVector> strata  = R_NilValue,
+    std::string n_risk_type = "weighted",
     std::string error = "greenwood",
     std::string conf_type = "arcsin",
     double conf_int = 0.95,
@@ -73,6 +74,10 @@ Rcpp::List calculateAJ_Rcpp(
   };
   const std::string canon_conf_type = canon_conf(conf_type);
   const std::string ERROR = to_lower(error);
+  n_risk_type = to_lower(n_risk_type);
+  if (n_risk_type != "weighted" && n_risk_type != "unweighted" && n_risk_type != "ess") {
+    stop("n_risk_type must be one of 'weighted', 'unweighted', or 'ess'.");
+  }
 
   // epsilon からイベント種別を判定（既存の any_of_int を流用）
   auto any_of_int = [](const IntegerVector& v, std::function<bool(int)> pred){
@@ -185,7 +190,8 @@ Rcpp::List calculateAJ_Rcpp(
     idx_of_strata[kg].push_back(i);
   }
 
-  std::vector<double> combined_times, combined_surv, combined_n_risk, combined_n_event, combined_n_censor;
+  std::vector<double> combined_times, combined_surv, combined_n_event, combined_n_censor;
+  std::vector<double> combined_n_risk_weighted, combined_n_risk_unweighted, combined_n_risk_ess;
   std::vector<double> combined_std_err, combined_std_err_km, combined_std_err_aj, combined_high, combined_low;
   std::vector<int>    combined_n_stratum, combined_u_stratum;
   Rcpp::List          IF_AJ_output(K);
@@ -289,7 +295,11 @@ Rcpp::List calculateAJ_Rcpp(
       for (int j = 0; j < Uall; ++j) {
         double sumW  = Y_all[j];
         double sumW2 = W2risk_all[j];
-        Mi_all[j] = (sumW2 <= EPS_M) ? 1.0 : (sumW * sumW) / sumW2;
+        if (sumW <= EPS_M || sumW2 <= EPS_M) {
+          Mi_all[j] = 0.0;
+        } else {
+          Mi_all[j] = (sumW * sumW) / sumW2;
+        }
       }
     }
 
@@ -658,7 +668,9 @@ Rcpp::List calculateAJ_Rcpp(
 
     combined_times.reserve(combined_times.size() + Uall);
     combined_surv .reserve(combined_surv .size() + Uall);
-    combined_n_risk.reserve(combined_n_risk.size() + Uall);
+    combined_n_risk_weighted.reserve(combined_n_risk_weighted.size() + Uall);
+    combined_n_risk_unweighted.reserve(combined_n_risk_unweighted.size() + Uall);
+    combined_n_risk_ess.reserve(combined_n_risk_ess.size() + Uall);
     combined_n_event.reserve(combined_n_event.size() + Uall);
     combined_n_censor.reserve(combined_n_censor.size() + Uall);
     combined_std_err.reserve(combined_std_err.size() + Uall);
@@ -669,7 +681,9 @@ Rcpp::List calculateAJ_Rcpp(
 
     for (int j=0;j<Uall;++j){
       combined_times.push_back(t_all[j]);
-      combined_n_risk.push_back(Y_all[j]);
+      combined_n_risk_weighted.push_back(Y_all[j]);
+      combined_n_risk_unweighted.push_back(Nrisk_all[j]);
+      combined_n_risk_ess.push_back(Mi_all[j]);
       combined_n_event.push_back(  w_event_all[j] );
       combined_n_censor.push_back( w_censor_all[j] );
       if (return_aj) combined_surv.push_back(1.0 - F1_all[j]);
@@ -720,12 +734,22 @@ Rcpp::List calculateAJ_Rcpp(
     km_out = Rcpp::NumericVector(0);
   }
 
+  const std::vector<double>* n_risk_selected = &combined_n_risk_weighted;
+  if (n_risk_type == "unweighted") {
+    n_risk_selected = &combined_n_risk_unweighted;
+  } else if (n_risk_type == "ess") {
+    n_risk_selected = &combined_n_risk_ess;
+  }
+
   Rcpp::List out = Rcpp::List::create(
     _["time"]               = wrap(combined_times),
     _["surv"]               = wrap(combined_surv),
     _["aj"]                 = aj_out,
     _["km"]                 = km_out,
-    _["n.risk"]             = wrap(combined_n_risk),
+    _["n.risk"]             = wrap(*n_risk_selected),
+    _["n.risk.weighted"]    = wrap(combined_n_risk_weighted),
+    _["n.risk.unweighted"]  = wrap(combined_n_risk_unweighted),
+    _["n.risk.ess"]         = wrap(combined_n_risk_ess),
     _["n"]                  = wrap(combined_n_stratum),
     _["n.event"]            = wrap(combined_n_event),
     _["n.censor"]           = wrap(combined_n_censor),
@@ -736,6 +760,7 @@ Rcpp::List calculateAJ_Rcpp(
     _["high"]               = wrap(combined_high),
     _["conf.type"]          = canon_conf_type,
     _["error"]              = used_error,
+    _["n.risk.type"]        = n_risk_type,
     _["strata"]             = strata_out,
     _["strata.levels"]      = strata_levels_out_sexp,
     _["type"]               = out_type,

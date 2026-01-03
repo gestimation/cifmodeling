@@ -8,6 +8,7 @@ cifcurve(
   formula,
   data,
   weights = NULL,
+  n.risk.type = c("weighted", "unweighted", "ess"),
   subset.condition = NULL,
   na.action = na.omit,
   outcome.type = c("survival", "competing-risk"),
@@ -32,6 +33,10 @@ Unlike \code{\link[=cifplot]{cifplot()}}, this function does not accept a fitted
 \item{data}{A data frame containing variables in the formula.}
 
 \item{weights}{Optional name of the weight variable in \code{data}. Weights must be nonnegative.}
+
+\item{n.risk.type}{Character string; one of \code{"weighted"}, \code{"unweighted"}, or \code{"ess"}.
+Controls which risk set size is reported in \verb{$n.risk} without affecting estimates or SEs.
+Defaults to \code{"weighted"} (the existing behavior).}
 
 \item{subset.condition}{Optional character string giving a logical condition to subset
 \code{data} (default \code{NULL}).}
@@ -103,6 +108,14 @@ the KM estimator with the chosen variance / CI transformation.
 \item When \code{outcome.type = "competing-risk"}, this computes the AJ estimator of CIF for \code{code.event1}.
 The returned \verb{$surv} is \strong{1 - CIF}, i.e. in the format that ggsurvfit expects.
 \item Use \code{\link[=cifplot]{cifplot()}} if you want to go straight to a figure; use \code{\link[=cifcurve]{cifcurve()}} if you only want the numbers.
+}
+}
+
+\subsection{Risk set display}{
+\itemize{
+\item Set \code{n.risk.type} to control whether \verb{$n.risk} reflects weighted,
+unweighted, or Kish effective sample size (ESS) counts. This only changes the
+displayed counts (e.g., for plotting or debugging) and leaves estimates and SEs unchanged.
 }
 }
 

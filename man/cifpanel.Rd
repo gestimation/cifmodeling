@@ -20,6 +20,7 @@ cifpanel(
   error = NULL,
   conf.type = NULL,
   conf.int = NULL,
+  n.risk.type = c("weighted", "unweighted", "ess"),
   type.y = NULL,
   label.x = NULL,
   label.y = NULL,
@@ -139,6 +140,10 @@ SEs and CIs based on influence functions (\code{"if"}) is recommended for weight
 used internally (default \verb{arcsine-square root}).}
 
 \item{conf.int}{Numeric two-sided level of CIs (default \code{0.95}).}
+
+\item{n.risk.type}{Character scalar or list (recycled per panel); each entry is normalized to one of
+\code{"weighted"}, \code{"unweighted"}, or \code{"ess"} and forwarded to \code{cifcurve()} to choose which
+risk set size is stored in \code{$n.risk}. Ignored when using precomputed \code{plots}.}
 
 \item{type.y}{Character string specifying the y-scale. For survival/CIF curves,
 \code{"surv"} implies survival probabilities and \code{"risk"} implies CIF

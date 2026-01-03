@@ -35,6 +35,7 @@ panel_prepare <- function(
     limsx.list = NULL, limsy.list = NULL,
     breakx.list = NULL, breaky.list = NULL,
     addCI.list = NULL, addCen.list = NULL, addCR.list = NULL, addIC.list = NULL, addQ.list = NULL,
+    n.risk.type.list = NULL,
     strata.list = NULL, legend.position = NULL,
     survfit.info = list(), style.info = list(), dots = list(), fonts = NULL,
     na.action = stats::na.omit
@@ -95,21 +96,26 @@ panel_prepare <- function(
       }
     }
 
+    nrt_i <- if (!is.null(n.risk.type.list)) n.risk.type.list[[i]] else survfit.info$n.risk.type
+    if (is.list(nrt_i)) nrt_i <- nrt_i[[min(i, length(nrt_i))]]
+    nrt_i <- util_check_n_risk_type(nrt_i)
+
     norm_inputs <- plot_normalize_formula_data(formulas[[i]], data)
     cur_formula <- norm_inputs$formula %||% formulas[[i]]
     data_i      <- norm_inputs$data
 
     args_est <- panel_drop_nulls(c(
-      list(
-        formula        = cur_formula,
-        data           = data_i,
-        outcome.type   = if (!is.null(outcome.list)) outcome.list[[i]] else NULL,
-        code.event1    = ce1,
-        code.event2    = ce2,
-        code.censoring = cc,
-        na.action      = na.action
-      ),
-      survfit.info
+        survfit.info,
+        list(
+            formula        = cur_formula,
+            data           = data_i,
+            outcome.type   = if (!is.null(outcome.list)) outcome.list[[i]] else NULL,
+            code.event1    = ce1,
+            code.event2    = ce2,
+            code.censoring = cc,
+            n.risk.type    = nrt_i,
+            na.action      = na.action
+          )
     ))
 
     ot <- args_est$outcome.type
@@ -121,6 +127,7 @@ panel_prepare <- function(
       na.action    = na.action
     )
 
+    args_est <- panel_dedupe_named_args(args_est)
     fit_i <- do.call(cifcurve, args_est)
     curves[[i]] <- fit_i
 
@@ -139,6 +146,7 @@ panel_prepare <- function(
       add.intercurrent.event.mark = if (!is.null(addIC.list))   addIC.list[[i]]   else FALSE,
       add.quantile                = if (!is.null(addQ.list))    addQ.list[[i]]    else FALSE,
       label.strata                = if (!is.null(strata.list))  strata.list[[i]]  else NULL,
+      n.risk.type                 = nrt_i,
       font.family                 = fonts$family,
       font.size                   = fonts$size
     )
@@ -153,6 +161,17 @@ panel_prepare <- function(
   }
 
   list(curves = curves, plot_args = plot_args, K = K)
+}
+
+# keep the *last* occurrence of each named argument; keep all unnamed args intact
+panel_dedupe_named_args <- function(x) {
+  nm <- names(x)
+  if (is.null(nm)) return(x)
+
+  dup <- duplicated(nm, fromLast = TRUE) & nzchar(nm)
+  if (!any(dup)) return(x)
+
+  x[!dup]
 }
 
 panel_as_formula <- function(f) {
