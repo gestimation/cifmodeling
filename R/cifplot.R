@@ -9,10 +9,12 @@
 #' [cifplot()] can add numbers-at-risk tables, tables of point estimates and
 #' CIs, censoring marks, competing-risk marks, and intercurrent-event marks.
 #'
+#' For usual single-panel mode, the function returns an object whose `plot`
+#' component is a regular ggplot object that can be further modified
+#' (compatible with `+` and `%+%`).
 #' For more complex multi-panel displays, [cifplot()] can internally call
 #' [cifpanel()] via several “panel modes” (per event, per variable, or
-#' censoring-focused). The function returns an object whose `plot` component
-#' is a regular ggplot object that can be further modified (compatible with `+` and `%+%`).
+#' censoring-focused).
 #'
 #' @inheritParams cif-stat-arguments
 #' @inheritParams cif-visual-arguments
@@ -87,6 +89,8 @@
 #'       -   `conf.int` sets the two-sided level (default 0.95)
 #'       -   `conf.type` chooses the transformation (`"arcsine-square root"`, `"plain"`, `"log"`, `"log-log"`, `"logit"`, or `"none"`)
 #'       -   `error` chooses the estimator for SE (`"greenwood"`, `"tsiatis"` or `"if"` for survival curves and `"delta"`, `"aalen"` or `"if"` for CIFs)
+#' -   **Risk sets used in tables**
+#'       -   `n.risk.type` controls whether `$n.risk` reflects weighted, unweighted, or effective sample size counts when building risk tables (forwarded to [cifcurve()]); when a fitted `survfit` object is supplied, existing risk sets are used as-is.
 #'
 #' ### Key arguments for cifplot()
 #' -   **Data visualization**
@@ -241,6 +245,7 @@ cifplot <- function(
     error                         = NULL,
     conf.type                     = "arcsine-square root",
     conf.int                      = 0.95,
+    n.risk.type                   = c("weighted", "unweighted", "ess"),
     type.y                        = NULL,
     label.x                       = "Time",
     label.y                       = NULL,
@@ -300,10 +305,14 @@ cifplot <- function(
   dots <- list(...)
   dots$print.panel <- dots$print.panel %||% print.panel
 
+  n.risk.type.missing <- missing(n.risk.type)
+  n.risk.type <- util_check_n_risk_type(n.risk.type)
+
   infos <- cifplot_build_info(
     error                         = error,
     conf.type                     = conf.type,
     conf.int                      = conf.int,
+    n.risk.type                   = n.risk.type,
 
     type.y                        = type.y,
     label.x                       = label.x,
@@ -370,6 +379,7 @@ cifplot <- function(
   ggsave.info  <- infos$ggsave.info
   inset.info   <- inset.info %||% list()
   print.info   <- print.info %||% list()
+  survfit.info$n.risk.type <- survfit.info$n.risk.type %||% n.risk.type
 
   style.info$font.family <- style.info$font.family %||% "sans"
   style.info$font.size   <- style.info$font.size   %||% 12
@@ -411,6 +421,8 @@ cifplot <- function(
       formula = formula_or_fit,
       data    = data
     )
+  } else if (!n.risk.type.missing) {
+    warning("`n.risk.type` is ignored when a fitted survfit object is supplied.", call. = FALSE)
   }
 
   if (!is.null(code.events)) {
@@ -460,7 +472,7 @@ cifplot <- function(
     isTRUE(panel.info$panel.per.event) ||
     isTRUE(panel.info$panel.censoring)
   if (is_panel) {
-    font.size <- font.size/2
+    style.info$font.size <- style.info$font.size / 2
     style.info$legend.position <- "none"
     if (!is.null(axis.info$label.strata)) .warn("panel_disables_labelstrata")
     if (isTRUE(visual.info$add.risktable) || isTRUE(visual.info$add.estimate.table)) .warn("panel_disables_tables")
@@ -491,6 +503,7 @@ cifplot <- function(
         code.event1      = code.event1,
         code.event2      = code.event2,
         code.censoring   = code.censoring,
+        n.risk.type      = n.risk.type,
         survfit.info     = survfit.info,
         axis.info        = axis.info,
         visual.info      = visual.info,
@@ -521,6 +534,7 @@ cifplot <- function(
         code.event2        = code.event2,
         code.censoring     = code.censoring,
         outcome.type       = outcome.type,
+        n.risk.type        = n.risk.type,
         rows.columns.panel = rows.columns.panel,
         subset.condition   = subset.condition,
         na.action          = na.action
@@ -548,6 +562,7 @@ cifplot <- function(
         code.event2        = code.event2,
         code.censoring     = code.censoring,
         outcome.type       = outcome.type,
+        n.risk.type        = n.risk.type,
         rows.columns.panel = rows.columns.panel,
         subset.condition   = subset.condition,
         na.action          = na.action
@@ -569,6 +584,7 @@ cifplot <- function(
       code.event2      = code.event2,
       code.censoring   = code.censoring,
       code.events      = NULL,
+      n.risk.type      = n.risk.type,
       survfit.info     = survfit.info,
       axis.info        = axis.info,
       visual.info      = visual.info,
@@ -579,7 +595,10 @@ cifplot <- function(
     dots_clean
   )
 
+
   out_plot <- do.call(cifplot_single, args_single)
+  fit_single <- attr(out_plot, "cifmodeling_survfit")
+  attr(out_plot, "cifmodeling_survfit") <- NULL
   out_plot <- apply_strata_to_plots(
     list(out_plot),
     order_data = axis.info$order.strata,
@@ -593,6 +612,16 @@ cifplot <- function(
   survfit.info$code.censoring <- survfit.info$code.censoring %||% code.censoring
   survfit.info$code.events    <- survfit.info$code.events    %||% code.events
   survfit.info$data.name      <- survfit.info$data.name      %||% deparse(substitute(data))
+
+  survfit_obj <- NULL
+  if (inherits(formula_or_fit, "survfit")) {
+    survfit_obj <- formula_or_fit
+  } else if (inherits(fit_single, "survfit")) {
+    survfit_obj <- fit_single
+  }
+  survfit.info$survfit <- survfit.info$survfit %||% survfit_obj
+  survfit.info$n.risk.type <- survfit.info$n.risk.type %||%
+  (if (inherits(survfit_obj, "survfit")) survfit_obj$n.risk.type else n.risk.type)
 
   print.info <- print.info %||% list()
   print.info$print.panel <- isTRUE(print.panel)
@@ -732,6 +761,7 @@ plot_panel.per.event <- function(
     code.event2,
     code.censoring,
     outcome.type,
+    n.risk.type,
     rows.columns.panel,
     subset.condition = NULL,
     na.action = na.omit
@@ -779,6 +809,7 @@ plot_panel.per.event <- function(
     na.action         = na.action,
     outcome.type      = "competing-risk",
     code.events       = list(ce_panel, c(ce_panel[2L], ce_panel[1L], ce_panel[3L])),
+    n.risk.type       = n.risk.type,
     axis.info         = axis.info.panel,
     visual.info       = visual.info.panel,
     panel.info        = panel.info.panel,
@@ -822,6 +853,7 @@ plot_panel.censoring <- function(
     code.event2,
     code.censoring,
     outcome.type,
+    n.risk.type,
     rows.columns.panel,
     subset.condition = NULL,
     na.action = na.omit
@@ -856,6 +888,7 @@ plot_panel.censoring <- function(
       c(code.event1,    code.censoring),
       c(code.censoring, code.event1)
     ),
+    n.risk.type       = n.risk.type,
     axis.info         = axis.info.panel,
     visual.info       = visual.info,
     panel.info        = panel.info.panel,
@@ -888,6 +921,7 @@ cifplot_single <- function(
     code.event2      = 2,
     code.censoring   = 0,
     code.events      = NULL,
+    n.risk.type      = NULL,
     survfit.info     = NULL,
     axis.info        = NULL,
     visual.info      = NULL,
@@ -902,6 +936,7 @@ cifplot_single <- function(
           "incompatible_flags",
           which = "panel.per.variable, panel.per.event, panel.censoring")
 
+  n.risk.type.missing <- missing(n.risk.type)
   dots         <- list(...)
 
   survfit.info <- survfit.info %||% list()
@@ -950,7 +985,8 @@ cifplot_single <- function(
   survfit.info <- panel_modify_list(list(
     error     = NULL,
     conf.type = "arcsine-square root",
-    conf.int  = 0.95
+    conf.int  = 0.95,
+    n.risk.type = n.risk.type
   ), survfit.info)
 
   axis.info <- panel_modify_list(list(
@@ -1016,6 +1052,7 @@ cifplot_single <- function(
   error     <- survfit.info$error
   conf.type <- survfit.info$conf.type
   conf.int  <- survfit.info$conf.int
+  n.risk.type      <- survfit.info$n.risk.type %||% n.risk.type
 
   type.y              <- axis.info$type.y
   label.x             <- axis.info$label.x
@@ -1101,6 +1138,13 @@ cifplot_single <- function(
     outcome.type <- match.arg(outcome.type, c("competing-risk","survival"))
   }
   survfit.info$outcome.type <- outcome.type
+  if (inherits(formula_or_fit, "survfit")) {
+    n.risk.type <- formula_or_fit$n.risk.type %||% n.risk.type
+    if (is.null(n.risk.type)) n.risk.type <- util_check_n_risk_type(n.risk.type)
+  } else {
+    n.risk.type <- util_check_n_risk_type(n.risk.type)
+  }
+  survfit.info$n.risk.type <- survfit.info$n.risk.type %||% n.risk.type
 
   if (!inherits(formula_or_fit, "survfit")) {
     if (is.null(data)) stop("When `formula` is a formula, `data` must be provided.")
@@ -1109,7 +1153,7 @@ cifplot_single <- function(
 
     formula_or_fit <- cifcurve(formula_or_fit, data = data_working, weights = weights, subset.condition = subset.condition, na.action = na.action,
                                outcome.type = outcome.type, code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
-                               error = error, conf.type = conf.type, conf.int = conf.int)
+                               error = error, conf.type = conf.type, conf.int = conf.int, n.risk.type = n.risk.type)
     formula_or_fit <- plot_survfit_short_strata_names(formula_or_fit)
   }
 
@@ -1135,6 +1179,7 @@ cifplot_single <- function(
     use.coord.cartesian = use.coord.cartesian
   )
   if (!is.null(filename.ggsave)) ggplot2::ggsave(filename.ggsave, plot = p, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave, units = ggsave.units)
+  attr(p, "cifmodeling_survfit") <- formula_or_fit
   return(p)
 }
 

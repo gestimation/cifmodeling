@@ -133,3 +133,68 @@ test_that("weights accepts quoted and unquoted column names (survfit-like)", {
   expect_equal(fit_unquoted$n.risk.weighted, fit_quoted$n.risk.weighted)
   expect_equal(fit_unquoted$n.risk, fit_quoted$n.risk)
 })
+
+test_that("cifplot forwards n.risk.type when fitting from a formula", {
+  df <- data.frame(
+    t = c(1, 2, 2, 3, 4),
+    epsilon = c(1, 0, 2, 0, 1),
+    w = c(1, 2, 3, 4, 5)
+  )
+
+  fit_ref <- cifcurve(
+    Event(t, epsilon) ~ 1,
+    data = df,
+    weights = "w",
+    outcome.type = "competing-risk",
+    conf.type = "none",
+    n.risk.type = "ess"
+  )
+
+  plot_out <- cifplot(
+    Event(t, epsilon) ~ 1,
+    data = df,
+    weights = "w",
+    outcome.type = "competing-risk",
+    conf.type = "none",
+    n.risk.type = "ess",
+    add.risktable = FALSE,
+    print.panel = FALSE
+  )
+
+  expect_equal(plot_out$survfit.info$survfit$n.risk.type, "ess")
+  expect_equal(plot_out$survfit.info$survfit$n.risk, fit_ref$n.risk)
+})
+
+test_that("cifpanel allows panel-wise n.risk.type selection", {
+  df <- data.frame(
+    t = c(1, 2, 2, 3, 4),
+    epsilon = c(1, 0, 2, 0, 1),
+    w = c(1, 2, 3, 4, 5)
+  )
+
+  panel_out <- cifpanel(
+    formulas = list(Event(t, epsilon) ~ 1, Event(t, epsilon) ~ 1),
+    data = df,
+    weights = "w",
+    outcome.type = "competing-risk",
+    conf.type = "none",
+    n.risk.type = list("weighted", "e"),
+    legend.position = "none",
+    print.panel = FALSE
+  )
+
+  expect_equal(panel_out$survfit.info$n.risk.type[[1]], "weighted")
+  expect_equal(panel_out$survfit.info$n.risk.type[[2]], "ess")
+  expect_equal(panel_out$survfit.info$curves[[1]]$n.risk.type, "weighted")
+  expect_equal(panel_out$survfit.info$curves[[2]]$n.risk.type, "ess")
+
+  fit_panel2 <- cifcurve(
+    Event(t, epsilon) ~ 1,
+    data = df,
+    weights = "w",
+    outcome.type = "competing-risk",
+    conf.type = "none",
+    n.risk.type = "ess"
+  )
+  expect_equal(panel_out$survfit.info$curves[[2]]$n.risk, fit_panel2$n.risk)
+})
