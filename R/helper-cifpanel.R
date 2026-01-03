@@ -35,6 +35,7 @@ panel_prepare <- function(
     limsx.list = NULL, limsy.list = NULL,
     breakx.list = NULL, breaky.list = NULL,
     addCI.list = NULL, addCen.list = NULL, addCR.list = NULL, addIC.list = NULL, addQ.list = NULL,
+    n.risk.type.list = NULL,
     strata.list = NULL, legend.position = NULL,
     survfit.info = list(), style.info = list(), dots = list(), fonts = NULL,
     na.action = stats::na.omit
@@ -95,6 +96,10 @@ panel_prepare <- function(
       }
     }
 
+    nrt_i <- if (!is.null(n.risk.type.list)) n.risk.type.list[[i]] else survfit.info$n.risk.type
+    if (is.list(nrt_i)) nrt_i <- nrt_i[[min(i, length(nrt_i))]]
+    nrt_i <- util_check_n_risk_type(nrt_i)
+
     norm_inputs <- plot_normalize_formula_data(formulas[[i]], data)
     cur_formula <- norm_inputs$formula %||% formulas[[i]]
     data_i      <- norm_inputs$data
@@ -107,6 +112,7 @@ panel_prepare <- function(
         code.event1    = ce1,
         code.event2    = ce2,
         code.censoring = cc,
+        n.risk.type    = nrt_i,
         na.action      = na.action
       ),
       survfit.info
@@ -139,6 +145,7 @@ panel_prepare <- function(
       add.intercurrent.event.mark = if (!is.null(addIC.list))   addIC.list[[i]]   else FALSE,
       add.quantile                = if (!is.null(addQ.list))    addQ.list[[i]]    else FALSE,
       label.strata                = if (!is.null(strata.list))  strata.list[[i]]  else NULL,
+      n.risk.type                 = nrt_i,
       font.family                 = fonts$family,
       font.size                   = fonts$size
     )

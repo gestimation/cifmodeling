@@ -93,6 +93,9 @@
 #'   with `NA` values dropped.
 #' - If `outcome.type` is `NULL`, the function infers each panel from its
 #'   `code.events[[i]]` length. When both are given, `outcome.type` takes precedence.
+#' - Control risk-set displays via `n.risk.type`, which is recycled per panel and
+#'   forwarded to [cifcurve()] to decide which risk set size populates `$n.risk`
+#'   (e.g., weighted vs. unweighted counts).
 #'
 #' ### Panel-wise vs shared arguments
 #'
@@ -267,6 +270,7 @@ cifpanel <- function(
     error                         = NULL,
     conf.type                     = NULL,
     conf.int                      = NULL,
+    n.risk.type                   = c("weighted", "unweighted", "ess"),
     type.y                        = NULL,
     label.x                       = NULL,
     label.y                       = NULL,
@@ -347,6 +351,7 @@ cifpanel <- function(
   call <- match.call()
   plots_out <- NULL
   engine.list <- panel_to_list(engine)
+  if (missing(n.risk.type)) n.risk.type <- "weighted"
 
   survfit.info.user <- survfit.info
   axis.info.user    <- axis.info
@@ -360,7 +365,8 @@ cifpanel <- function(
   survfit.info <- panel_modify_list(list(
     error     = error,
     conf.type = conf.type,
-    conf.int  = conf.int
+    conf.int  = conf.int,
+    n.risk.type = n.risk.type
   ), survfit.info %||% list())
 
   axis.info <- panel_modify_list(list(
@@ -687,6 +693,13 @@ cifpanel <- function(
   ncol               <- layout_info$ncol
   n_slots            <- layout_info$n_slots
 
+  n.risk.type.list <- panel_to_list(n.risk.type)
+  if (!is.null(n.risk.type.list)) {
+    n.risk.type.list <- panel_recycle_to(n.risk.type.list, K)
+    n.risk.type.list <- lapply(n.risk.type.list, util_check_n_risk_type)
+  }
+  survfit.info$n.risk.type <- survfit.info$n.risk.type %||% n.risk.type.list
+
   use_formula_list <- !is.null(formulas)
   if (use_formula_list) {
     stopifnot(is.list(formulas))
@@ -761,6 +774,7 @@ cifpanel <- function(
   if (!is.null(addCR.list))       kill_names <- c(kill_names, "add.competing.risk.mark")
   if (!is.null(addIC.list))       kill_names <- c(kill_names, "add.intercurrent.event.mark")
   if (!is.null(addQ.list))        kill_names <- c(kill_names, "add.quantile")
+  if (!is.null(n.risk.type.list)) kill_names <- c(kill_names, "n.risk.type")
 
   dots <- panel_strip_overrides_from_dots(dots, unique(kill_names))
 
@@ -787,6 +801,7 @@ cifpanel <- function(
     addCR.list      = addCR.list,
     addIC.list      = addIC.list,
     addQ.list       = addQ.list,
+    n.risk.type.list = n.risk.type.list,
     strata.list     = make_panel_list_preserve_vector(label.strata, K),
     legend.position = legend.position,
     survfit.info    = survfit.info,
@@ -795,6 +810,8 @@ cifpanel <- function(
     fonts           = fonts,
     na.action       = na.action
   )
+  survfit.info$curves <- survfit.info$curves %||% prep$curves
+  survfit.info$n.risk.type <- survfit.info$n.risk.type %||% n.risk.type.list
   plots <- lapply(seq_len(prep$K), function(i) {
     pa <- prep$plot_args[[i]]
     if (!is.null(typey.list)) {
@@ -807,6 +824,10 @@ cifpanel <- function(
     pa$visual.info  <- panel_modify_list(visual.info,  pa$visual.info %||% list())
     pa$style.info   <- panel_modify_list(style.info,   pa$style.info %||% list())
     pa$survfit.info <- panel_modify_list(survfit.info, pa$survfit.info %||% list())
+    if (!is.null(n.risk.type.list)) {
+      pa$survfit.info$n.risk.type <- n.risk.type.list[[i]]
+      pa$n.risk.type <- pa$n.risk.type %||% n.risk.type.list[[i]]
+    }
 
     pa <- panel_force_apply(
       pa,
@@ -995,6 +1016,7 @@ cifpanel <- function(
   survfit.info$outcome.type   <- survfit.info$outcome.type   %||% outcome.type
   survfit.info$code.events    <- survfit.info$code.events    %||% code.events
   survfit.info$data.name      <- survfit.info$data.name      %||% deparse(substitute(data))
+  survfit.info$n.risk.type    <- survfit.info$n.risk.type    %||% n.risk.type.list
 
   print.info$engine <- print.info$engine %||% engine.list
 
