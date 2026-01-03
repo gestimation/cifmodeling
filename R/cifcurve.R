@@ -17,28 +17,25 @@
 #' the influence function is also computed and returned (default `FALSE`).
 #' @param report.survfit.std.err Logical. If `TRUE`, report SE on the log-survival
 #' scale (survfit's convention). Otherwise SE is on the probability scale.
-#' @param n.risk.type Character string; one of `"weighted"`, `"unweighted"`, or `"ess"`.
-#'   Controls which risk set size is returned in `$n.risk` without affecting estimates
-#'   or standard errors. Defaults to `"weighted"` (the existing behavior).
 #' @param engine Character. One of `"auto"`, `"calculateKM"`, or `"calculateAJ_Rcpp"` (default `"calculateAJ_Rcpp"`).
 #' @param prob.bound Numeric lower bound used to internally truncate probabilities away from 0 and 1 (default `1e-7`).
-#' 
+#'
 #' @details
-#' 
+#'
 #' ### Typical use cases
 #' - When `outcome.type = "survival"`, this is a thin wrapper around
 #' the KM estimator with the chosen variance / CI transformation.
 #' - When `outcome.type = "competing-risk"`, this computes the AJ estimator of CIF for `code.event1`.
 #'  The returned `$surv` is **1 - CIF**, i.e. in the format that ggsurvfit expects.
 #' - Use [cifplot()] if you want to go straight to a figure; use [cifcurve()] if you only want the numbers.
-#' 
+#'
 #' ### Risk set display
 #' - Set `n.risk.type` to control whether `$n.risk` reflects weighted, unweighted,
 #'   or Kish effective sample size (ESS) counts. This only affects the reported
 #'   counts (e.g., for plotting or debugging) and leaves estimates and SEs unchanged.
-#' 
+#'
 #' ### Standard error and confidence intervals
-#' 
+#'
 #' | Argument | Description | Default |
 #' |---|---|---|
 #' | `error` | SE for KM: `"greenwood"`, `"tsiatis"`, `"if"`. For CIF: `"aalen"`, `"delta"`, `"if"`. | `"greenwood"`, `"delta"` or `"if"` |
@@ -86,7 +83,7 @@ cifcurve <- function(
     formula,
     data,
     weights = NULL,
-    n.risk.type = c("weighted","unweighted","ess"),
+    n.risk.type = "weighted",
     subset.condition = NULL,
     na.action = na.omit,
     outcome.type = c("survival","competing-risk"),
@@ -101,12 +98,17 @@ cifcurve <- function(
     engine = "calculateAJ_Rcpp",
     prob.bound = 1e-7
 ) {
-  has_weights_user <- !(missing(weights) || is.null(weights))
-  n.risk.type <- match.arg(n.risk.type)
-  outcome.type  <- util_check_outcome_type(outcome.type, formula = formula, data = data)
-  out_read_surv <- util_read_surv(formula, data, weights,
-                                  code.event1, code.event2, code.censoring,
-                                  subset.condition, na.action)
+  outcome.type <- util_check_outcome_type(outcome.type, formula = formula, data = data)
+  weights_expr <- substitute(weights)
+  has_weights_user <- !(missing(weights) || identical(weights_expr, quote(NULL)))
+  out_read_surv <- eval(substitute(
+    util_read_surv(
+      formula = formula, data = data, weights = W,
+      code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
+      subset.condition = subset.condition, na.action = na.action
+    ),
+    list(W = weights_expr)
+  ))
   error <- curve_check_error(error, outcome.type, weights = out_read_surv$w, has_weights = has_weights_user)
   call <- match.call()
 

@@ -8,3 +8,4 @@ calculateAJ_Rcpp <- function(t, epsilon, w = NULL, strata = NULL, n_risk_type = 
 calculateKM <- function(t, d, w = as.numeric( c()), strata = as.integer( c()), error = "greenwood") {
     .Call(`_cifmodeling_calculateKM`, t, d, w, strata, error)
 }
+

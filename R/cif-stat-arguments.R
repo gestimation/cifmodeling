@@ -25,5 +25,8 @@
 #' @param conf.type Character specifying the method of transformation for CIs
 #' used internally (default `arcsine-square root`).
 #' @param conf.int Numeric two-sided level of CIs (default `0.95`).
+#' @param n.risk.type Character string; one of `"weighted"`, `"unweighted"`, or `"ess"`.
+#' Controls which risk set size is returned in `$n.risk` without affecting estimates
+#'or standard errors. (defaults `"weighted"`).
 #'
 NULL

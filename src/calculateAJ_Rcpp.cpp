@@ -753,7 +753,6 @@ Rcpp::List calculateAJ_Rcpp(
     _["n"]                  = wrap(combined_n_stratum),
     _["n.event"]            = wrap(combined_n_event),
     _["n.censor"]           = wrap(combined_n_censor),
-    _["unweighted.n"]       = wrap(combined_n_stratum),
     _["std.err"]            = wrap(combined_std_err),
     _["std.err.aj"]         = std_err_aj_out,
     _["std.err.km"]         = std_err_km_out,
