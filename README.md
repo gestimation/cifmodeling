@@ -272,35 +272,6 @@ modelplot()
 
 ## Why cifmodeling?
 
-<<<<<<< HEAD
-- **Unified interface** for Kaplan–Meier and Aalen–Johansen curves, with
-<<<<<<< HEAD
-  survival and competing risks handled by the same syntax.
-
-- **Publication-ready graphics** built on `ggsurvfit` and `ggplot2`,
-  including risk/estimate tables,
-  censoring/competing-risks/intercurrent-events marks, and multi-panel
-  layouts. \<\<\<\<\<\<\< HEAD
-
-- # **Coherent regression models** for CIFs, targeting familiar effect measures such as risk ratios (RR), odds ratios (OR), and subdistribution hazard ratios (SHR).
-
-- **Tidy summaries and reporting**: regression results from `polyreg()`
-  support `generics::tidy()`, `glance()`, and `augment()`, which
-  integrate smoothly with `modelsummary` and other broom-style tools.
-
-- **Coherent regression models** of CIFs, targeting familiar effect
-  measures (risk ratios, odds ratios, and subdistribution hazard
-  ratios). Modeling the nuisance structure using polytomous log odds
-  products ensures that the sum of cause-specific CIFs does not exceed
-  one. \>\>\>\>\>\>\> 52e2a3008aaa2cc10374d4a220ad7b6c757aba48
-=======
-  survival and competing risks handled by the same `Event()` + formula +
-  data syntax.
-- **Effects on the CIF scale**: while Fine-Gray models subdistribution
-  hazards, `polyreg()` directly targets ratios of CIFs (risk ratios,
-  odds ratios, subdistribution hazard ratios), so parameters align
-  closely with differences seen in CIF curves.
-=======
 In clinical and epidemiologic research, analysts often need to handle
 censoring, competing risks, and intercurrent events (e.g. treatment
 switching), but existing R packages typically separate these tasks
@@ -316,7 +287,6 @@ data. The tools assist users in the following ways:
   subdistribution hazards, `polyreg()` directly targets ratios of CIFs
   (risk ratios, odds ratios, subdistribution hazard ratios), so
   parameters align closely with differences seen in CIF curves.
->>>>>>> c37257fab9b9eea022f85536a2cf550f9b836311
 - **Coherent, joint modeling of all competing events**: `polyreg()`
   models all cause-specific CIFs together, parameterizing the nuisance
   structure with polytomous log odds products and enforcing that their
@@ -328,7 +298,6 @@ data. The tools assist users in the following ways:
   including number-at-risk/CIF+CI tables,
   censoring/competing-risk/intercurrent-event marks, and multi-panel
   layouts.
->>>>>>> ee5005b4869f1b0b293ed0d404c0115d2926b6ed
 
 ## Position in the survival ecosystem
 
