@@ -248,7 +248,6 @@
 #' @importFrom patchwork wrap_plots plot_layout inset_element plot_annotation
 #'
 #' @name cifpanel
-#' @keywords internal
 #' @section Lifecycle:
 #' \lifecycle{experimental}
 #' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifplot()] for display of a CIF; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.

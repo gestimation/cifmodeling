@@ -495,4 +495,3 @@ print(output5)
 \seealso{
 \code{\link[=polyreg]{polyreg()}} for log-odds product modeling of CIFs; \code{\link[=cifcurve]{cifcurve()}} for KM/AJ estimators; \code{\link[=cifplot]{cifplot()}} for display of a CIF; \link[ggsurvfit:ggsurvfit]{ggsurvfit::ggsurvfit}, \link[patchwork:patchwork-package]{patchwork::patchwork} and \link[modelsummary:modelsummary]{modelsummary::modelsummary} for display helpers.
 }
-\keyword{internal}
