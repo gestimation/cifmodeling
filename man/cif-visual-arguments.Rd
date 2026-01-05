@@ -2,9 +2,36 @@
 % Please edit documentation in R/cif-visual-arguments.R
 \name{cif-visual-arguments}
 \alias{cif-visual-arguments}
-\title{These arguments are shared by \code{\link[=cifplot]{cifplot()}}, \code{\link[=cifpanel]{cifpanel()}}, and
-\code{\link[=cifcurve]{cifcurve()}}.}
+\title{These arguments are shared by \code{\link[=cifplot]{cifplot()}} and \code{\link[=cifpanel]{cifpanel()}}.}
 \arguments{
+\item{add.risktable}{Logical; if \code{TRUE}, adds a numbers-at-risk table under the plot.
+Default \code{TRUE}. \strong{Note:} when a panel mode is active, tables are suppressed.}
+
+\item{add.estimate.table}{Logical; if \code{TRUE}, adds a table of estimates and CIs.
+Default \code{FALSE}. \strong{Note:} when a panel mode is active, tables are suppressed.}
+
+\item{symbol.risk.table}{Character specifying the symbol used in the risk table to denote
+strata: \code{"square"}, \code{"circle"}, or \code{"triangle"} (default \code{"square"}).}
+
+\item{font.size.risk.table}{Numeric font size for texts in risk / estimate tables (default \code{3}).}
+
+\item{label.strata}{Character vector or named character vector specifying labels for strata.
+Names (if present) must match the (re-ordered) underlying strata levels.
+\strong{Note:} when any of the panel modes is active
+(\code{panel.per.variable = TRUE}, \code{panel.per.event = TRUE}, \code{panel.censoring = TRUE},
+or \code{panel.mode = "auto"} and it actually dispatches to a panel),
+strata labels are suppressed to avoid duplicated legends across sub-plots.}
+
+\item{level.strata}{Optional character vector giving the full set of expected strata levels.
+When provided, both \code{order.strata} and \code{label.strata} are validated against it
+before application.}
+
+\item{order.strata}{Optional character vector specifying the display order of strata
+in the legend/number-at-risk table. Specify the levels of strata. Levels not listed are dropped.}
+
+\item{legend.position}{Character specifying the legend position:
+\code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, or \code{"none"} (default \code{"top"}).}
+
 \item{type.y}{Character string specifying the y-scale. For survival/CIF curves,
 \code{"surv"} implies survival probabilities and \code{"risk"} implies CIF
 (1-survival in simple survival settings). Specify \code{"cumhaz"} to plot cumulative hazard
@@ -100,7 +127,6 @@ invisibly for further modification (default \code{FALSE}).}
 \item{dpi.ggsave}{Numeric DPI passed to \code{ggplot2::ggsave()} (default \code{300}).}
 }
 \description{
-These arguments are shared by \code{\link[=cifplot]{cifplot()}}, \code{\link[=cifpanel]{cifpanel()}}, and
-\code{\link[=cifcurve]{cifcurve()}}.
+These arguments are shared by \code{\link[=cifplot]{cifplot()}} and \code{\link[=cifpanel]{cifpanel()}}.
 }
 \keyword{internal}

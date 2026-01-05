@@ -1,5 +1,4 @@
-#' These arguments are shared by [cifplot()], [cifpanel()], and
-#' [cifcurve()].
+#' These arguments are shared by [cifplot()], [cifpanel()], and [cifcurve()].
 #'
 #' @name cif-stat-arguments
 #' @keywords internal

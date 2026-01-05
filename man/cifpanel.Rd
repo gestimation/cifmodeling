@@ -156,6 +156,20 @@ If \code{NULL}, a default is chosen from \code{outcome.type} or the survfit obje
 \item{label.y}{Character y-axis label (default is chosen automatically from \code{outcome.type}
 and \code{type.y}, e.g. "Survival", "Cumulative incidence" or "Cumulative hazard").}
 
+\item{label.strata}{Character vector or named character vector specifying labels for strata.
+Names (if present) must match the (re-ordered) underlying strata levels.
+\strong{Note:} when any of the panel modes is active
+(\code{panel.per.variable = TRUE}, \code{panel.per.event = TRUE}, \code{panel.censoring = TRUE},
+or \code{panel.mode = "auto"} and it actually dispatches to a panel),
+strata labels are suppressed to avoid duplicated legends across sub-plots.}
+
+\item{order.strata}{Optional character vector specifying the display order of strata
+in the legend/number-at-risk table. Specify the levels of strata. Levels not listed are dropped.}
+
+\item{level.strata}{Optional character vector giving the full set of expected strata levels.
+When provided, both \code{order.strata} and \code{label.strata} are validated against it
+before application.}
+
 \item{limits.x}{Numeric length-2 vector specifying x-axis limits. If \code{NULL}, it is
 set from the fitted object (typically \code{c(0, max(time))}).}
 
@@ -168,6 +182,17 @@ set to \code{c(0, 1)} for probability-type outcomes.}
 
 \item{add.conf}{Logical; if \code{TRUE}, adds a CI ribbon
 (via \code{ggsurvfit::add_confidence_interval()}). Default \code{TRUE}.}
+
+\item{add.risktable}{Logical; if \code{TRUE}, adds a numbers-at-risk table under the plot.
+Default \code{TRUE}. \strong{Note:} when a panel mode is active, tables are suppressed.}
+
+\item{add.estimate.table}{Logical; if \code{TRUE}, adds a table of estimates and CIs.
+Default \code{FALSE}. \strong{Note:} when a panel mode is active, tables are suppressed.}
+
+\item{symbol.risk.table}{Character specifying the symbol used in the risk table to denote
+strata: \code{"square"}, \code{"circle"}, or \code{"triangle"} (default \code{"square"}).}
+
+\item{font.size.risk.table}{Numeric font size for texts in risk / estimate tables (default \code{3}).}
 
 \item{add.censor.mark}{Logical; if \code{TRUE}, draws censoring marks on each curve
 (via \code{ggsurvfit::add_censor_mark()}). Default \code{TRUE}.}
@@ -244,6 +269,9 @@ Abbreviations such as \code{"C"}, \code{"B"}, \code{"F"}, or \code{"G"} are also
 
 \item{font.size}{Integer specifying the base font size (default \code{12}).}
 
+\item{legend.position}{Character specifying the legend position:
+\code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, or \code{"none"} (default \code{"top"}).}
+
 \item{legend.collect}{Logical; if \code{TRUE}, try to collect a single legend
 for all panels (passed to \pkg{patchwork}). Default \code{TRUE}.}
 
@@ -281,6 +309,9 @@ invisibly for further modification (default \code{FALSE}).}
 \item{dpi.ggsave}{Numeric DPI passed to \code{ggplot2::ggsave()} (default \code{300}).}
 
 \item{survfit.info, axis.info, visual.info, panel.info, style.info, print.info, ggsave.info, inset.info}{Internal lists used for programmatic control. Not intended for direct user input.}
+
+\item{engine}{Character string specifying the internal rendering engine used to build each panel.
+Currently intended for internal use; default is \code{"cifplot"}.}
 
 \item{...}{Additional arguments forwarded to the internal \code{cifplot_single()}
 calls that build each panel. Use this to pass low-level options such as

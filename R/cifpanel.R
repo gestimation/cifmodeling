@@ -70,6 +70,8 @@
 #'   element refers to the main plot and the second (if present) to the inset.
 #' @param survfit.info,axis.info,visual.info,panel.info,style.info,print.info,ggsave.info,inset.info
 #'   Internal lists used for programmatic control. Not intended for direct user input.
+#' @param engine Character string specifying the internal rendering engine used to build each panel.
+#' Currently intended for internal use; default is `"cifplot"`.
 #' @param ... Additional arguments forwarded to the internal `cifplot_single()`
 #'   calls that build each panel. Use this to pass low-level options such as
 #'   `competing.risk.time`, `intercurrent.event.time`, or styling overrides.

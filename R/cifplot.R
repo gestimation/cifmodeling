@@ -29,26 +29,6 @@
 #'   When supplied, this argument overrides `code.event1`, `code.event2`, and `code.censoring` for the purpose of estimation.
 #'   For panel displays (e.g. `cifpanel()` or when `panel.per.event = TRUE` or
 #'   `panel.censoring = TRUE`), `code.events` may also be a list of such numeric vectors, one per panel.
-#' @param add.risktable Logical; if `TRUE`, adds a numbers-at-risk table under the plot.
-#'   Default `TRUE`. **Note:** when a panel mode is active, tables are suppressed.
-#' @param add.estimate.table Logical; if `TRUE`, adds a table of estimates and CIs.
-#'   Default `FALSE`. **Note:** when a panel mode is active, tables are suppressed.
-#' @param symbol.risk.table Character specifying the symbol used in the risk table to denote
-#'   strata: `"square"`, `"circle"`, or `"triangle"` (default `"square"`).
-#' @param font.size.risk.table Numeric font size for texts in risk / estimate tables (default `3`).
-#' @param label.strata Character vector or named character vector specifying labels for strata.
-#'   Names (if present) must match the (re-ordered) underlying strata levels.
-#'   **Note:** when any of the panel modes is active
-#'   (`panel.per.variable = TRUE`, `panel.per.event = TRUE`, `panel.censoring = TRUE`,
-#'   or `panel.mode = "auto"` and it actually dispatches to a panel),
-#'   strata labels are suppressed to avoid duplicated legends across sub-plots.
-#' @param level.strata Optional character vector giving the full set of expected strata levels.
-#'   When provided, both `order.strata` and `label.strata` are validated against it
-#'   before application.
-#' @param order.strata Optional character vector specifying the display order of strata
-#'   in the legend/number-at-risk table. Specify the levels of strata. Levels not listed are dropped.
-#' @param legend.position Character specifying the legend position:
-#'   `"top"`, `"right"`, `"bottom"`, `"left"`, or `"none"` (default `"top"`).
 #' @param panel.per.event Logical. **Explicit panel mode.** If `TRUE` and
 #'   `outcome.type == "competing-risk"`, [cifplot()] internally calls [cifpanel()]
 #'   to display two event-specific CIFs side-by-side (event 1 and event 2) using

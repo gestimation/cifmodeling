@@ -2,8 +2,7 @@
 % Please edit documentation in R/cif-stat-arguments.R
 \name{cif-stat-arguments}
 \alias{cif-stat-arguments}
-\title{These arguments are shared by \code{\link[=cifplot]{cifplot()}}, \code{\link[=cifpanel]{cifpanel()}}, and
-\code{\link[=cifcurve]{cifcurve()}}.}
+\title{These arguments are shared by \code{\link[=cifplot]{cifplot()}}, \code{\link[=cifpanel]{cifpanel()}}, and \code{\link[=cifcurve]{cifcurve()}}.}
 \arguments{
 \item{data}{A data frame containing variables in the formula.}
 
@@ -42,7 +41,6 @@ used internally (default \verb{arcsine-square root}).}
 \item{conf.int}{Numeric two-sided level of CIs (default \code{0.95}).}
 }
 \description{
-These arguments are shared by \code{\link[=cifplot]{cifplot()}}, \code{\link[=cifpanel]{cifpanel()}}, and
-\code{\link[=cifcurve]{cifcurve()}}.
+These arguments are shared by \code{\link[=cifplot]{cifplot()}}, \code{\link[=cifpanel]{cifpanel()}}, and \code{\link[=cifcurve]{cifcurve()}}.
 }
 \keyword{internal}
