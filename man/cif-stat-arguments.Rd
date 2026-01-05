@@ -9,6 +9,10 @@
 
 \item{weights}{Optional name of the weight variable in \code{data}. Weights must be nonnegative.}
 
+\item{n.risk.type}{Character string; one of \code{"weighted"}, \code{"unweighted"}, or \code{"ess"}.
+Controls which risk set size is returned in \verb{$n.risk} without affecting estimates
+or standard errors. (default \code{"weighted"}).}
+
 \item{subset.condition}{Optional character string giving a logical condition to subset
 \code{data} (default \code{NULL}).}
 
@@ -28,8 +32,9 @@ Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic detection
 \item{code.censoring}{Integer code of censoring (default \code{0}).}
 
 \item{error}{Character string specifying the method for SEs and CIs used internally.
-For \code{"survival"}, choose one of \code{"greenwood"} (default), \code{"tsiatis"}, or \code{"if"}.
-For \code{"competing-risk"}, choose one of \code{"delta"} (default), \code{"aalen"}, or \code{"if"}.}
+For \code{"survival"} without weights, choose one of \code{"greenwood"} (default), \code{"tsiatis"}, or \code{"if"}.
+For \code{"competing-risk"} without weights, choose one of \code{"delta"} (default), \code{"aalen"}, or \code{"if"}.
+SEs and CIs based on influence functions (\code{"if"}) is recommended for weighted analysis.}
 
 \item{conf.type}{Character specifying the method of transformation for CIs
 used internally (default \verb{arcsine-square root}).}

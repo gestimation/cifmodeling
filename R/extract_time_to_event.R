@@ -69,20 +69,20 @@ extract_time_to_event <- function(
     drop.empty = TRUE
 ){
   which.event <- match.arg(which.event)
-  out_readSurv <- util_read_surv(
+  out_read_surv <- util_read_surv(
     formula = formula, data = data, weights = NULL,
     code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
     subset.condition = subset.condition, na.action = na.action
   )
   util_get_event_time(
-    out_readSurv = out_readSurv,
+    out_read_surv = out_read_surv,
     which.event = which.event, code.user.specified = code.user.specified,
     read.unique.time = read.unique.time, drop.empty = drop.empty
   )
 }
 
 util_get_event_time <- function(
-    out_readSurv,
+    out_read_surv,
     which.event = c("event2", "event1", "censor", "censoring", "user_specified"),
     code.user.specified = NULL,
     read.unique.time = TRUE,
@@ -90,23 +90,23 @@ util_get_event_time <- function(
 ){
   which.event <- match.arg(which.event)
 
-  if (is.null(out_readSurv) || !is.list(out_readSurv)) .err("req", arg = "out_readSurv (list)")
+  if (is.null(out_read_surv) || !is.list(out_read_surv)) .err("req", arg = "out_read_surv (list)")
 
-  strata <- out_readSurv$strata
-  if (is.null(strata)) strata <- factor(rep("all", length(out_readSurv$t)))
+  strata <- out_read_surv$strata
+  if (is.null(strata)) strata <- factor(rep("all", length(out_read_surv$t)))
   if (is.factor(strata)) strata <- as.character(strata)
 
-  tvec    <- suppressWarnings(as.numeric(out_readSurv$t))
-  epsilon <- suppressWarnings(as.numeric(out_readSurv$epsilon))
-  if (anyNA(tvec))   .err("na",          arg = "out_readSurv$t")
-  if (any(tvec < 0)) .err("nonneg",      arg = "out_readSurv$t")
+  tvec    <- suppressWarnings(as.numeric(out_read_surv$t))
+  epsilon <- suppressWarnings(as.numeric(out_read_surv$epsilon))
+  if (anyNA(tvec))   .err("na",          arg = "out_read_surv$t")
+  if (any(tvec < 0)) .err("nonneg",      arg = "out_read_surv$t")
 
   pick <- switch(
     which.event,
-    event1 = as.integer(out_readSurv$d1),
-    event2 = as.integer(out_readSurv$d2),
-    censor = as.integer(out_readSurv$d0),
-    censoring = as.integer(out_readSurv$d0),
+    event1 = as.integer(out_read_surv$d1),
+    event2 = as.integer(out_read_surv$d2),
+    censor = as.integer(out_read_surv$d0),
+    censoring = as.integer(out_read_surv$d0),
     user_specified = {
       if (is.null(code.user.specified)) .err("req", arg = "user_specified_code")
       as.integer(epsilon == as.numeric(code.user.specified))

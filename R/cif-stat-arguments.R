@@ -6,6 +6,9 @@
 #'
 #' @param data A data frame containing variables in the formula.
 #' @param weights Optional name of the weight variable in `data`. Weights must be nonnegative.
+#' @param n.risk.type Character string; one of `"weighted"`, `"unweighted"`, or `"ess"`.
+#' Controls which risk set size is returned in `$n.risk` without affecting estimates
+#' or standard errors. (default `"weighted"`).
 #' @param subset.condition Optional character string giving a logical condition to subset
 #' `data` (default `NULL`).
 #' @param na.action A function specifying the action to take on missing values (default `na.omit`).
@@ -19,8 +22,9 @@
 #' @param code.event2 Integer code of the competing risk (default `2`).
 #' @param code.censoring Integer code of censoring (default `0`).
 #' @param error Character string specifying the method for SEs and CIs used internally.
-#' For `"survival"`, choose one of `"greenwood"` (default), `"tsiatis"`, or `"if"`.
-#' For `"competing-risk"`, choose one of `"delta"` (default), `"aalen"`, or `"if"`.
+#' For `"survival"` without weights, choose one of `"greenwood"` (default), `"tsiatis"`, or `"if"`.
+#' For `"competing-risk"` without weights, choose one of `"delta"` (default), `"aalen"`, or `"if"`.
+#' SEs and CIs based on influence functions (`"if"`) is recommended for weighted analysis.
 #' @param conf.type Character specifying the method of transformation for CIs
 #' used internally (default `arcsine-square root`).
 #' @param conf.int Numeric two-sided level of CIs (default `0.95`).

@@ -94,11 +94,7 @@ test_that("tidy.polyreg() and glance.polyreg() work for survival models", {
 
   data(diabetes.complications)
   diabetes.complications$d <- as.integer(diabetes.complications$epsilon>0)
-  diabetes.complications$fruitq1 <- ifelse(
-    diabetes.complications$fruitq == "Q1",
-    "Q1",
-    "Q2 to Q4"
-  )
+  diabetes.complications$fruitq1 <- ifelse(diabetes.complications$fruitq == "Q1",1,0)
 
   fit <- polyreg(
     nuisance.model = Event(t, d) ~ 1,
@@ -131,9 +127,7 @@ test_that("tidy/glance work for competing-risk polyreg", {
   skip_on_cran()
 
   data(diabetes.complications)
-  diabetes.complications$fruitq1 <- ifelse(
-    diabetes.complications$fruitq == "Q1", "Q1", "Q2 to Q4"
-  )
+  diabetes.complications$fruitq1 <- ifelse(diabetes.complications$fruitq == "Q1",1,0)
 
   fit <- polyreg(
     nuisance.model = Event(t, epsilon) ~ 1,
@@ -165,7 +159,7 @@ test_that("augment.polyreg() returns row-wise diagnostics", {
   skip_on_cran()
   data(diabetes.complications)
   diabetes.complications$fruitq1 <- ifelse(
-    diabetes.complications$fruitq == "Q1","Q1","Q2 to Q4"
+    diabetes.complications$fruitq == "Q1",1,0
   )
 
   fit <- polyreg(
@@ -190,11 +184,7 @@ test_that("coef(), vcov(), nobs() work for survival polyreg models", {
 
   data(diabetes.complications)
   diabetes.complications$d <- as.integer(diabetes.complications$epsilon > 0)
-  diabetes.complications$fruitq1 <- ifelse(
-    diabetes.complications$fruitq == "Q1",
-    "Q1",
-    "Q2 to Q4"
-  )
+  diabetes.complications$fruitq1 <- ifelse(diabetes.complications$fruitq == "Q1",1,0)
 
   fit <- polyreg(
     nuisance.model = Event(t, d) ~ 1,

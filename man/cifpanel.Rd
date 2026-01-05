@@ -13,10 +13,14 @@ cifpanel(
   subset.condition = NULL,
   na.action = na.omit,
   outcome.type = NULL,
+  code.event1 = 1,
+  code.event2 = 2,
+  code.censoring = 0,
   code.events = NULL,
   error = NULL,
   conf.type = NULL,
   conf.int = NULL,
+  n.risk.type = c("weighted", "unweighted", "ess"),
   type.y = NULL,
   label.x = NULL,
   label.y = NULL,
@@ -113,27 +117,44 @@ if the event variable has more than two unique levels, \code{"competing-risk"} i
 otherwise, \code{"survival"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
 Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic detection based on the event coding.}
 
-\item{code.events}{Optional numeric length-3 vector \code{c(event1, event2, censoring)}.
-When supplied, it overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring}
-(primarily used when \code{\link[=cifpanel]{cifpanel()}} is called or when \code{panel.per.event = TRUE}).}
+\item{code.event1}{Integer code of the event of interest (default \code{1}).}
+
+\item{code.event2}{Integer code of the competing risk (default \code{2}).}
+
+\item{code.censoring}{Integer code of censoring (default \code{0}).}
+
+\item{code.events}{Optional specification of event/censoring codes.
+For single-panel calls, supply a numeric vector. For competing-risk outcomes, use \code{c(event1, event2, censoring)}.
+For survival outcomes, a length-2 or length-3 vector is allowed:
+\code{c(event, censoring)} or \verb{c(event, *, censoring)}, where any middle element is ignored.
+When supplied, this argument overrides \code{code.event1}, \code{code.event2}, and \code{code.censoring} for the purpose of estimation.
+For panel displays (e.g. \code{cifpanel()} or when \code{panel.per.event = TRUE} or
+\code{panel.censoring = TRUE}), \code{code.events} may also be a list of such numeric vectors, one per panel.}
 
 \item{error}{Character string specifying the method for SEs and CIs used internally.
-For \code{"survival"}, choose one of \code{"greenwood"} (default), \code{"tsiatis"}, or \code{"if"}.
-For \code{"competing-risk"}, choose one of \code{"delta"} (default), \code{"aalen"}, or \code{"if"}.}
+For \code{"survival"} without weights, choose one of \code{"greenwood"} (default), \code{"tsiatis"}, or \code{"if"}.
+For \code{"competing-risk"} without weights, choose one of \code{"delta"} (default), \code{"aalen"}, or \code{"if"}.
+SEs and CIs based on influence functions (\code{"if"}) is recommended for weighted analysis.}
 
 \item{conf.type}{Character specifying the method of transformation for CIs
 used internally (default \verb{arcsine-square root}).}
 
 \item{conf.int}{Numeric two-sided level of CIs (default \code{0.95}).}
 
-\item{type.y}{Character string specifying the y-scale: \code{"surv"} for survival probabilities
-or \code{"risk"} for cumulative incidence (1 - survival in simple survival settings).
-If \verb{NULL``, a default is chosen from }outcome.type`.}
+\item{n.risk.type}{Character string; one of \code{"weighted"}, \code{"unweighted"}, or \code{"ess"}.
+Controls which risk set size is returned in \verb{$n.risk} without affecting estimates
+or standard errors. (default \code{"weighted"}).}
+
+\item{type.y}{Character string specifying the y-scale. For survival/CIF curves,
+\code{"surv"} implies survival probabilities and \code{"risk"} implies CIF
+(1-survival in simple survival settings). Specify \code{"cumhaz"} to plot cumulative hazard
+or \code{"cloglog"} to generate a complementary log-log plot.
+If \code{NULL}, a default is chosen from \code{outcome.type} or the survfit object.}
 
 \item{label.x}{Character x-axis label (default \code{"Time"}).}
 
 \item{label.y}{Character y-axis label (default is chosen automatically from \code{outcome.type}
-and \code{type.y}, e.g. "Survival" or "Cumulative incidence").}
+and \code{type.y}, e.g. "Survival", "Cumulative incidence" or "Cumulative hazard").}
 
 \item{limits.x}{Numeric length-2 vector specifying x-axis limits. If \code{NULL}, it is
 set from the fitted object (typically \code{c(0, max(time))}).}
@@ -284,7 +305,7 @@ sessions in addition to being returned.
 It takes one or more model formulas (or, alternatively, one formula and several
 event-coding specifications) and returns a multi-panel figure, typically as a
 patchwork-compatible object. Most display options (axis labels, marks, style, ggsave options)
-are shared with \code{\link[=cifplot]{cifplot()}}, but per-panel legends and risk tables are
+are shared with \code{\link[=cifplot]{cifplot()}}, but per-panel legends and number-at-risk tables are
 suppressed to avoid duplicated display. Typical use cases are:
 \itemize{
 \item Compare CIF (event 1) vs CIF (event 2) in a 1×2 layout.
@@ -309,8 +330,14 @@ list in \code{formulas} (one per panel). When both are provided, \code{formulas}
 \item length 2 = survival: \code{c(event1, censor)}
 \item length 3 = competing-risk: \code{c(event1, event2, censor)}
 }
+\item If \code{code.events} is \code{NULL}, \code{code.event1}, \code{code.event2}, \code{code.censoring}
+are combined into \code{code.events = list(c(code.event1, code.event2, code.censoring))}
+with \code{NA} values dropped.
 \item If \code{outcome.type} is \code{NULL}, the function infers each panel from its
 \code{code.events[[i]]} length. When both are given, \code{outcome.type} takes precedence.
+\item Control risk-set displays via \code{n.risk.type}, which is recycled per panel and
+forwarded to \code{\link[=cifcurve]{cifcurve()}} to decide which risk set size populates \verb{$n.risk}
+(e.g., weighted vs. unweighted counts).
 }
 }
 

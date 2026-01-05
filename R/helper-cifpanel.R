@@ -35,9 +35,10 @@ panel_prepare <- function(
     limsx.list = NULL, limsy.list = NULL,
     breakx.list = NULL, breaky.list = NULL,
     addCI.list = NULL, addCen.list = NULL, addCR.list = NULL, addIC.list = NULL, addQ.list = NULL,
+    n.risk.type.list = NULL,
     strata.list = NULL, legend.position = NULL,
     survfit.info = list(), style.info = list(), dots = list(), fonts = NULL,
-    na.action = stats::na.omit                 # ★ 追加（既定は stats::na.omit）
+    na.action = stats::na.omit
 ){
   if (is.null(fonts)) fonts <- panel_extract_fonts(dots)
 
@@ -45,35 +46,79 @@ panel_prepare <- function(
   plot_args <- vector("list", length = K)
 
   for (i in seq_len(K)) {
-    pair <- code.events[[i]]
 
-    # ★ flags は小文字化して判定
-    flag <- tolower(outcome.flags[i])
-    if (flag == "s") {
-      ce1 <- pair[1]; ce2 <- NULL; cc <- pair[2]
-    } else {
-      ce1 <- pair[1]; ce2 <- pair[2]; cc <- pair[3]
+    pair <- code.events[[i]]
+    if (is.null(pair) || length(pair) == 0L) {
+      .err("need_code_events")
     }
 
+    flag <- tolower(outcome.flags[i])
+
+    if (flag == "s") {
+      ## ---- survival: flag優先。lengthは「あれば使う」程度に扱う ----
+      ## 基本的に censor コードさえわかれば survival は動くので、
+      ## - event1: pair[1]
+      ## - censor: pair の最後の要素（長さ2でも3でもOK）
+      if (length(pair) >= 2L) {
+        ce1 <- pair[1L]
+        cc  <- pair[length(pair)]  # length 2 → pair[2], length 3 → pair[3]
+      } else {
+        .err(
+          "code_events_too_short",
+          msg = sprintf(
+            "Panel %d is 'survival' but code.events[[%d]] has length %d; expected at least 2 codes.",
+            i, i, length(pair)
+          )
+        )
+      }
+      ce2 <- NULL  # survival では event2 は使わない（捨てる）
+
+    } else {
+      ## ---- competing-risk: できれば 3 コード欲しいが、flagを優先してゆるめに扱う ----
+      if (length(pair) >= 3L) {
+        ce1 <- pair[1L]
+        ce2 <- pair[2L]
+        cc  <- pair[3L]
+      } else if (length(pair) == 2L) {
+        ## 「event vs censor」しかないが、flagは C なので、
+        ## event2 は存在しないものとして NA にしておく（d2 は全て0になる）
+        ce1 <- pair[1L]
+        ce2 <- NA_integer_
+        cc  <- pair[2L]
+      } else {
+        .err(
+          "code_events_too_short",
+          msg = sprintf(
+            "Panel %d is 'competing-risk' but code.events[[%d]] has length %d; expected at least 2 codes.",
+            i, i, length(pair)
+          )
+        )
+      }
+    }
+
+    nrt_i <- if (!is.null(n.risk.type.list)) n.risk.type.list[[i]] else survfit.info$n.risk.type
+    if (is.list(nrt_i)) nrt_i <- nrt_i[[min(i, length(nrt_i))]]
+    nrt_i <- util_check_n_risk_type(nrt_i)
+
     norm_inputs <- plot_normalize_formula_data(formulas[[i]], data)
-    cur_formula <- norm_inputs$formula %||% formulas[[i]]   # ★ ここで cur_formula を定義
+    cur_formula <- norm_inputs$formula %||% formulas[[i]]
     data_i      <- norm_inputs$data
 
     args_est <- panel_drop_nulls(c(
-      list(
-        formula        = cur_formula,            # ★ 正規化済み formula を使用
-        data           = data_i,
-        outcome.type   = if (!is.null(outcome.list)) outcome.list[[i]] else NULL,
-        code.event1    = ce1,
-        code.event2    = ce2,
-        code.censoring = cc,
-        na.action      = na.action               # ★ cifcurve にも渡す
-      ),
-      survfit.info
+        survfit.info,
+        list(
+            formula        = cur_formula,
+            data           = data_i,
+            outcome.type   = if (!is.null(outcome.list)) outcome.list[[i]] else NULL,
+            code.event1    = ce1,
+            code.event2    = ce2,
+            code.censoring = cc,
+            n.risk.type    = nrt_i,
+            na.action      = na.action
+          )
     ))
 
     ot <- args_est$outcome.type
-    # ★ 正規化判定にはこのパネルの pair をそのまま渡す
     args_est$outcome.type <- panel_normalize_outcome_type(
       outcome.type = ot,
       code.events  = pair,
@@ -82,31 +127,34 @@ panel_prepare <- function(
       na.action    = na.action
     )
 
+    args_est <- panel_dedupe_named_args(args_est)
     fit_i <- do.call(cifcurve, args_est)
     curves[[i]] <- fit_i
 
     args_plot <- list(
-      formula_or_fit             = fit_i,
-      type.y                     = if (!is.null(typey.list))   typey.list[[i]]   else NULL,
-      label.y                    = if (!is.null(labely.list))  labely.list[[i]]  else NULL,
-      label.x                    = if (!is.null(labelx.list))  labelx.list[[i]]  else NULL,
-      limits.y                   = if (!is.null(limsy.list))   limsy.list[[i]]   else NULL,
-      limits.x                   = if (!is.null(limsx.list))   limsx.list[[i]]   else NULL,
-      breaks.x                   = if (!is.null(breakx.list))  breakx.list[[i]]  else NULL,
-      breaks.y                   = if (!is.null(breaky.list))  breaky.list[[i]]  else NULL,
-      add.conf                   = if (!is.null(addCI.list))   addCI.list[[i]]   else TRUE,
-      add.censor.mark            = if (!is.null(addCen.list))  addCen.list[[i]]  else TRUE,
-      add.competing.risk.mark    = if (!is.null(addCR.list))   addCR.list[[i]]   else FALSE,
-      add.intercurrent.event.mark= if (!is.null(addIC.list))   addIC.list[[i]]   else FALSE,
-      add.quantile               = if (!is.null(addQ.list))    addQ.list[[i]]    else FALSE,
-      label.strata               = if (!is.null(strata.list))  strata.list[[i]]  else NULL,
-      font.family                = fonts$family,
-      font.size                  = fonts$size
+      formula_or_fit              = fit_i,
+      type.y                      = if (!is.null(typey.list))   typey.list[[i]]   else NULL,
+      label.y                     = if (!is.null(labely.list))  labely.list[[i]]  else NULL,
+      label.x                     = if (!is.null(labelx.list))  labelx.list[[i]]  else NULL,
+      limits.y                    = if (!is.null(limsy.list))   limsy.list[[i]]   else NULL,
+      limits.x                    = if (!is.null(limsx.list))   limsx.list[[i]]   else NULL,
+      breaks.x                    = if (!is.null(breakx.list))  breakx.list[[i]]  else NULL,
+      breaks.y                    = if (!is.null(breaky.list))  breaky.list[[i]]  else NULL,
+      add.conf                    = if (!is.null(addCI.list))   addCI.list[[i]]   else TRUE,
+      add.censor.mark             = if (!is.null(addCen.list))  addCen.list[[i]]  else TRUE,
+      add.competing.risk.mark     = if (!is.null(addCR.list))   addCR.list[[i]]   else FALSE,
+      add.intercurrent.event.mark = if (!is.null(addIC.list))   addIC.list[[i]]   else FALSE,
+      add.quantile                = if (!is.null(addQ.list))    addQ.list[[i]]    else FALSE,
+      label.strata                = if (!is.null(strata.list))  strata.list[[i]]  else NULL,
+      n.risk.type                 = nrt_i,
+      font.family                 = fonts$family,
+      font.size                   = fonts$size
     )
-    if (!is.null(dots$style))     args_plot$style     <- dots$style
-    if (!is.null(dots$palette))   args_plot$palette   <- dots$palette
-    if (!is.null(dots$linewidth)) args_plot$linewidth <- dots$linewidth
-    if (!is.null(dots$linetype))  args_plot$linetype  <- dots$linetype
+
+    if (!is.null(dots$style))      args_plot$style           <- dots$style
+    if (!is.null(dots$palette))    args_plot$palette         <- dots$palette
+    if (!is.null(dots$linewidth))  args_plot$linewidth       <- dots$linewidth
+    if (!is.null(dots$linetype))   args_plot$linetype        <- dots$linetype
     if (!is.null(legend.position)) args_plot$legend.position <- legend.position
 
     plot_args[[i]] <- panel_drop_nulls(args_plot)
@@ -115,22 +163,49 @@ panel_prepare <- function(
   list(curves = curves, plot_args = plot_args, K = K)
 }
 
-panel_as_formula_global <- function(f) {
-  if (is.character(f))   return(stats::as.formula(f, env = .GlobalEnv))
-  if (inherits(f, "formula")) return(stats::as.formula(f, env = .GlobalEnv))
+# keep the *last* occurrence of each named argument; keep all unnamed args intact
+panel_dedupe_named_args <- function(x) {
+  nm <- names(x)
+  if (is.null(nm)) return(x)
+
+  dup <- duplicated(nm, fromLast = TRUE) & nzchar(nm)
+  if (!any(dup)) return(x)
+
+  x[!dup]
+}
+
+panel_as_formula <- function(f) {
+  env <- parent.frame()
+  if (is.character(f))   return(stats::as.formula(f, env = env))
+  if (inherits(f, "formula")) return(stats::as.formula(f, env = env))
   .err("formula_must_be")
 }
 
-panel_recycle_to <- function(x, n) {
-  if (length(x) == n) return(x)
-  if (length(x) == 0L) .err("recycle_empty")
-  rep_len(x, n)
-}
+
 panel_to_list <- function(x) if (is.null(x)) NULL else if (is.list(x)) x else as.list(x)
 panel_drop_nulls <- function(lst) lst[!vapply(lst, is.null, logical(1))]
 panel_strip_overrides_from_dots <- function(dots, override_names) {
   if (length(override_names) == 0L) return(dots)
   dots[setdiff(names(dots), override_names)]
+}
+panel_recycle_to <- function(x, n, arg_name = deparse(substitute(x))) {
+  len <- length(x)
+  if (len == n) {
+    return(x)
+  }
+  if (len == 0L) {
+    .err("recycle_empty")
+  }
+  if (len == 1L) {
+    return(rep_len(x, n))
+  }
+  stop(
+    sprintf(
+      "Length mismatch for %s: got %d, but expected length 1 or %d (number of panels).",
+      arg_name, len, n
+    ),
+    call. = FALSE
+  )
 }
 
 panel_is_surv <- function(x) {
@@ -215,7 +290,7 @@ panel_modify_list <- function(x, y, keep.null = FALSE) {
     val <- y[[nm]]
     if (is.null(val) && !keep.null) x[[nm]] <- NULL else x[[nm]] <- val
 
-      }
+  }
   x
 }
 

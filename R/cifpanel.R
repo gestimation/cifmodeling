@@ -5,7 +5,7 @@
 #' It takes one or more model formulas (or, alternatively, one formula and several
 #' event-coding specifications) and returns a multi-panel figure, typically as a
 #' patchwork-compatible object. Most display options (axis labels, marks, style, ggsave options)
-#' are shared with [cifplot()], but per-panel legends and risk tables are
+#' are shared with [cifplot()], but per-panel legends and number-at-risk tables are
 #' suppressed to avoid duplicated display. Typical use cases are:
 #'
 #' -   Compare CIF (event 1) vs CIF (event 2) in a 1×2 layout.
@@ -25,9 +25,13 @@
 #' @param formulas Optional list of formulas. When given, each formula defines
 #'   **one panel**. This is the most common way to create “one variable per plot”
 #'   panels.
-#' @param code.events Optional numeric length-3 vector `c(event1, event2, censoring)`.
-#'   When supplied, it overrides `code.event1`, `code.event2`, and `code.censoring`
-#'   (primarily used when [cifpanel()] is called or when `panel.per.event = TRUE`).
+#' @param code.events Optional specification of event/censoring codes.
+#'   For single-panel calls, supply a numeric vector. For competing-risk outcomes, use `c(event1, event2, censoring)`.
+#'   For survival outcomes, a length-2 or length-3 vector is allowed:
+#'   `c(event, censoring)` or `c(event, *, censoring)`, where any middle element is ignored.
+#'   When supplied, this argument overrides `code.event1`, `code.event2`, and `code.censoring` for the purpose of estimation.
+#'   For panel displays (e.g. `cifpanel()` or when `panel.per.event = TRUE` or
+#'   `panel.censoring = TRUE`), `code.events` may also be a list of such numeric vectors, one per panel.
 #' @param legend.collect Logical; if `TRUE`, try to collect a single legend
 #'   for all panels (passed to \pkg{patchwork}). Default `TRUE`.
 #' @param inset.panel Logical. If `FALSE` (default), all panels are arranged
@@ -84,9 +88,14 @@
 #' - Alternatively, pass `code.events` per panel to infer the type:
 #'   - length 2 = survival: `c(event1, censor)`
 #'   - length 3 = competing-risk: `c(event1, event2, censor)`
+#' - If `code.events` is `NULL`, `code.event1`, `code.event2`, `code.censoring`
+#'   are combined into `code.events = list(c(code.event1, code.event2, code.censoring))`
+#'   with `NA` values dropped.
 #' - If `outcome.type` is `NULL`, the function infers each panel from its
 #'   `code.events[[i]]` length. When both are given, `outcome.type` takes precedence.
-#'
+#' - Control risk-set displays via `n.risk.type`, which is recycled per panel and
+#'   forwarded to [cifcurve()] to decide which risk set size populates `$n.risk`
+#'   (e.g., weighted vs. unweighted counts).
 #'
 #' ### Panel-wise vs shared arguments
 #'
@@ -253,10 +262,14 @@ cifpanel <- function(
     subset.condition              = NULL,
     na.action                     = na.omit,
     outcome.type                  = NULL,
+    code.event1                   = 1,
+    code.event2                   = 2,
+    code.censoring                = 0,
     code.events                   = NULL,
     error                         = NULL,
     conf.type                     = NULL,
     conf.int                      = NULL,
+    n.risk.type                   = c("weighted", "unweighted", "ess"),
     type.y                        = NULL,
     label.x                       = NULL,
     label.y                       = NULL,
@@ -322,12 +335,6 @@ cifpanel <- function(
     engine                        = "cifplot",
     ...
 ){
-#  if (!is.null(label.strata)) {
-#    .warn("panel_disables_labelstrata")
-#  }
-#  if (isTRUE(add.risktable) || isTRUE(add.estimate.table)) {
-#    .warn("panel_disables_tables")
-#  }
   legend.position  <- "none"
   add.risktable     <- FALSE
   add.estimate.table <- FALSE
@@ -337,6 +344,7 @@ cifpanel <- function(
   call <- match.call()
   plots_out <- NULL
   engine.list <- panel_to_list(engine)
+  if (missing(n.risk.type)) n.risk.type <- "weighted"
 
   survfit.info.user <- survfit.info
   axis.info.user    <- axis.info
@@ -350,7 +358,8 @@ cifpanel <- function(
   survfit.info <- panel_modify_list(list(
     error     = error,
     conf.type = conf.type,
-    conf.int  = conf.int
+    conf.int  = conf.int,
+    n.risk.type = n.risk.type
   ), survfit.info %||% list())
 
   axis.info <- panel_modify_list(list(
@@ -632,8 +641,33 @@ cifpanel <- function(
   n_slots <- nrow * ncol
 
   if (is.null(data)) stop("data must be provided.")
-  if (is.null(code.events) || !is.list(code.events) || length(code.events) == 0)
-    .err("need_code_events")
+  if (is.null(code.events)) {
+    out_flag <- NULL
+    if (!is.null(outcome.type)) {
+      out0 <- if (is.list(outcome.type)) outcome.type[[1]] else outcome.type[1]
+      out_flag <- panel_norm_outcome(as.character(out0))
+    }
+
+    if (!is.null(out_flag) && identical(out_flag, "S")) {
+      base_codes <- c(code.event1, code.censoring)
+    } else {
+      base_codes <- c(code.event1, code.event2, code.censoring)
+    }
+    base_codes <- base_codes[!is.na(base_codes)]
+    if (length(base_codes) < 2L) {
+      .err("need_code_events")
+    }
+    code.events <- list(base_codes)
+
+  } else {
+    if (!is.list(code.events)) {
+      code.events <- list(code.events)
+    }
+    if (length(code.events) == 0L) {
+      .err("need_code_events")
+    }
+  }
+
   if (!is.null(formulas) && !is.null(formula))
     .warn("both_formula_forms")
   if (is.null(formulas) && is.null(formula))
@@ -652,13 +686,20 @@ cifpanel <- function(
   ncol               <- layout_info$ncol
   n_slots            <- layout_info$n_slots
 
+  n.risk.type.list <- panel_to_list(n.risk.type)
+  if (!is.null(n.risk.type.list)) {
+    n.risk.type.list <- panel_recycle_to(n.risk.type.list, K)
+    n.risk.type.list <- lapply(n.risk.type.list, util_check_n_risk_type)
+  }
+  survfit.info$n.risk.type <- n.risk.type.list
+
   use_formula_list <- !is.null(formulas)
   if (use_formula_list) {
     stopifnot(is.list(formulas))
-    formulas <- lapply(formulas, panel_as_formula_global)
+    formulas <- lapply(formulas, panel_as_formula)
     formulas <- panel_recycle_to(formulas, K)
   } else {
-    formula  <- panel_as_formula_global(formula)
+    formula  <- panel_as_formula(formula)
     formulas <- rep(list(formula), K)
   }
 
@@ -726,6 +767,7 @@ cifpanel <- function(
   if (!is.null(addCR.list))       kill_names <- c(kill_names, "add.competing.risk.mark")
   if (!is.null(addIC.list))       kill_names <- c(kill_names, "add.intercurrent.event.mark")
   if (!is.null(addQ.list))        kill_names <- c(kill_names, "add.quantile")
+  if (!is.null(n.risk.type.list)) kill_names <- c(kill_names, "n.risk.type")
 
   dots <- panel_strip_overrides_from_dots(dots, unique(kill_names))
 
@@ -752,6 +794,7 @@ cifpanel <- function(
     addCR.list      = addCR.list,
     addIC.list      = addIC.list,
     addQ.list       = addQ.list,
+    n.risk.type.list = n.risk.type.list,
     strata.list     = make_panel_list_preserve_vector(label.strata, K),
     legend.position = legend.position,
     survfit.info    = survfit.info,
@@ -760,14 +803,24 @@ cifpanel <- function(
     fonts           = fonts,
     na.action       = na.action
   )
-
+  survfit.info$curves <- survfit.info$curves %||% prep$curves
+  survfit.info$n.risk.type <- survfit.info$n.risk.type %||% n.risk.type.list
   plots <- lapply(seq_len(prep$K), function(i) {
     pa <- prep$plot_args[[i]]
-
+    if (!is.null(typey.list)) {
+      ty_i <- typey.list[[i]]
+      if (!is.null(ty_i)) {
+        pa$axis.info$type.y <- ty_i
+      }
+    }
     pa$axis.info    <- panel_modify_list(axis.info,    pa$axis.info %||% list())
     pa$visual.info  <- panel_modify_list(visual.info,  pa$visual.info %||% list())
     pa$style.info   <- panel_modify_list(style.info,   pa$style.info %||% list())
     pa$survfit.info <- panel_modify_list(survfit.info, pa$survfit.info %||% list())
+    if (!is.null(n.risk.type.list)) {
+      pa$survfit.info$n.risk.type <- n.risk.type.list[[i]]
+      pa$n.risk.type <- pa$n.risk.type %||% n.risk.type.list[[i]]
+    }
 
     pa <- panel_force_apply(
       pa,
@@ -956,6 +1009,7 @@ cifpanel <- function(
   survfit.info$outcome.type   <- survfit.info$outcome.type   %||% outcome.type
   survfit.info$code.events    <- survfit.info$code.events    %||% code.events
   survfit.info$data.name      <- survfit.info$data.name      %||% deparse(substitute(data))
+  survfit.info$n.risk.type    <- survfit.info$n.risk.type    %||% n.risk.type.list
 
   print.info$engine <- print.info$engine %||% engine.list
 
@@ -1048,9 +1102,6 @@ panel_force_apply <- function(
   pa
 }
 
-
-
-
 normalize_strata_info <- function(level.strata = NULL,
                                   order.strata = NULL,
                                   label.strata = NULL) {
@@ -1099,19 +1150,53 @@ normalize_strata_info <- function(level.strata = NULL,
 
 apply_strata_to_plots <- function(plots, order_data, label_map, touch_colour = TRUE) {
   if (!length(plots) || is.null(order_data) || is.null(label_map)) return(plots)
-  brks <- order_data
-  labs <- unname(label_map[brks])
+
+  brks <- as.character(order_data)
+  labs <- unname(as.character(label_map[brks]))
+  # 念のため欠損ラベルを補完
+  bad <- is.na(labs) | !nzchar(labs)
+  if (any(bad)) labs[bad] <- brks[bad]
+
+  # 既存 scale があれば「更新」、無ければ「追加」する
+  update_or_add_discrete_scale <- function(p, aes, add_scale_fun) {
+    # ggplot2内部は "colour" が正規形
+    aes <- if (identical(aes, "color")) "colour" else aes
+
+    sc <- p$scales$get_scales(aes)
+
+    if (is.null(sc)) {
+      # scale が未指定（デフォルト任せ）の場合だけ discrete scale を追加
+      # breaks/labels/limits を指定して legend の順序・表示名を固定する
+      return(
+        suppressMessages(
+          p + add_scale_fun(breaks = brks, labels = labs, limits = brks, drop = FALSE)
+        )
+      )
+    }
+
+    # 連続スケール等に誤爆しない（strata を想定しているので離散だけ触る）
+    if (!inherits(sc, "ScaleDiscrete")) return(p)
+
+    # 既存 scale（manual も含む）を“破壊せず”に legend 情報だけ更新
+    sc$breaks <- brks
+    sc$labels <- labs
+
+    # limits がある scale なら順序・マッピングも固定（manual values の上書きはしない）
+    # ggproto なので try で安全に
+    try(sc$limits <- brks, silent = TRUE)
+
+    p
+  }
 
   relabel_one <- function(p) {
-    layers <- list(
-      ggplot2::scale_linetype_discrete(breaks = brks, labels = labs),
-      ggplot2::scale_shape_discrete(breaks = brks, labels = labs),
-      ggplot2::scale_fill_discrete(breaks = brks, labels = labs)
-    )
+    p <- update_or_add_discrete_scale(p, "linetype", ggplot2::scale_linetype_discrete)
+    p <- update_or_add_discrete_scale(p, "shape",    ggplot2::scale_shape_discrete)
+    p <- update_or_add_discrete_scale(p, "fill",     ggplot2::scale_fill_discrete)
+
     if (isTRUE(touch_colour)) {
-      layers <- c(layers, list(ggplot2::scale_color_discrete(breaks = brks, labels = labs)))
+      p <- update_or_add_discrete_scale(p, "colour", ggplot2::scale_color_discrete)
     }
-    suppressMessages(Reduce(`+`, layers, init = p))
+    p
   }
 
   lapply(plots, relabel_one)

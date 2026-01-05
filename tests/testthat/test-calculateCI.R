@@ -180,10 +180,13 @@ test_that("cifcurve() yields the same outputs as survfit()", {
   skip_on_cran()
   skip_if_not_installed("survival")
 
-  df_test <- createTestData1(200, 2, first_zero=TRUE, last_zero=TRUE, subset_present=FALSE, logical_strata=FALSE, na_strata=FALSE)
-  #  df_test <- createTestData1(200, 1, first_zero=TRUE, last_zero=TRUE, subset_present=FALSE, logical_strata=FALSE, na_strata=FALSE)
-  e <- survival::survfit(Surv(t, d)~strata, df_test, weight=w, conf.type = "plain")
-  t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "plain", report.survfit.std.err = TRUE, outcome.type = "survival", engine="calculateAJ_Rcpp")
+  #df_test <- createTestData1(200, 2, first_zero=TRUE, last_zero=TRUE, subset_present=FALSE, logical_strata=FALSE, na_strata=FALSE)
+  #e <- survival::survfit(Surv(t, d)~strata, df_test, weight=w, conf.type = "plain")
+  #t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "plain", report.survfit.std.err = TRUE, outcome.type = "survival", engine="calculateAJ_Rcpp", error="greenwood")
+
+  df_test <- createTestData1(200, 1, first_zero=TRUE, last_zero=TRUE, subset_present=FALSE, logical_strata=FALSE, na_strata=FALSE)
+  e <- survival::survfit(Surv(t, d)~strata, df_test, conf.type = "plain")
+  t <- cifcurve(Surv(t, d)~strata, df_test, conf.type = "plain", report.survfit.std.err = TRUE, outcome.type = "survival", error="greenwood")
   #t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "plain", report.survfit.std.err = TRUE, outcome.type = "survival", engine="calculateKM")
   e$std.err <- sapply(e$std.err, function(x) ifelse(is.nan(x), NA, x))
   e$lower <- sapply(e$lower, function(x) ifelse(is.nan(x), NA, x))
@@ -259,7 +262,6 @@ test_that("AJ influence function roughly matches jackknife influence", {
   K <- length(time0)
   expect_equal(dim(IF_cpp)[2L], K)
 
-  ## ---- jackknife 部分はそのまま ----
   theta_minus <- matrix(NA_real_, nrow = n, ncol = K)
 
   for (i in seq_len(n)) {
@@ -268,7 +270,7 @@ test_that("AJ influence function roughly matches jackknife influence", {
       epsilon  = epsilon[-i],
       error    = "if",
       conf_type= "none",
-      return_if= FALSE   # ここは不要なので FALSE でも OK
+      return_if= FALSE
     )
     f_step <- stats::stepfun(fit_i$time, c(0, fit_i$aj))
     theta_minus[i, ] <- f_step(time0)
@@ -297,3 +299,192 @@ test_that("AJ influence function roughly matches jackknife influence", {
   expect_lt(max(rel_diff), 0.2)
 })
 
+test_that("curve_check_error fallback matches spec", {
+  expect_identical(curve_check_error(NULL, "survival", weights = NULL), "greenwood")
+  expect_identical(curve_check_error(NULL, "competing-risk", weights = NULL), "delta")
+
+  expect_identical(curve_check_error(NULL, "survival", weights = numeric(0)), "greenwood")
+  expect_identical(curve_check_error(NULL, "competing-risk", weights = numeric(0)), "delta")
+
+  expect_identical(curve_check_error(NULL, "survival", weights = 1, has_weights = TRUE), "if")
+  expect_identical(curve_check_error(NULL, "competing-risk", weights = 1, has_weights = TRUE), "if")
+})
+
+
+# tests/testthat/test-calculateAJ_Rcpp-if.R
+
+test_that("SE/CI are broadly consistent across error methods (outcome='s' and 'c')", {
+
+  calc <- function(t, eps, w = NULL, error, conf_type = "plain", conf_int = 0.95, return_if = TRUE) {
+    if (is.null(w)) {
+      calculateAJ_Rcpp(
+        t = t, epsilon = eps,
+        error = error, conf_type = conf_type, conf_int = conf_int,
+        return_if = return_if
+      )
+    } else {
+      calculateAJ_Rcpp(
+        t = t, epsilon = eps, w = w,
+        error = error, conf_type = conf_type, conf_int = conf_int,
+        return_if = return_if
+      )
+    }
+  }
+
+  extract_core <- function(out) {
+    list(
+      time = out$time,
+      est  = out$surv,
+      se   = out$std.err,
+      low  = out$low,
+      high = out$high
+    )
+  }
+
+  core_mask <- function(core, min_est = 0.02, max_est = 0.98) {
+    is.finite(core$est) &
+      is.finite(core$se)  & core$se > 0 &
+      is.finite(core$low) & is.finite(core$high) &
+      core$est > min_est & core$est < max_est
+  }
+
+  expect_ci_valid <- function(core) {
+    ok <- is.finite(core$est) & is.finite(core$low) & is.finite(core$high)
+    expect_true(all(core$low[ok] <= core$high[ok]))
+    expect_true(all(core$low[ok] >= 0 & core$high[ok] <= 1))
+    expect_true(all(core$low[ok] <= core$est[ok] & core$est[ok] <= core$high[ok]))
+  }
+
+  expect_methods_close <- function(core_if, core_ref,
+                                   se_median_ratio_bounds = c(0.85, 1.15),
+                                   se_q05_q95_bounds      = c(0.60, 1.60),
+                                   ci_max_abs_diff        = 0.06,
+                                   label = "") {
+
+    expect_equal(core_if$time, core_ref$time, info = paste0(label, " time grid differs"))
+    expect_equal(core_if$est, core_ref$est, tolerance = 1e-12,
+                 info = paste0(label, " point estimates differ"))
+    expect_ci_valid(core_if)
+    expect_ci_valid(core_ref)
+
+    m <- core_mask(core_ref)
+    expect_true(sum(m) >= 10, info = paste0(label, " too few comparable points"))
+
+    # SE 比
+    ratio <- core_if$se[m] / core_ref$se[m]
+    med   <- median(ratio)
+    q05   <- as.numeric(stats::quantile(ratio, 0.05, names = FALSE))
+    q95   <- as.numeric(stats::quantile(ratio, 0.95, names = FALSE))
+
+    expect_true(med >= se_median_ratio_bounds[1] && med <= se_median_ratio_bounds[2],
+                info = paste0(label, " median(SE_if/SE_ref) = ", signif(med, 3)))
+    expect_true(q05 >= se_q05_q95_bounds[1] && q95 <= se_q05_q95_bounds[2],
+                info = paste0(label, " q05/q95(SE_if/SE_ref) = ",
+                              signif(q05, 3), "/", signif(q95, 3)))
+
+    d_low  <- max(abs(core_if$low[m]  - core_ref$low[m]))
+    d_high <- max(abs(core_if$high[m] - core_ref$high[m]))
+    expect_true(
+      d_low < ci_max_abs_diff,
+      info = paste0(label, " max|low diff| = ", signif(d_low, 3),
+                    " (threshold=", ci_max_abs_diff, ")")
+    )
+    expect_true(
+      d_high < ci_max_abs_diff,
+      info = paste0(label, " max|high diff| = ", signif(d_high, 3),
+                    " (threshold=", ci_max_abs_diff, ")")
+    )
+  }
+
+  expect_if_dims <- function(out, n) {
+    expect_true(is.list(out$influence.function))
+    expect_true(length(out$influence.function) >= 1)
+    mat <- out$influence.function[[1]]
+    expect_true(is.matrix(mat))
+    expect_equal(nrow(mat), n)
+    expect_equal(ncol(mat), length(out$time))
+  }
+
+  set.seed(1)
+  n  <- 400
+  te <- rexp(n, rate = 0.08)
+  tc <- rexp(n, rate = 0.05)
+  t_s   <- pmin(te, tc)
+  eps_s <- as.integer(te <= tc)
+
+  out_if_s <- calc(t_s, eps_s, error = "if",        conf_type = "plain", return_if = TRUE)
+  out_gw_s <- calc(t_s, eps_s, error = "greenwood", conf_type = "plain", return_if = TRUE)
+
+  core_if_s <- extract_core(out_if_s)
+  core_gw_s <- extract_core(out_gw_s)
+
+  expect_equal(out_if_s$error, "if")
+  expect_equal(out_gw_s$error, "greenwood")
+
+  expect_if_dims(out_if_s, n)
+  expect_if_dims(out_gw_s, n)
+
+  expect_methods_close(
+    core_if_s, core_gw_s,
+    se_median_ratio_bounds = c(0.85, 1.15),
+    se_q05_q95_bounds      = c(0.60, 1.60),
+    ci_max_abs_diff        = 0.05,
+    label = "unweighted outcome='s' (if vs greenwood):"
+  )
+
+  set.seed(2)
+  w_s <- runif(n, min = 0.5, max = 2.0)
+
+  out_if_sw <- calc(t_s, eps_s, w = w_s, error = "if",        conf_type = "plain", return_if = TRUE)
+  out_gw_sw <- calc(t_s, eps_s, w = w_s, error = "greenwood", conf_type = "plain", return_if = TRUE)
+
+  core_if_sw <- extract_core(out_if_sw)
+  core_gw_sw <- extract_core(out_gw_sw)
+
+  expect_equal(out_if_sw$error, "if")
+  expect_equal(out_gw_sw$error, "greenwood")
+
+  expect_if_dims(out_if_sw, n)
+  expect_if_dims(out_gw_sw, n)
+
+  expect_methods_close(
+    core_if_sw, core_gw_sw,
+    se_median_ratio_bounds = c(0.80, 1.20),
+    se_q05_q95_bounds      = c(0.50, 1.80),
+    ci_max_abs_diff        = 0.08,
+    label = "weighted outcome='s' (if vs greenwood):"
+  )
+
+  set.seed(3)
+  n2 <- 350
+  t1 <- rexp(n2, rate = 0.06)
+  t2 <- rexp(n2, rate = 0.04)
+  tc2 <- rexp(n2, rate = 0.03)
+  mat <- cbind(t1, t2, tc2)
+  ix  <- max.col(-mat, ties.method = "first")
+  t_c   <- mat[cbind(seq_len(n2), ix)]
+  eps_c <- c(1L, 2L, 0L)[ix]
+
+  out_if_c    <- calc(t_c, eps_c, error = "if",    conf_type = "plain", return_if = TRUE)
+  out_delta_c <- calc(t_c, eps_c, error = "delta", conf_type = "plain", return_if = TRUE)
+
+  core_if_c    <- extract_core(out_if_c)
+  core_delta_c <- extract_core(out_delta_c)
+
+  expect_equal(out_if_c$error, "if")
+  expect_equal(out_delta_c$error, "delta")
+
+  expect_if_dims(out_if_c, n2)
+  expect_if_dims(out_delta_c, n2)
+
+  expect_true(length(out_if_c$aj) > 0)
+  expect_equal(out_if_c$aj + out_if_c$surv, rep(1, length(out_if_c$time)), tolerance = 1e-10)
+
+  expect_methods_close(
+    core_if_c, core_delta_c,
+    se_median_ratio_bounds = c(0.80, 1.20),
+    se_q05_q95_bounds      = c(0.50, 1.80),
+    ci_max_abs_diff        = 0.08,
+    label = "unweighted outcome='c' (if vs delta):"
+  )
+})

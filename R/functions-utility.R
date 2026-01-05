@@ -143,10 +143,41 @@ util_get_surv <- function(
 }
 
 util_read_surv <- function(formula, data, weights = NULL,
-                     code.event1 = 1, code.event2 = 2, code.censoring = 0,
-                     subset.condition = NULL, na.action = stats::na.omit) {
-  data <- createAnalysisDataset(formula, data, weights, subset.condition, na.action)
+                           code.event1 = 1, code.event2 = 2, code.censoring = 0,
+                           subset.condition = NULL, na.action = stats::na.omit) {
+
+  # --- resolve weights without forcing evaluation ---
+  weights_expr <- substitute(weights)
+  weights_resolved <- NULL
+
+  if (missing(weights) || identical(weights_expr, quote(NULL))) {
+    weights_resolved <- NULL
+
+  } else if (is.name(weights_expr)) {
+    nm <- as.character(weights_expr)
+    if (nm %in% names(data)) {
+      weights_resolved <- nm            # data列名として扱う（"w" と同等）
+    } else {
+      # 親フレームのオブジェクトとして評価（ip.weight など）
+      weights_resolved <- eval(weights_expr, parent.frame(), parent.frame(2))
+    }
+
+  } else if (is.character(weights_expr) && length(weights_expr) == 1) {
+    # "w" のような文字列リテラル
+    weights_resolved <- as.character(weights_expr)
+
+  } else {
+    # df$w や get("w") 等の式は親フレームで評価
+    weights_resolved <- eval(weights_expr, parent.frame(), parent.frame(2))
+  }
+  # -------------------------------------------------
+
+  data <- createAnalysisDataset(formula, data, weights_resolved, subset.condition, na.action)
+  weights <- weights_resolved
+
+  # 以下、あなたの既存コードをそのまま
   allowed <- c(code.censoring, code.event1, code.event2)
+  allowed <- unique(stats::na.omit(allowed))
   old_opt <- getOption("cifmodeling.allowed", NULL)
   on.exit(options(cifmodeling.allowed = old_opt), add = TRUE)
   options(cifmodeling.allowed = allowed)
@@ -201,5 +232,7 @@ util_read_surv <- function(formula, data, weights = NULL,
     check_weights(weights)
     w <- weights
   }
-  list(t=t, epsilon=epsilon, d=d, d0=d0, d1=d1, d2=d2, strata=strata, strata_name=strata_name, w=w, data_sync=data_sync)
+
+  list(t=t, epsilon=epsilon, d=d, d0=d0, d1=d1, d2=d2,
+       strata=strata, strata_name=strata_name, w=w, data_sync=data_sync)
 }

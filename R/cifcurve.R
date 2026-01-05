@@ -3,16 +3,16 @@
 #' Core estimation routine that computes a survfit-compatible object
 #' from a formula + data interface (`Event()` or `survival::Surv()` on
 #' the LHS, and a stratification variable on the RHS if necessary).
-#' Use this when you want **numbers only** (KM / CIF + SE + CI) and
-#' you will plot it yourself (for example with `ggsurvfit` or [cifplot()]).
+#' The back-end  C++ routine supports both weighted and stratified data. Use this
+#' when you want **numbers only** (e.g. estimates, SEs, CIs and influence functions)
+#' and will plot it yourself.
 #'
 #' @inheritParams cif-stat-arguments
 #'
 #' @param formula A model formula specifying the time-to-event outcome on the LHS
 #'   (typically `Event(time, status)` or `survival::Surv(time, status)`)
 #'   and, optionally, a stratification variable on the RHS.
-#'   Unlike [cifplot()], this function does not accept a fitted
-#'   `survfit` object.
+#'   Unlike [cifplot()], this function does not accept a fitted survfit object.
 #' @param report.influence.function Logical. When `TRUE` and `engine = "calculateAJ_Rcpp"`,
 #' the influence function is also computed and returned (default `FALSE`).
 #' @param report.survfit.std.err Logical. If `TRUE`, report SE on the log-survival
@@ -23,19 +23,22 @@
 #' @details
 #'
 #' ### Typical use cases
-#' - When \code{outcome.type = "survival"}, this is a thin wrapper around
+#' - When `outcome.type = "survival"`, this is a thin wrapper around
 #' the KM estimator with the chosen variance / CI transformation.
-#' - When \code{outcome.type = "competing-risk"}, this computes the AJ
-#'   estimator of CIF for \code{code.event1}. The returned \code{$surv} is
-#'   \code{1 - CIF}, i.e. in the format that \pkg{ggsurvfit} expects.
-#' - Use \code{\link{cifplot}} if you want to go straight to a figure; use
-#'   \code{cifcurve()} if you only want the numbers.
+#' - When `outcome.type = "competing-risk"`, this computes the AJ estimator of CIF for `code.event1`.
+#'  The returned `$surv` is **1 - CIF**, i.e. in the format that ggsurvfit expects.
+#' - Use [cifplot()] if you want to go straight to a figure; use [cifcurve()] if you only want the numbers.
+#'
+#' ### Risk set display
+#' - Set `n.risk.type` to control whether `$n.risk` reflects weighted, unweighted,
+#'   or Kish effective sample size (ESS) counts. This only affects the reported
+#'   counts (e.g., for plotting or debugging) and leaves estimates and SEs unchanged.
 #'
 #' ### Standard error and confidence intervals
 #'
 #' | Argument | Description | Default |
 #' |---|---|---|
-#' | `error` | SE for KM: `"greenwood"`, `"tsiatis"`, `"if"`. For CIF: `"aalen"`, `"delta"`, `"if"`. | `"greenwood"` or `"delta"` |
+#' | `error` | SE for KM: `"greenwood"`, `"tsiatis"`, `"if"`. For CIF: `"aalen"`, `"delta"`, `"if"`. | `"greenwood"`, `"delta"` or `"if"` |
 #' | `conf.type` | Transformation for CIs: `"plain"`, `"log"`, `"log-log"`, `"arcsin"`, `"logit"`, or `"none"`. | `"arcsin"` |
 #' | `conf.int` | Two-sided CI level. | `0.95` |
 #'
@@ -50,7 +53,9 @@
 #' -   `mean()`: restricted mean survival estimates with CIs
 #' -   `quantile()`: quantile estimates with CIs
 #'
-#' Note that some methods (e.g. `residuals.survfit`) may not be supported.
+#' Note that `$n.risk`, `$n.event`, and `$n.censor` are rounded up to the nearest integer
+#' regardless of whether the data is weighted or not.
+#' Some methods (e.g. `residuals.survfit`) may not be supported.
 #'
 #' @examples
 #' data(diabetes.complications)
@@ -78,6 +83,7 @@ cifcurve <- function(
     formula,
     data,
     weights = NULL,
+    n.risk.type = "weighted",
     subset.condition = NULL,
     na.action = na.omit,
     outcome.type = c("survival","competing-risk"),
@@ -92,30 +98,38 @@ cifcurve <- function(
     engine = "calculateAJ_Rcpp",
     prob.bound = 1e-7
 ) {
-  outcome.type  <- util_check_outcome_type(outcome.type, formula = formula, data = data)
-  out_readSurv  <- util_read_surv(formula, data, weights,
-                                  code.event1, code.event2, code.censoring,
-                                  subset.condition, na.action)
-  error <- curve_check_error(error, outcome.type)
+  outcome.type <- util_check_outcome_type(outcome.type, formula = formula, data = data)
+  n.risk.type <- util_check_n_risk_type(n.risk.type)
+  substitute_weights <- substitute(weights)
+  has_weights_user <- !(missing(weights) || identical(substitute_weights, quote(NULL)))
+  out_read_surv <- eval(substitute(
+    util_read_surv(
+      formula = formula, data = data, weights = arg_weights,
+      code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
+      subset.condition = subset.condition, na.action = na.action
+    ),
+    list(arg_weights = substitute_weights)
+  ))
+  error <- curve_check_error(error, outcome.type, weights = out_read_surv$w, has_weights = has_weights_user)
   call <- match.call()
 
-  strata_fac   <- as.factor(out_readSurv$strata)
+  strata_fac   <- as.factor(out_read_surv$strata)
   strata_lvls  <- levels(strata_fac)
-  strata_var   <- out_readSurv$strata_name %||% NULL
+  strata_var   <- out_read_surv$strata_name %||% NULL
   if (!is.null(strata_var)) {
     strata_fullnames <- paste0(strata_var, "=", strata_lvls)
   } else {
     strata_fullnames <- strata_lvls
   }
 
-  epsilon_norm <- rep.int(0L, length(out_readSurv$epsilon))
-  epsilon_norm[out_readSurv$epsilon == code.event1]    <- 1L
-  epsilon_norm[out_readSurv$epsilon == code.event2]    <- 2L
-  epsilon_norm[out_readSurv$epsilon == code.censoring] <- 0L
+  epsilon_norm <- rep.int(0L, length(out_read_surv$epsilon))
+  epsilon_norm[out_read_surv$epsilon == code.event1]    <- 1L
+  epsilon_norm[out_read_surv$epsilon == code.event2]    <- 2L
+  epsilon_norm[out_read_surv$epsilon == code.censoring] <- 0L
 
   if (identical(outcome.type, "survival") && identical(engine, "calculateKM")) {
-    out_km <- calculateKM(out_readSurv$t, out_readSurv$d,
-                          out_readSurv$w, as.integer(out_readSurv$strata), error)
+    out_km <- calculateKM(out_read_surv$t, out_read_surv$d,
+                          out_read_surv$w, as.integer(out_read_surv$strata), error)
     out_km$std.err <- out_km$surv * out_km$std.err
     out_ci <- calculateCI(out_km, conf.int, conf.type, conf.lower = NULL)
     if (isTRUE(report.survfit.std.err))
@@ -125,9 +139,9 @@ cifcurve <- function(
       time      = out_km$time,
       surv      = out_km$surv,
       n         = out_km$n,
-      n.risk    = out_km$n.risk,
-      n.event   = out_km$n.event,
-      n.censor  = out_km$n.censor,
+      n.risk    = ceiling(out_km$n.risk),
+      n.event   = ceiling(out_km$n.event),
+      n.censor  = ceiling(out_km$n.censor),
       std.err   = out_km$std.err,
       std.err.cif = out_km$`std.err.cif`,
       upper     = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$upper,
@@ -137,25 +151,26 @@ cifcurve <- function(
       type      = "kaplan-meier",
       method    = "Kaplan-Meier"
     )
-    if (any(as.integer(out_readSurv$strata) != 1)) {
+    if (any(as.integer(out_read_surv$strata) != 1)) {
       names(out_km$strata) <- strata_fullnames
       survfit_object$strata <- out_km$strata
     }
+    survfit_object$n.risk.type <- n.risk.type
     survfit_object <- harmonize_engine_output(survfit_object)
     class(survfit_object) <- "survfit"
     return(survfit_object)
 
   } else if (identical(outcome.type, "competing-risk") && identical(engine, "calculateKM")) {
-    out_aj <- calculateAJ(out_readSurv)
+    out_aj <- calculateAJ(out_read_surv)
     names(out_aj$strata1) <- strata_fullnames
 
-    if (any(as.integer(out_readSurv$strata) != 1)) {
-      n <- table(as.integer(out_readSurv$strata))
+    if (any(as.integer(out_read_surv$strata) != 1)) {
+      n <- table(as.integer(out_read_surv$strata))
       rep_list <- mapply(rep, n, out_aj$strata1, SIMPLIFY = FALSE)
       n.risk <- do.call(c, rep_list) -
         out_aj$n.cum.censor - out_aj$n.cum.event1 - out_aj$n.cum.event2
     } else {
-      n <- length(out_readSurv$strata)
+      n <- length(out_read_surv$strata)
       n.risk <- n - out_aj$n.cum.censor - out_aj$n.cum.event1 - out_aj$n.cum.event2
     }
 
@@ -175,9 +190,9 @@ cifcurve <- function(
       time        = out_aj$time1,
       surv        = out_aj$surv,
       n           = n,
-      n.risk      = n.risk,
-      n.event     = out_aj$n.event1,
-      n.censor    = out_aj$n.censor,
+      n.risk      = ceiling(n.risk),
+      n.event     = ceiling(out_aj$n.event1),
+      n.censor    = ceiling(out_aj$n.censor),
       std.err     = out_aj$std.err,
       std.err.cif = std_err_cif,
       upper       = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$upper,
@@ -187,24 +202,26 @@ cifcurve <- function(
       type        = "aalen-johansen",
       method      = "aalen-johansen"
     )
-    if (any(as.integer(out_readSurv$strata) != 1))
+    if (any(as.integer(out_read_surv$strata) != 1))
       survfit_object$strata <- out_aj$strata1
 
+    survfit_object$n.risk.type <- n.risk.type
     survfit_object <- harmonize_engine_output(survfit_object)
     class(survfit_object) <- "survfit"
     return(survfit_object)
   }
 
   out_cpp <- call_calculateAJ_Rcpp(
-    t = out_readSurv$t,
+    t = out_read_surv$t,
     epsilon = as.integer(epsilon_norm),
-    w = out_readSurv$w,
-    strata = as.integer(out_readSurv$strata),
+    w = if (has_weights_user) out_read_surv$w else NULL,
+    strata = as.integer(out_read_surv$strata),
     error = error,
     conf.type = conf.type,
     conf.int = conf.int,
     report.influence.function = report.influence.function,
-    prob.bound = prob.bound
+    prob.bound = prob.bound,
+    n.risk.type = n.risk.type
   )
   if (length(strata_fullnames) && length(out_cpp$strata)) {
     names(out_cpp$strata) <- strata_fullnames
@@ -214,9 +231,13 @@ cifcurve <- function(
   }
   out_cpp$call <- call
   out_cpp <- harmonize_engine_output(out_cpp)
+  out_cpp$n.risk <- ceiling(out_cpp$n.risk)
+  out_cpp$n.censor <- ceiling(out_cpp$n.censor)
+  out_cpp$n.event <- ceiling(out_cpp$n.event)
+  out_cpp$n.risk.type <- n.risk.type
   if (isTRUE(report.survfit.std.err)) out_cpp$std.err <- out_cpp$std.err / out_cpp$surv
   class(out_cpp) <- "survfit"
-  out_cpp
+  return(out_cpp)
 }
 
 calculateAJ <- function(data) {
@@ -302,30 +323,69 @@ calculateAJ <- function(data) {
   )
 }
 
-curve_check_error <- function(x, outcome.type) {
+curve_check_error <- function(x, outcome.type, weights = NULL, has_weights = NULL) {
   ot <- util_check_outcome_type(x = outcome.type, auto_message = FALSE)
-  choices <- switch(ot,
-                    "survival"          = c("greenwood", "tsiatis", "jackknife", "if"),
-                    "competing-risk"    = c("aalen", "delta", "jackknife", "if"),
-                    stop(sprintf("Invalid outcome.type: %s", outcome.type), call. = FALSE)
+
+  choices <- switch(
+    ot,
+    "survival"       = c("greenwood", "tsiatis", "if"),
+    "competing-risk" = c("aalen", "delta", "if"),
+    stop(sprintf("Invalid outcome.type: %s", outcome.type), call. = FALSE)
   )
-  fallback <- if (ot == "survival") "greenwood" else "delta"
+
+  if (is.null(has_weights)) {
+    has_weights <- !is.null(weights) && length(weights) > 0
+  }
+
+  fallback <- if (has_weights) {
+    "if"
+  } else if (ot == "survival") {
+    "greenwood"
+  } else {
+    "delta"
+  }
 
   if (is.null(x)) return(fallback)
 
-  x_norm <- tolower(as.character(x))
+  normalize_error <- function(z) {
+    z <- tolower(trimws(as.character(z)))
+
+    if (z %in% c("g", "greenwood")) return("greenwood")
+    if (z %in% c("t", "tsiatis"))   return("tsiatis")
+    if (z %in% c("if", "influence function", "influence_function",
+                 "influence curve", "ic")) return("if")
+    if (z %in% c("a", "aalen"))     return("aalen")
+    if (z %in% c("d", "delta"))     return("delta")
+    z
+  }
+  x_norm <- normalize_error(x)
+  if (has_weights && x_norm != "if") {
+    warning(
+      sprintf("%s with weights: error='%s' is not supported; falling back to 'if'.",
+              ot, as.character(x)),
+      call. = FALSE
+    )
+    return("if")
+  }
+
   if (x_norm %in% choices) return(x_norm)
 
-  warning(sprintf("%s: unsupported error='%s'; falling back to '%s'.", ot, x_norm, fallback), call. = FALSE)
-  return(fallback)
+  warning(
+    sprintf("%s: unsupported error='%s'; falling back to '%s'.",
+            ot, as.character(x), fallback),
+    call. = FALSE
+  )
+  fallback
 }
+
 
 call_calculateAJ_Rcpp <- function(t, epsilon, w = NULL, strata = NULL,
                                    error = "greenwood",
                                    conf.type = "arcsin",
                                    conf.int = 0.95,
                                    report.influence.function = FALSE,
-                                   prob.bound = 1e-5) {
+                                   prob.bound = 1e-5,
+                                   n.risk.type = "weighted") {
   calculateAJ_Rcpp(
     t = t,
     epsilon = epsilon,
@@ -335,7 +395,8 @@ call_calculateAJ_Rcpp <- function(t, epsilon, w = NULL, strata = NULL,
     conf_type = conf.type,
     conf_int = conf.int,
     return_if = isTRUE(report.influence.function),
-    prob_bound = prob.bound
+    prob_bound = prob.bound,
+    n_risk_type = n.risk.type
   )
 }
 
@@ -353,4 +414,3 @@ harmonize_engine_output <- function(out) {
   out$`conf.type`          <- out$`conf.type`          %||% "arcsine-square root"
   out
 }
-

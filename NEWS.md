@@ -1,6 +1,75 @@
+# cifmodeling 0.9.7
+
+* Added `n.risk.type` to `cifcurve()` to optionally display weighted, unweighted,
+  or Kish ESS risk set sizes without changing estimates or SEs.
+* Modified the risk table of `cifplot()` to display integer values.
+* Refactored the internal plotting pipeline to consistently honor axis controls
+  (`limits.x`, `limits.y`, `breaks.x`, `breaks.y`) across `cifplot()` and `cifpanel()`,
+  including the `cumhaz` and `cloglog` transformations and both scale and
+  `coord_cartesian` code paths.
+* Simplified the special-case handling for `cloglog` by unifying axis-application
+  logic, improving maintainability without changing user-facing results.
+* Added/strengthened robust tests for axis limits and breaks behavior.
+
+# cifmodeling 0.9.6
+
+* Documentation and tests were polished for CRAN submission.
+* Fixed GCC r-devel warning (`-Wstringop-overread`) triggered in `calculateAJ_Rcpp` (no change to user-facing results).
+
+# cifmodeling 0.9.5
+
+* First CRAN release.
+* Documentation and tests were polished for CRAN submission.
+
+# cifmodeling 0.9.4
+
+* Sixth CRAN submission.
+
+Invalid DESCRIPTION file, software names were single quoted. Rebuilt and resubmitted.
+
+# cifmodeling 0.9.3
+
+* Fifth CRAN submission.
+
+Addressed CRAN feedback regarding file-system and environment management.
+Removed development-time scripts under tools/ that performed bulk renaming
+and wrote to the package directory or the current working directory.
+These files are no longer included in the source tarball.
+Eliminated the remaining use of .GlobalEnv in internal helpers.
+panel_as_formula_global() now evaluates formulas in the calling environment
+(parent.frame()) instead of .GlobalEnv, fully complying with the
+“no modification of the .GlobalEnv” CRAN policy.
+No user-visible changes; only internal cleanup for CRAN compliance.
+
+# cifmodeling 0.9.2
+
+* Fourth CRAN submission.
+* Invalid file URLs  
+  (articles/gallery.html, articles/polyreg.html, articles/formulas.html)
+  were replaced by URLs in the web and verified using urlchecker::url_check(). 
+  Rebuilt and resubmitted.
+
+# cifmodeling 0.9.1
+
+* Third CRAN submission.
+* The DOI reported by CRAN (`10.21105/joss.00510`) does not appear to be present
+  in the package source. Verified using recursive search and a freshly created
+  tarball. Rebuilt and resubmitted.
+
+# cifmodeling 0.9.0
+
+* Second CRAN submission.
+
+# cifmodeling 0.8.2
+
+* Bug fixes
+* README.Rmd, Vignettes and site were updated. 
+* Cumulative hazard and log-log plots were implemented
+
 # cifmodeling 0.8.1
 
 * README.Rmd, Vignettes and site were updated. 
+* polyreg S3 methods were implemented
 
 # cifmodeling 0.8.0
 
@@ -14,21 +83,29 @@
 
 # cifmodeling 0.7.0
 
+* Bug fixes
+* README.Rmd, Vignettes and site were updated. 
+
+# cifmodeling 0.6.0
+
+* Initial CRAN submission.
+
+# cifmodeling 0.5.0
+
+* Bug fixes
+
 # cifmodeling 0.4.0
 
 * Bug fixes
-  * `order.strata` is now applied via discrete scale limits so legend and fill
-    ordering remain stable, including when `printEachVar = TRUE`.
-  * Numeric stratification variables are coerced to factors when they have fewer
-    than nine unique values and are split at the median (Below/Above median)
-    when they have nine or more unique values.
-  * `cifplot(printEachEvent = TRUE)` keeps both event-specific `ggplot`
-    objects in `attr(x, "plots")` while returning the combined panel.
-  * Default y-axis labels consistently use "Survival" for survival outcomes and
-    "Cumulative incidence" phrasing for competing-risk outcomes.
+
+# cifmodeling 0.3.0
+
+* `cifpanel()` and panel mode of * `cifplot()` were developed.
 
 # cifmodeling 0.2.0
 
+* Bug fixes
+
 # cifmodeling 0.1.0
 
-* Initial CRAN submission.
+* `cifcurve()`, `cifplot()` and `polyreg()` were developed.

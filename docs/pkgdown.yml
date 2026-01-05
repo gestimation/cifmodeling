@@ -1,17 +1,23 @@
 pandoc: 3.6.3
-pkgdown: 2.1.3
+pkgdown: 2.1.1
 pkgdown_sha: ~
 articles:
   arguments: arguments.html
   examples: examples.html
+  formulas: formulas.html
+  gallery: gallery.html
   information: information.html
   overview: overview.html
   polyreg: polyreg.html
+<<<<<<< HEAD
 <<<<<<< HEAD
 last_built: 2025-11-18T13:28Z
 =======
 last_built: 2025-11-20T06:20Z
 >>>>>>> ee5005b4869f1b0b293ed0d404c0115d2926b6ed
+=======
+last_built: 2025-12-05T02:18Z
+>>>>>>> c37257fab9b9eea022f85536a2cf550f9b836311
 urls:
   reference: https://gestimation.github.io/cifmodeling/reference
   article: https://gestimation.github.io/cifmodeling/articles

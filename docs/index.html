@@ -8,8 +8,8 @@
 <title>cifmodeling • cifmodeling</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
-<link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
+<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.4.2/css/all.min.css" rel="stylesheet">
+<link href="deps/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="cifmodeling">
 <meta name="description" content="A compact and unified toolkit for Kaplan-Meier/Aalen-Johansen curves, visualization, and direct polytomous regression for survival and competing risks data.">
 <meta property="og:description" content="A compact and unified toolkit for Kaplan-Meier/Aalen-Johansen curves, visualization, and direct polytomous regression for survival and competing risks data.">
@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.8.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.9.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,7 +37,9 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="articles/overview.html">Overview</a></li>
     <li><a class="dropdown-item" href="articles/polyreg.html">Direct polytomous regression</a></li>
+    <li><a class="dropdown-item" href="articles/formulas.html">Computational formulas in cifcurve()</a></li>
     <li><a class="dropdown-item" href="articles/examples.html">Examples</a></li>
+    <li><a class="dropdown-item" href="articles/gallery.html">Gallery</a></li>
     <li><a class="dropdown-item" href="articles/information.html">Additional information</a></li>
     <li><a class="dropdown-item" href="articles/arguments.html">Full lists of arguments</a></li>
   </ul>
@@ -57,28 +59,51 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="visualization-and-modeling-of-survival-and-competing-risks-data--cifmodeling">Visualization and Modeling of Survival and Competing Risks Data — cifmodeling<a class="anchor" aria-label="anchor" href="#visualization-and-modeling-of-survival-and-competing-risks-data--cifmodeling"></a>
+<div class="page-header"><h1 id="visualization-and-polytomous-modeling-of-survival-and-competing-risks-with-minimal-code--cifmodeling">Visualization and Polytomous Modeling of Survival and Competing Risks with Minimal Code — cifmodeling<a class="anchor" aria-label="anchor" href="#visualization-and-polytomous-modeling-of-survival-and-competing-risks-with-minimal-code--cifmodeling"></a>
 </h1></div>
+<p>Are you comfortable writing <code>Surv(time, status) ~ strata</code> but hesitant to dive into the Fine-Gray models or custom <code>ggplot2</code> code? <strong>cifmodeling</strong> helps clinicians, epidemiologists, and applied researchers move from basic Kaplan–Meier curves to clear, publication-ready survival and competing risk plots – with just a few lines of R.</p>
+<p>This package provides a unified, high-level interface for survival and competing-risks analysis, combining nonparametric estimation, regression modeling, and visualization. It is centered around three tightly connected functions:</p>
+<ul>
+<li>
+<code><a href="reference/cifplot.html">cifplot()</a></code> generates a survival or cumulative incidence function (CIF) curve. The visualization is built on top of <code>ggsurvfit</code> and <code>ggplot2</code>.</li>
+<li>
+<code><a href="reference/cifpanel.html">cifpanel()</a></code> creates multi-panel displays for survival/CIF curves, arranged either <strong>in a grid layout or as an inset overlay</strong>.</li>
+<li>
+<code><a href="reference/polyreg.html">polyreg()</a></code> fits <strong>coherent regression models</strong> on all cause-specific CIFs simultaneously.</li>
+</ul>
+<blockquote>
+<p><strong>Explore the main features visually:</strong><br>
+See the <a href="https://gestimation.github.io/cifmodeling/articles/gallery.html">Gallery</a> for a curated set of examples using <code><a href="reference/cifplot.html">cifplot()</a></code> and <code><a href="reference/cifpanel.html">cifpanel()</a></code>.</p>
+</blockquote>
+<blockquote>
+<p><strong>Learn the modeling framework with <code><a href="reference/polyreg.html">polyreg()</a></code>:</strong><br>
+See the <a href="https://gestimation.github.io/cifmodeling/articles/polyreg.html">Direct polytomous regression</a> for coherent, joint modeling of all cause-specific CIFs.</p>
+</blockquote>
+<blockquote>
+<p><strong>Prefer to build intuition before diving into code?</strong><br>
+Visit the <em>Coffee and Research – Story and Quiz</em> series for narrative-style introductions to study design, survival and competing risks analysis, and frequentist and causality thinking: <a href="https://gestimation.github.io/coffee-and-research/en/" class="external-link uri">https://gestimation.github.io/coffee-and-research/en/</a></p>
+</blockquote>
 <div class="section level2">
 <h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
-<p>This package is a compact, high-level extension of the existing <code>survival</code> ecosystem. It provides a unified interface for Kaplan-Meier and Aalen-Johansen curves, modern visualization, and direct polytomous regression for survival and competing risks data.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gestimation.github.io/cifmodeling/">cifmodeling</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">diabetes.complications</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/cifplot.html">cifplot</a></span><span class="op">(</span><span class="fu"><a href="reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="va">fruitq</span>, data<span class="op">=</span><span class="va">diabetes.complications</span>, </span>
 <span>        outcome.type<span class="op">=</span><span class="st">"competing-risk"</span>, panel.per.event<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="reference/figures/README-example01-1-1.png" alt="Aalen-Johansen cumulative incidence curves from cifplot()" width="70%"><p class="caption">
+<img src="reference/figures/README-example01-1.png" alt="Aalen-Johansen cumulative incidence curves from cifplot()" width="70%"><p class="caption">
 Aalen-Johansen cumulative incidence curves from cifplot()
 </p>
 </div>
-<p>In competing risks data, censoring is often coded as 0, the event of interest as 1, and competing risks as 2. In the <code>diabetes.complications</code> data frame, <code>epsilon</code> follows this convention. With <code>panel.per.event = TRUE</code>, <code><a href="reference/cifplot.html">cifplot()</a></code> visualizes the cumulative incidence functions (CIFs), with the CIF of diabetic retinopathy (<code>epsilon = 1</code>) shown on the left and the CIF of macrovascular complications (<code>epsilon = 2</code>) on the right.</p>
+<p>In competing risks data, censoring is often coded as 0, the event of interest as 1, and competing risks as 2. In the <code>diabetes.complications</code> data frame, <code>epsilon</code> follows this convention. With <code>panel.per.event = TRUE</code>, <code><a href="reference/cifplot.html">cifplot()</a></code> visualizes both competing events, with the CIF of diabetic retinopathy (<code>epsilon = 1</code>) shown on the left and the CIF of macrovascular complications (<code>epsilon = 2</code>) on the right.</p>
 </div>
 <div class="section level2">
-<h2 id="why-cifmodeling">Why cifmodeling?<a class="anchor" aria-label="anchor" href="#why-cifmodeling"></a>
+<h2 id="a-workflow-of-competing-risks-analysis">A workflow of competing risks analysis<a class="anchor" aria-label="anchor" href="#a-workflow-of-competing-risks-analysis"></a>
 </h2>
+<p>Four code snippets illustrate how the three core functions interact with existing resources and analyze complex competing risks data:</p>
 <ul>
+<<<<<<< HEAD
 <<<<<<< HEAD
 <li><p><strong>Unified interface</strong> for Kaplan–Meier and Aalen–Johansen curves, with survival and competing risks handled by the same syntax.</p></li>
 <li><p><strong>Publication-ready graphics</strong> built on <code>ggsurvfit</code> and <code>ggplot2</code>, including risk/estimate tables, censoring/competing-risks/intercurrent-events marks, and multi-panel layouts. &lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</p></li>
@@ -98,119 +123,83 @@ Aalen-Johansen cumulative incidence curves from cifplot()
 <li>
 <strong>Publication-ready graphics</strong> built on <code>ggsurvfit</code> and <code>ggplot2</code>, including at-risk/CIF+CI tables, censoring/competing-risk/intercurrent-event marks, and multi-panel layouts.</li>
 >>>>>>> ee5005b4869f1b0b293ed0d404c0115d2926b6ed
+=======
+<li>Describe the competing risks via a CIF plot with marks</li>
+<li>Plot adjusted CIFs using inverse probability weights (IPW)</li>
+<li>Estimate risk ratios for all competing events at a clinically relevant time</li>
+<li>Visualize how risk ratios evolve over time</li>
+>>>>>>> c37257fab9b9eea022f85536a2cf550f9b836311
 </ul>
-</div>
-<div class="section level2">
-<h2 id="tools-for-survival-and-competing-risks-analysis">Tools for survival and competing risks analysis<a class="anchor" aria-label="anchor" href="#tools-for-survival-and-competing-risks-analysis"></a>
-</h2>
-<p>In clinical and epidemiological research, analysts often need to handle censoring, competing risks, and intercurrent events (e.g. treatment switching), but existing R packages typically separate these tasks across different interfaces. <code>cifmodeling</code> provides a unified, publication-ready toolkit that integrates nonparametric estimation, regression modelling, and visualization for survival and competing risks data. The package is centered around three tightly connected functions:</p>
-<ul>
-<li><p><code><a href="reference/cifplot.html">cifplot()</a></code> typically generates a survival or CIF curve with marks that represent censoring, competing risks and intercurrent events. <strong>Multiple standard error (SE) estimators and confidence interval (CI) methods valid for unweighted and weighted data are supported.</strong> The visualization is built on top of <code>ggsurvfit</code> and <code>ggplot2</code>.</p></li>
-<li><p><code><a href="reference/cifpanel.html">cifpanel()</a></code> creates a multi-panel figure for survival/CIF curves, arranged either <strong>in a grid layout or as an inset overlay</strong>.</p></li>
-<li><p><code><a href="reference/polyreg.html">polyreg()</a></code> fits <strong>coherent regression models</strong> of CIFs using polytomous log odds products.</p></li>
-</ul>
-<p>These functions adopt a formula + data syntax, return tidy, publication-ready outputs, and integrate seamlessly with <code>ggsurvfit</code> and <code>modelsummary</code> for visualization and reporting.</p>
-</div>
-<div class="section level2">
-<h2 id="position-in-the-survival-ecosystem">Position in the survival ecosystem<a class="anchor" aria-label="anchor" href="#position-in-the-survival-ecosystem"></a>
-</h2>
-<p>Several excellent R packages exist for survival and competing risks analysis. The <strong>survival</strong> package provides the canonical API for survival data. In combination with the <strong>ggsurvfit</strong> package, <code><a href="https://rdrr.io/pkg/survival/man/survfit.html" class="external-link">survival::survfit()</a></code> can produce publication-ready survival plots. For CIF plots, however, integration in the general ecosystem is less streamlined. <code>cifmodeling</code> fills this gap by offering <code><a href="reference/cifplot.html">cifplot()</a></code> for survival/CIF plots and multi-panel figures via a single, unified interface.</p>
-<p>Beyond providing a unified interface, <code><a href="reference/cifcurve.html">cifcurve()</a></code> also extends <code>survfit()</code> in a few targeted ways. For unweighted survival data, it reproduces the standard Kaplan-Meier estimator with <strong>Greenwood and Tsiatis SEs</strong> and a unified set of CI transformations. For competing risks data, it computes Aalen-Johansen CIFs with both <strong>Aalen-type and delta-method SEs</strong>. For weighted survival or competing risks data (e.g. inverse probability weighting), it implements <strong>influence-function based SEs</strong> (Deng and Wang 2025) as well as <strong>modified Greenwood- and Tsiatis-type SEs</strong> (Xie and Liu 2005), which are valid under general positive weights.</p>
-<p>If you need very fine-grained plot customization, you can compute the estimator and keep a survfit-compatible object with <code><a href="reference/cifcurve.html">cifcurve()</a></code> (or supply your own survfit object) and then style it using <code>ggsurvfit/ggplot2</code> layers. In other words:</p>
-<ul>
-<li>use <code><a href="reference/cifcurve.html">cifcurve()</a></code> for estimation,</li>
-<li>use <code><a href="reference/cifplot.html">cifplot()</a></code> / <code><a href="reference/cifpanel.html">cifpanel()</a></code> for quick, high-quality figures, and</li>
-<li>fall back to the <code>ggplot</code> ecosystem when you want full artistic control.</li>
-</ul>
-<p>The <strong>mets</strong> package is a more specialised toolkit that provides advanced methods for competing risks analysis. <code><a href="reference/polyreg.html">cifmodeling::polyreg()</a></code> focuses on coherent modelling of all CIFs simultaneously to estimate the exposure effects in terms of RR/OR/SHR. This coherence can come with longer runtimes for large problems. If you prefer fitting separate regression models for each competing event or specifically need the Fine-Gray models (Fine and Gray 1999) and the direct binomial models (Scheike, Zhang and Gerds 2008), <code><a href="http://kkholst.github.io/mets/reference/cifreg.html" class="external-link">mets::cifreg()</a></code> and <code><a href="http://kkholst.github.io/mets/reference/binreg.html" class="external-link">mets::binreg()</a></code> are excellent choices.</p>
-</div>
-<div class="section level2">
-<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
-</h2>
-<p>The package is implemented in R and relies on <code>Rcpp</code>, <code>nleqslv</code> and <code>boot</code> for its numerical back-end. The examples in this document also use <code>ggplot2</code>, <code>ggsurvfit</code>, <code>patchwork</code> and <code>modelsummary</code> for tabulation and plotting. Install the core package and these companion packages with:</p>
+<p>We use the <code>diabetes.complications</code> data throughout, focusing on diabetic retinopathy (event 1) and macrovascular complications (event 2), with the level of fruit intake, low (Q1) and high (Q2 to 4), as the exposure (<code>fruitq1</code>).</p>
+<div class="section level3">
+<h3 id="cif-plot-with-competing-risk-marks">CIF plot with competing-risk marks<a class="anchor" aria-label="anchor" href="#cif-plot-with-competing-risk-marks"></a>
+</h3>
+<p>The first snippet is plotting the CIF of diabetic retinopathy with <strong>marks indicating individuals who experienced macrovascular complications first</strong> (<code>add.competing.risk.mark = TRUE</code>). Here we show a workflow slightly different from the code at the beginning. First, the time points at which the macrovascular complications occurred were obtained as <code>output1</code> for each strata using a helper function <code><a href="reference/extract_time_to_event.html">extract_time_to_event()</a></code>. Then, <code><a href="reference/cifplot.html">cifplot()</a></code> is used to generate the figure. The <code>label.y</code>, <code>label.x</code>, <code>label.strata</code> and <code>limit.x</code> arguments are also used to customize <strong>the labels and axis limits</strong>.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Install cifmodeling from GitHub</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"gestimation/cifmodeling"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Core dependencies</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Rcpp"</span>, <span class="st">"nleqslv"</span>, <span class="st">"boot"</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Recommended packages for plotting and tabulation in this README</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ggplot2"</span>, <span class="st">"ggsurvfit"</span>, <span class="st">"patchwork"</span>, <span class="st">"modelsummary"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="quality-control">Quality control<a class="anchor" aria-label="anchor" href="#quality-control"></a>
-</h2>
-<p><code>cifmodeling</code> includes an extensive test suite built with <strong>testthat</strong>, which checks the numerical accuracy and graphical consistency of all core functions (<code><a href="reference/cifcurve.html">cifcurve()</a></code>, <code><a href="reference/cifplot.html">cifplot()</a></code>, <code><a href="reference/cifpanel.html">cifpanel()</a></code>, and <code><a href="reference/polyreg.html">polyreg()</a></code>). The estimators are routinely compared against related functions in <strong>survival</strong>, <strong>cmprsk</strong> and <strong>mets</strong> packages to ensure consistency. The package is continuously tested on GitHub Actions (Windows, macOS, Linux) to maintain reproducibility and CRAN-level compliance.</p>
-</div>
-<div class="section level2">
-<h2 id="an-example-of-competing-risks-analysis">An example of competing risks analysis<a class="anchor" aria-label="anchor" href="#an-example-of-competing-risks-analysis"></a>
-</h2>
-<p>For the initial illustration, we focus on unadjusted cumulative incidence of diabetic retinopathy (event 1) and macrovascular complications (event 2) at 8 years of follow-up. To visualize each covariate separately when multiple strata are supplied, set <code>panel.per.variable = TRUE</code>. Each variable on the right-hand side is plotted in its own panel, and the layout can be controlled with <code>rows.columns.panel</code>. The figure below contrasts the CIFs of diabetic retinopathy for the quartiles <code>fruitq</code> and a binary exposure <code>fruitq1</code>, low (Q1) and high (Q2 to 4) intake of fruit, generated by <code><a href="reference/cifplot.html">cifplot()</a></code>. The <code>add.conf=TRUE</code> argument adds CIs to the plot. This helps visualize the statistical uncertainty of estimated probabilities across exposure levels. When using numeric variables for stratification, discretize them beforehand with <code><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut()</a></code> or <code><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor()</a></code>. The labels of x-axis (Time) and y-axis (Cumulative incidence) in these panels are default labels.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">diabetes.complications</span><span class="op">)</span></span>
-<span><span class="va">diabetes.complications</span><span class="op">$</span><span class="va">fruitq1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span></span>
-<span>  <span class="va">diabetes.complications</span><span class="op">$</span><span class="va">fruitq</span> <span class="op">==</span> <span class="st">"Q1"</span>,<span class="st">"Q1"</span>,<span class="st">"Q2 to Q4"</span></span>
-<span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/cifplot.html">cifplot</a></span><span class="op">(</span><span class="fu"><a href="reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="va">fruitq</span><span class="op">+</span><span class="va">fruitq1</span>, data<span class="op">=</span><span class="va">diabetes.complications</span>, </span>
-<span>        outcome.type<span class="op">=</span><span class="st">"competing-risk"</span>,</span>
-<span>        add.conf<span class="op">=</span><span class="cn">TRUE</span>, add.censor.mark<span class="op">=</span><span class="cn">FALSE</span>, </span>
-<span>        add.competing.risk.mark<span class="op">=</span><span class="cn">FALSE</span>, panel.per.variable<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<div class="figure">
-<img src="reference/figures/README-example04-1-1-1.png" alt="Cumulative incidence curves per each stratification variable" width="70%"><p class="caption">
-Cumulative incidence curves per each stratification variable
-</p>
-</div>
-<p>In the second figure, <strong>competing-risk marks</strong> are added (<code>add.competing.risk.mark = TRUE</code>) to indicate individuals who experienced the competing event (macrovascular complications) before diabetic retinopathy. Here we show a workflow slightly different from the previous code. First, we compute a survfit-compatible object <code>output1</code> using <code><a href="reference/cifcurve.html">cifcurve()</a></code> with <code>outcome.type="competing-risk"</code> by calculating Aalen–Johansen estimator stratified by <code>fruitq1</code>. The time points at which the macrovascular complications occurred were obtained as <code>output2</code> for each strata using a helper function <code><a href="reference/extract_time_to_event.html">extract_time_to_event()</a></code>. Then, <code><a href="reference/cifplot.html">cifplot()</a></code> is used to generate the figure. These marks help distinguish between events due to the primary cause and those attributable to competing causes. Note that the names of <code>competing.risk.time</code> and <code>intercurrent.event.time</code> must match the strata labels used in the plot if supplied by the user. The <code>label.y</code>, <code>label.x</code> and <code>limit.x</code> arguments are also used to customize <strong>the axis labels and limits</strong>.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">output1</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/cifcurve.html">cifcurve</a></span><span class="op">(</span><span class="fu"><a href="reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="va">fruitq1</span>, data<span class="op">=</span><span class="va">diabetes.complications</span>, </span>
-<span>                    outcome.type<span class="op">=</span><span class="st">"competing-risk"</span><span class="op">)</span></span>
-<span><span class="va">output2</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/extract_time_to_event.html">extract_time_to_event</a></span><span class="op">(</span><span class="fu"><a href="reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="va">fruitq1</span>, </span>
+<span><span class="va">output1</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/extract_time_to_event.html">extract_time_to_event</a></span><span class="op">(</span><span class="fu"><a href="reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="va">fruitq1</span>, </span>
 <span>                                 data<span class="op">=</span><span class="va">diabetes.complications</span>, which.event<span class="op">=</span><span class="st">"event2"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/cifplot.html">cifplot</a></span><span class="op">(</span><span class="va">output1</span>, add.conf<span class="op">=</span><span class="cn">FALSE</span>, add.risktable<span class="op">=</span><span class="cn">FALSE</span>, </span>
-<span>        add.censor.mark<span class="op">=</span><span class="cn">FALSE</span>, add.competing.risk.mark<span class="op">=</span><span class="cn">TRUE</span>, competing.risk.time<span class="op">=</span><span class="va">output2</span>, </span>
+<span><span class="fu"><a href="reference/cifplot.html">cifplot</a></span><span class="op">(</span><span class="fu"><a href="reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="va">fruitq1</span>, data<span class="op">=</span><span class="va">diabetes.complications</span>, </span>
+<span>        outcome.type<span class="op">=</span><span class="st">"competing-risk"</span>,</span>
+<span>        add.conf<span class="op">=</span><span class="cn">FALSE</span>, add.risktable<span class="op">=</span><span class="cn">FALSE</span>, add.censor.mark<span class="op">=</span><span class="cn">FALSE</span>,</span>
+<span>        add.competing.risk.mark<span class="op">=</span><span class="cn">TRUE</span>, competing.risk.time<span class="op">=</span><span class="va">output1</span>,</span>
 <span>        label.y<span class="op">=</span><span class="st">"CIF of diabetic retinopathy"</span>, label.x<span class="op">=</span><span class="st">"Years from registration"</span>,</span>
-<span>        limits.x<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">8</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>        limits.x<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">8</span><span class="op">)</span>, label.strata<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"High intake"</span>,<span class="st">"Low intake"</span><span class="op">)</span>, </span>
+<span>        level.strata<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span>, order.strata<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="reference/figures/README-example04-1-2-1.png" alt="Cumulative incidence curves with competing risk marks" width="70%"><p class="caption">
-Cumulative incidence curves with competing risk marks
+<img src="reference/figures/README-example02-1.png" alt="Cumulative incidence curves with competing-risk marks" width="70%"><p class="caption">
+Cumulative incidence curves with competing-risk marks
 </p>
 </div>
-<p>The <code>label.strata</code> is another argument for customizing labels, but when inputting a survfit object, it becomes invalid because it does not contain stratum information. Therefore, the following code inputs the formula and data. <code>label.strata</code> is used by combining <code>level.strata</code> and <code>order.strata</code>. The <code>level.strata</code> specifies <strong>the levels of the stratification variable corresponding to each label</strong> in <code>label.strata</code>. The levels specified in <code>level.strata</code> are then displayed in the figure <strong>in the order defined by <code>order.strata</code></strong>. A figure enclosed in a square was generated, which is due to <code>style="framed"</code> specification.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/cifplot.html">cifplot</a></span><span class="op">(</span><span class="fu"><a href="reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="va">fruitq1</span>, data<span class="op">=</span><span class="va">diabetes.complications</span>, </span>
-<span>        outcome.type<span class="op">=</span><span class="st">"competing-risk"</span>, add.conf<span class="op">=</span><span class="cn">FALSE</span>, add.risktable<span class="op">=</span><span class="cn">FALSE</span>, </span>
-<span>        add.estimate.table<span class="op">=</span><span class="cn">TRUE</span>, add.censor.mark<span class="op">=</span><span class="cn">FALSE</span>, add.competing.risk.mark<span class="op">=</span><span class="cn">TRUE</span>, </span>
-<span>        competing.risk.time<span class="op">=</span><span class="va">output2</span>, label.y<span class="op">=</span><span class="st">"CIF of diabetic retinopathy"</span>, </span>
-<span>        label.x<span class="op">=</span><span class="st">"Years from registration"</span>, limits.x<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">8</span><span class="op">)</span>,</span>
-<span>        label.strata<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"High intake"</span>,<span class="st">"Low intake"</span><span class="op">)</span>, level.strata<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Q2 to Q4"</span>,<span class="st">"Q1"</span><span class="op">)</span>, </span>
-<span>        order.strata<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Q1"</span>, <span class="st">"Q2 to Q4"</span><span class="op">)</span>, style<span class="op">=</span><span class="st">"framed"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="ipw-adjusted-cif-with-cifplot-and-cbps">IPW-adjusted CIF with cifplot() and CBPS()<a class="anchor" aria-label="anchor" href="#ipw-adjusted-cif-with-cifplot-and-cbps"></a>
+</h3>
+<p>In an observational study, it is necessary to adjust for confounders in order to compare fruit intake levels. In the next example, we obtain IPWs from <code><a href="https://rdrr.io/pkg/CBPS/man/CBPS.html" class="external-link">CBPS()</a></code> and draw adjusted CIFs. It is important to note that in IPW analysis, the SEs output in the unweighted analysis are not necessarily valid. Among the SE methods selectable in <code><a href="reference/cifplot.html">cifplot()</a></code> (Aalen-, delta-, and influence-function-type), simulations by Deng and Wang (2025) have shown that the influence-function based SE performs well. This snippet displays valid CIs in the plot by specifying <code>error=“if”</code> and <code>add.conf=TRUE</code>.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"CBPS"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span> <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">CBPS</span><span class="op">)</span></span>
+<span></span>
+<span> <span class="va">output2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/CBPS/man/CBPS.html" class="external-link">CBPS</a></span><span class="op">(</span></span>
+<span>  <span class="va">fruitq1</span> <span class="op">~</span> <span class="va">age</span> <span class="op">+</span> <span class="va">sex</span> <span class="op">+</span> <span class="va">bmi</span> <span class="op">+</span> <span class="va">hba1c</span> <span class="op">+</span> <span class="va">diabetes_duration</span> <span class="op">+</span> <span class="va">drug_oha</span> <span class="op">+</span> <span class="va">drug_insulin</span></span>
+<span>   <span class="op">+</span> <span class="va">sbp</span> <span class="op">+</span> <span class="va">ldl</span> <span class="op">+</span> <span class="va">hdl</span> <span class="op">+</span> <span class="va">tg</span> <span class="op">+</span> <span class="va">current_smoker</span> <span class="op">+</span> <span class="va">alcohol_drinker</span> <span class="op">+</span> <span class="va">ltpa</span>,</span>
+<span>  data <span class="op">=</span> <span class="va">diabetes.complications</span>, ATT<span class="op">=</span><span class="fl">0</span></span>
+<span> <span class="op">)</span></span>
+<span> <span class="va">diabetes.complications</span><span class="op">$</span><span class="va">ipw</span> <span class="op">&lt;-</span> <span class="va">output2</span><span class="op">$</span><span class="va">weights</span></span>
+<span> <span class="fu"><a href="reference/cifplot.html">cifplot</a></span><span class="op">(</span><span class="fu"><a href="reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="va">fruitq1</span>, data<span class="op">=</span><span class="va">diabetes.complications</span>, </span>
+<span>         outcome.type<span class="op">=</span><span class="st">"competing-risk"</span>, weights <span class="op">=</span> <span class="st">"ipw"</span>, </span>
+<span>         add.conf<span class="op">=</span><span class="cn">TRUE</span>, add.risktable<span class="op">=</span><span class="cn">FALSE</span>, add.censor.mark<span class="op">=</span><span class="cn">FALSE</span>,</span>
+<span>         label.y<span class="op">=</span><span class="st">"CIF of diabetic retinopathy"</span>, label.x<span class="op">=</span><span class="st">"Years from registration"</span>,</span>
+<span>         limits.x<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">8</span><span class="op">)</span>, label.strata<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"High intake"</span>,<span class="st">"Low intake"</span><span class="op">)</span>, </span>
+<span>         level.strata<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span>, order.strata<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span>, error <span class="op">=</span> <span class="st">"if"</span><span class="op">)</span></span>
+<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
+<span> <span class="fu"><a href="https://rdrr.io/r/graphics/frame.html" class="external-link">plot.new</a></span><span class="op">(</span><span class="op">)</span></span>
+<span> <span class="fu"><a href="https://rdrr.io/r/graphics/text.html" class="external-link">text</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.5</span>,</span>
+<span> <span class="st">"Install the 'CBPS' package to run this example."</span>,</span>
+<span> cex <span class="op">=</span> <span class="fl">0.9</span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code></pre></div>
 <div class="figure">
-<img src="reference/figures/README-example04-1-3-1.png" alt="Cumulative incidence curves with strata labels and framed style" width="70%"><p class="caption">
-Cumulative incidence curves with strata labels and framed style
+<img src="reference/figures/README-example03-1.png" alt="Adjusted cumulative incidence curves with CIs based on influence functions" width="70%"><p class="caption">
+Adjusted cumulative incidence curves with CIs based on influence functions
 </p>
 </div>
-<p>By specifying <code>add.estimate.table = TRUE</code>, <strong>the risks of diabetic retinopathy (estimates for CIFs) along with their CIs</strong> are shown in the table at the bottom of the figure. The risk ratios at a specific time point (e.g. 8 years) for competing events can be jointly and coherently estimated using <code><a href="reference/polyreg.html">polyreg()</a></code> with <code>outcome.type = "competing-risk"</code>. In the code of <code><a href="reference/polyreg.html">polyreg()</a></code> below, no covariates are included in the nuisance model (<code>~1</code> specifies intercept only). The effect of low fruit intake <code>fruitq1</code> is estimated as <strong>an unadjusted risk ratio</strong> (<code>effect.measure1="RR"</code>) for diabetic retinopathy (event 1) and macrovascular complications (event 2) at 8 years (<code>time.point=8</code>).</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+</div>
+<div class="section level3">
+<h3 id="risk-ratios-for-all-competing-events-via-polyreg">Risk ratios for all competing events via polyreg()<a class="anchor" aria-label="anchor" href="#risk-ratios-for-all-competing-events-via-polyreg"></a>
+</h3>
+<p>We then fit <code><a href="reference/polyreg.html">polyreg()</a></code> to estimate risk ratios for diabetic retinopathy and macrovascular complications, in a coherent joint model of all cause-specific CIFs at 8 years.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">output3</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/polyreg.html">polyreg</a></span><span class="op">(</span>nuisance.model<span class="op">=</span><span class="fu"><a href="reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="fl">1</span>, exposure<span class="op">=</span><span class="st">"fruitq1"</span>, </span>
 <span>          data<span class="op">=</span><span class="va">diabetes.complications</span>, effect.measure1<span class="op">=</span><span class="st">"RR"</span>, effect.measure2<span class="op">=</span><span class="st">"RR"</span>, </span>
 <span>          time.point<span class="op">=</span><span class="fl">8</span>, outcome.type<span class="op">=</span><span class="st">"competing-risk"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">output3</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] -1.38313159 -0.30043942 -3.99147406 -0.07582595</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="va">output3</span><span class="op">)</span></span>
-<span><span class="co">#&gt;              [,1]         [,2]         [,3]         [,4]</span></span>
-<span><span class="co">#&gt; [1,]  0.017018160 -0.012351309  0.009609321 -0.008372500</span></span>
-<span><span class="co">#&gt; [2,] -0.012351309  0.012789187 -0.006012254  0.006540183</span></span>
-<span><span class="co">#&gt; [3,]  0.009609321 -0.006012254  0.048161715 -0.044070501</span></span>
-<span><span class="co">#&gt; [4,] -0.008372500  0.006540183 -0.044070501  0.055992232</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">output3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;                       event1        event2      </span></span>
 <span><span class="co">#&gt; ---------------------------------------------- </span></span>
-<span><span class="co">#&gt; fruitq1, Q2 to Q4 vs Q1 </span></span>
-<span><span class="co">#&gt;                       0.740         0.927       </span></span>
-<span><span class="co">#&gt;                       [0.593, 0.924]  [0.583, 1.474]</span></span>
-<span><span class="co">#&gt;                       (p=0.008)     (p=0.749)   </span></span>
+<span><span class="co">#&gt; fruitq1, 1 vs 0      </span></span>
+<span><span class="co">#&gt;                       1.350         1.079       </span></span>
+<span><span class="co">#&gt;                       [1.114, 1.637]  [0.682, 1.707]</span></span>
+<span><span class="co">#&gt;                       (p=0.002)     (p=0.746)   </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ---------------------------------------------- </span></span>
 <span><span class="co">#&gt; </span></span>
@@ -228,41 +217,106 @@ Cumulative incidence curves with strata labels and framed style
 <li>
 <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code>: model-level summaries (follow-up, convergence, number of events),</li>
 <li>
-<code>augment()</code>: observation-level diagnostics (weights for IPCW, predicted CIFs, and influence-functions).</li>
+<code>augment()</code>: observation-level diagnostics (weights for IPCW, predicted CIFs, and influence functions).</li>
 </ul>
-<p>This means that <code><a href="reference/polyreg.html">polyreg()</a></code> fits integrate naturally with the broader <code>broom/modelsummary</code> ecosystem. For publication-ready tables, you can pass <code>polyreg</code> objects directly to <code><a href="https://modelsummary.com/man/msummary.html" class="external-link">modelsummary::msummary()</a></code> and <code><a href="https://modelsummary.com/man/modelplot.html" class="external-link">modelsummary::modelplot()</a></code>, including exponentiated summaries (risk ratios, odds ratios, subdistribution hazard ratios) via the <code>exponentiate = TRUE</code> option.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">output4</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/polyreg.html">polyreg</a></span><span class="op">(</span>nuisance.model<span class="op">=</span><span class="fu"><a href="reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="fl">1</span>, exposure<span class="op">=</span><span class="st">"fruitq1"</span>, </span>
-<span>                   data<span class="op">=</span><span class="va">diabetes.complications</span>, effect.measure1<span class="op">=</span><span class="st">"RR"</span>, effect.measure2<span class="op">=</span><span class="st">"RR"</span>, </span>
-<span>                   time.point<span class="op">=</span><span class="fl">2</span>, outcome.type<span class="op">=</span><span class="st">"competing-risk"</span><span class="op">)</span></span>
-<span><span class="va">output5</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/polyreg.html">polyreg</a></span><span class="op">(</span>nuisance.model<span class="op">=</span><span class="fu"><a href="reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="fl">1</span>, exposure<span class="op">=</span><span class="st">"fruitq1"</span>, </span>
-<span>                   data<span class="op">=</span><span class="va">diabetes.complications</span>, effect.measure1<span class="op">=</span><span class="st">"RR"</span>, effect.measure2<span class="op">=</span><span class="st">"RR"</span>, </span>
-<span>                   time.point<span class="op">=</span><span class="fl">4</span>, outcome.type<span class="op">=</span><span class="st">"competing-risk"</span><span class="op">)</span></span>
-<span><span class="va">output6</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/polyreg.html">polyreg</a></span><span class="op">(</span>nuisance.model<span class="op">=</span><span class="fu"><a href="reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="fl">1</span>, exposure<span class="op">=</span><span class="st">"fruitq1"</span>, </span>
-<span>                   data<span class="op">=</span><span class="va">diabetes.complications</span>, effect.measure1<span class="op">=</span><span class="st">"RR"</span>, effect.measure2<span class="op">=</span><span class="st">"RR"</span>, </span>
-<span>                   time.point<span class="op">=</span><span class="fl">6</span>, outcome.type<span class="op">=</span><span class="st">"competing-risk"</span><span class="op">)</span></span>
-<span><span class="va">summary</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>  <span class="st">"RR of diabetes retinopathy at 2 years"</span> <span class="op">=</span> <span class="va">output4</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event1</span>, </span>
-<span>  <span class="st">"RR of diabetes retinopathy at 4 years"</span> <span class="op">=</span> <span class="va">output5</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event1</span>, </span>
-<span>  <span class="st">"RR of diabetes retinopathy at 6 years"</span> <span class="op">=</span> <span class="va">output6</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event1</span>, </span>
-<span>  <span class="st">"RR of diabetes retinopathy at 8 years"</span> <span class="op">=</span> <span class="va">output3</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event1</span>,</span>
-<span>  <span class="st">"RR of marcovascular complications at 2 years"</span> <span class="op">=</span> <span class="va">output4</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event2</span>, </span>
-<span>  <span class="st">"RR of marcovascular complications at 4 years"</span> <span class="op">=</span> <span class="va">output5</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event2</span>, </span>
-<span>  <span class="st">"RR of marcovascular complications at 6 years"</span> <span class="op">=</span> <span class="va">output6</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event2</span>, </span>
-<span>  <span class="st">"RR of marcovascular complications at 8 years"</span> <span class="op">=</span> <span class="va">output3</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event2</span></span>
-<span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://modelsummary.com" class="external-link">modelsummary</a></span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://modelsummary.com/man/modelplot.html" class="external-link">modelplot</a></span><span class="op">(</span><span class="va">summary</span>, coef_rename<span class="op">=</span><span class="st">""</span>, exponentiate <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="risk-ratios-over-time-with-modelplot">Risk ratios over time with modelplot()<a class="anchor" aria-label="anchor" href="#risk-ratios-over-time-with-modelplot"></a>
+</h3>
+<p>Finally, we repeat the model at multiple time points and use <code><a href="https://modelsummary.com/man/modelplot.html" class="external-link">modelplot()</a></code> to visualize how risk ratios evolve over follow-up. With generics-Compatible objects, <code><a href="reference/polyreg.html">polyreg()</a></code> is integrated naturally with the broader <code>broom/modelsummary</code> ecosystem. For publication-ready tables, you can pass <code>polyreg</code> objects directly to <code><a href="https://modelsummary.com/man/msummary.html" class="external-link">modelsummary::msummary()</a></code> and <code><a href="https://modelsummary.com/man/modelplot.html" class="external-link">modelsummary::modelplot()</a></code>, including exponentiated summaries (risk ratios, odds ratios, subdistribution hazard ratios) via the <code>exponentiate = TRUE</code> option.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"modelsummary"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span> <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://modelsummary.com" class="external-link">modelsummary</a></span><span class="op">)</span></span>
+<span> <span class="va">output4</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/polyreg.html">polyreg</a></span><span class="op">(</span>nuisance.model<span class="op">=</span><span class="fu"><a href="reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="fl">1</span>, exposure<span class="op">=</span><span class="st">"fruitq1"</span>, </span>
+<span>                    data<span class="op">=</span><span class="va">diabetes.complications</span>, effect.measure1<span class="op">=</span><span class="st">"RR"</span>, effect.measure2<span class="op">=</span><span class="st">"RR"</span>, </span>
+<span>                    time.point<span class="op">=</span><span class="fl">2</span>, outcome.type<span class="op">=</span><span class="st">"competing-risk"</span><span class="op">)</span></span>
+<span> <span class="va">output5</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/polyreg.html">polyreg</a></span><span class="op">(</span>nuisance.model<span class="op">=</span><span class="fu"><a href="reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="fl">1</span>, exposure<span class="op">=</span><span class="st">"fruitq1"</span>, </span>
+<span>                    data<span class="op">=</span><span class="va">diabetes.complications</span>, effect.measure1<span class="op">=</span><span class="st">"RR"</span>, effect.measure2<span class="op">=</span><span class="st">"RR"</span>, </span>
+<span>                    time.point<span class="op">=</span><span class="fl">4</span>, outcome.type<span class="op">=</span><span class="st">"competing-risk"</span><span class="op">)</span></span>
+<span> <span class="va">output6</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/polyreg.html">polyreg</a></span><span class="op">(</span>nuisance.model<span class="op">=</span><span class="fu"><a href="reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="fl">1</span>, exposure<span class="op">=</span><span class="st">"fruitq1"</span>, </span>
+<span>                    data<span class="op">=</span><span class="va">diabetes.complications</span>, effect.measure1<span class="op">=</span><span class="st">"RR"</span>, effect.measure2<span class="op">=</span><span class="st">"RR"</span>, </span>
+<span>                    time.point<span class="op">=</span><span class="fl">6</span>, outcome.type<span class="op">=</span><span class="st">"competing-risk"</span><span class="op">)</span></span>
+<span> <span class="va">summary</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  <span class="st">"RR of diabetic retinopathy at 2 years"</span> <span class="op">=</span> <span class="va">output4</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event1</span>, </span>
+<span>  <span class="st">"RR of diabetic retinopathy at 4 years"</span> <span class="op">=</span> <span class="va">output5</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event1</span>, </span>
+<span>  <span class="st">"RR of diabetic retinopathy at 6 years"</span> <span class="op">=</span> <span class="va">output6</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event1</span>, </span>
+<span>  <span class="st">"RR of diabetic retinopathy at 8 years"</span> <span class="op">=</span> <span class="va">output3</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event1</span>,</span>
+<span>  <span class="st">"RR of macrovascular complications at 2 years"</span> <span class="op">=</span> <span class="va">output4</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event2</span>, </span>
+<span>  <span class="st">"RR of macrovascular complications at 4 years"</span> <span class="op">=</span> <span class="va">output5</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event2</span>, </span>
+<span>  <span class="st">"RR of macrovascular complications at 6 years"</span> <span class="op">=</span> <span class="va">output6</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event2</span>, </span>
+<span>  <span class="st">"RR of macrovascular complications at 8 years"</span> <span class="op">=</span> <span class="va">output3</span><span class="op">$</span><span class="va">summary</span><span class="op">$</span><span class="va">event2</span></span>
+<span> <span class="op">)</span></span>
+<span> <span class="fu"><a href="https://modelsummary.com/man/modelplot.html" class="external-link">modelplot</a></span><span class="op">(</span><span class="va">summary</span>, coef_rename<span class="op">=</span><span class="st">""</span>, exponentiate <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
+<span> <span class="fu"><a href="https://rdrr.io/r/graphics/frame.html" class="external-link">plot.new</a></span><span class="op">(</span><span class="op">)</span></span>
+<span> <span class="fu"><a href="https://rdrr.io/r/graphics/text.html" class="external-link">text</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.5</span>,</span>
+<span> <span class="st">"Install the 'modelsummary' package to run this example."</span>,</span>
+<span> cex <span class="op">=</span> <span class="fl">0.9</span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code></pre></div>
 <div class="figure">
-<img src="reference/figures/README-example04-1-5-1.png" alt="Unadjusted risk ratios at 2, 4, 6 and 8 years by polyreg()" width="70%"><p class="caption">
-Unadjusted risk ratios at 2, 4, 6 and 8 years by polyreg()
+<img src="reference/figures/README-example05-1.png" alt="Visualizaton of risk ratios at 2, 4, 6 and 8 years using polyreg() and modelplot()" width="70%"><p class="caption">
+Visualizaton of risk ratios at 2, 4, 6 and 8 years using polyreg() and modelplot()
 </p>
 </div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="why-cifmodeling">Why cifmodeling?<a class="anchor" aria-label="anchor" href="#why-cifmodeling"></a>
+</h2>
+<p>In clinical and epidemiologic research, analysts often need to handle censoring, competing risks, and intercurrent events (e.g. treatment switching), but existing R packages typically separate these tasks across different interfaces. <code>cifmodeling</code> provides a unified, publication-ready toolkit that integrates nonparametric estimation, regression modeling, and visualization for survival and competing risks data. The tools assist users in the following ways:</p>
+<ul>
+<li>
+<strong>Unified interface</strong> for the Kaplan–Meier and Aalen–Johansen curves, with survival and competing risks handled by the same <code><a href="reference/Event.html">Event()</a></code> + formula + data syntax.</li>
+<li>
+<strong>Effects on the CIF scale</strong>: while the Fine-Gray models subdistribution hazards, <code><a href="reference/polyreg.html">polyreg()</a></code> directly targets ratios of CIFs (risk ratios, odds ratios, subdistribution hazard ratios), so parameters align closely with differences seen in CIF curves.</li>
+<li>
+<strong>Coherent, joint modeling of all competing events</strong>: <code><a href="reference/polyreg.html">polyreg()</a></code> models all cause-specific CIFs together, parameterizing the nuisance structure with polytomous log odds products and enforcing that their CIFs sum to at most one.</li>
+<li>
+<strong>Tidy summaries and reporting</strong>: support for <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">generics::tidy()</a></code>, <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code>, and <code>augment()</code>, which integrate <code><a href="reference/polyreg.html">polyreg()</a></code> smoothly with <code>modelsummary</code> and other broom-style tools.</li>
+<li>
+<strong>Publication-ready graphics</strong> built on <code>ggsurvfit</code> and <code>ggplot2</code>, including number-at-risk/CIF+CI tables, censoring/competing-risk/intercurrent-event marks, and multi-panel layouts.</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="position-in-the-survival-ecosystem">Position in the survival ecosystem<a class="anchor" aria-label="anchor" href="#position-in-the-survival-ecosystem"></a>
+</h2>
+<p>Several excellent R packages exist for survival and competing risks analysis. The <strong>survival</strong> package provides the canonical API for survival data. In combination with the <strong>ggsurvfit</strong> package, <code><a href="https://rdrr.io/pkg/survival/man/survfit.html" class="external-link">survival::survfit()</a></code> can produce publication-ready survival plots. For CIF plots, however, integration in the general ecosystem is less streamlined. <code>cifmodeling</code> fills this gap by offering <code><a href="reference/cifplot.html">cifplot()</a></code> for survival/CIF plots and multi-panel figures via a single, unified interface.</p>
+<p>Beyond providing a unified interface, <code><a href="reference/cifcurve.html">cifcurve()</a></code> also extends <code>survfit()</code> in a few targeted ways. For unweighted survival data, it reproduces the standard Kaplan-Meier estimator with <strong>Greenwood and Tsiatis SEs</strong> and a unified set of CI transformations. For competing risks data, it computes Aalen-Johansen CIFs with both <strong>Aalen-type and delta-method SEs</strong>. For weighted survival or competing risks data (e.g. inverse probability weighting), it implements <strong>influence-function based SEs</strong> (Deng and Wang 2025) as well as <strong>modified Greenwood- and Tsiatis-type SEs</strong> (Xie and Liu 2005), which are valid under general positive weights.</p>
+<p>If you need very fine-grained plot customization, you can compute the estimator and keep a survfit-compatible object with <code><a href="reference/cifcurve.html">cifcurve()</a></code> (or supply your own survfit object) and then style it using <code>ggsurvfit/ggplot2</code> layers. In other words:</p>
+<ul>
+<li>use <code><a href="reference/cifcurve.html">cifcurve()</a></code> for estimation,</li>
+<li>use <code><a href="reference/cifplot.html">cifplot()</a></code> / <code><a href="reference/cifpanel.html">cifpanel()</a></code> for quick, high-quality figures, and</li>
+<li>fall back to the <code>ggplot</code> ecosystem when you want full artistic control.</li>
+</ul>
+<p>The <strong>causalRisk</strong> focuses on <em>causal</em> cumulative risk and hazard estimation using IPW and related estimators. It allows users to specify treatment, outcome, censoring, and missingness models via a dedicated syntax (<code>specify_models()</code>, <code>identify_*()</code>), and then estimate counterfactual cumulative risks and risk differences/ratios under complex censoring and confounding structures, with built-in plotting and table-making utilities.</p>
+<p>The <strong>mets</strong> package is a more specialized toolkit that provides advanced methods for competing risks analysis. <code><a href="reference/polyreg.html">cifmodeling::polyreg()</a></code> focuses on coherent modeling of all CIFs simultaneously to estimate the exposure effects in terms of RR/OR/SHR. This coherence can come with longer runtimes for large problems. If you prefer fitting separate regression models for each competing event or specifically need the Fine-Gray models (Fine and Gray 1999) and the direct binomial models (Scheike, Zhang and Gerds 2008), <code><a href="http://kkholst.github.io/mets/reference/cifreg.html" class="external-link">mets::cifreg()</a></code> and <code><a href="http://kkholst.github.io/mets/reference/binreg.html" class="external-link">mets::binreg()</a></code> are excellent choices.</p>
+<blockquote>
+<p><strong>Interested in the precise variance formulas and influence functions for the Aalen-Johansen estimator?</strong><br>
+Visit <a href="https://gestimation.github.io/cifmodeling/articles/formulas.html">Computational formulas in cifcurve()</a>.</p>
+</blockquote>
+</div>
+<div class="section level2">
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h2>
+<p>The package is implemented in R and relies on <code>Rcpp</code>, <code>nleqslv</code> and <code>boot</code> for its numerical back-end. The examples in this document also use <code>ggplot2</code>, <code>ggsurvfit</code>, <code>patchwork</code> and <code>modelsummary</code> for tabulation and plotting. Install the core package and these companion packages with:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Install cifmodeling with core dependencies</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"cifmodeling"</span>, <span class="st">"Rcpp"</span>, <span class="st">"nleqslv"</span>, <span class="st">"boot"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Recommended packages for plotting and tabulation in this README</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ggplot2"</span>, <span class="st">"ggsurvfit"</span>, <span class="st">"patchwork"</span>, <span class="st">"modelsummary"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="quality-control">Quality control<a class="anchor" aria-label="anchor" href="#quality-control"></a>
+</h2>
+<p><code>cifmodeling</code> includes an extensive test suite built with <strong>testthat</strong>, which checks the numerical accuracy and graphical consistency of all core functions (<code><a href="reference/cifcurve.html">cifcurve()</a></code>, <code><a href="reference/cifplot.html">cifplot()</a></code>, <code><a href="reference/cifpanel.html">cifpanel()</a></code>, and <code><a href="reference/polyreg.html">polyreg()</a></code>). The estimators are routinely compared against related functions in <strong>survival</strong>, <strong>cmprsk</strong> and <strong>mets</strong> packages to ensure consistency. The package is continuously tested on GitHub Actions (Windows, macOS, Linux) to maintain reproducibility and CRAN-level compliance.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
+<li><a href="https://cloud.r-project.org/package=cifmodeling" class="external-link">View on CRAN</a></li>
 <li><a href="https://github.com/gestimation/cifmodeling/" class="external-link">Browse source code</a></li>
 <li><a href="https://github.com/gestimation/cifmodeling/issues" class="external-link">Report a bug</a></li>
 </ul>
@@ -287,7 +341,7 @@ Unadjusted risk ratios at 2, 4, 6 and 8 years by polyreg()
 <div class="developers">
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
-<li>Shiro Tanaka <br><small class="roles"> Author, maintainer, copyright holder </small> <a href="https://orcid.org/0000-0001-6817-5235" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
+<li>Shiro Tanaka <br><small class="roles"> Author, maintainer, copyright holder </small> <a href="https://orcid.org/0000-0001-6817-5235" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a> </li>
 <li><a href="authors.html">More about authors...</a></li>
 </ul>
 </div>
@@ -303,7 +357,7 @@ Unadjusted risk ratios at 2, 4, 6 and 8 years by polyreg()
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
 </div>
 
     </footer>

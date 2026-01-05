@@ -8,6 +8,7 @@ cifcurve(
   formula,
   data,
   weights = NULL,
+  n.risk.type = "weighted",
   subset.condition = NULL,
   na.action = na.omit,
   outcome.type = c("survival", "competing-risk"),
@@ -27,12 +28,15 @@ cifcurve(
 \item{formula}{A model formula specifying the time-to-event outcome on the LHS
 (typically \code{Event(time, status)} or \code{survival::Surv(time, status)})
 and, optionally, a stratification variable on the RHS.
-Unlike \code{\link[=cifplot]{cifplot()}}, this function does not accept a fitted
-\code{survfit} object.}
+Unlike \code{\link[=cifplot]{cifplot()}}, this function does not accept a fitted survfit object.}
 
 \item{data}{A data frame containing variables in the formula.}
 
 \item{weights}{Optional name of the weight variable in \code{data}. Weights must be nonnegative.}
+
+\item{n.risk.type}{Character string; one of \code{"weighted"}, \code{"unweighted"}, or \code{"ess"}.
+Controls which risk set size is returned in \verb{$n.risk} without affecting estimates
+or standard errors. (default \code{"weighted"}).}
 
 \item{subset.condition}{Optional character string giving a logical condition to subset
 \code{data} (default \code{NULL}).}
@@ -53,8 +57,9 @@ Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic detection
 \item{code.censoring}{Integer code of censoring (default \code{0}).}
 
 \item{error}{Character string specifying the method for SEs and CIs used internally.
-For \code{"survival"}, choose one of \code{"greenwood"} (default), \code{"tsiatis"}, or \code{"if"}.
-For \code{"competing-risk"}, choose one of \code{"delta"} (default), \code{"aalen"}, or \code{"if"}.}
+For \code{"survival"} without weights, choose one of \code{"greenwood"} (default), \code{"tsiatis"}, or \code{"if"}.
+For \code{"competing-risk"} without weights, choose one of \code{"delta"} (default), \code{"aalen"}, or \code{"if"}.
+SEs and CIs based on influence functions (\code{"if"}) is recommended for weighted analysis.}
 
 \item{conf.type}{Character specifying the method of transformation for CIs
 used internally (default \verb{arcsine-square root}).}
@@ -83,31 +88,40 @@ This enables an independent use of standard methods for \code{survfit} such as:
 \item \code{quantile()}: quantile estimates with CIs
 }
 
-Note that some methods (e.g. \code{residuals.survfit}) may not be supported.
+Note that \verb{$n.risk}, \verb{$n.event}, and \verb{$n.censor} are rounded up to the nearest integer
+regardless of whether the data is weighted or not.
+Some methods (e.g. \code{residuals.survfit}) may not be supported.
 }
 \description{
 Core estimation routine that computes a survfit-compatible object
 from a formula + data interface (\code{Event()} or \code{survival::Surv()} on
 the LHS, and a stratification variable on the RHS if necessary).
-Use this when you want \strong{numbers only} (KM / CIF + SE + CI) and
-you will plot it yourself (for example with \code{ggsurvfit} or \code{\link[=cifplot]{cifplot()}}).
+The back-end  C++ routine supports both weighted and stratified data. Use this
+when you want \strong{numbers only} (e.g. estimates, SEs, CIs and influence functions)
+and will plot it yourself.
 }
 \details{
 \subsection{Typical use cases}{
 \itemize{
 \item When \code{outcome.type = "survival"}, this is a thin wrapper around
 the KM estimator with the chosen variance / CI transformation.
-\item When \code{outcome.type = "competing-risk"}, this computes the AJ
-estimator of CIF for \code{code.event1}. The returned \code{$surv} is
-\code{1 - CIF}, i.e. in the format that \pkg{ggsurvfit} expects.
-\item Use \code{\link{cifplot}} if you want to go straight to a figure; use
-\code{cifcurve()} if you only want the numbers.
+\item When \code{outcome.type = "competing-risk"}, this computes the AJ estimator of CIF for \code{code.event1}.
+The returned \verb{$surv} is \strong{1 - CIF}, i.e. in the format that ggsurvfit expects.
+\item Use \code{\link[=cifplot]{cifplot()}} if you want to go straight to a figure; use \code{\link[=cifcurve]{cifcurve()}} if you only want the numbers.
+}
+}
+
+\subsection{Risk set display}{
+\itemize{
+\item Set \code{n.risk.type} to control whether \verb{$n.risk} reflects weighted, unweighted,
+or Kish effective sample size (ESS) counts. This only affects the reported
+counts (e.g., for plotting or debugging) and leaves estimates and SEs unchanged.
 }
 }
 
 \subsection{Standard error and confidence intervals}{\tabular{lll}{
    Argument \tab Description \tab Default \cr
-   \code{error} \tab SE for KM: \code{"greenwood"}, \code{"tsiatis"}, \code{"if"}. For CIF: \code{"aalen"}, \code{"delta"}, \code{"if"}. \tab \code{"greenwood"} or \code{"delta"} \cr
+   \code{error} \tab SE for KM: \code{"greenwood"}, \code{"tsiatis"}, \code{"if"}. For CIF: \code{"aalen"}, \code{"delta"}, \code{"if"}. \tab \code{"greenwood"}, \code{"delta"} or \code{"if"} \cr
    \code{conf.type} \tab Transformation for CIs: \code{"plain"}, \code{"log"}, \code{"log-log"}, \code{"arcsin"}, \code{"logit"}, or \code{"none"}. \tab \code{"arcsin"} \cr
    \code{conf.int} \tab Two-sided CI level. \tab \code{0.95} \cr
 }
