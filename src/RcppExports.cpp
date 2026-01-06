@@ -11,8 +11,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // calculateAJ_Rcpp
-Rcpp::List calculateAJ_Rcpp(Rcpp::NumericVector t, Rcpp::IntegerVector epsilon, Rcpp::Nullable<Rcpp::NumericVector> w, Rcpp::Nullable<Rcpp::IntegerVector> strata, std::string error, std::string conf_type, double conf_int, bool return_if, double prob_bound);
-RcppExport SEXP _cifmodeling_calculateAJ_Rcpp(SEXP tSEXP, SEXP epsilonSEXP, SEXP wSEXP, SEXP strataSEXP, SEXP errorSEXP, SEXP conf_typeSEXP, SEXP conf_intSEXP, SEXP return_ifSEXP, SEXP prob_boundSEXP) {
+Rcpp::List calculateAJ_Rcpp(Rcpp::NumericVector t, Rcpp::IntegerVector epsilon, Rcpp::Nullable<Rcpp::NumericVector> w, Rcpp::Nullable<Rcpp::IntegerVector> strata, std::string n_risk_type, std::string error, std::string conf_type, double conf_int, bool return_if, double prob_bound);
+RcppExport SEXP _cifmodeling_calculateAJ_Rcpp(SEXP tSEXP, SEXP epsilonSEXP, SEXP wSEXP, SEXP strataSEXP, SEXP n_risk_typeSEXP, SEXP errorSEXP, SEXP conf_typeSEXP, SEXP conf_intSEXP, SEXP return_ifSEXP, SEXP prob_boundSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -20,12 +20,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type epsilon(epsilonSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type w(wSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type strata(strataSEXP);
+    Rcpp::traits::input_parameter< std::string >::type n_risk_type(n_risk_typeSEXP);
     Rcpp::traits::input_parameter< std::string >::type error(errorSEXP);
     Rcpp::traits::input_parameter< std::string >::type conf_type(conf_typeSEXP);
     Rcpp::traits::input_parameter< double >::type conf_int(conf_intSEXP);
     Rcpp::traits::input_parameter< bool >::type return_if(return_ifSEXP);
     Rcpp::traits::input_parameter< double >::type prob_bound(prob_boundSEXP);
-    rcpp_result_gen = Rcpp::wrap(calculateAJ_Rcpp(t, epsilon, w, strata, error, conf_type, conf_int, return_if, prob_bound));
+    rcpp_result_gen = Rcpp::wrap(calculateAJ_Rcpp(t, epsilon, w, strata, n_risk_type, error, conf_type, conf_int, return_if, prob_bound));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -46,7 +47,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_cifmodeling_calculateAJ_Rcpp", (DL_FUNC) &_cifmodeling_calculateAJ_Rcpp, 9},
+    {"_cifmodeling_calculateAJ_Rcpp", (DL_FUNC) &_cifmodeling_calculateAJ_Rcpp, 10},
     {"_cifmodeling_calculateKM", (DL_FUNC) &_cifmodeling_calculateKM, 5},
     {NULL, NULL, 0}
 };

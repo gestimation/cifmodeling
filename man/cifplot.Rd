@@ -19,6 +19,7 @@ cifplot(
   error = NULL,
   conf.type = "arcsine-square root",
   conf.int = 0.95,
+  n.risk.type = c("weighted", "unweighted", "ess"),
   type.y = NULL,
   label.x = "Time",
   label.y = NULL,
@@ -120,6 +121,10 @@ SEs and CIs based on influence functions (\code{"if"}) is recommended for weight
 used internally (default \verb{arcsine-square root}).}
 
 \item{conf.int}{Numeric two-sided level of CIs (default \code{0.95}).}
+
+\item{n.risk.type}{Character string; one of \code{"weighted"}, \code{"unweighted"}, or \code{"ess"}.
+Controls which risk set size is returned in \verb{$n.risk} without affecting estimates
+or standard errors. (default \code{"weighted"}).}
 
 \item{type.y}{Character string specifying the y-scale. For survival/CIF curves,
 \code{"surv"} implies survival probabilities and \code{"risk"} implies CIF
@@ -293,10 +298,12 @@ an optional stratification variable. In addition to the curves themselves,
 \code{\link[=cifplot]{cifplot()}} can add numbers-at-risk tables, tables of point estimates and
 CIs, censoring marks, competing-risk marks, and intercurrent-event marks.
 
+For usual single-panel mode, the function returns an object whose \code{plot}
+component is a regular ggplot object that can be further modified
+(compatible with \code{+} and \verb{\%+\%}).
 For more complex multi-panel displays, \code{\link[=cifplot]{cifplot()}} can internally call
 \code{\link[=cifpanel]{cifpanel()}} via several “panel modes” (per event, per variable, or
-censoring-focused). The function returns an object whose \code{plot} component
-is a regular ggplot object that can be further modified (compatible with \code{+} and \verb{\%+\%}).
+censoring-focused).
 }
 \details{
 \subsection{Typical use cases}{
@@ -320,6 +327,10 @@ is a regular ggplot object that can be further modified (compatible with \code{+
 \item \code{conf.int} sets the two-sided level (default 0.95)
 \item \code{conf.type} chooses the transformation (\code{"arcsine-square root"}, \code{"plain"}, \code{"log"}, \code{"log-log"}, \code{"logit"}, or \code{"none"})
 \item \code{error} chooses the estimator for SE (\code{"greenwood"}, \code{"tsiatis"} or \code{"if"} for survival curves and \code{"delta"}, \code{"aalen"} or \code{"if"} for CIFs)
+}
+\item \strong{Risk sets used in tables}
+\itemize{
+\item \code{n.risk.type} controls whether \verb{$n.risk} reflects weighted, unweighted, or effective sample size counts when building risk tables (forwarded to \code{\link[=cifcurve]{cifcurve()}}); when a fitted \code{survfit} object is supplied, existing risk sets are used as-is.
 }
 }
 }

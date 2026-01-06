@@ -1,4 +1,4 @@
-#' @title Arrange multiple survival/CIF plots in a panel display
+#' @title Arrange multiple survival and CIF plots in a panel display
 #'
 #' @description
 #' [cifpanel()] is the panel-building counterpart of [cifplot()].
@@ -70,6 +70,8 @@
 #'   element refers to the main plot and the second (if present) to the inset.
 #' @param survfit.info,axis.info,visual.info,panel.info,style.info,print.info,ggsave.info,inset.info
 #'   Internal lists used for programmatic control. Not intended for direct user input.
+#' @param engine Character string specifying the internal rendering engine used to build each panel.
+#' Currently intended for internal use; default is `"cifplot"`.
 #' @param ... Additional arguments forwarded to the internal `cifplot_single()`
 #'   calls that build each panel. Use this to pass low-level options such as
 #'   `competing.risk.time`, `intercurrent.event.time`, or styling overrides.
@@ -93,6 +95,9 @@
 #'   with `NA` values dropped.
 #' - If `outcome.type` is `NULL`, the function infers each panel from its
 #'   `code.events[[i]]` length. When both are given, `outcome.type` takes precedence.
+#' - Control risk-set displays via `n.risk.type`, which is recycled per panel and
+#'   forwarded to [cifcurve()] to decide which risk set size populates `$n.risk`
+#'   (e.g., weighted vs. unweighted counts).
 #'
 #' ### Panel-wise vs shared arguments
 #'
@@ -130,8 +135,7 @@
 #' -   `title.panel`, `subtitle.panel`, `caption.panel`, `title.plot`: overall titles and captions.
 #' -   `tag.panel`: panel tag style (e.g., "A", "a", "1").
 #' -   `label.x`, `label.y`, `limits.x`, `limits.y`, `breaks.x`, `breaks.y`: shared axis control unless a list is supplied for per-panel control.
-
-
+#'
 #' #### Scale & labels
 #'
 #' | Argument | Meaning | Default |
@@ -246,7 +250,6 @@
 #' @importFrom patchwork wrap_plots plot_layout inset_element plot_annotation
 #'
 #' @name cifpanel
-#' @keywords internal
 #' @section Lifecycle:
 #' \lifecycle{experimental}
 #' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifplot()] for display of a CIF; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
@@ -267,6 +270,7 @@ cifpanel <- function(
     error                         = NULL,
     conf.type                     = NULL,
     conf.int                      = NULL,
+    n.risk.type                   = c("weighted", "unweighted", "ess"),
     type.y                        = NULL,
     label.x                       = NULL,
     label.y                       = NULL,
@@ -332,12 +336,6 @@ cifpanel <- function(
     engine                        = "cifplot",
     ...
 ){
-#  if (!is.null(label.strata)) {
-#    .warn("panel_disables_labelstrata")
-#  }
-#  if (isTRUE(add.risktable) || isTRUE(add.estimate.table)) {
-#    .warn("panel_disables_tables")
-#  }
   legend.position  <- "none"
   add.risktable     <- FALSE
   add.estimate.table <- FALSE
@@ -347,6 +345,7 @@ cifpanel <- function(
   call <- match.call()
   plots_out <- NULL
   engine.list <- panel_to_list(engine)
+  if (missing(n.risk.type)) n.risk.type <- "weighted"
 
   survfit.info.user <- survfit.info
   axis.info.user    <- axis.info
@@ -360,7 +359,8 @@ cifpanel <- function(
   survfit.info <- panel_modify_list(list(
     error     = error,
     conf.type = conf.type,
-    conf.int  = conf.int
+    conf.int  = conf.int,
+    n.risk.type = n.risk.type
   ), survfit.info %||% list())
 
   axis.info <- panel_modify_list(list(
@@ -687,6 +687,13 @@ cifpanel <- function(
   ncol               <- layout_info$ncol
   n_slots            <- layout_info$n_slots
 
+  n.risk.type.list <- panel_to_list(n.risk.type)
+  if (!is.null(n.risk.type.list)) {
+    n.risk.type.list <- panel_recycle_to(n.risk.type.list, K)
+    n.risk.type.list <- lapply(n.risk.type.list, util_check_n_risk_type)
+  }
+  survfit.info$n.risk.type <- n.risk.type.list
+
   use_formula_list <- !is.null(formulas)
   if (use_formula_list) {
     stopifnot(is.list(formulas))
@@ -761,6 +768,7 @@ cifpanel <- function(
   if (!is.null(addCR.list))       kill_names <- c(kill_names, "add.competing.risk.mark")
   if (!is.null(addIC.list))       kill_names <- c(kill_names, "add.intercurrent.event.mark")
   if (!is.null(addQ.list))        kill_names <- c(kill_names, "add.quantile")
+  if (!is.null(n.risk.type.list)) kill_names <- c(kill_names, "n.risk.type")
 
   dots <- panel_strip_overrides_from_dots(dots, unique(kill_names))
 
@@ -787,6 +795,7 @@ cifpanel <- function(
     addCR.list      = addCR.list,
     addIC.list      = addIC.list,
     addQ.list       = addQ.list,
+    n.risk.type.list = n.risk.type.list,
     strata.list     = make_panel_list_preserve_vector(label.strata, K),
     legend.position = legend.position,
     survfit.info    = survfit.info,
@@ -795,6 +804,8 @@ cifpanel <- function(
     fonts           = fonts,
     na.action       = na.action
   )
+  survfit.info$curves <- survfit.info$curves %||% prep$curves
+  survfit.info$n.risk.type <- survfit.info$n.risk.type %||% n.risk.type.list
   plots <- lapply(seq_len(prep$K), function(i) {
     pa <- prep$plot_args[[i]]
     if (!is.null(typey.list)) {
@@ -807,6 +818,10 @@ cifpanel <- function(
     pa$visual.info  <- panel_modify_list(visual.info,  pa$visual.info %||% list())
     pa$style.info   <- panel_modify_list(style.info,   pa$style.info %||% list())
     pa$survfit.info <- panel_modify_list(survfit.info, pa$survfit.info %||% list())
+    if (!is.null(n.risk.type.list)) {
+      pa$survfit.info$n.risk.type <- n.risk.type.list[[i]]
+      pa$n.risk.type <- pa$n.risk.type %||% n.risk.type.list[[i]]
+    }
 
     pa <- panel_force_apply(
       pa,
@@ -995,6 +1010,7 @@ cifpanel <- function(
   survfit.info$outcome.type   <- survfit.info$outcome.type   %||% outcome.type
   survfit.info$code.events    <- survfit.info$code.events    %||% code.events
   survfit.info$data.name      <- survfit.info$data.name      %||% deparse(substitute(data))
+  survfit.info$n.risk.type    <- survfit.info$n.risk.type    %||% n.risk.type.list
 
   print.info$engine <- print.info$engine %||% engine.list
 
@@ -1087,9 +1103,6 @@ panel_force_apply <- function(
   pa
 }
 
-
-
-
 normalize_strata_info <- function(level.strata = NULL,
                                   order.strata = NULL,
                                   label.strata = NULL) {
@@ -1138,19 +1151,53 @@ normalize_strata_info <- function(level.strata = NULL,
 
 apply_strata_to_plots <- function(plots, order_data, label_map, touch_colour = TRUE) {
   if (!length(plots) || is.null(order_data) || is.null(label_map)) return(plots)
-  brks <- order_data
-  labs <- unname(label_map[brks])
+
+  brks <- as.character(order_data)
+  labs <- unname(as.character(label_map[brks]))
+  # 念のため欠損ラベルを補完
+  bad <- is.na(labs) | !nzchar(labs)
+  if (any(bad)) labs[bad] <- brks[bad]
+
+  # 既存 scale があれば「更新」、無ければ「追加」する
+  update_or_add_discrete_scale <- function(p, aes, add_scale_fun) {
+    # ggplot2内部は "colour" が正規形
+    aes <- if (identical(aes, "color")) "colour" else aes
+
+    sc <- p$scales$get_scales(aes)
+
+    if (is.null(sc)) {
+      # scale が未指定（デフォルト任せ）の場合だけ discrete scale を追加
+      # breaks/labels/limits を指定して legend の順序・表示名を固定する
+      return(
+        suppressMessages(
+          p + add_scale_fun(breaks = brks, labels = labs, limits = brks, drop = FALSE)
+        )
+      )
+    }
+
+    # 連続スケール等に誤爆しない（strata を想定しているので離散だけ触る）
+    if (!inherits(sc, "ScaleDiscrete")) return(p)
+
+    # 既存 scale（manual も含む）を“破壊せず”に legend 情報だけ更新
+    sc$breaks <- brks
+    sc$labels <- labs
+
+    # limits がある scale なら順序・マッピングも固定（manual values の上書きはしない）
+    # ggproto なので try で安全に
+    try(sc$limits <- brks, silent = TRUE)
+
+    p
+  }
 
   relabel_one <- function(p) {
-    layers <- list(
-      ggplot2::scale_linetype_discrete(breaks = brks, labels = labs),
-      ggplot2::scale_shape_discrete(breaks = brks, labels = labs),
-      ggplot2::scale_fill_discrete(breaks = brks, labels = labs)
-    )
+    p <- update_or_add_discrete_scale(p, "linetype", ggplot2::scale_linetype_discrete)
+    p <- update_or_add_discrete_scale(p, "shape",    ggplot2::scale_shape_discrete)
+    p <- update_or_add_discrete_scale(p, "fill",     ggplot2::scale_fill_discrete)
+
     if (isTRUE(touch_colour)) {
-      layers <- c(layers, list(ggplot2::scale_color_discrete(breaks = brks, labels = labs)))
+      p <- update_or_add_discrete_scale(p, "colour", ggplot2::scale_color_discrete)
     }
-    suppressMessages(Reduce(`+`, layers, init = p))
+    p
   }
 
   lapply(plots, relabel_one)

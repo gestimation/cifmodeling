@@ -1,6 +1,6 @@
 Package: cifmodeling
 Title: Visualization and Polytomous Modeling of Survival and Competing Risks
-Version: 0.9.7
+Version: 0.9.8
 Authors@R: c(person("Shiro", "Tanaka", , "gestimation@gmail.com", role = c("aut", "cre", "cph"), comment = c(ORCID = "0000-0001-6817-5235")), person("Shigetaka", "Kobari", role = "ctb"), person("Chisato", "Honda", role = "ctb"))
 Description: A publication-ready toolkit for modern survival and competing risks
     analysis with a minimal, formula-based interface. Both nonparametric

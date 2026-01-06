@@ -2,12 +2,15 @@
 % Please edit documentation in R/cif-stat-arguments.R
 \name{cif-stat-arguments}
 \alias{cif-stat-arguments}
-\title{These arguments are shared by \code{\link[=cifplot]{cifplot()}}, \code{\link[=cifpanel]{cifpanel()}}, and
-\code{\link[=cifcurve]{cifcurve()}}.}
+\title{These arguments are shared by \code{\link[=cifplot]{cifplot()}}, \code{\link[=cifpanel]{cifpanel()}}, and \code{\link[=cifcurve]{cifcurve()}}.}
 \arguments{
 \item{data}{A data frame containing variables in the formula.}
 
 \item{weights}{Optional name of the weight variable in \code{data}. Weights must be nonnegative.}
+
+\item{n.risk.type}{Character string; one of \code{"weighted"}, \code{"unweighted"}, or \code{"ess"}.
+Controls which risk set size is returned in \verb{$n.risk} without affecting estimates
+or standard errors. (default \code{"weighted"}).}
 
 \item{subset.condition}{Optional character string giving a logical condition to subset
 \code{data} (default \code{NULL}).}
@@ -38,7 +41,6 @@ used internally (default \verb{arcsine-square root}).}
 \item{conf.int}{Numeric two-sided level of CIs (default \code{0.95}).}
 }
 \description{
-These arguments are shared by \code{\link[=cifplot]{cifplot()}}, \code{\link[=cifpanel]{cifpanel()}}, and
-\code{\link[=cifcurve]{cifcurve()}}.
+These arguments are shared by \code{\link[=cifplot]{cifplot()}}, \code{\link[=cifpanel]{cifpanel()}}, and \code{\link[=cifcurve]{cifcurve()}}.
 }
 \keyword{internal}

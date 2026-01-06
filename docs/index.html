@@ -103,10 +103,32 @@ Aalen-Johansen cumulative incidence curves from cifplot()
 </h2>
 <p>Four code snippets illustrate how the three core functions interact with existing resources and analyze complex competing risks data:</p>
 <ul>
+<<<<<<< HEAD
+<<<<<<< HEAD
+<li><p><strong>Unified interface</strong> for Kaplan–Meier and Aalen–Johansen curves, with survival and competing risks handled by the same syntax.</p></li>
+<li><p><strong>Publication-ready graphics</strong> built on <code>ggsurvfit</code> and <code>ggplot2</code>, including risk/estimate tables, censoring/competing-risks/intercurrent-events marks, and multi-panel layouts. &lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</p></li>
+<li><h1 id="coherent-regression-models-for-cifs-targeting-familiar-effect-measures-such-as-risk-ratios-rr-odds-ratios-or-and-subdistribution-hazard-ratios-shr">
+<strong>Coherent regression models</strong> for CIFs, targeting familiar effect measures such as risk ratios (RR), odds ratios (OR), and subdistribution hazard ratios (SHR).</h1></li>
+<li><p><strong>Tidy summaries and reporting</strong>: regression results from <code><a href="reference/polyreg.html">polyreg()</a></code> support <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">generics::tidy()</a></code>, <code>glance()</code>, and <code>augment()</code>, which integrate smoothly with <code>modelsummary</code> and other broom-style tools.</p></li>
+<li><p><strong>Coherent regression models</strong> of CIFs, targeting familiar effect measures (risk ratios, odds ratios, and subdistribution hazard ratios). Modeling the nuisance structure using polytomous log odds products ensures that the sum of cause-specific CIFs does not exceed one. &gt;&gt;&gt;&gt;&gt;&gt;&gt; 52e2a3008aaa2cc10374d4a220ad7b6c757aba48</p></li>
+=======
+<li>
+<strong>Unified interface</strong> for Kaplan–Meier and Aalen–Johansen curves, with survival and competing risks handled by the same <code><a href="reference/Event.html">Event()</a></code> + formula + data syntax.</li>
+<li>
+<strong>Effects on the CIF scale</strong>: while Fine-Gray models subdistribution hazards, <code><a href="reference/polyreg.html">polyreg()</a></code> directly targets ratios of CIFs (risk ratios, odds ratios, subdistribution hazard ratios), so parameters align closely with differences seen in CIF curves.</li>
+<li>
+<strong>Coherent, joint modeling of all competing events</strong>: <code><a href="reference/polyreg.html">polyreg()</a></code> models all cause-specific CIFs together, parameterizing the nuisance structure with polytomous log odds products and enforcing that their CIFs sum to at most one.</li>
+<li>
+<strong>Tidy summaries and reporting</strong>: support for <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">generics::tidy()</a></code>, <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code>, and <code>augment()</code>, which integrate <code><a href="reference/polyreg.html">polyreg()</a></code> smoothly with <code>modelsummary</code> and other broom-style tools.</li>
+<li>
+<strong>Publication-ready graphics</strong> built on <code>ggsurvfit</code> and <code>ggplot2</code>, including at-risk/CIF+CI tables, censoring/competing-risk/intercurrent-event marks, and multi-panel layouts.</li>
+>>>>>>> ee5005b4869f1b0b293ed0d404c0115d2926b6ed
+=======
 <li>Describe the competing risks via a CIF plot with marks</li>
 <li>Plot adjusted CIFs using inverse probability weights (IPW)</li>
 <li>Estimate risk ratios for all competing events at a clinically relevant time</li>
 <li>Visualize how risk ratios evolve over time</li>
+>>>>>>> c37257fab9b9eea022f85536a2cf550f9b836311
 </ul>
 <p>We use the <code>diabetes.complications</code> data throughout, focusing on diabetic retinopathy (event 1) and macrovascular complications (event 2), with the level of fruit intake, low (Q1) and high (Q2 to 4), as the exposure (<code>fruitq1</code>).</p>
 <div class="section level3">

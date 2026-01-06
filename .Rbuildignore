@@ -12,3 +12,4 @@
 ^pkgdown$
 ^attic$
 ^README_files$
+^private$

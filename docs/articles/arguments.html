@@ -92,8 +92,9 @@ stratification variable on the right-hand side. Unlike
 <code>weights</code> Optional name of the weight variable in
 <code>data</code>. Weights must be nonnegative.</li>
 <li>
-<code>subset.condition</code> Optional character expression to
-subset <code>data</code> before analysis.</li>
+<code>subset.condition</code> Optional character string giving a
+logical condition to subset <code>data</code> (default
+<code>NULL</code>).</li>
 <li>
 <code>na.action</code> A function specifying the action to take on
 missing values (default <code>na.omit</code>).</li>
@@ -156,10 +157,10 @@ truncate probabilities away from 0 and 1 (default
 </h2>
 <ul>
 <li>
-<code>formula_or_fit</code> A model formula or a survfit object.
-Note: When a formula is supplied, the left-hand side must be
-<code>Event(time, status)</code> or
-<code>survival::Surv(time, status)</code>.</li>
+<code>formula_or_fit</code> Either a model formula or a survfit
+object. When a formula is supplied, the LHS must be
+<code>Event(time, status)</code> or <code>Surv(time, status)</code>. The
+RHS specifies an optional stratification variable.</li>
 <li>
 <code>data</code> A data frame containing variables in
 <code>formula</code>.</li>
@@ -167,8 +168,9 @@ Note: When a formula is supplied, the left-hand side must be
 <code>weights</code> Optional name of the weight variable in
 <code>data</code>. Weights must be nonnegative.</li>
 <li>
-<code>subset.condition</code> Optional character expression to
-subset <code>data</code> before analysis.</li>
+<code>subset.condition</code> Optional character string giving a
+logical condition to subset <code>data</code> (default
+<code>NULL</code>).</li>
 <li>
 <code>na.action</code> A function specifying the action to take on
 missing values (default <code>na.omit</code>).</li>
@@ -411,8 +413,9 @@ provided, overrides <code>formula</code>.</p></li>
 <code>formula</code>.</p></li>
 <li><p><code>weights</code> Optional name of the weight variable in
 <code>data</code>. Weights must be nonnegative.</p></li>
-<li><p><code>subset.condition</code> Optional character expression to
-subset <code>data</code> before analysis.</p></li>
+<li><p><code>subset.condition</code> Optional character string giving a
+logical condition to subset <code>data</code> (default
+<code>NULL</code>).</p></li>
 <li><p><code>na.action</code> A function specifying the action to take
 on missing values (default <code>na.omit</code>).</p></li>
 <li><p><code>outcome.type</code> Character string specifying the type of
@@ -542,6 +545,10 @@ stratification variable used to adjust for dependent censoring (default
 <code>data</code> A data frame containing the outcome, exposure and
 nuisance covariates referenced by <code>nuisance.model</code>.</li>
 <li>
+<code>subset.condition</code> Optional character string giving a
+logical condition to subset <code>data</code> (default
+<code>NULL</code>).</li>
+<li>
 <code>na.action</code> A function specifying the action to take on
 missing values (default <code>na.omit</code>).</li>
 <li>
@@ -613,6 +620,11 @@ default for proportional models
 Use <code>TRUE</code> for bias-corrected and accelerated intervals or
 <code>FALSE</code> for the normal approximation (default to
 <code>FALSE</code>).</li>
+<li>
+<code>boot.multiplier</code> Character string specifying the wild
+bootstrap weight distribution. One of <code>"rademacher"</code>,
+<code>"mammen"</code> or <code>"gaussian"</code> (default
+<code>"rademacher"</code>).</li>
 <li>
 <code>boot.replications</code> Integer giving the number of
 bootstrap replications (default to <code>200</code>).</li>

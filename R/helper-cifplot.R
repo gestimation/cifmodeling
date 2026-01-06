@@ -985,6 +985,7 @@ cifplot_build_info <- function(
   error,
   conf.type,
   conf.int,
+  n.risk.type,
 
   type.y,
   label.x,
@@ -1046,7 +1047,8 @@ cifplot_build_info <- function(
   survfit.info <- panel_modify_list(list(
     error     = error,
     conf.type = conf.type,
-    conf.int  = conf.int
+    conf.int  = conf.int,
+    n.risk.type = n.risk.type
   ), survfit.info %||% list())
 
   axis.info <- panel_modify_list(list(

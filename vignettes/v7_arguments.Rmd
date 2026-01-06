@@ -14,7 +14,12 @@ vignette: >
 -   `formula` A model formula specifying the time-to-event outcome on the left-hand side (typically `Event(time, status)` or `survival::Surv(time, status)`) and, optionally, a stratification variable on the right-hand side. Unlike `cifplot()`, this function does not accept a fitted `survfit` object. 
 -   `data` A data frame containing variables in `formula`.
 -   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative.
+<<<<<<< HEAD:vignettes/arguments.Rmd
+-   `subset.condition` Optional character string giving a logical condition to subset `data` (default `NULL`).
+=======
+-   `n.risk.type` Character string; one of `"weighted"`, `"unweighted"`, or `"ess"`. Controls which risk set size is returned in `$n.risk` without affecting estimates or standard errors (default `"weighted"`).
 -   `subset.condition` Optional character expression to subset `data` before analysis.
+>>>>>>> c37257fab9b9eea022f85536a2cf550f9b836311:vignettes/v7_arguments.Rmd
 -   `na.action` A function specifying the action to take on missing values (default `na.omit`).
 -   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"survival"` (Kaplan-Meier) or `"competing-risk"` (Aalen-Johansen). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"competing-risk"` is assumed; otherwise, `"survival"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding.
 -   `code.event1` Integer code of the event of interest (default `1`).
@@ -30,10 +35,15 @@ vignette: >
 
 ## cifplot()
 
--   `formula_or_fit` A model formula or a survfit object. Note: When a formula is supplied, the left-hand side must be `Event(time, status)` or `survival::Surv(time, status)`.
+-   `formula_or_fit` Either a model formula or a survfit object. When a formula is supplied, the LHS must be `Event(time, status)` or `Surv(time, status)`. The RHS specifies an optional stratification variable.
 -   `data` A data frame containing variables in `formula`.
 -   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative.
+<<<<<<< HEAD:vignettes/arguments.Rmd
+-   `subset.condition` Optional character string giving a logical condition to subset `data` (default `NULL`).
+=======
+-   `n.risk.type` Character string; one of `"weighted"`, `"unweighted"`, or `"ess"`. Controls which risk set size is returned in `$n.risk` without affecting estimates or standard errors (default `"weighted"`).
 -   `subset.condition` Optional character expression to subset `data` before analysis.
+>>>>>>> c37257fab9b9eea022f85536a2cf550f9b836311:vignettes/v7_arguments.Rmd
 -   `na.action` A function specifying the action to take on missing values (default `na.omit`).
 -   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"survival"` (Kaplan-Meier) or `"competing-risk"` (Aalen-Johansen). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"competing-risk"` is assumed; otherwise, `"survival"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding.
 -   `code.event1` Integer code of the event of interest (default `1`).
@@ -96,7 +106,12 @@ vignette: >
 -   `formulas` A list of formulas (one per panel). If provided, overrides `formula`.
 -   `data` A data frame containing variables in `formula`.
 -   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative.
+<<<<<<< HEAD:vignettes/arguments.Rmd
+-   `subset.condition` Optional character string giving a logical condition to subset `data` (default `NULL`).
+=======
+-   `n.risk.type` Character string; one of `"weighted"`, `"unweighted"`, or `"ess"`. Controls which risk set size is returned in `$n.risk` without affecting estimates or standard errors (default `"weighted"`).
 -   `subset.condition` Optional character expression to subset `data` before analysis.
+>>>>>>> c37257fab9b9eea022f85536a2cf550f9b836311:vignettes/v7_arguments.Rmd
 -   `na.action` A function specifying the action to take on missing values (default `na.omit`).
 -   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"survival"` (Kaplan-Meier) or `"competing-risk"` (Aalen-Johansen). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"competing-risk"` is assumed; otherwise, `"survival"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding.
 -   `code.event1` Integer code of the event of interest (default `1`).
@@ -140,6 +155,7 @@ vignette: >
 -   `exposure` A character string giving the name of the categorical exposure variable in `data`.
 -   `strata` Optional character string with the name of the stratification variable used to adjust for dependent censoring (default `NULL`).
 -   `data` A data frame containing the outcome, exposure and nuisance covariates referenced by `nuisance.model`.
+-   `subset.condition` Optional character string giving a logical condition to subset `data` (default `NULL`).
 -   `na.action` A function specifying the action to take on missing values (default `na.omit`).
 -   `code.event1` Integer code of the event of interest (default `1`).
 -   `code.event2` Integer code of the competing event (default `2`).
