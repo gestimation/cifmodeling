@@ -1,12 +1,12 @@
+# cifmodeling 0.9.8
+
+* Second CRAN release.
+
 # cifmodeling 0.9.7
 
 * Added `n.risk.type` to `cifcurve()` to optionally display weighted, unweighted,
   or Kish ESS risk set sizes without changing estimates or SEs.
 * Modified the risk table of `cifplot()` to display integer values.
-* Refactored the internal plotting pipeline to consistently honor axis controls
-  (`limits.x`, `limits.y`, `breaks.x`, `breaks.y`) across `cifplot()` and `cifpanel()`,
-  including the `cumhaz` and `cloglog` transformations and both scale and
-  `coord_cartesian` code paths.
 * Simplified the special-case handling for `cloglog` by unifying axis-application
   logic, improving maintainability without changing user-facing results.
 * Added/strengthened robust tests for axis limits and breaks behavior.
