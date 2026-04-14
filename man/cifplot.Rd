@@ -123,8 +123,7 @@ used internally (default \verb{arcsine-square root}).}
 \item{conf.int}{Numeric two-sided level of CIs (default \code{0.95}).}
 
 \item{n.risk.type}{Character string; one of \code{"weighted"}, \code{"unweighted"}, or \code{"ess"}.
-Controls which risk set size is returned in \verb{$n.risk} without affecting estimates
-or standard errors. (default \code{"weighted"}).}
+Controls which risk set size is returned in \verb{$n.risk} without affecting estimates or SEs (default \code{"weighted"}).}
 
 \item{type.y}{Character string specifying the y-scale. For survival/CIF curves,
 \code{"surv"} implies survival probabilities and \code{"risk"} implies CIF

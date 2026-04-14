@@ -17,7 +17,7 @@
 #' censoring weights are estimated internally from `cens.model` using
 #' [mets::phreg()] and predicted censoring survival probabilities.
 #'
-#' @param formula A model formula with an [Event()] response on the left-hand side.
+#' @param formula A model formula with an `Event()` response on the left-hand side.
 #'   The right-hand side defines the regression design matrix. The final column of
 #'   the resulting design matrix must correspond to a binary exposure coded as 0/1.
 #' @param data A data frame containing the variables in `formula`.
@@ -533,7 +533,7 @@ binregRatioLOP <- function(formula,
 
 #' Calculate fitted percentages from log-odds product regression coefficients
 #'
-#' Converts regression coefficients from [binregRatioLOP()] into fitted
+#' Converts regression coefficients from `binregRatioLOP()` into fitted
 #' percentages under exposure levels 0 and 1.
 #'
 #' The coefficient vector is assumed to consist of nuisance coefficients for the

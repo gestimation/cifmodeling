@@ -183,7 +183,7 @@ that contribute estimation are terminated by min of max follow-up times
 of each exposure level (default \code{TRUE}).}
 
 \item{prob.bound}{Numeric lower bound used to internally truncate probabilities away
-from 0 and 1 (default \code{1e-5}).}
+from 0 and 1 (default \code{1e-7}).}
 }
 \value{
 A list of class \code{"polyreg"} containing the fitted exposure effects and
