@@ -1,13 +1,13 @@
-#' Fit IPCW ratio regression for cumulative incidence or restricted mean time lost
+#' Fit direct binomial regression for restricted mean time lost
 #' using a log-odds product parameterization
 #'
 #' Fits an inverse probability of censoring weighted (IPCW) ratio regression model
 #' for the conditional proportion of outcome attributable to a specific cause in
 #' competing risks data. The target quantity is
 #' \deqn{E\{Z_1(\tau)\mid X\} / E\{Z(\tau)\mid X\},}
-#' where \eqn{Z_1(\tau)} is the cause-specific outcome for the event of interest
-#' and \eqn{Z(\tau)} is the corresponding total outcome across all causes.
-#'
+#' where \eqn{Z_1(\tau)} is the cause-specific restricted time lost up to the time
+#' horizon \eqn{\tau} for cause 1 and \eqn{Z(\tau)} is the corresponding total
+#' restricted time lost up to \eqn{\tau}.
 #' The model is parameterized through a nuisance log-odds product model together
 #' with a log percentage ratio parameter for a binary exposure. The final column
 #' of the design matrix is assumed to be a binary exposure coded as 0/1, and the
@@ -23,7 +23,7 @@
 #' @param data A data frame containing the variables in `formula`.
 #' @param cause Integer or vector of integers specifying the event code(s) treated
 #'   as the primary cause of interest.
-#' @param time Numeric scalar giving the prediction horizon \eqn{\tau}.
+#' @param time Numeric scalar giving the time horizon \eqn{\tau}.
 #' @param beta Optional numeric vector of starting values. Its length must equal
 #'   the number of columns in the design matrix. By default, nuisance coefficients
 #'   are initialized at `0.1` and the exposure log percentage ratio parameter at
@@ -48,9 +48,8 @@
 #'   estimating equations at the supplied `beta`.
 #' @param augmentation Optional numeric vector used to augment the estimating
 #'   equation. Defaults to a vector of zeros.
-#' @param outcome Character string specifying the outcome scale. `"cif"` uses the
-#'   cumulative incidence decomposition, and `"rmtl"` uses restricted mean time
-#'   lost decomposition up to `time`.
+#' @param outcome Character string specifying the outcome scale. Currently only
+#'   `"rmtl"`,  restricted mean time lost decomposition up to `time`, is implemented.
 #' @param model Character string identifying the model family. Currently only
 #'   `"log-odds"` is implemented.
 #' @param Ydirect Optional user-supplied outcome matrix replacing the internally
@@ -62,10 +61,6 @@
 #' and let \eqn{L} denote the remaining covariates. The function models the
 #' conditional percentage for the primary cause under a log-odds product
 #' parameterization, returning fitted percentages under `A = 0` and `A = 1`.
-#'
-#' For `outcome = "cif"`, the outcome is based on cause-specific and total
-#' cumulative incidence up to `time`. For `outcome = "rmtl"`, the outcome is based
-#' on restricted mean time lost up to `time`.
 #'
 #' The returned object includes coefficient estimates, naive and robust variance
 #' estimates, estimated influence functions, fitted percentages, and quantities
@@ -97,7 +92,6 @@
 #'   data = diabetes.complications,
 #'   time = 8,
 #'   cause = 1,
-#'   outcome = "rmtl",
 #'   type = "I"
 #' )
 #'
@@ -133,7 +127,7 @@ binregRatioLOP <- function(formula,
                            cens.code = 0,
                            no.opt = FALSE,
                            augmentation = NULL,
-                           outcome = c("cif", "rmtl"),
+                           outcome = "rmtl",
                            model = "log-odds",
                            Ydirect = NULL,
                            ...) {

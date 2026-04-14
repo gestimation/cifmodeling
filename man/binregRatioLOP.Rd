@@ -2,7 +2,7 @@
 % Please edit documentation in R/binregRatioLOP.R
 \name{binregRatioLOP}
 \alias{binregRatioLOP}
-\title{Fit IPCW ratio regression for cumulative incidence or restricted mean time lost
+\title{Fit direct binomial regression for restricted mean time lost
 using a log-odds product parameterization}
 \usage{
 binregRatioLOP(
@@ -21,7 +21,7 @@ binregRatioLOP(
   cens.code = 0,
   no.opt = FALSE,
   augmentation = NULL,
-  outcome = c("cif", "rmtl"),
+  outcome = "rmtl",
   model = "log-odds",
   Ydirect = NULL,
   ...
@@ -37,7 +37,7 @@ the resulting design matrix must correspond to a binary exposure coded as 0/1.}
 \item{cause}{Integer or vector of integers specifying the event code(s) treated
 as the primary cause of interest.}
 
-\item{time}{Numeric scalar giving the prediction horizon \eqn{\tau}.}
+\item{time}{Numeric scalar giving the time horizon \eqn{\tau}.}
 
 \item{beta}{Optional numeric vector of starting values. Its length must equal
 the number of columns in the design matrix. By default, nuisance coefficients
@@ -74,9 +74,8 @@ estimating equations at the supplied \code{beta}.}
 \item{augmentation}{Optional numeric vector used to augment the estimating
 equation. Defaults to a vector of zeros.}
 
-\item{outcome}{Character string specifying the outcome scale. \code{"cif"} uses the
-cumulative incidence decomposition, and \code{"rmtl"} uses restricted mean time
-lost decomposition up to \code{time}.}
+\item{outcome}{Character string specifying the outcome scale. Currently only
+\code{"rmtl"},  restricted mean time lost decomposition up to \code{time}, is implemented.}
 
 \item{model}{Character string identifying the model family. Currently only
 \code{"log-odds"} is implemented.}
@@ -106,15 +105,15 @@ Fits an inverse probability of censoring weighted (IPCW) ratio regression model
 for the conditional proportion of outcome attributable to a specific cause in
 competing risks data. The target quantity is
 \deqn{E\{Z_1(\tau)\mid X\} / E\{Z(\tau)\mid X\},}
-where \eqn{Z_1(\tau)} is the cause-specific outcome for the event of interest
-and \eqn{Z(\tau)} is the corresponding total outcome across all causes.
-}
-\details{
+where \eqn{Z_1(\tau)} is the cause-specific restricted time lost up to the time
+horizon \eqn{\tau} for cause 1 and \eqn{Z(\tau)} is the corresponding total
+restricted time lost up to \eqn{\tau}.
 The model is parameterized through a nuisance log-odds product model together
 with a log percentage ratio parameter for a binary exposure. The final column
 of the design matrix is assumed to be a binary exposure coded as 0/1, and the
 remaining columns are treated as adjustment covariates.
-
+}
+\details{
 Right censoring is handled through IPCW. When \code{cens.weights} is not supplied,
 censoring weights are estimated internally from \code{cens.model} using
 \code{\link[mets:phreg]{mets::phreg()}} and predicted censoring survival probabilities.
@@ -123,10 +122,6 @@ Let \eqn{A} denote the binary exposure in the final column of the design matrix
 and let \eqn{L} denote the remaining covariates. The function models the
 conditional percentage for the primary cause under a log-odds product
 parameterization, returning fitted percentages under \code{A = 0} and \code{A = 1}.
-
-For \code{outcome = "cif"}, the outcome is based on cause-specific and total
-cumulative incidence up to \code{time}. For \code{outcome = "rmtl"}, the outcome is based
-on restricted mean time lost up to \code{time}.
 
 The returned object includes coefficient estimates, naive and robust variance
 estimates, estimated influence functions, fitted percentages, and quantities
@@ -141,7 +136,6 @@ fit <- binregRatioLOP(
   data = diabetes.complications,
   time = 8,
   cause = 1,
-  outcome = "rmtl",
   type = "I"
 )
 
