@@ -44,14 +44,25 @@ the nuisance linear predictor and the log percentage ratio parameter under the
 log-odds product parameterization.
 }
 \examples{
-## One binary exposure and no adjustment covariates
-beta <- c(log(0.75))
-X_L <- matrix(numeric(0), nrow = 1)
-calculatePercentageLOP(beta, X_L = X_L, offset = 0)
+## event: 0 = censoring, 1 = primary cause, 2 = competing cause
+data(diabetes.complications)
 
-## One adjustment covariate plus the exposure parameter
-beta <- c(0.2, log(0.75))
-X_L <- matrix(c(-1, 1), ncol = 1)
-calculatePercentageLOP(beta, X_L = X_L, offset = c(0, 0))
+fit <- binregRatioLOP(
+  Event(t, epsilon) ~ fruitq1,
+  data = diabetes.complications,
+  time = 8,
+  cause = 1,
+  type = "I"
+)
+
+fit$coef
+fit$se.robust
+
+## Estimated percentages under A = 0 and A = 1 when there are no adjustment covariates
+calculatePercentageLOP(
+  fit$coef,
+  X_L = matrix(1, nrow = 1, ncol = 1),
+  offset = 0
+)
 
 }
