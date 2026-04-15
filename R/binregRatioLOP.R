@@ -573,7 +573,7 @@ binregRatioLOP <- function(formula,
 #' fit$coef
 #' fit$se.robust
 #'
-#' ## Estimated percentages under A = 0 and A = 1 when there are no adjustment covariates
+#' ## Estimated percentages of restricted mean time lost under A = 0 and A = 1 when there are no adjustment covariates
 #' calculatePercentageLOP(
 #'   fit$coef,
 #'   X_L = matrix(1, nrow = 1, ncol = 1),
