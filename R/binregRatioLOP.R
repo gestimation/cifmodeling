@@ -212,7 +212,7 @@ binregRatioLOP <- function(formula,
 
   if (do_censor_fit) {
     kmt <- kaplan.meier
-    formC <- update.formula(cens.model, Surv(exit, statusC) ~ . + cluster(id__))
+    formC <- update.formula(cens.model, Surv(exit, statusC) ~ .)
     resC <- phreg(formC, data)
     if (resC$p > 0) kmt <- FALSE
     exittime <- pmin(exit, time)
