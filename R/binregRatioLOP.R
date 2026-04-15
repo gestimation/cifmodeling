@@ -629,8 +629,8 @@ calculatePercentageLOP <- function(beta, X_L, offset, tol = 1e-8, eps = 1e-10) {
     p_1[idx] <- exptheta[idx] * p_0[idx]
   }
 
-  p_0 <- pmin(pmax(p_0, eps), 1 - eps)
-  p_1 <- pmin(pmax(p_1, eps), 1 - eps)
+  percentage_RMTL_0 <- pmin(pmax(p_0, eps), 1 - eps)
+  percentage_RMTL_1 <- pmin(pmax(p_1, eps), 1 - eps)
 
-  cbind(p_0, p_1)
+  cbind(percentage_RMTL_0, percentage_RMTL_1)
 }
