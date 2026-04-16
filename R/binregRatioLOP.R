@@ -81,7 +81,7 @@
 #'   convergence.}
 #' }
 #'
-#' @seealso [Event()], [calculatePercentageLOP()], [polyreg()], [cifcurve()]
+#' @seealso [Event()], [calculate_percentage_log_odds()], [polyreg()], [cifcurve()]
 #'
 #' @examples
 #' ## event: 0 = censoring, 1 = primary cause, 2 = competing cause
@@ -99,7 +99,7 @@
 #' fit$se.robust
 #'
 #' ## Estimated percentages under A = 0 and A = 1 when there are no adjustment covariates
-#' calculatePercentageLOP(
+#' calculate_percentage_log_odds(
 #'   fit$coef,
 #'   X_L = matrix(1, nrow = 1, ncol = 1),
 #'   offset = 0
@@ -256,7 +256,7 @@ binregRatioLOP <- function(formula,
     }
 
     X_L <- Xmat[, -ncol(Xmat), drop = FALSE]
-    p0_p1 <- calculatePercentageLOP(pp, X_L, offset_vec)
+    p0_p1 <- calculate_percentage_log_odds(pp, X_L, offset_vec)
     p <- p0_p1[, 1] * (1 - X_A) + p0_p1[, 2] * X_A
 
     list(
@@ -562,7 +562,7 @@ binregRatioLOP <- function(formula,
 #' ## event: 0 = censoring, 1 = primary cause, 2 = competing cause
 #' data(diabetes.complications)
 #'
-#' fit <- binregRatioLOP(
+#' fit <- calculate_percentage_log_odds(
 #'   Event(t, epsilon) ~ fruitq1,
 #'   data = diabetes.complications,
 #'   time = 8,
@@ -574,15 +574,15 @@ binregRatioLOP <- function(formula,
 #' fit$se.robust
 #'
 #' ## Estimated percentages of restricted mean time lost under A = 0 and A = 1 when there are no adjustment covariates
-#' calculatePercentageLOP(
+#' calculate_percentage_log_odds(
 #'   fit$coef,
 #'   X_L = matrix(1, nrow = 1, ncol = 1),
 #'   offset = 0
 #' )
 #'
-#' @name calculatePercentageLOP
+#' @name calculate_percentage_log_odds
 #' @export
-calculatePercentageLOP <- function(beta, X_L, offset, tol = 1e-8, eps = 1e-10) {
+calculate_percentage_log_odds <- function(beta, X_L, offset, tol = 1e-8, eps = 1e-10) {
   n <- length(offset)
 
   if (is.null(dim(X_L))) {
@@ -671,17 +671,17 @@ calculatePercentageLOP <- function(beta, X_L, offset, tol = 1e-8, eps = 1e-10) {
 #'                      0.01, 0.09), nrow = 2, byrow = TRUE)
 #' x <- c(1, 1)
 #'
-#' calculatePercentageLogistic(
+#' calculate_percentage_logistic(
 #'   coef = coef,
 #'   var_coef = var_coef,
 #'   x = x,
 #'   conf.int = 0.95
 #' )
 #'
-#' @name calculatePercentageLogistic
+#' @name calculate_percentage_logistic
 #' @export
 #' @importFrom stats qnorm
-calculatePercentageLogistic <- function(coef, var_coef, x, conf.int){
+calculate_percentage_logistic <- function(coef, var_coef, x, conf.int){
   alpha <- 1 - conf.int
   critical_value <- qnorm(1 - alpha / 2)
   eta_hat <- sum(x * coef)
