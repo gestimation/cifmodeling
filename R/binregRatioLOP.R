@@ -634,3 +634,62 @@ calculatePercentageLOP <- function(beta, X_L, offset, tol = 1e-8, eps = 1e-10) {
 
   cbind(percentage_RMTL_0, percentage_RMTL_1)
 }
+
+#' Calculate fitted percentages and Wald confidence intervals from a logistic
+#' RMTL regression model
+#'
+#' Computes the fitted percentage on the probability scale from a linear predictor
+#' and returns a Wald confidence interval obtained by transforming the confidence
+#' limits for the linear predictor with the inverse logit function.
+#'
+#' @param coef Numeric vector of regression coefficients.
+#' @param var_coef Variance-covariance matrix corresponding to `coef`.
+#' @param x Numeric vector of covariate values at which the fitted percentage is
+#'   to be evaluated. Its length must match `length(coef)`.
+#' @param conf.int Numeric confidence level for the Wald interval, for example
+#'   `0.95`.
+#'
+#' @details
+#' The function first computes the linear predictor
+#' \deqn{\eta = x^\top \beta,}
+#' then transforms it to the probability scale using the inverse logit
+#' \deqn{\mathrm{expit}(\eta) = 1 / \{1 + \exp(-\eta)\}.}
+#' A Wald confidence interval is constructed on the linear predictor scale using
+#' `var_coef` and then mapped to the probability scale.
+#'
+#' @return
+#' A list with components:
+#' \describe{
+#'   \item{percentage_RMTL}{The fitted percentage on the probability scale.}
+#'   \item{lower}{Lower confidence limit on the probability scale.}
+#'   \item{upper}{Upper confidence limit on the probability scale.}
+#' }
+#'
+#' @examples
+#' coef <- c(-0.5, 0.8)
+#' var_coef <- matrix(c(0.04, 0.01,
+#'                      0.01, 0.09), nrow = 2, byrow = TRUE)
+#' x <- c(1, 1)
+#'
+#' calculatePercentageLogistic(
+#'   coef = coef,
+#'   var_coef = var_coef,
+#'   x = x,
+#'   conf.int = 0.95
+#' )
+#'
+#' @name calculatePercentageLogistic
+#' @export
+#' @importFrom stats qnorm
+calculatePercentageLogistic <- function(coef, var_coef, x, conf.int){
+  alpha <- 1 - conf.int
+  critical_value <- qnorm(1 - alpha / 2)
+  eta_hat <- sum(x * coef)
+  var_eta <- t(as.matrix(x)) %*% var_coef %*% as.matrix(x)
+  lower_eta <- eta_hat - critical_value * sqrt(var_eta)
+  upper_eta <- eta_hat + critical_value * sqrt(var_eta)
+  percentage_RMTL <- 1 / (1 + exp(-eta_hat))
+  lower <- 1 / (1 + exp(-lower_eta))
+  upper <- 1 / (1 + exp(-upper_eta))
+  return(list(percentage_RMTL = percentage_RMTL, lower = lower, upper = upper))
+}
