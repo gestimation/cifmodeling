@@ -143,7 +143,7 @@ fit$coef
 fit$se.robust
 
 ## Estimated percentages under A = 0 and A = 1 when there are no adjustment covariates
-calculatePercentageLOP(
+calculate_percentage_log_odds(
   fit$coef,
   X_L = matrix(1, nrow = 1, ncol = 1),
   offset = 0
@@ -151,5 +151,5 @@ calculatePercentageLOP(
 
 }
 \seealso{
-\code{\link[=Event]{Event()}}, \code{\link[=calculatePercentageLOP]{calculatePercentageLOP()}}, \code{\link[=polyreg]{polyreg()}}, \code{\link[=cifcurve]{cifcurve()}}
+\code{\link[=Event]{Event()}}, \code{\link[=calculate_percentage_log_odds]{calculate_percentage_log_odds()}}, \code{\link[=polyreg]{polyreg()}}, \code{\link[=cifcurve]{cifcurve()}}
 }
