@@ -98,10 +98,10 @@
 #'   Levenberg-Marquardt routine (default `40`).
 #' @param optim.parameter11 Numeric lower bound for lambda in the
 #'   Levenberg-Marquardt routine (default `0.025`).
-#' @param optim.parameter12 Numeric multiplicative increment applied to lambda
-#'   when the Levenberg-Marquardt step is successful (default `2`).
-#' @param optim.parameter13 Numeric multiplicative decrement applied to lambda
-#'   when the Levenberg-Marquardt step is unsuccessful (default `0.5`).
+#' @param optim.parameter12 Numeric multiplicative decrement applied to lambda
+#'   when the Levenberg-Marquardt step is unsuccessful (default `2`).
+#' @param optim.parameter13 Numeric multiplicative increment applied to lambda
+#'   when the Levenberg-Marquardt step is successful (default `0.5`).
 #' @param data.initial.values Optional data frame providing starting values for
 #'   the optimization (default `NULL`).
 #' @param normalize.covariate Logical indicating whether covariates should
