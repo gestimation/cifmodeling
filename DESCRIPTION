@@ -31,7 +31,8 @@ Suggests:
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),
-    pkgdown
+    pkgdown,
+    DiagrammeR
 Config/testthat/edition: 3
 LinkingTo: 
     Rcpp
