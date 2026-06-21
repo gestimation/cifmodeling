@@ -93,15 +93,15 @@
 #' @param optim.parameter8 Numeric tolerance for updating the Hessian in the
 #'   Levenberg-Marquardt routine (default `1e-6`).
 #' @param optim.parameter9 Numeric starting value for the Levenberg-Marquardt
-#'   damping parameter lambda (default `1e-6`).
+#'   damping parameter lambda (default `1e-3`).
 #' @param optim.parameter10 Numeric upper bound for lambda in the
 #'   Levenberg-Marquardt routine (default `40`).
 #' @param optim.parameter11 Numeric lower bound for lambda in the
-#'   Levenberg-Marquardt routine (default `0.025`).
-#' @param optim.parameter12 Numeric multiplicative increment applied to lambda
-#'   when the Levenberg-Marquardt step is successful (default `2`).
-#' @param optim.parameter13 Numeric multiplicative decrement applied to lambda
-#'   when the Levenberg-Marquardt step is unsuccessful (default `0.5`).
+#'   Levenberg-Marquardt routine (default `1e-6`).
+#' @param optim.parameter12 Numeric multiplicative decrement applied to lambda
+#'   when the Levenberg-Marquardt step is unsuccessful (default `2`).
+#' @param optim.parameter13 Numeric multiplicative increment applied to lambda
+#'   when the Levenberg-Marquardt step is successful (default `0.5`).
 #' @param data.initial.values Optional data frame providing starting values for
 #'   the optimization (default `NULL`).
 #' @param normalize.covariate Logical indicating whether covariates should
@@ -110,7 +110,7 @@
 #'   that contribute estimation are terminated by min of max follow-up times
 #'   of each exposure level (default `TRUE`).
 #' @param prob.bound Numeric lower bound used to internally truncate probabilities away
-#'   from 0 and 1 (default `1e-5`).
+#'   from 0 and 1 (default `1e-7`).
 #'
 #' @details
 #'
@@ -329,9 +329,9 @@ polyreg <- function(
     optim.parameter6 = 50,
     optim.parameter7 = 1e-10,
     optim.parameter8 = 1e-6,
-    optim.parameter9 = 1e-6,
+    optim.parameter9 = 1e-3,
     optim.parameter10 = 40,
-    optim.parameter11 = 0.025,
+    optim.parameter11 = 1e-6,
     optim.parameter12 = 2,
     optim.parameter13 = 0.5,
     data.initial.values = NULL,
