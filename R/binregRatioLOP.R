@@ -565,7 +565,7 @@ calculatePercentageLOP <- function(beta, X_L, offset, tol = 1e-8, eps = 1e-10) {
 
 #' @keywords internal
 #' @noRd
-.constructid <- function(id, nid, namesX = NULL, as.data = FALSE)
+.construct_id <- function(id, nid, namesX = NULL, as.data = FALSE)
 {
   call.id <- id
   if (!is.null(id)) {
