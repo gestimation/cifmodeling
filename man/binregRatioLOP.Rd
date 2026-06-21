@@ -153,3 +153,4 @@ calculatePercentageLOP(
 \seealso{
 \code{\link[=Event]{Event()}}, \code{\link[=calculatePercentageLOP]{calculatePercentageLOP()}}, \code{\link[=polyreg]{polyreg()}}, \code{\link[=cifcurve]{cifcurve()}}
 }
+\keyword{internal}

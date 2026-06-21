@@ -22,3 +22,4 @@ calculate_A12_logrank_weightit(
 \description{
 Returns A12 on the "mean score" scale: (1/n) * dU_total/dB^T
 }
+\keyword{internal}
