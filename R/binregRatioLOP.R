@@ -128,7 +128,7 @@ binregRatioLOP <- function(formula,
   X <- as.matrix(X)
 
   call.id <- id
-  conid <- mets::construct_id(id, nrow(X), as.data = TRUE)
+  conid <- .construct_id(id, nrow(X), as.data = TRUE)
   name.id <- conid$name.id
   id <- conid$id
   nid <- conid$nid
@@ -561,4 +561,35 @@ calculatePercentageLOP <- function(beta, X_L, offset, tol = 1e-8, eps = 1e-10) {
   percentage_RMTL_1 <- pmin(pmax(p_1, eps), 1 - eps)
 
   cbind(percentage_RMTL_0, percentage_RMTL_1)
+}
+
+#' @keywords internal
+#' @noRd
+.constructid <- function(id, nid, namesX = NULL, as.data = FALSE)
+{
+  call.id <- id
+  if (!is.null(id)) {
+    ids <- unique(id)
+    nid <- length(ids)
+    if (is.numeric(id))
+      id <- fast.approx(ids, id) - 1
+    else {
+      id <- as.integer(factor(id, labels = seq(nid))) -
+        1
+    }
+    order.ids <- order(ids)
+    id.name <- ids[order.ids]
+  }
+  else {
+    id <- 1:nid - 1
+    ids <- id + 1
+    order.ids <- ids
+    id.name <- ids
+  }
+  if (as.data) {
+    id <- (0:(nid - 1))[order(ids)][id + 1]
+    id.name <- ids
+  }
+  return(list(call.id = call.id, id = id, nid = nid, unique.id = ids,
+              name.id = id.name))
 }
