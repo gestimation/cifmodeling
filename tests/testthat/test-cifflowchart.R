@@ -14,9 +14,9 @@ test_that("Event(time, status) formulas classify final and tau status", {
   expect_true("Event 1" %in% names(x$outcome_counts[[1]]))
   y <- cifmodeling:::.flowchart_prepare_data(Event(time, status) ~ arm, dat, time.point = 30)
   all_out <- unlist(lapply(y$outcome_counts, names), use.names = FALSE)
-  expect_true("Event 1 by tau" %in% all_out)
-  expect_true("Event 2 by tau" %in% all_out)
-  expect_true("Event-free at tau" %in% all_out)
+  expect_true("Event 1 by 30" %in% all_out)
+  expect_true("Event 2 by 30" %in% all_out)
+  expect_true("Event-free at 30" %in% all_out)
 })
 
 test_that("unsupported formula shapes error", {
@@ -49,4 +49,76 @@ test_that("missing group warns and labels/orders are reflected", {
   expect_equal(x$group_labels[1:2], c("Arm B", "Arm A"))
   expect_true(any(unlist(lapply(x$outcome_counts, names)) %in% c("Complete", "Progression")))
   expect_true("Missing group" %in% x$groups)
+})
+
+test_that("events exactly at time.point are not overwritten as event-free", {
+  dat <- data.frame(
+    time = c(30, 30, 30, 40),
+    status = c(1, 2, 0, 0),
+    arm = c("A", "A", "A", "A")
+  )
+
+  x <- cifmodeling:::.flowchart_prepare_data(
+    Event(time, status) ~ arm,
+    dat,
+    time.point = 30
+  )
+
+  out <- names(x$outcome_counts[[1]])
+
+  expect_true("Event 1 by 30" %in% out)
+  expect_true("Event 2 by 30" %in% out)
+  expect_true("Event-free at 30" %in% out)
+})
+
+test_that("factor outcome levels are preserved", {
+  dat <- data.frame(
+    response = factor(c("PD", "CR", "PD"), levels = c("CR", "PD")),
+    arm = "A"
+  )
+
+  x <- cifmodeling:::.flowchart_prepare_data(response ~ arm, dat)
+
+  expect_equal(names(x$outcome_counts[[1]]), c("CR", "PD"))
+})
+
+test_that("named label.events maps factor outcome levels", {
+  dat <- data.frame(
+    response = factor(c("PD", "CR", "PD"), levels = c("CR", "PD")),
+    arm = "A"
+  )
+
+  x <- cifmodeling:::.flowchart_prepare_data(
+    response ~ arm,
+    dat,
+    label.events = c(CR = "Complete", PD = "Progression")
+  )
+
+  expect_equal(names(x$outcome_counts[[1]]), c("Complete", "Progression"))
+})
+
+test_that("overall formula does not create a group node in dot output", {
+  dat <- data.frame(response = c("CR", "PD", "CR"))
+
+  x <- cifmodeling:::.flowchart_prepare_data(response ~ 1, dat)
+  dot <- cifmodeling:::.flowchart_make_dot(x)
+
+  expect_false(grepl("group1 \\[label", dot))
+})
+
+test_that("censoring before time.point is classified separately", {
+  dat <- data.frame(
+    time = c(10, 30, 40),
+    status = c(0, 0, 0),
+    arm = c("A", "A", "A")
+  )
+
+  x <- cifmodeling:::.flowchart_prepare_data(
+    Event(time, status) ~ arm,
+    dat,
+    time.point = 30
+  )
+
+  expect_equal(unname(x$outcome_counts[[1]]["Censored before 30"]), 1)
+  expect_equal(unname(x$outcome_counts[[1]]["Event-free at 30"]), 2)
 })

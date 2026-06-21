@@ -106,7 +106,7 @@
 #' )
 #'
 #' @name binregRatioLOP
-#' @export
+#' @keywords internal
 #' @importFrom stats model.frame model.extract model.matrix terms update.formula predict
 #' @importFrom survival Surv
 #' @importFrom nleqslv nleqslv
@@ -581,7 +581,7 @@ binregRatioLOP <- function(formula,
 #' )
 #'
 #' @name calculatePercentageLOP
-#' @export
+#' @keywords internal
 calculatePercentageLOP <- function(beta, X_L, offset, tol = 1e-8, eps = 1e-10) {
   n <- length(offset)
 

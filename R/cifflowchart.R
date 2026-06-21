@@ -15,6 +15,8 @@
 #' @param subset.condition Optional expression evaluated in `data` before
 #'   counting.
 #' @param na.action Included for consistency with other formula interfaces.
+#' The default is `na.pass` because missing outcomes and missing groups are
+#' displayed in the flowchart.
 #' @param outcome.type Reserved for future use.
 #' @param code.event1,code.event2,code.censoring Status codes for event-history
 #'   formulas.
@@ -28,6 +30,22 @@
 #' @param ... Reserved for future use.
 #'
 #' @return A `DiagrammeR::grViz()` htmlwidget.
+#' @examples
+#' if (requireNamespace("DiagrammeR", quietly = TRUE)) {
+#'   data(diabetes.complications)
+#'
+#'   cifflowchart(
+#'     Event(t, epsilon) ~ fruitq1,
+#'     data = diabetes.complications,
+#'     time.point = 8,
+#'     outcome.type = "competing-risk"
+#'   )
+#' }
+#'
+#' @name cifflowchart
+#' @section Lifecycle:
+#' \lifecycle{experimental}
+#'
 #' @export
 cifflowchart <- function(formula,
                          data,
@@ -35,7 +53,7 @@ cifflowchart <- function(formula,
                          pre.exclude = NULL,
                          post.exclude = NULL,
                          subset.condition = NULL,
-                         na.action = na.omit,
+                         na.action = na.pass,
                          outcome.type = NULL,
                          code.event1 = 1,
                          code.event2 = 2,
@@ -63,20 +81,33 @@ cifflowchart <- function(formula,
 
 .flowchart_prepare_data <- function(formula, data, time.point = NULL,
                                     pre.exclude = NULL, post.exclude = NULL,
-                                    subset.condition = NULL, na.action = na.omit,
+                                    subset.condition = NULL, na.action = na.pass,
                                     outcome.type = NULL, code.event1 = 1,
                                     code.event2 = 2, code.censoring = 0,
                                     label.strata = NULL, order.strata = NULL,
                                     label.events = NULL, percent = TRUE,
                                     digits = 1, ...) {
-  if (!inherits(formula, "formula")) stop("'formula' must be a formula.", call. = FALSE)
-  data <- as.data.frame(data)
-  if (!is.null(subset.condition) && !identical(subset.condition, quote(NULL))) {
-    keep <- eval(subset.condition, data, parent.frame())
-    if (!is.logical(keep) || length(keep) != nrow(data)) stop("'subset.condition' must evaluate to a logical vector with one value per row.", call. = FALSE)
-    data <- data[keep & !is.na(keep), , drop = FALSE]
+  if (!inherits(formula, "formula")) {
+    stop("'formula' must be a formula.", call. = FALSE)
   }
-
+  pre_vars <- if (!is.null(pre.exclude) && !identical(pre.exclude, quote(NULL))) {
+    all.vars(pre.exclude)
+  } else {
+    character(0)
+  }
+  post_vars <- if (!is.null(post.exclude) && !identical(post.exclude, quote(NULL))) {
+    all.vars(post.exclude)
+  } else {
+    character(0)
+  }
+  data <- createAnalysisDataset(
+    formula = formula,
+    data = data,
+    other.variables.analyzed = unique(c(pre_vars, post_vars)),
+    subset.condition = subset.condition,
+    na.action = na.pass,
+    fill_missing = FALSE
+  )
   lhs <- formula[[2]]
   rhs <- formula[[3]]
   rhs_vars <- all.vars(rhs)
@@ -103,6 +134,8 @@ cifflowchart <- function(formula,
     out <- data[[all.vars(lhs)[1]]]
     vals <- .flowchart_levels(out, NULL)
     vals[is.na(vals)] <- "Missing outcome"
+    lev <- attr(vals, "levels", exact = TRUE)
+    attr(vals, "levels") <- unique(c(lev, "Missing outcome"))
     .flowchart_relabel(vals, label.events)
   } else {
     time <- data[[as.character(lhs[[2]])]]; status <- data[[as.character(lhs[[3]])]]
@@ -117,21 +150,44 @@ cifflowchart <- function(formula,
                                    outcome, has_group, percent, digits) {
   total_n <- length(included)
   pre_counts <- .flowchart_tab(pre$reason[pre$excluded])
+
   groups <- if (has_group) {
     lev <- attr(group_key, "levels", exact = TRUE)
     c(lev[lev %in% group_key[included]], setdiff(unique(group_key[included]), lev))
   } else "All"
+
   group_labels <- vapply(groups, function(g) group_label[match(g, group_key)], character(1))
   group_n <- vapply(groups, function(g) sum(included & group_key == g), integer(1))
-  post_counts <- lapply(groups, function(g) .flowchart_tab(post_all$reason[included & group_key == g & post_all$excluded]))
+
+  post_counts <- lapply(groups, function(g) {
+    .flowchart_tab(post_all$reason[included & group_key == g & post_all$excluded])
+  })
+
   analysis <- included & !post_all$excluded
-  outcome_counts <- lapply(groups, function(g) .flowchart_tab(outcome[analysis & group_key == g]))
+
+  outcome_levels <- attr(outcome, "levels", exact = TRUE)
+
+  outcome_counts <- lapply(groups, function(g) {
+    z <- outcome[analysis & group_key == g]
+    attr(z, "levels") <- outcome_levels
+    .flowchart_tab(z)
+  })
+
   analysis_n <- vapply(groups, function(g) sum(analysis & group_key == g), integer(1))
-  list(total_n = total_n, pre_counts = pre_counts, groups = groups,
-       group_labels = unname(group_labels), group_n = group_n,
-       post_counts = post_counts, outcome_counts = outcome_counts,
-       analysis_n = analysis_n, has_group = has_group, percent = percent,
-       digits = digits)
+
+  list(
+    total_n = total_n,
+    pre_counts = pre_counts,
+    groups = groups,
+    group_labels = unname(group_labels),
+    group_n = group_n,
+    post_counts = post_counts,
+    outcome_counts = outcome_counts,
+    analysis_n = unname(analysis_n),
+    has_group = has_group,
+    percent = percent,
+    digits = digits
+  )
 }
 
 .flowchart_make_dot <- function(x, title = NULL) {
@@ -144,12 +200,45 @@ cifflowchart <- function(formula,
   lines <- c(lines, paste0("all [label = \"", label("All patients", x$total_n, x$total_n), "\"];"))
   parent <- "all"
   if (length(x$pre_counts)) {
-    lines <- c(lines, paste0("pre [label = \"", label("Excluded before treatment", sum(x$pre_counts), x$total_n), "\n", esc(.flowchart_reason_lines(x$pre_counts)), "\"];"), "all -> pre;", paste0("included [label = \"", label("Included before treatment", sum(x$group_n), x$total_n), "\"];"), "all -> included;")
+    lines <- c(lines, paste0("pre [label = \"", label("Excluded before treatment", sum(x$pre_counts), x$total_n), "\\n", esc(.flowchart_reason_lines(x$pre_counts)), "\"];"), "all -> pre;", paste0("included [label = \"", label("Included before treatment", sum(x$group_n), x$total_n), "\"];"), "all -> included;")
     parent <- "included"
+  }
+  if (!x$has_group) {
+    if (length(x$post_counts[[1]])) {
+      lines <- c(
+        lines,
+        paste0(
+          "post1 [label = \"",
+          label("Excluded after treatment", sum(x$post_counts[[1]]), x$group_n[1]),
+          "\\n",
+          esc(.flowchart_reason_lines(x$post_counts[[1]])),
+          "\"];"
+        ),
+        paste0(parent, " -> post1;")
+      )
+    }
+
+    for (j in seq_along(x$outcome_counts[[1]])) {
+      lines <- c(
+        lines,
+        paste0(
+          "out1_", j, " [label = \"",
+          label(
+            names(x$outcome_counts[[1]])[j],
+            unname(x$outcome_counts[[1]])[j],
+            x$analysis_n[1]
+          ),
+          "\"];"
+        ),
+        paste0(parent, " -> out1_", j, ";")
+      )
+    }
+
+    return(paste(c(lines, "}"), collapse = "\n"))
   }
   for (i in seq_along(x$groups)) {
     gp <- paste0("group", i); lines <- c(lines, paste0(gp, " [label = \"", label(x$group_labels[i], x$group_n[i], sum(x$group_n)), "\"];"), paste0(parent, " -> ", gp, ";"))
-    if (length(x$post_counts[[i]])) lines <- c(lines, paste0("post", i, " [label = \"", label("Excluded after treatment", sum(x$post_counts[[i]]), x$group_n[i]), "\n", esc(.flowchart_reason_lines(x$post_counts[[i]])), "\"];"), paste0(gp, " -> post", i, ";"))
+    if (length(x$post_counts[[i]])) lines <- c(lines, paste0("post", i, " [label = \"", label("Excluded after treatment", sum(x$post_counts[[i]]), x$group_n[i]), "\\n", esc(.flowchart_reason_lines(x$post_counts[[i]])), "\"];"), paste0(gp, " -> post", i, ";"))
     for (j in seq_along(x$outcome_counts[[i]])) lines <- c(lines, paste0("out", i, "_", j, " [label = \"", label(names(x$outcome_counts[[i]])[j], unname(x$outcome_counts[[i]])[j], x$analysis_n[i]), "\"];"), paste0(gp, " -> out", i, "_", j, ";"))
   }
   paste(c(lines, "}"), collapse = "\n")
@@ -172,18 +261,45 @@ cifflowchart <- function(formula,
 
 .flowchart_event_status <- function(time, status, tau, e1, e2, cens, labels) {
   out <- rep(NA_character_, length(status))
+
   if (is.null(tau)) {
-    out[status == e1] <- "Event 1"; out[status == e2] <- "Event 2"; out[status == cens] <- "Censored"
+    lev <- c("Event 1", "Event 2", "Censored", "Missing outcome")
+    out[status == e1] <- "Event 1"
+    out[status == e2] <- "Event 2"
+    out[status == cens] <- "Censored"
   } else {
-    out[time <= tau & status == e1] <- "Event 1 by tau"; out[time <= tau & status == e2] <- "Event 2 by tau"; out[time < tau & status == cens] <- "Censored before tau"; out[time >= tau] <- "Event-free at tau"
+    lev <- c(
+      paste0("Event 1 by ", tau),
+      paste0("Event 2 by ", tau),
+      paste0("Censored before ", tau),
+      paste0("Event-free at ", tau),
+      "Missing outcome"
+    )
+    out[time <= tau & status == e1] <- paste0("Event 1 by ", tau)
+    out[time <= tau & status == e2] <- paste0("Event 2 by ", tau)
+    out[time <  tau & status == cens] <- paste0("Censored before ", tau)
+    out[is.na(out) & time >= tau] <- paste0("Event-free at ", tau)
   }
+
   out[is.na(out)] <- "Missing outcome"
+  attr(out, "levels") <- lev
   .flowchart_relabel(out, labels)
 }
 
 .flowchart_levels <- function(x, order = NULL) {
   y <- as.character(x)
-  lev <- if (!is.null(order)) as.character(order) else if (is.factor(x)) levels(x) else unique(y[!is.na(y)])
+
+  if (!is.null(order)) {
+    lev <- c(
+      as.character(order),
+      setdiff(unique(y[!is.na(y)]), as.character(order))
+    )
+  } else if (is.factor(x)) {
+    lev <- levels(x)
+  } else {
+    lev <- unique(y[!is.na(y)])
+  }
+
   out <- as.character(factor(y, levels = lev))
   attr(out, "levels") <- lev
   out
@@ -191,18 +307,40 @@ cifflowchart <- function(formula,
 
 .flowchart_relabel <- function(x, labels = NULL) {
   if (is.null(labels)) return(x)
+
   lab <- as.character(labels)
+  lev <- attr(x, "levels", exact = TRUE)
+
   if (!is.null(names(labels))) {
-    lev <- attr(x, "levels", exact = TRUE)
-    hit <- match(x, names(labels)); x[!is.na(hit)] <- lab[hit[!is.na(hit)]]
-    if (!is.null(lev)) { lev_hit <- match(lev, names(labels)); lev[!is.na(lev_hit)] <- lab[lev_hit[!is.na(lev_hit)]]; attr(x, "levels") <- lev }
-    x
-  } else {
-    ux <- unique(x[!is.na(x)]); hit <- match(x, ux); x[!is.na(hit)] <- lab[hit[!is.na(hit)]]
-    lev <- attr(x, "levels", exact = TRUE); if (!is.null(lev)) { lev_hit <- match(lev, ux); lev[!is.na(lev_hit)] <- lab[lev_hit[!is.na(lev_hit)]]; attr(x, "levels") <- lev }
-    x
+    hit <- match(x, names(labels))
+    x[!is.na(hit)] <- lab[hit[!is.na(hit)]]
+
+    if (!is.null(lev)) {
+      lev_hit <- match(lev, names(labels))
+      lev[!is.na(lev_hit)] <- lab[lev_hit[!is.na(lev_hit)]]
+      attr(x, "levels") <- lev
+    }
+
+    return(x)
   }
+
+  key <- lev
+  if (is.null(key)) key <- unique(x[!is.na(x)])
+
+  if (length(lab) != length(key)) {
+    stop("'labels' must have the same length as the levels, or be a named vector.", call. = FALSE)
+  }
+
+  hit <- match(x, key)
+  x[!is.na(hit)] <- lab[hit[!is.na(hit)]]
+
+  if (!is.null(lev)) {
+    attr(x, "levels") <- lab
+  }
+
+  x
 }
+
 .flowchart_tab <- function(x) {
   lev <- attr(x, "levels", exact = TRUE)
   x <- x[!is.na(x)]
@@ -210,4 +348,5 @@ cifflowchart <- function(formula,
   if (is.null(lev)) lev <- unique(x)
   table(factor(x, levels = lev[lev %in% x]))
 }
+
 .flowchart_reason_lines <- function(tab) paste(paste0(names(tab), ": ", as.integer(tab)), collapse = "\\n")

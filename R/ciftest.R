@@ -1,3 +1,4 @@
+#' @keywords internal
 calculate_log_rank <- function(
     t,
     epsilon,
@@ -154,6 +155,7 @@ calculate_log_rank <- function(
 }
 
 #' Extract Mparts from a weightit object (robustly)
+#' @keywords internal
 get_weightit_mparts <- function(weightit) {
   if (!is.null(weightit$Mparts)) return(weightit$Mparts)
   mp <- attr(weightit, "Mparts", exact = TRUE)
@@ -166,6 +168,7 @@ get_weightit_mparts <- function(weightit) {
 }
 
 #' Choose a safe finite-difference step so w +/- h*delta stays >= 0
+#' @keywords internal
 fd_step_safe <- function(w, delta, rel = 1e-6, max_tries = 20L) {
   stopifnot(length(w) == length(delta))
   # target: max|h*delta| ≈ rel * max(1, median(w))
@@ -194,6 +197,7 @@ fd_step_safe <- function(w, delta, rel = 1e-6, max_tries = 20L) {
 #' A12 for log-rank-type score using directional finite differences with dw/dB from WeightIt
 #'
 #' Returns A12 on the "mean score" scale: (1/n) * dU_total/dB^T
+#' @keywords internal
 calculate_A12_logrank_weightit <- function(
     t,
     epsilon,

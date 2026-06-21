@@ -11,7 +11,7 @@ cifflowchart(
   pre.exclude = NULL,
   post.exclude = NULL,
   subset.condition = NULL,
-  na.action = na.omit,
+  na.action = na.pass,
   outcome.type = NULL,
   code.event1 = 1,
   code.event2 = 2,
@@ -40,7 +40,9 @@ non-empty values as exclusion reasons.}
 \item{subset.condition}{Optional expression evaluated in \code{data} before
 counting.}
 
-\item{na.action}{Included for consistency with other formula interfaces.}
+\item{na.action}{Included for consistency with other formula interfaces.
+The default is \code{na.pass} because missing outcomes and missing groups are
+displayed in the flowchart.}
 
 \item{outcome.type}{Reserved for future use.}
 
@@ -70,4 +72,22 @@ A \code{DiagrammeR::grViz()} htmlwidget.
 groups, and outcome status with \code{DiagrammeR}. It can be used as a simple
 CONSORT-like flowchart helper, but it is not intended to fully automate a
 CONSORT-compliant diagram.
+}
+\section{Lifecycle}{
+
+\lifecycle{experimental}
+}
+
+\examples{
+if (requireNamespace("DiagrammeR", quietly = TRUE)) {
+  data(diabetes.complications)
+
+  cifflowchart(
+    Event(t, epsilon) ~ fruitq1,
+    data = diabetes.complications,
+    time.point = 8,
+    outcome.type = "competing-risk"
+  )
+}
+
 }

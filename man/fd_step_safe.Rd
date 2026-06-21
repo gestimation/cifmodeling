@@ -9,3 +9,4 @@ fd_step_safe(w, delta, rel = 1e-06, max_tries = 20L)
 \description{
 Choose a safe finite-difference step so w +/- h*delta stays >= 0
 }
+\keyword{internal}
