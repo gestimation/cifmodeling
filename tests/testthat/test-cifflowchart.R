@@ -28,7 +28,14 @@ test_that("unsupported formula shapes error", {
 
 test_that("logical exclusions are counted and pre exclusion takes precedence", {
   dat <- data.frame(response = c("A", "B", "C", "D"), arm = c("x", "x", "y", "y"), pre = c(TRUE, FALSE, TRUE, FALSE), post = c(TRUE, TRUE, FALSE, TRUE))
-  expect_warning(x <- cifmodeling:::.flowchart_prepare_data(response ~ arm, dat, pre.exclude = quote(pre), post.exclude = quote(post)), "pre.exclude")
+  expect_silent(
+    x <- cifmodeling:::.flowchart_prepare_data(
+      response ~ arm,
+      dat,
+      pre.exclude = quote(pre),
+      post.exclude = quote(post)
+    )
+  )
   expect_equal(sum(x$pre_counts), 2)
   expect_equal(sum(vapply(x$post_counts, sum, integer(1))), 2)
   expect_error(cifmodeling:::.flowchart_prepare_data(response ~ arm, transform(dat, pre = c(TRUE, NA, FALSE, FALSE)), pre.exclude = quote(pre)), "must not contain NA")
@@ -133,7 +140,7 @@ test_that("withdraw.consent and ineligible are counted before pre.exclude", {
     post = c(TRUE, TRUE, TRUE, TRUE, FALSE)
   )
 
-  expect_warning(
+  expect_silent(
     x <- cifmodeling:::.flowchart_prepare_data(
       response ~ arm,
       dat,
@@ -141,8 +148,7 @@ test_that("withdraw.consent and ineligible are counted before pre.exclude", {
       ineligible = quote(inelig),
       pre.exclude = quote(pre),
       post.exclude = quote(post)
-    ),
-    "takes precedence"
+    )
   )
 
   expect_equal(sum(x$withdraw_counts), 1)

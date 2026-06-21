@@ -224,26 +224,26 @@ cifflowchart <- function(formula,
   pre_effective <- !withdraw$excluded & !inelig$excluded & pre$excluded
   included <- !withdraw$excluded & !inelig$excluded & !pre$excluded
 
-  if (any(withdraw$excluded & (inelig$excluded | pre$excluded | post_all$excluded))) {
-    warning(
-      "Some rows are withdraw.consent and later exclusions; withdraw.consent takes precedence.",
-      call. = FALSE
-    )
-  }
+#  if (any(withdraw$excluded & (inelig$excluded | pre$excluded | post_all$excluded))) {
+#    warning(
+#      "Some rows are withdraw.consent and later exclusions; withdraw.consent takes precedence.",
+#      call. = FALSE
+#    )
+#  }
 
-  if (any(!withdraw$excluded & inelig$excluded & (pre$excluded | post_all$excluded))) {
-    warning(
-      "Some rows are ineligible and later exclusions; ineligible takes precedence.",
-      call. = FALSE
-    )
-  }
+#  if (any(!withdraw$excluded & inelig$excluded & (pre$excluded | post_all$excluded))) {
+#    warning(
+#      "Some rows are ineligible and later exclusions; ineligible takes precedence.",
+#      call. = FALSE
+#    )
+#  }
 
-  if (any(!withdraw$excluded & !inelig$excluded & pre$excluded & post_all$excluded)) {
-    warning(
-      "Some rows are both pre.exclude and post.exclude; pre.exclude takes precedence.",
-      call. = FALSE
-    )
-  }
+#  if (any(!withdraw$excluded & !inelig$excluded & pre$excluded & post_all$excluded)) {
+#    warning(
+#      "Some rows are both pre.exclude and post.exclude; pre.exclude takes precedence.",
+#      call. = FALSE
+#    )
+#  }
 
   group_raw <- if (has_group) {
     data[[rhs_vars]]

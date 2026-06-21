@@ -90,12 +90,7 @@ stratification variable on the right-hand side. Unlike
 <code>formula</code>.</li>
 <li>
 <code>weights</code> Optional name of the weight variable in
-<code>data</code>. Weights must be nonnegative.
-&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD:vignettes/arguments.Rmd</li>
-<li><h2 id="subset.condition-optional-character-string-giving-a-logical-condition-to-subset-data-default-null.">
-<code>subset.condition</code>
-Optional character string giving a logical condition to subset
-<code>data</code> (default <code>NULL</code>).</h2></li>
+<code>data</code>. Weights must be nonnegative.</li>
 <li>
 <code>n.risk.type</code> Character string; one of
 <code>"weighted"</code>, <code>"unweighted"</code>, or
@@ -103,9 +98,9 @@ Optional character string giving a logical condition to subset
 <code>$n.risk</code> without affecting estimates or standard errors
 (default <code>"weighted"</code>).</li>
 <li>
-<code>subset.condition</code> Optional character expression to
-subset <code>data</code> before analysis. &gt;&gt;&gt;&gt;&gt;&gt;&gt;
-c37257fab9b9eea022f85536a2cf550f9b836311:vignettes/v7_arguments.Rmd</li>
+<code>subset.condition</code> Optional character string giving a
+logical condition to subset <code>data</code> (default
+<code>NULL</code>).</li>
 <li>
 <code>na.action</code> A function specifying the action to take on
 missing values (default <code>na.omit</code>).</li>
@@ -146,9 +141,24 @@ transformation for CIs used internally (default
 <code>conf.int</code> Numeric two-sided level of CIs (default
 <code>0.95</code>).</li>
 <li>
-<code>return_if</code> Logical. When <code>TRUE</code> and
-<code>engine = "calculateAJ_Rcpp"</code>, the influence function is also
-computed and returned (default <code>FALSE</code>).</li>
+<code>time.point</code> Optional single time point at which a
+one-sided normal approximation test is performed when
+<code>null.hypothesis</code> is specified.</li>
+<li>
+<code>null.hypothesis</code> Optional null value for the survival
+probability or cumulative incidence at <code>time.point</code>. For
+<code>outcome.type = "survival"</code>, the one-sided alternative is
+that the observed survival probability is higher than the null value.
+For <code>outcome.type = "competing-risk"</code>, the one-sided
+alternative is that the observed CIF for <code>code.event1</code> is
+lower than the null value. A scalar value is recycled across strata. A
+named numeric vector can be used to specify stratum-specific null
+values.</li>
+<li>
+<code>report.influence.function</code> Logical. When
+<code>TRUE</code> and <code>engine = "calculateAJ_Rcpp"</code>, the
+influence function is also computed and returned (default
+<code>FALSE</code>).</li>
 <li>
 <code>report.survfit.std.err</code> Logical. If <code>TRUE</code>,
 report SE on the log-survival scale (survfit’s convention). Otherwise SE
@@ -179,7 +189,7 @@ RHS specifies an optional stratification variable.</li>
 <code>weights</code> Optional name of the weight variable in
 <code>data</code>. Weights must be nonnegative.
 &lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD:vignettes/arguments.Rmd</li>
-<li><h2 id="subset.condition-optional-character-string-giving-a-logical-condition-to-subset-data-default-null.-1">
+<li><h2 id="subset.condition-optional-character-string-giving-a-logical-condition-to-subset-data-default-null.">
 <code>subset.condition</code>
 Optional character string giving a logical condition to subset
 <code>data</code> (default <code>NULL</code>).</h2></li>
@@ -453,7 +463,7 @@ provided, overrides <code>formula</code>.</p></li>
 <li><p><code>weights</code> Optional name of the weight variable in
 <code>data</code>. Weights must be nonnegative.
 &lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD:vignettes/arguments.Rmd</p></li>
-<li><h2 id="subset.condition-optional-character-string-giving-a-logical-condition-to-subset-data-default-null.-2">
+<li><h2 id="subset.condition-optional-character-string-giving-a-logical-condition-to-subset-data-default-null.-1">
 <code>subset.condition</code>
 Optional character string giving a logical condition to subset
 <code>data</code> (default <code>NULL</code>).</h2></li>
