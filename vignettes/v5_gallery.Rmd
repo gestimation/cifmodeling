@@ -164,7 +164,7 @@ cifplot(Event(t,d) ~ fruitq1,
         panel.censoring           = TRUE)
 ```
 
-## Zoomed-in-view
+### Zoomed-in-view
 
 ```{r gallery-5-01, fig.cap="Zoomed-in-view panel using cifpanel()", warning=FALSE, message=FALSE}
 output5 <- cifpanel(
