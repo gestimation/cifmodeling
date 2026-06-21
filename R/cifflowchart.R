@@ -644,12 +644,13 @@ cifflowchart <- function(formula,
 
     idx1 <- !is.na(time) & !is.na(status) & time <= tau & status == e1
     idx2 <- !is.na(time) & !is.na(status) & time <= tau & status == e2
-    idxc <- !is.na(time) & !is.na(status) & time < tau & status == cens
-    idxf <- is.na(out) & !is.na(time) & time >= tau
+    idxc <- !is.na(time) & !is.na(status) & time <  tau & status == cens
 
     out[idx1] <- paste0("Event 1 by ", tau)
     out[idx2] <- paste0("Event 2 by ", tau)
     out[idxc] <- paste0("Censored before ", tau)
+
+    idxf <- is.na(out) & !is.na(time) & time >= tau
     out[idxf] <- paste0("Event-free at ", tau)
   }
 
