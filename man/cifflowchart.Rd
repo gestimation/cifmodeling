@@ -8,6 +8,8 @@ cifflowchart(
   formula,
   data,
   time.point = NULL,
+  withdraw.consent = NULL,
+  ineligible = NULL,
   pre.exclude = NULL,
   post.exclude = NULL,
   subset.condition = NULL,
@@ -33,9 +35,9 @@ cifflowchart(
 
 \item{time.point}{Optional time point for \code{Event(time, status)} formulas.}
 
-\item{pre.exclude, post.exclude}{Optional exclusion variables. Logical vectors
-use \code{TRUE} as excluded. Character and factor vectors use non-missing,
-non-empty values as exclusion reasons.}
+\item{withdraw.consent, ineligible, pre.exclude, post.exclude}{Optional exclusion
+variables. Logical vectors use \code{TRUE} as excluded. Character and factor
+vectors use non-missing, non-empty values as exclusion reasons.}
 
 \item{subset.condition}{Optional expression evaluated in \code{data} before
 counting.}

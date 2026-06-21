@@ -62,6 +62,8 @@ CONSORT-compliant diagram.</p>
 <span>  <span class="va">formula</span>,</span>
 <span>  <span class="va">data</span>,</span>
 <span>  time.point <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  withdraw.consent <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ineligible <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  pre.exclude <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  post.exclude <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  subset.condition <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -97,10 +99,10 @@ CONSORT-compliant diagram.</p>
 <dd><p>Optional time point for <code>Event(time, status)</code> formulas.</p></dd>
 
 
-<dt id="arg-pre-exclude-post-exclude">pre.exclude, post.exclude<a class="anchor" aria-label="anchor" href="#arg-pre-exclude-post-exclude"></a></dt>
-<dd><p>Optional exclusion variables. Logical vectors
-use <code>TRUE</code> as excluded. Character and factor vectors use non-missing,
-non-empty values as exclusion reasons.</p></dd>
+<dt id="arg-withdraw-consent-ineligible-pre-exclude-post-exclude">withdraw.consent, ineligible, pre.exclude, post.exclude<a class="anchor" aria-label="anchor" href="#arg-withdraw-consent-ineligible-pre-exclude-post-exclude"></a></dt>
+<dd><p>Optional exclusion
+variables. Logical vectors use <code>TRUE</code> as excluded. Character and factor
+vectors use non-missing, non-empty values as exclusion reasons.</p></dd>
 
 
 <dt id="arg-subset-condition">subset.condition<a class="anchor" aria-label="anchor" href="#arg-subset-condition"></a></dt>
