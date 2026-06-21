@@ -714,7 +714,7 @@ harmonize_engine_output <- function(out) {
     value <- log(-log(p0))
     deriv <- 1 / (p0 * log(p0))
   } else if (type == "logit") {
-    value <- qlogis(p0)
+    value <- log(p0 / (1 - p0))
     deriv <- 1 / (p0 * (1 - p0))
   } else {
     stop("Unsupported 'conf.type'.", call. = FALSE)
@@ -822,7 +822,7 @@ harmonize_engine_output <- function(out) {
     }
 
     end <- cumsum(counts)
-    start <- c(1L, head(end, -1L) + 1L)
+    start <- c(1L, utils::head(end, -1L) + 1L)
 
     index_list <- Map(seq.int, start, end)
   } else {
@@ -840,7 +840,7 @@ harmonize_engine_output <- function(out) {
       ))
     }
 
-    j <- tail(idx_at_time, 1L)
+    j <- utils::tail(idx_at_time, 1L)
 
     list(
       surv = as.numeric(fit$surv[j]),
