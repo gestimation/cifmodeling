@@ -122,3 +122,32 @@ test_that("censoring before time.point is classified separately", {
   expect_equal(unname(x$outcome_counts[[1]]["Censored before 30"]), 1)
   expect_equal(unname(x$outcome_counts[[1]]["Event-free at 30"]), 2)
 })
+
+test_that("withdraw.consent and ineligible are counted before pre.exclude", {
+  dat <- data.frame(
+    response = c("A", "B", "C", "D", "E"),
+    arm = c("x", "x", "y", "y", "y"),
+    wd = c(TRUE, FALSE, FALSE, FALSE, FALSE),
+    inelig = c(TRUE, TRUE, FALSE, FALSE, FALSE),
+    pre = c(TRUE, TRUE, TRUE, FALSE, FALSE),
+    post = c(TRUE, TRUE, TRUE, TRUE, FALSE)
+  )
+
+  expect_warning(
+    x <- cifmodeling:::.flowchart_prepare_data(
+      response ~ arm,
+      dat,
+      withdraw.consent = quote(wd),
+      ineligible = quote(inelig),
+      pre.exclude = quote(pre),
+      post.exclude = quote(post)
+    ),
+    "takes precedence"
+  )
+
+  expect_equal(sum(x$withdraw_counts), 1)
+  expect_equal(sum(x$ineligible_counts), 1)
+  expect_equal(sum(x$pre_counts), 1)
+  expect_equal(sum(vapply(x$post_counts, sum, integer(1))), 1)
+  expect_equal(sum(x$analysis_n), 1)
+})
