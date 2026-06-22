@@ -60,14 +60,18 @@
 #' Z = \{g(\hat p) - g(p_0)\} / \widehat{SE}\{g(\hat p)\},
 #' }
 #' where `g()` is the transformation specified by `conf.type`. For survival
-#' outcomes, \eqn{\hat p} is the Kaplan-Meier survival estimate and the
-#' default one-sided alternative is \eqn{S(t) > S_0(t)}. For competing-risk
-#' outcomes, \eqn{\hat p} is the Aalen-Johansen cumulative incidence estimate
-#' for `code.event1` and the default one-sided alternative is
-#' \eqn{F_1(t) < F_{10}(t)}. When strata are present, the test is calculated
-#' separately within each stratum.
-#'
-#'
+#' outcomes, \eqn{\hat p} is the Kaplan-Meier survival estimate and
+#' the default one-sided alternative is \eqn{S(t) > S_0(t)}. For competing-risk
+#' outcomes, the reported estimate is the Aalen-Johansen cumulative incidence
+#' estimate \eqn{F_1(t)} for `code.event1`, but the transformation for the
+#' one-sided test is applied to \eqn{1 - F_1(t)} and \eqn{1 - F_{10}(t)},
+#' consistently with the survfit-compatible `$surv` component. Thus,
+#' `conf.type = "log-log"` corresponds to
+#' \eqn{\log[-\log\{1 - F_1(t)\}]} for competing-risk outcomes. The default
+#' one-sided alternative is \eqn{F_1(t) < F_{10}(t)}, equivalently
+#' \eqn{1 - F_1(t) > 1 - F_{10}(t)}. When strata are present, the test is
+#' calculated separately within each stratum.
+
 #' @return
 #' A `"survfit"` object. For `outcome.type="survival"`, `$surv` is the survival function.
 #' For `outcome.type="competing-risk"`, `$surv` equals `1 - CIF` for `code.event1`.
@@ -578,13 +582,31 @@ harmonize_engine_output <- function(out) {
   if (identical(outcome.type, "survival")) {
     estimate <- surv_est
     estimate.name <- "survival"
+
+    test_estimate <- estimate
+    test_null <- null_value
+    test_scale <- "survival"
+
     alternative <- "observed survival probability is higher than null.hypothesis"
     alternative.direction <- "greater"
+    test_alternative.direction <- "greater"
+
   } else if (identical(outcome.type, "competing-risk")) {
     estimate <- 1 - surv_est
     estimate.name <- "cumulative incidence"
+
+    ## For competing-risk outcomes, the returned survfit object stores
+    ## surv = 1 - CIF. Therefore transformations for the one-sided test
+    ## are applied to 1 - CIF and 1 - null.hypothesis.
+    test_estimate <- 1 - estimate
+    test_null <- 1 - null_value
+    test_scale <- "1 - cumulative incidence"
+
     alternative <- "observed cumulative incidence is lower than null.hypothesis"
-    alternative.direction <- "less"
+
+    ## CIF < null is equivalent to 1 - CIF > 1 - null.
+    test_alternative.direction <- "greater"
+
   } else {
     stop(
       "'null.hypothesis' one-sided testing is currently supported only for ",
@@ -594,15 +616,15 @@ harmonize_engine_output <- function(out) {
   }
 
   tr_est <- .cifcurve_transform_probability(
-    p = estimate,
+    p = test_estimate,
     se = se_prob,
     conf.type = conf.type,
     prob.bound = prob.bound
   )
 
   tr_null <- .cifcurve_transform_probability(
-    p = null_value,
-    se = rep(NA_real_, length(null_value)),
+    p = test_null,
+    se = rep(NA_real_, length(test_null)),
     conf.type = conf.type,
     prob.bound = prob.bound
   )
@@ -612,7 +634,7 @@ harmonize_engine_output <- function(out) {
   p_value <- .cifcurve_one_sided_tail_pvalue(
     z = z,
     transform.sign = tr_est$sign,
-    alternative.direction = alternative.direction
+    alternative.direction = test_alternative.direction
   )
 
   out <- data.frame(
@@ -622,6 +644,9 @@ harmonize_engine_output <- function(out) {
     estimate = estimate,
     null.hypothesis = null_value,
     std.err = se_prob,
+    transformation.scale = rep(test_scale, length(estimate)),
+    estimate.for.test = test_estimate,
+    null.for.test = test_null,
     estimate.transformed = tr_est$value,
     null.transformed = tr_null$value,
     std.err.transformed = tr_est$se,

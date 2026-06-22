@@ -152,12 +152,17 @@ normal approximation. The test statistic is
 Z = \{g(\hat p) - g(p_0)\} / \widehat{SE}\{g(\hat p)\},
 }
 where \code{g()} is the transformation specified by \code{conf.type}. For survival
-outcomes, \eqn{\hat p} is the Kaplan-Meier survival estimate and the
-default one-sided alternative is \eqn{S(t) > S_0(t)}. For competing-risk
-outcomes, \eqn{\hat p} is the Aalen-Johansen cumulative incidence estimate
-for \code{code.event1} and the default one-sided alternative is
-\eqn{F_1(t) < F_{10}(t)}. When strata are present, the test is calculated
-separately within each stratum.
+outcomes, \eqn{\hat p} is the Kaplan-Meier survival estimate and
+the default one-sided alternative is \eqn{S(t) > S_0(t)}. For competing-risk
+outcomes, the reported estimate is the Aalen-Johansen cumulative incidence
+estimate \eqn{F_1(t)} for \code{code.event1}, but the transformation for the
+one-sided test is applied to \eqn{1 - F_1(t)} and \eqn{1 - F_{10}(t)},
+consistently with the survfit-compatible \verb{$surv} component. Thus,
+\code{conf.type = "log-log"} corresponds to
+\eqn{\log[-\log\{1 - F_1(t)\}]} for competing-risk outcomes. The default
+one-sided alternative is \eqn{F_1(t) < F_{10}(t)}, equivalently
+\eqn{1 - F_1(t) > 1 - F_{10}(t)}. When strata are present, the test is
+calculated separately within each stratum.
 }
 }
 \section{Lifecycle}{

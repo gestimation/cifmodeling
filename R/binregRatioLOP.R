@@ -128,7 +128,7 @@ binregRatioLOP <- function(formula,
   X <- as.matrix(X)
 
   call.id <- id
-  conid <- .construct_id(id, nrow(X), as.data = TRUE)
+  conid <- .construct_id_local(id, nrow(X), as.data = TRUE)
   name.id <- conid$name.id
   id <- conid$id
   nid <- conid$nid
@@ -565,31 +565,42 @@ calculatePercentageLOP <- function(beta, X_L, offset, tol = 1e-8, eps = 1e-10) {
 
 #' @keywords internal
 #' @noRd
-.construct_id <- function(id, nid, namesX = NULL, as.data = FALSE)
-{
+.construct_id_local <- function(id, nid, namesX = NULL, as.data = FALSE) {
   call.id <- id
+
   if (!is.null(id)) {
+    if (length(id) != nid) {
+      stop("'id' must have length equal to the number of observations.", call. = FALSE)
+    }
+
     ids <- unique(id)
     nid <- length(ids)
-    if (is.numeric(id))
-      id <- fast.approx(ids, id) - 1
-    else {
-      id <- as.integer(factor(id, labels = seq(nid))) -
-        1
+
+    if (is.numeric(id)) {
+      id <- match(id, ids) - 1L
+    } else {
+      id <- as.integer(factor(id, levels = ids, labels = seq_len(nid))) - 1L
     }
+
     order.ids <- order(ids)
     id.name <- ids[order.ids]
-  }
-  else {
-    id <- 1:nid - 1
-    ids <- id + 1
+  } else {
+    id <- seq_len(nid) - 1L
+    ids <- id + 1L
     order.ids <- ids
     id.name <- ids
   }
-  if (as.data) {
-    id <- (0:(nid - 1))[order(ids)][id + 1]
+
+  if (isTRUE(as.data)) {
+    id <- (seq_len(nid) - 1L)[order(ids)][id + 1L]
     id.name <- ids
   }
-  return(list(call.id = call.id, id = id, nid = nid, unique.id = ids,
-              name.id = id.name))
+
+  list(
+    call.id = call.id,
+    id = as.integer(id),
+    nid = nid,
+    unique.id = ids,
+    name.id = id.name
+  )
 }

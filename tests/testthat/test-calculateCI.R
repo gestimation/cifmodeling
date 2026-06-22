@@ -27,11 +27,40 @@ test_that("cifcurve computes one-sided p-values by strata", {
 
   expect_equal(nrow(tab), 2)
   expect_setequal(tab$strata, c("arm=A", "arm=B"))
+  expect_true(all(tab$estimate.type == "cumulative incidence"))
+  expect_true(all(tab$transformation.scale == "1 - cumulative incidence"))
+
   expect_true(all(is.finite(tab$estimate)))
   expect_true(all(is.finite(tab$std.err)))
   expect_true(all(is.finite(tab$z)))
   expect_true(all(is.finite(tab$p.value)))
   expect_true(all(tab$p.value >= 0 & tab$p.value <= 1))
+
+  expect_equal(
+    tab$estimate.for.test,
+    1 - tab$estimate,
+    tolerance = 1e-8
+  )
+
+  expect_equal(
+    tab$null.for.test,
+    1 - tab$null.hypothesis,
+    tolerance = 1e-8
+  )
+
+  expect_equal(
+    tab$z,
+    (tab$estimate.for.test - tab$null.for.test) / tab$std.err.transformed,
+    tolerance = 1e-8
+  )
+
+  ## CIF < null is tested as 1 - CIF > 1 - null.
+  ## Plain transformation is increasing, so use upper tail.
+  expect_equal(
+    tab$p.value,
+    stats::pnorm(tab$z, lower.tail = FALSE),
+    tolerance = 1e-8
+  )
 })
 
 test_that("cifcurve one-sided p works for survival outcome.type", {
@@ -59,6 +88,7 @@ test_that("cifcurve one-sided p works for survival outcome.type", {
 
   expect_true(nrow(tab) >= 1)
   expect_true(all(tab$estimate.type == "survival"))
+  expect_true(all(tab$transformation.scale == "survival"))
   expect_true(all(tab$time.point == 8))
   expect_true(all(tab$null.hypothesis == 0.50))
   expect_true(all(is.finite(tab$estimate)))
@@ -66,12 +96,25 @@ test_that("cifcurve one-sided p works for survival outcome.type", {
   expect_true(all(is.finite(tab$z)))
   expect_true(all(tab$p.value >= 0 & tab$p.value <= 1))
 
-  ## plain transformation, survival alternative: S(t) > S0(t)
+  expect_equal(
+    tab$estimate.for.test,
+    tab$estimate,
+    tolerance = 1e-8
+  )
+
+  expect_equal(
+    tab$null.for.test,
+    tab$null.hypothesis,
+    tolerance = 1e-8
+  )
+
+  ## Plain transformation, survival alternative: S(t) > S0(t)
   expect_equal(
     tab$z,
     (tab$estimate - tab$null.hypothesis) / tab$std.err,
     tolerance = 1e-8
   )
+
   expect_equal(
     tab$p.value,
     stats::pnorm(tab$z, lower.tail = FALSE),
@@ -101,6 +144,7 @@ test_that("cifcurve one-sided p works for competing-risk outcome.type", {
 
   expect_true(nrow(tab) >= 1)
   expect_true(all(tab$estimate.type == "cumulative incidence"))
+  expect_true(all(tab$transformation.scale == "1 - cumulative incidence"))
   expect_true(all(tab$time.point == 8))
   expect_true(all(tab$null.hypothesis == 0.30))
   expect_true(all(is.finite(tab$estimate)))
@@ -108,15 +152,29 @@ test_that("cifcurve one-sided p works for competing-risk outcome.type", {
   expect_true(all(is.finite(tab$z)))
   expect_true(all(tab$p.value >= 0 & tab$p.value <= 1))
 
-  ## plain transformation, competing-risk alternative: CIF(t) < CIF0(t)
   expect_equal(
-    tab$z,
-    (tab$estimate - tab$null.hypothesis) / tab$std.err,
+    tab$estimate.for.test,
+    1 - tab$estimate,
     tolerance = 1e-8
   )
+
+  expect_equal(
+    tab$null.for.test,
+    1 - tab$null.hypothesis,
+    tolerance = 1e-8
+  )
+
+  ## Plain transformation, competing-risk alternative:
+  ## CIF(t) < CIF0(t), equivalently 1 - CIF(t) > 1 - CIF0(t).
+  expect_equal(
+    tab$z,
+    (tab$estimate.for.test - tab$null.for.test) / tab$std.err,
+    tolerance = 1e-8
+  )
+
   expect_equal(
     tab$p.value,
-    stats::pnorm(tab$z, lower.tail = TRUE),
+    stats::pnorm(tab$z, lower.tail = FALSE),
     tolerance = 1e-8
   )
 })
@@ -139,8 +197,13 @@ test_that("cifcurve one-sided p accepts outcome.type abbreviations", {
     "One-sided normal approximation test"
   )
 
+  tab_s <- fit_s$one.sided.p$table
+
   expect_equal(fit_s$one.sided.p$outcome.type, "survival")
-  expect_true(all(fit_s$one.sided.p$table$estimate.type == "survival"))
+  expect_true(all(tab_s$estimate.type == "survival"))
+  expect_true(all(tab_s$transformation.scale == "survival"))
+  expect_equal(tab_s$estimate.for.test, tab_s$estimate, tolerance = 1e-8)
+  expect_equal(tab_s$null.for.test, tab_s$null.hypothesis, tolerance = 1e-8)
 
   expect_output(
     fit_c <- cifcurve(
@@ -154,8 +217,13 @@ test_that("cifcurve one-sided p accepts outcome.type abbreviations", {
     "One-sided normal approximation test"
   )
 
+  tab_c <- fit_c$one.sided.p$table
+
   expect_equal(fit_c$one.sided.p$outcome.type, "competing-risk")
-  expect_true(all(fit_c$one.sided.p$table$estimate.type == "cumulative incidence"))
+  expect_true(all(tab_c$estimate.type == "cumulative incidence"))
+  expect_true(all(tab_c$transformation.scale == "1 - cumulative incidence"))
+  expect_equal(tab_c$estimate.for.test, 1 - tab_c$estimate, tolerance = 1e-8)
+  expect_equal(tab_c$null.for.test, 1 - tab_c$null.hypothesis, tolerance = 1e-8)
 })
 
 test_that("cifcurve one-sided p works when outcome.type is inferred", {
@@ -175,8 +243,11 @@ test_that("cifcurve one-sided p works when outcome.type is inferred", {
     "One-sided normal approximation test"
   )
 
+  tab_s <- fit_s$one.sided.p$table
+
   expect_equal(fit_s$one.sided.p$outcome.type, "survival")
-  expect_true(all(fit_s$one.sided.p$table$estimate.type == "survival"))
+  expect_true(all(tab_s$estimate.type == "survival"))
+  expect_true(all(tab_s$transformation.scale == "survival"))
 
   expect_output(
     fit_c <- cifcurve(
@@ -189,8 +260,11 @@ test_that("cifcurve one-sided p works when outcome.type is inferred", {
     "One-sided normal approximation test"
   )
 
+  tab_c <- fit_c$one.sided.p$table
+
   expect_equal(fit_c$one.sided.p$outcome.type, "competing-risk")
-  expect_true(all(fit_c$one.sided.p$table$estimate.type == "cumulative incidence"))
+  expect_true(all(tab_c$estimate.type == "cumulative incidence"))
+  expect_true(all(tab_c$transformation.scale == "1 - cumulative incidence"))
 })
 
 test_that("cifcurve one-sided p works without a stratification variable", {
@@ -214,7 +288,10 @@ test_that("cifcurve one-sided p works without a stratification variable", {
   expect_equal(tab$strata, "All")
   expect_equal(tab$time.point, 8)
   expect_equal(tab$estimate.type, "cumulative incidence")
+  expect_equal(tab$transformation.scale, "1 - cumulative incidence")
   expect_equal(tab$null.hypothesis, 0.30)
+  expect_equal(tab$estimate.for.test, 1 - tab$estimate, tolerance = 1e-8)
+  expect_equal(tab$null.for.test, 1 - tab$null.hypothesis, tolerance = 1e-8)
   expect_true(is.finite(tab$estimate))
   expect_true(is.finite(tab$std.err))
   expect_true(is.finite(tab$z))
@@ -241,6 +318,9 @@ test_that("cifcurve one-sided p accepts named null.hypothesis for no strata", {
   expect_equal(nrow(tab), 1)
   expect_equal(tab$strata, "All")
   expect_equal(tab$null.hypothesis, 0.30)
+  expect_equal(tab$transformation.scale, "1 - cumulative incidence")
+  expect_equal(tab$estimate.for.test, 1 - tab$estimate, tolerance = 1e-8)
+  expect_equal(tab$null.for.test, 1 - tab$null.hypothesis, tolerance = 1e-8)
 })
 
 test_that("cifcurve one-sided p works with missing stratification values under na.omit", {
@@ -271,6 +351,9 @@ test_that("cifcurve one-sided p works with missing stratification values under n
   expect_false(any(is.na(tab$strata)))
   expect_false(any(grepl("NA", tab$strata, fixed = TRUE)))
   expect_true(all(tab$estimate.type == "cumulative incidence"))
+  expect_true(all(tab$transformation.scale == "1 - cumulative incidence"))
+  expect_equal(tab$estimate.for.test, 1 - tab$estimate, tolerance = 1e-8)
+  expect_equal(tab$null.for.test, 1 - tab$null.hypothesis, tolerance = 1e-8)
   expect_true(all(tab$p.value >= 0 & tab$p.value <= 1))
 })
 
@@ -311,6 +394,8 @@ test_that("cifcurve one-sided p matches named null.hypothesis after omitting mis
 
   expect_setequal(tab$strata, strata_names)
   expect_equal(unname(tab$null.hypothesis), rep(0.30, nrow(tab)))
+  expect_equal(tab$estimate.for.test, 1 - tab$estimate, tolerance = 1e-8)
+  expect_equal(tab$null.for.test, 1 - tab$null.hypothesis, tolerance = 1e-8)
 })
 
 test_that("cifcurve one-sided p errors when named null.hypothesis does not match strata", {
@@ -419,7 +504,7 @@ test_that("cifcurve one-sided p requires probability-scale standard errors", {
   )
 })
 
-test_that("cifcurve one-sided p handles decreasing log-log transformation", {
+test_that("cifcurve one-sided p handles decreasing log-log transformation for survival", {
   data(diabetes.complications)
 
   dat <- diabetes.complications
@@ -439,8 +524,78 @@ test_that("cifcurve one-sided p handles decreasing log-log transformation", {
 
   tab <- fit$one.sided.p$table
 
-  ## log-log transformation is decreasing for probabilities in (0, 1).
-  ## For survival alternative S(t) > S0(t), the p-value should use lower tail.
+  expect_equal(tab$estimate.type, "survival")
+  expect_equal(tab$transformation.scale, "survival")
+  expect_equal(tab$estimate.for.test, tab$estimate, tolerance = 1e-8)
+  expect_equal(tab$null.for.test, tab$null.hypothesis, tolerance = 1e-8)
+
+  expect_equal(
+    tab$estimate.transformed,
+    log(-log(tab$estimate.for.test)),
+    tolerance = 1e-8
+  )
+
+  expect_equal(
+    tab$null.transformed,
+    log(-log(tab$null.for.test)),
+    tolerance = 1e-8
+  )
+
+  ## g(p) = log(-log(p)) is decreasing.
+  ## For survival alternative S(t) > S0(t), use lower tail.
+  expect_equal(
+    tab$p.value,
+    stats::pnorm(tab$z, lower.tail = TRUE),
+    tolerance = 1e-8
+  )
+})
+
+test_that("cifcurve one-sided p uses 1-CIF scale for competing-risk log-log test", {
+  data(diabetes.complications)
+
+  expect_output(
+    fit <- cifcurve(
+      Event(t, epsilon) ~ 1,
+      data = diabetes.complications,
+      outcome.type = "competing-risk",
+      time.point = 8,
+      null.hypothesis = 0.30,
+      conf.type = "log-log"
+    ),
+    "One-sided normal approximation test"
+  )
+
+  tab <- fit$one.sided.p$table
+
+  expect_equal(tab$estimate.type, "cumulative incidence")
+  expect_equal(tab$transformation.scale, "1 - cumulative incidence")
+
+  expect_equal(
+    tab$estimate.for.test,
+    1 - tab$estimate,
+    tolerance = 1e-8
+  )
+
+  expect_equal(
+    tab$null.for.test,
+    1 - tab$null.hypothesis,
+    tolerance = 1e-8
+  )
+
+  expect_equal(
+    tab$estimate.transformed,
+    log(-log(tab$estimate.for.test)),
+    tolerance = 1e-8
+  )
+
+  expect_equal(
+    tab$null.transformed,
+    log(-log(tab$null.for.test)),
+    tolerance = 1e-8
+  )
+
+  ## g(p) = log(-log(p)) is decreasing.
+  ## CIF < null is equivalent to 1 - CIF > 1 - null, so use lower tail.
   expect_equal(
     tab$p.value,
     stats::pnorm(tab$z, lower.tail = TRUE),
