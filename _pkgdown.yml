@@ -43,25 +43,25 @@ navbar:
 articles:
   - title: Overview
     contents:
-      - overview
+      - v1_overview
   - title: Direct polytomous regression
     contents:
-      - polyreg
+      - v2_polyreg
   - title: Computational formulas in cifcurve()
     contents:
-      - formulas
+      - v3_formulas
   - title: Examples
     contents:
-      - examples
+      - v4_examples
   - title: Gallery
     contents:
-      - gallery
+      - v5_gallery
   - title: Additional information
     contents:
-      - information
+      - v6_information
   - title: Full lists of arguments
     contents:
-      - arguments
+      - v7_arguments
 
 reference:
   - title: Nonparametric estimation and visualization
@@ -69,6 +69,7 @@ reference:
       - cifcurve
       - cifplot
       - cifpanel
+      - cifflowchart
   - title: Direct polytomous regression
     contents:
       - polyreg

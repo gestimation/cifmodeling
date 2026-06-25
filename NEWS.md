@@ -1,3 +1,13 @@
+# cifmodeling 1.0.0
+
+* Third CRAN release.
+
+* Added `cifflowchart()` for lightweight flowchart summaries of exclusions, groups, and outcome status.
+* Added one-sided normal approximation tests in `cifcurve()` via `time.point` and `null.hypothesis`.
+* Improved handling of risk-set display and event coding options.
+* Updated documentation, examples, vignettes, and pkgdown site.
+* Fixed bugs and expanded test coverage.
+
 # cifmodeling 0.9.8
 
 * Second CRAN release.

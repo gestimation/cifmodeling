@@ -56,62 +56,9 @@
 #'   constructed IPCW outcome.
 #' @param ... Additional arguments passed through model-frame construction.
 #'
-#' @details
-#' Let \eqn{A} denote the binary exposure in the final column of the design matrix
-#' and let \eqn{L} denote the remaining covariates. The function models the
-#' conditional percentage for the primary cause under a log-odds product
-#' parameterization, returning fitted percentages under `A = 0` and `A = 1`.
-#'
-#' The returned object includes coefficient estimates, naive and robust variance
-#' estimates, estimated influence functions, fitted percentages, and quantities
-#' related to the censoring model fit.
-#'
-#' @return
-#' An object of class `"binreg"` containing at least the following components:
-#' \describe{
-#'   \item{coef}{Estimated regression coefficients. The last coefficient is the
-#'   log percentage ratio parameter for the binary exposure.}
-#'   \item{se.robust}{Robust standard errors based on the estimated influence
-#'   functions.}
-#'   \item{robvar}{Robust variance-covariance matrix.}
-#'   \item{iid}{Estimated influence functions used for robust variance estimation.}
-#'   \item{p0, p1}{Estimated conditional percentages under exposure levels 0 and 1.}
-#'   \item{p}{Estimated conditional percentage at the observed exposure level.}
-#'   \item{converged}{Logical indicating whether the numerical solver reported
-#'   convergence.}
-#' }
-#'
-#' @seealso [Event()], [calculatePercentageLOP()], [polyreg()], [cifcurve()]
-#'
-#' @examples
-#' ## event: 0 = censoring, 1 = primary cause, 2 = competing cause
-#' data(diabetes.complications)
-#'
-#' fit <- binregRatioLOP(
-#'   Event(t, epsilon) ~ fruitq1,
-#'   data = diabetes.complications,
-#'   time = 8,
-#'   cause = 1,
-#'   type = "I"
-#' )
-#'
-#' fit$coef
-#' fit$se.robust
-#'
-#' ## Estimated percentages under A = 0 and A = 1 when there are no adjustment covariates
-#' calculatePercentageLOP(
-#'   fit$coef,
-#'   X_L = matrix(1, nrow = 1, ncol = 1),
-#'   offset = 0
-#' )
-#'
-#' @name binregRatioLOP
-#' @export
+#' @keywords internal
+#' @noRd
 #' @importFrom stats model.frame model.extract model.matrix terms update.formula predict
-#' @importFrom survival Surv
-#' @importFrom nleqslv nleqslv
-#' @importFrom numDeriv jacobian
-#' @importFrom mets phreg construct_id sumstrata revcumsumstrata cumsumstrata
 binregRatioLOP <- function(formula,
                            data,
                            cause = 1,
@@ -132,6 +79,9 @@ binregRatioLOP <- function(formula,
                            Ydirect = NULL,
                            ...) {
   cl <- match.call()
+  .require_suggested_package("survival", "binregRatioLOP")
+  .require_suggested_package("numDeriv", "binregRatioLOP")
+  .require_suggested_package("mets", "binregRatioLOP")
   type <- match.arg(type)
   outcome <- match.arg(outcome)
 
@@ -178,7 +128,7 @@ binregRatioLOP <- function(formula,
   X <- as.matrix(X)
 
   call.id <- id
-  conid <- construct_id(id, nrow(X), as.data = TRUE)
+  conid <- .construct_id_local(id, nrow(X), as.data = TRUE)
   name.id <- conid$name.id
   id <- conid$id
   nid <- conid$nid
@@ -212,8 +162,8 @@ binregRatioLOP <- function(formula,
 
   if (do_censor_fit) {
     kmt <- kaplan.meier
-    formC <- update.formula(cens.model, Surv(exit, statusC) ~ .)
-    resC <- phreg(formC, data)
+    formC <- stats::update.formula(cens.model, survival::Surv(exit, statusC) ~ .)
+    resC <- mets::phreg(formC, data)
     if (resC$p > 0) kmt <- FALSE
     exittime <- pmin(exit, time)
     cens.weights <- suppressWarnings(
@@ -324,7 +274,7 @@ binregRatioLOP <- function(formula,
       se_model <- rep(NA_real_, ncol(X))
       converged_flag <- FALSE
     } else {
-      iid <- apply(Dlogl %*% t(ihess), 2, sumstrata, id, max(id) + 1)
+      iid <- apply(Dlogl %*% t(ihess), 2, mets::sumstrata, id, max(id) + 1)
       robvar <- crossprod(iid)
       modelvar <- tryCatch(solve(hess), error = function(e) NULL)
       se_robust <- sqrt(diag(robvar))
@@ -391,40 +341,40 @@ binregRatioLOP <- function(formula,
     S0i[xx$jumps + 1]  <- 1 / resC$S0
     S0i2[xx$jumps + 1] <- 1 / (resC$S0^2)
 
-    h <- apply(X_ord * Yo_ord, 2, revcumsumstrata, xx$strata, xx$nstrata)
+    h <- apply(X_ord * Yo_ord, 2, mets::revcumsumstrata, xx$strata, xx$nstrata)
     btime <- 1 * (exit_ord < time)
 
-    IhdLam0 <- apply(h * S0i2 * btime, 2, cumsumstrata, xx$strata, xx$nstrata)
+    IhdLam0 <- apply(h * S0i2 * btime, 2, mets::revcumsumstrata, xx$strata, xx$nstrata)
     U <- matrix(0, nrow(xx$X), ncol(X_ord))
     U[xx$jumps + 1, ] <- (resC$jumptimes < time) * h[xx$jumps + 1, ] / c(resC$S0)
     MGt <- (U - IhdLam0) * c(xx$weights)
 
     mid <- max(xx$id)
-    MGCiidI <- apply(MGt, 2, sumstrata, xx$id, mid + 1)
+    MGCiidI <- apply(MGt, 2, mets::sumstrata, xx$id, mid + 1)
     MGCiid  <- MGCiidI
 
     if (type == "II") {
-      hYt <- revcumsumstrata(Yo_ord, xx$strata, xx$nstrata)
-      IhdLam0_y <- cumsumstrata(hYt * S0i2 * btime, xx$strata, xx$nstrata)
+      hYt <- mets::revcumsumstrata(Yo_ord, xx$strata, xx$nstrata)
+      IhdLam0_y <- mets::revcumsumstrata(hYt * S0i2 * btime, xx$strata, xx$nstrata)
 
       U_y <- rep(0, length(xx$strata))
       U_y[xx$jumps + 1] <- (resC$jumptimes < time) * hYt[xx$jumps + 1] / c(resC$S0)
 
       MGt_y <- X_ord * c(U_y - IhdLam0_y) * c(xx$weights)
-      MGtiid <- apply(MGt_y, 2, sumstrata, xx$id, mid + 1)
+      MGtiid <- apply(MGt_y, 2, mets::sumstrata, xx$id, mid + 1)
 
       augmentationII <- augmentation + colSums(MGtiid)
 
-      EXt <- apply(X_ord, 2, revcumsumstrata, xx$strata, xx$nstrata)
+      EXt <- apply(X_ord, 2, mets::revcumsumstrata, xx$strata, xx$nstrata)
       IEXhYtdLam0 <- apply(EXt * c(hYt) * S0i * S0i2 * btime,
-                           2, cumsumstrata, xx$strata, xx$nstrata)
+                           2, mets::cumsumstrata, xx$strata, xx$nstrata)
 
       U2 <- matrix(0, nrow(xx$X), ncol(X_ord))
       U2[xx$jumps + 1, ] <- (resC$jumptimes < time) *
         hYt[xx$jumps + 1] * EXt[xx$jumps + 1, ] / c(resC$S0)^2
 
       MGt2 <- (U2 - IEXhYtdLam0) * c(xx$weights)
-      MGCiid2 <- apply(MGt2, 2, sumstrata, xx$id, mid + 1)
+      MGCiid2 <- apply(MGt2, 2, mets::sumstrata, xx$id, mid + 1)
 
       MGCiid <- MGCiid + (MGtiid - MGCiid2)
     }
@@ -525,6 +475,19 @@ binregRatioLOP <- function(formula,
   val
 }
 
+#' @keywords internal
+.require_suggested_package <- function(pkg, fun) {
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+    stop(
+      sprintf(
+        "Package '%s' is required to use %s(). Please install it first.",
+        pkg, fun
+      ),
+      call. = FALSE
+    )
+  }
+}
+
 #' Calculate fitted percentages from log-odds product regression coefficients
 #'
 #' Converts regression coefficients from `binregRatioLOP()` into fitted
@@ -545,43 +508,8 @@ binregRatioLOP <- function(formula,
 #' @param eps Small positive constant used to truncate fitted percentages away
 #'   from 0 and 1.
 #'
-#' @details
-#' For each observation, the function returns two fitted percentages:
-#' one for exposure level 0 and one for exposure level 1. These are obtained from
-#' the nuisance linear predictor and the log percentage ratio parameter under the
-#' log-odds product parameterization.
-#'
-#' @return
-#' A numeric matrix with two columns:
-#' \describe{
-#'   \item{p_0}{Estimated percentage under exposure level 0.}
-#'   \item{p_1}{Estimated percentage under exposure level 1.}
-#' }
-#'
-#' @examples
-#' ## event: 0 = censoring, 1 = primary cause, 2 = competing cause
-#' data(diabetes.complications)
-#'
-#' fit <- binregRatioLOP(
-#'   Event(t, epsilon) ~ fruitq1,
-#'   data = diabetes.complications,
-#'   time = 8,
-#'   cause = 1,
-#'   type = "I"
-#' )
-#'
-#' fit$coef
-#' fit$se.robust
-#'
-#' ## Estimated percentages of restricted mean time lost under A = 0 and A = 1 when there are no adjustment covariates
-#' calculatePercentageLOP(
-#'   fit$coef,
-#'   X_L = matrix(1, nrow = 1, ncol = 1),
-#'   offset = 0
-#' )
-#'
-#' @name calculatePercentageLOP
-#' @export
+#' @keywords internal
+#' @noRd
 calculatePercentageLOP <- function(beta, X_L, offset, tol = 1e-8, eps = 1e-10) {
   n <- length(offset)
 
@@ -633,4 +561,46 @@ calculatePercentageLOP <- function(beta, X_L, offset, tol = 1e-8, eps = 1e-10) {
   percentage_RMTL_1 <- pmin(pmax(p_1, eps), 1 - eps)
 
   cbind(percentage_RMTL_0, percentage_RMTL_1)
+}
+
+#' @keywords internal
+#' @noRd
+.construct_id_local <- function(id, nid, namesX = NULL, as.data = FALSE) {
+  call.id <- id
+
+  if (!is.null(id)) {
+    if (length(id) != nid) {
+      stop("'id' must have length equal to the number of observations.", call. = FALSE)
+    }
+
+    ids <- unique(id)
+    nid <- length(ids)
+
+    if (is.numeric(id)) {
+      id <- match(id, ids) - 1L
+    } else {
+      id <- as.integer(factor(id, levels = ids, labels = seq_len(nid))) - 1L
+    }
+
+    order.ids <- order(ids)
+    id.name <- ids[order.ids]
+  } else {
+    id <- seq_len(nid) - 1L
+    ids <- id + 1L
+    order.ids <- ids
+    id.name <- ids
+  }
+
+  if (isTRUE(as.data)) {
+    id <- (seq_len(nid) - 1L)[order(ids)][id + 1L]
+    id.name <- ids
+  }
+
+  list(
+    call.id = call.id,
+    id = as.integer(id),
+    nid = nid,
+    unique.id = ids,
+    name.id = id.name
+  )
 }

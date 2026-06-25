@@ -11,7 +11,9 @@ cifcurve(
   n.risk.type = "weighted",
   subset.condition = NULL,
   na.action = na.omit,
-  outcome.type = c("survival", "competing-risk"),
+  outcome.type = NULL,
+  time.point = NULL,
+  null.hypothesis = NULL,
   code.event1 = 1,
   code.event2 = 2,
   code.censoring = 0,
@@ -48,6 +50,17 @@ If \code{NULL} (default), the function automatically infers the outcome type fro
 if the event variable has more than two unique levels, \code{"competing-risk"} is assumed;
 otherwise, \code{"survival"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
 Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic detection based on the event coding.}
+
+\item{time.point}{Optional single time point at which a one-sided normal
+approximation test is performed when \code{null.hypothesis} is specified.}
+
+\item{null.hypothesis}{Optional null value for the survival probability or
+cumulative incidence at \code{time.point}. For \code{outcome.type = "survival"},
+the one-sided alternative is that the observed survival probability is
+higher than the null value. For \code{outcome.type = "competing-risk"}, the
+one-sided alternative is that the observed CIF for \code{code.event1} is lower
+than the null value. A scalar value is recycled across strata. A named
+numeric vector can be used to specify stratum-specific null values.}
 
 \item{code.event1}{Integer code of the event of interest (default \code{1}).}
 
@@ -86,6 +99,9 @@ This enables an independent use of standard methods for \code{survfit} such as:
 \item \code{mean()}: restricted mean survival estimates with CIs
 \item \code{quantile()}: quantile estimates with CIs
 }
+
+If \code{null.hypothesis} is specified, the returned object additionally contains
+a \code{one.sided.p} list with the one-sided normal approximation test results.
 
 Note that \verb{$n.risk}, \verb{$n.event}, and \verb{$n.censor} are rounded up to the nearest integer
 regardless of whether the data is weighted or not.
@@ -126,6 +142,28 @@ counts (e.g., for plotting or debugging) and leaves estimates and SEs unchanged.
 }
 
 }
+
+\subsection{One-sided normal approximation test}{
+
+When both \code{time.point} and \code{null.hypothesis} are specified, \code{cifcurve()}
+compares the estimate at \code{time.point} with \code{null.hypothesis} using a
+normal approximation. The test statistic is
+\deqn{
+Z = \{g(\hat p) - g(p_0)\} / \widehat{SE}\{g(\hat p)\},
+}
+where \code{g()} is the transformation specified by \code{conf.type}. For survival
+outcomes, \eqn{\hat p} is the Kaplan-Meier survival estimate and
+the default one-sided alternative is \eqn{S(t) > S_0(t)}. For competing-risk
+outcomes, the reported estimate is the Aalen-Johansen cumulative incidence
+estimate \eqn{F_1(t)} for \code{code.event1}, but the transformation for the
+one-sided test is applied to \eqn{1 - F_1(t)} and \eqn{1 - F_{10}(t)},
+consistently with the survfit-compatible \verb{$surv} component. Thus,
+\code{conf.type = "log-log"} corresponds to
+\eqn{\log[-\log\{1 - F_1(t)\}]} for competing-risk outcomes. The default
+one-sided alternative is \eqn{F_1(t) < F_{10}(t)}, equivalently
+\eqn{1 - F_1(t) > 1 - F_{10}(t)}. When strata are present, the test is
+calculated separately within each stratum.
+}
 }
 \section{Lifecycle}{
 
@@ -143,6 +181,13 @@ cifplot(output1,
         add.risktable = FALSE,
         label.y = "CIF of diabetic retinopathy",
         label.x = "Years from registration")
+
+output2 <- cifcurve(Event(t,epsilon) ~ fruitq,
+                    data = diabetes.complications,
+                    outcome.type = "competing-risk",
+                    time.point = 8,
+                    null.hypothesis = 0.30)
+output2$one.sided.p
 
 }
 \seealso{

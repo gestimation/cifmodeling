@@ -17,7 +17,7 @@ and will plot it yourself."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.8.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,13 +28,13 @@ and will plot it yourself."></head><body>
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/overview.html">Overview</a></li>
-    <li><a class="dropdown-item" href="../articles/polyreg.html">Direct polytomous regression</a></li>
-    <li><a class="dropdown-item" href="../articles/formulas.html">Computational formulas in cifcurve()</a></li>
-    <li><a class="dropdown-item" href="../articles/examples.html">Examples</a></li>
-    <li><a class="dropdown-item" href="../articles/gallery.html">Gallery</a></li>
-    <li><a class="dropdown-item" href="../articles/information.html">Additional information</a></li>
-    <li><a class="dropdown-item" href="../articles/arguments.html">Full lists of arguments</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/v1_overview.html">Overview</a></li>
+    <li><a class="dropdown-item" href="../articles/v2_polyreg.html">Direct polytomous regression</a></li>
+    <li><a class="dropdown-item" href="../articles/v3_formulas.html">Computational formulas in cifcurve()</a></li>
+    <li><a class="dropdown-item" href="../articles/v4_examples.html">Examples</a></li>
+    <li><a class="dropdown-item" href="../articles/v5_gallery.html">Gallery</a></li>
+    <li><a class="dropdown-item" href="../articles/v6_information.html">Additional information</a></li>
+    <li><a class="dropdown-item" href="../articles/v7_arguments.html">Full lists of arguments</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -68,9 +68,12 @@ and will plot it yourself.</p>
 <span>  <span class="va">formula</span>,</span>
 <span>  <span class="va">data</span>,</span>
 <span>  weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  n.risk.type <span class="op">=</span> <span class="st">"weighted"</span>,</span>
 <span>  subset.condition <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  na.action <span class="op">=</span> <span class="va">na.omit</span>,</span>
-<span>  outcome.type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"survival"</span>, <span class="st">"competing-risk"</span><span class="op">)</span>,</span>
+<span>  outcome.type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  time.point <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  null.hypothesis <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  code.event1 <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  code.event2 <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  code.censoring <span class="op">=</span> <span class="fl">0</span>,</span>
@@ -103,6 +106,11 @@ Unlike <code><a href="cifplot.html">cifplot()</a></code>, this function does not
 <dd><p>Optional name of the weight variable in <code>data</code>. Weights must be nonnegative.</p></dd>
 
 
+<dt id="arg-n-risk-type">n.risk.type<a class="anchor" aria-label="anchor" href="#arg-n-risk-type"></a></dt>
+<dd><p>Character string; one of <code>"weighted"</code>, <code>"unweighted"</code>, or <code>"ess"</code>.
+Controls which risk set size is returned in <code>$n.risk</code> without affecting estimates or SEs (default <code>"weighted"</code>).</p></dd>
+
+
 <dt id="arg-subset-condition">subset.condition<a class="anchor" aria-label="anchor" href="#arg-subset-condition"></a></dt>
 <dd><p>Optional character string giving a logical condition to subset
 <code>data</code> (default <code>NULL</code>).</p></dd>
@@ -119,6 +127,21 @@ If <code>NULL</code> (default), the function automatically infers the outcome ty
 if the event variable has more than two unique levels, <code>"competing-risk"</code> is assumed;
 otherwise, <code>"survival"</code> is used. You can also use abbreviations such as <code>"S"</code> or <code>"C"</code>.
 Mixed or ambiguous inputs (e.g., <code>c("S", "C")</code>) trigger automatic detection based on the event coding.</p></dd>
+
+
+<dt id="arg-time-point">time.point<a class="anchor" aria-label="anchor" href="#arg-time-point"></a></dt>
+<dd><p>Optional single time point at which a one-sided normal
+approximation test is performed when <code>null.hypothesis</code> is specified.</p></dd>
+
+
+<dt id="arg-null-hypothesis">null.hypothesis<a class="anchor" aria-label="anchor" href="#arg-null-hypothesis"></a></dt>
+<dd><p>Optional null value for the survival probability or
+cumulative incidence at <code>time.point</code>. For <code>outcome.type = "survival"</code>,
+the one-sided alternative is that the observed survival probability is
+higher than the null value. For <code>outcome.type = "competing-risk"</code>, the
+one-sided alternative is that the observed CIF for <code>code.event1</code> is lower
+than the null value. A scalar value is recycled across strata. A named
+numeric vector can be used to specify stratum-specific null values.</p></dd>
 
 
 <dt id="arg-code-event-">code.event1<a class="anchor" aria-label="anchor" href="#arg-code-event-"></a></dt>
@@ -176,7 +199,11 @@ This enables an independent use of standard methods for <code>survfit</code> suc
 <li><p><code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code>: base R stepwise survival/CIF curves</p></li>
 <li><p><code><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean()</a></code>: restricted mean survival estimates with CIs</p></li>
 <li><p><code><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile()</a></code>: quantile estimates with CIs</p></li>
-</ul><p>Note that some methods (e.g. <code>residuals.survfit</code>) may not be supported.</p>
+</ul><p>If <code>null.hypothesis</code> is specified, the returned object additionally contains
+a <code>one.sided.p</code> list with the one-sided normal approximation test results.</p>
+<p>Note that <code>$n.risk</code>, <code>$n.event</code>, and <code>$n.censor</code> are rounded up to the nearest integer
+regardless of whether the data is weighted or not.
+Some methods (e.g. <code>residuals.survfit</code>) may not be supported.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -192,8 +219,35 @@ The returned <code>$surv</code> is <strong>1 - CIF</strong>, i.e. in the format 
 </ul></div>
 
 <div class="section">
+<h3 id="risk-set-display">Risk set display<a class="anchor" aria-label="anchor" href="#risk-set-display"></a></h3>
+
+<ul><li><p>Set <code>n.risk.type</code> to control whether <code>$n.risk</code> reflects weighted, unweighted,
+or Kish effective sample size (ESS) counts. This only affects the reported
+counts (e.g., for plotting or debugging) and leaves estimates and SEs unchanged.</p></li>
+</ul></div>
+
+<div class="section">
 <h3 id="standard-error-and-confidence-intervals">Standard error and confidence intervals<a class="anchor" aria-label="anchor" href="#standard-error-and-confidence-intervals"></a></h3>
 <table class="table table"><tr><td>Argument</td><td>Description</td><td>Default</td></tr><tr><td><code>error</code></td><td>SE for KM: <code>"greenwood"</code>, <code>"tsiatis"</code>, <code>"if"</code>. For CIF: <code>"aalen"</code>, <code>"delta"</code>, <code>"if"</code>.</td><td><code>"greenwood"</code>, <code>"delta"</code> or <code>"if"</code></td></tr><tr><td><code>conf.type</code></td><td>Transformation for CIs: <code>"plain"</code>, <code>"log"</code>, <code>"log-log"</code>, <code>"arcsin"</code>, <code>"logit"</code>, or <code>"none"</code>.</td><td><code>"arcsin"</code></td></tr><tr><td><code>conf.int</code></td><td>Two-sided CI level.</td><td><code>0.95</code></td></tr></table></div>
+
+<div class="section">
+<h3 id="one-sided-normal-approximation-test">One-sided normal approximation test<a class="anchor" aria-label="anchor" href="#one-sided-normal-approximation-test"></a></h3>
+
+
+<p>When both <code>time.point</code> and <code>null.hypothesis</code> are specified, <code>cifcurve()</code>
+compares the estimate at <code>time.point</code> with <code>null.hypothesis</code> using a
+normal approximation. The test statistic is
+$$
+Z = \{g(\hat p) - g(p_0)\} / \widehat{SE}\{g(\hat p)\},
+$$
+where <code>g()</code> is the transformation specified by <code>conf.type</code>. For survival
+outcomes, \(\hat p\) is the Kaplan-Meier survival estimate and the
+default one-sided alternative is \(S(t) &gt; S_0(t)\). For competing-risk
+outcomes, \(\hat p\) is the Aalen-Johansen cumulative incidence estimate
+for <code>code.event1</code> and the default one-sided alternative is
+\(F_1(t) &lt; F_{10}(t)\). When strata are present, the test is calculated
+separately within each stratum.</p>
+</div>
 
     </div>
     <div class="section level2">
@@ -220,6 +274,65 @@ The returned <code>$surv</code> is <strong>1 - CIF</strong>, i.e. in the format 
 <span class="r-in"><span>        label.y <span class="op">=</span> <span class="st">"CIF of diabetic retinopathy"</span>,</span></span>
 <span class="r-in"><span>        label.x <span class="op">=</span> <span class="st">"Years from registration"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="cifcurve-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">output2</span> <span class="op">&lt;-</span> <span class="fu">cifcurve</span><span class="op">(</span><span class="fu"><a href="Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span> <span class="op">~</span> <span class="va">fruitq</span>,</span></span>
+<span class="r-in"><span>                    data <span class="op">=</span> <span class="va">diabetes.complications</span>,</span></span>
+<span class="r-in"><span>                    outcome.type <span class="op">=</span> <span class="st">"competing-risk"</span>,</span></span>
+<span class="r-in"><span>                    time.point <span class="op">=</span> <span class="fl">8</span>,</span></span>
+<span class="r-in"><span>                    null.hypothesis <span class="op">=</span> <span class="fl">0.30</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> One-sided normal approximation test</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Alternative: observed cumulative incidence is lower than null.hypothesis</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Time point: 8</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Transformation: arcsine-square root</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     strata time.point        estimate.type  estimate null.hypothesis    std.err</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  fruitq=Q1          8 cumulative incidence 0.3531391             0.3 0.03578625</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  fruitq=Q2          8 cumulative incidence 0.2643748             0.3 0.03298645</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  fruitq=Q3          8 cumulative incidence 0.2811656             0.3 0.02943527</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  fruitq=Q4          8 cumulative incidence 0.2408163             0.3 0.03032340</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  estimate.transformed null.transformed std.err.transformed          z</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0.6363391        0.5796397          0.03743759  1.5145047</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0.5400442        0.5796397          0.03739962 -1.0587137</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0.5588960        0.5796397          0.03273727 -0.6336425</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0.5129278        0.5796397          0.03545942 -1.8813595</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     p.value</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  0.93505106</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  0.14486509</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  0.26315707</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  0.02996152</span>
+<span class="r-in"><span><span class="va">output2</span><span class="op">$</span><span class="va">one.sided.p</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $method</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "One-sided normal approximation test"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $outcome.type</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "competing-risk"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $alternative</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "observed cumulative incidence is lower than null.hypothesis"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $conf.type</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "arcsine-square root"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $time.point</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 8</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $table</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      strata time.point        estimate.type  estimate null.hypothesis</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 fruitq=Q1          8 cumulative incidence 0.3531391             0.3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 fruitq=Q2          8 cumulative incidence 0.2643748             0.3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 fruitq=Q3          8 cumulative incidence 0.2811656             0.3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4 fruitq=Q4          8 cumulative incidence 0.2408163             0.3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      std.err estimate.transformed null.transformed std.err.transformed</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.03578625            0.6363391        0.5796397          0.03743759</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 0.03298645            0.5400442        0.5796397          0.03739962</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 0.02943527            0.5588960        0.5796397          0.03273727</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4 0.03032340            0.5129278        0.5796397          0.03545942</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            z    p.value</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  1.5145047 0.93505106</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 -1.0587137 0.14486509</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 -0.6336425 0.26315707</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4 -1.8813595 0.02996152</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

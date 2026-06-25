@@ -9,3 +9,4 @@ get_weightit_mparts(weightit)
 \description{
 Extract Mparts from a weightit object (robustly)
 }
+\keyword{internal}
