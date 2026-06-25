@@ -57,7 +57,7 @@
 #' compares the estimate at `time.point` with `null.hypothesis` using a
 #' normal approximation. The test statistic is
 #' \deqn{
-#' Z = \{g(\hat p) - g(p_0)\} / \widehat{SE}\{g(\hat p)\},
+#' Z = (g(\hat{p}) - g(p_0)) / \widehat{SE}(g(\hat{p})).
 #' }
 #' where `g()` is the transformation specified by `conf.type`. For survival
 #' outcomes, \eqn{\hat p} is the Kaplan-Meier survival estimate and
@@ -67,7 +67,7 @@
 #' one-sided test is applied to \eqn{1 - F_1(t)} and \eqn{1 - F_{10}(t)},
 #' consistently with the survfit-compatible `$surv` component. Thus,
 #' `conf.type = "log-log"` corresponds to
-#' \eqn{\log[-\log\{1 - F_1(t)\}]} for competing-risk outcomes. The default
+#' \eqn{\log[-\log(1 - F_1(t))]} for competing-risk outcomes. The default
 #' one-sided alternative is \eqn{F_1(t) < F_{10}(t)}, equivalently
 #' \eqn{1 - F_1(t) > 1 - F_{10}(t)}. When strata are present, the test is
 #' calculated separately within each stratum.

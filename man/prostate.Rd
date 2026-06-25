@@ -13,7 +13,7 @@
   \item{hx}{History of cardiovascular disease.}
   \item{sbp}{Systolic blood pressure.}
   \item{dbp}{Diastolic blood pressure.}
-  \item{ekg}{Electrocardiogram category.}
+  \item{ekg}{Electrocardiogram category.}bul
   \item{hg}{Hemoglobin level.}
   \item{sz}{Size of the primary tumor.}
   \item{sg}{Stage/grade of disease.}
