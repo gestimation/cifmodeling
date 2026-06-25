@@ -2,9 +2,9 @@
 \alias{prostate}
 \docType{data}
 \title{Data from a prostate cancer trial in Byer & Green (1980)}
-\format{A data frame with 502 observations and 16 variables, including:
+\format{A data frame with 502 observations and 18 variables, including:
 \describe{
-  \item{dtime}{Follow-up time in days.}
+  \item{dtime}{Follow-up time in months.}
   \item{status}{Event status ("alive", "dead - prostatic ca", "dead - other ca", "dead - heart or vascular", "dead - cerebrovascular").}
   \item{rx}{Treatment assignment to diethylstilbestrol (DES) or a placebo.}
   \item{age}{Age at baseline (years).}

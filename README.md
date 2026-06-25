@@ -261,10 +261,10 @@ if (requireNamespace("modelsummary", quietly = TRUE)) {
 
 <div class="figure">
 
-<img src="man/figures/README-example05-1.png" alt="Visualizaton of risk ratios at 2, 4, 6 and 8 years using polyreg() and modelplot()" width="70%" />
+<img src="man/figures/README-example05-1.png" alt="Visualization of risk ratios at 2, 4, 6 and 8 years using polyreg() and modelplot()" width="70%" />
 <p class="caption">
 
-Visualizaton of risk ratios at 2, 4, 6 and 8 years using polyreg() and
+Visualization of risk ratios at 2, 4, 6 and 8 years using polyreg() and
 modelplot()
 </p>
 

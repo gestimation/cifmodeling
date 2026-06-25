@@ -150,7 +150,7 @@ p-values. Internally, a `"polyreg"` object also supports the **generics** API:
 
 Finally, we repeat the model at multiple time points and use `modelplot()` to visualize how risk ratios evolve over follow-up. With generics-Compatible objects, `polyreg()` is integrated naturally with the broader `broom/modelsummary` ecosystem. For publication-ready tables, you can pass `polyreg` objects directly to `modelsummary::msummary()` and `modelsummary::modelplot()`, including exponentiated summaries (risk ratios, odds ratios, subdistribution hazard ratios) via the `exponentiate = TRUE` option. 
 
-```{r example05, fig.cap="Visualizaton of risk ratios at 2, 4, 6 and 8 years using polyreg() and modelplot()", warning=FALSE, message=FALSE}
+```{r example05, fig.cap="Visualization of risk ratios at 2, 4, 6 and 8 years using polyreg() and modelplot()", warning=FALSE, message=FALSE}
 
 if (requireNamespace("modelsummary", quietly = TRUE)) {
  library(modelsummary)
