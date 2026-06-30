@@ -1,0 +1,38 @@
+# cifmodeling: Visualization and Polytomous Modeling of Survival and Competing Risks
+
+A publication-ready toolkit for modern survival and competing risks
+analysis with a minimal, formula-based interface. Both nonparametric
+estimation and direct polytomous regression of cumulative incidence
+functions (CIFs) are supported. The main functions 'cifcurve()',
+'cifplot()', and 'cifpanel()' estimate survival and CIF curves and
+produce high-quality graphics with risk tables, censoring and
+competing-risk marks, and multi-panel or inset layouts built on
+'ggplot2' and 'ggsurvfit'. The modeling function 'polyreg()' performs
+direct polytomous regression for coherent joint modeling of all
+cause-specific CIFs to estimate risk ratios, odds ratios, or
+subdistribution hazard ratios at user-specified time points. All core
+functions adopt a formula-and-data syntax and return tidy and extensible
+outputs that integrate smoothly with 'modelsummary', 'broom', and the
+broader 'tidyverse' ecosystem. Key numerical routines are implemented in
+C++ via 'Rcpp'.
+
+## See also
+
+Useful links:
+
+- <https://gestimation.github.io/cifmodeling/>
+
+- <https://github.com/gestimation/cifmodeling>
+
+- Report bugs at <https://github.com/gestimation/cifmodeling/issues>
+
+## Author
+
+**Maintainer**: Shiro Tanaka <gestimation@gmail.com>
+([ORCID](https://orcid.org/0000-0001-6817-5235)) \[copyright holder\]
+
+Other contributors:
+
+- Shigetaka Kobari \[contributor\]
+
+- Chisato Honda \[contributor\]

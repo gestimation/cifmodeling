@@ -1,0 +1,166 @@
+# Direct polytomous regression
+
+## Why direct modeling of CIFs?
+
+In survival analysis, users often interpret the results through plots of
+cumulative incidence: *how far apart are the CIF curves at a given time,
+and how does this separation evolve over follow-up?* Standard Fine-Gray
+models, however, parameterize **subdistribution hazards**, whose
+regression coefficients are only indirectly related to the observed
+differences between CIF curves for the event of interest. This makes it
+difficult to interpret the model on the probability scale and to
+quantify effects on all competing events.
+
+Direct polytomous regression was motivated by this gap. It models **all
+cause-specific CIFs jointly**, parameterizing the nuisance structure
+(i.e. a model of confounders) with polytomous log odds products. It also
+targets **effect measures on the CIF scale itself**: at user-specified
+time points it estimates ratios of CIFs (risk ratios, odds ratios,
+subdistribution hazard ratios), and in proportional-effect settings it
+compares CIFs in terms of a constant ratio over time. As a result, the
+regression parameters are much more directly aligned with what is
+visible in CIF curves.
+
+## Coherent modeling of CIFs using polytomous log odds products
+
+Standard semiparametric regression approaches that fit separate models
+for each cause have two drawbacks in competing risks settings: they may
+lose efficiency by ignoring the correlation between causes, and they can
+be **incoherent** in the sense that the implied cause-specific CIFs do
+not necessarily sum to at most one. Direct polytomous regression
+addresses these challenges by **log-odds-product modeling of all
+cause-specific CIFs** (Richardson, Robins and Wang 2017). It introduces
+a nuisance model specified as **polytomous log odds products** in
+addition to the model for effect measures (e.g., risk ratios for the
+exposure), so that the sum restriction on CIFs is enforced naturally.
+This model specification is equivalent to the Richardson model in the
+case of uncensored binary outcome (Richardson, Robins and Wang 2017).
+The same framework applies both to models with common multiplicative
+effects over time and to models targeting effects at specific time
+points.
+
+The models in `polyreg` are specified by three main components:
+
+- Nuisance model: Describes the relationship between outcomes and
+  covariates (excluding exposure).
+
+- Effect measures and time points: Defines the exposure effects to be
+  estimated and the time point of interest if necessary.
+
+- Censoring adjustment: Specifies strata for inverse probability
+  weighting to adjust for dependent censoring.
+
+## 1. Nuisance model
+
+The `nuisance.model` argument specifies the formula linking the outcome
+to covariates. Its format depends on the outcome type:
+
+- Competing risks or survival outcome: Use `Surv()` or
+  [`Event()`](https://gestimation.github.io/cifmodeling/reference/Event.md)
+  with time and status variables.
+
+- Binomial outcome: Use standard R formula notation.
+
+Default event codes:
+
+- Competing risks outcome: 1 and 2 for event types, 0 for censoring.
+
+- Survival outcome: 1 for events, 0 for censoring.
+
+- Binomial outcome: 0 and 1.
+
+Event codes can be customized using `code.event1`, `code.event2`, and
+`code.censoring`. The `outcome.type` argument must be set to:
+
+- Effects on CIFs at a specific time: `"competing-risk"`
+
+- Effects on a risk at a specific time: `"survival"`
+
+- Constant effects on CIFs over time: `"proportional-competing-risk"`
+
+- Constant effects on a risk over time: `"proportional-survival"`
+
+- Effects on a risk of a binomial outcome: `"binomial"`
+
+Covariates included in `nuisance.model` should adjust for confounding
+factors to obtain unbiased exposure effect estimates.
+
+## 2. Effect measures and time points
+
+Three effect measures available:
+
+- Risk ratio (RR)
+
+- Odds ratio (OR)
+
+- Subdistribution hazard ratio (SHR)
+
+Set the desired measure using `effect.measure1` and, for competing risks
+analysis, `effect.measure2`. The `time.point` argument specifies the
+follow-up time at which effects are estimated.
+
+## 3. Censoring adjustment
+
+The IPCW method is used to adjust for dependent censoring. Use `strata=`
+to specify stratification variables. If no strata are specified,
+Kaplan-Meier weights are used.
+
+## Estimator and confidence intervals
+
+In
+[`polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg.md),
+the regression parameters are calculated by the stratified IPCW
+estimators, which asymptotically achieve minimum variance within a class
+of augmented IPCW estimators, without the computational burden of
+deriving augmentation terms for each cause. For confidence intervals,
+[`polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg.md)
+normally chooses a single, simple method based on `outcome.type`:
+
+- `"competing-risk"`, `"survival"`, `"binomial"`: Wald CIs based on
+  sandwich variance
+- `"proportional-competing-risk"`, `"proportional-survival"`: Bootstrap
+  CIs (normal approximation)
+
+For time-point (non-proportional) models, the default is Wald CIs using
+a sandwich variance directly from influence functions. If
+`report.boot.conf = TRUE`, the variance is instead estimated by a wild
+(multiplier) bootstrap applied to the influence functions
+(`boot.multiplier`, boot.replications), and Wald CIs are formed from
+that bootstrap variance. For common effects (proportional models),
+`boot()` refits the estimator in each replicate and forms
+normal-approximate CIs from the bootstrap mean and SD. If desired, BCa
+CIs can be requested via `boot.bca = TRUE` (only for proportional
+models). Users normally do not need to set any CI flags.
+
+## Return
+
+This function returns an object of class `"polyreg"` with the following
+main components:
+
+- `coef`: regression coefficients on the chosen effect-measure scale.
+
+- `vcov`: variance–covariance matrix for the regression coefficients.
+
+- `diagnostic.statistics`: a data frame containing inverse probability
+  weights, influence functions, and predicted potential outcomes for
+  individual observations.
+
+- `summary`: a list of event-wise *tidy* and *glance* tables summarising
+  the estimated exposure effects.
+
+In practice, users are expected to work with the usual S3 methods:
+
+``` r
+
+coef(fit)         # regression coefficients
+vcov(fit)         # variance–covariance matrix
+nobs(fit)         # number of observations used in the fit
+summary(fit)      # formatted, event-wise table printed to the console
+```
+
+Calling [`summary()`](https://rdrr.io/r/base/summary.html) on a
+“polyreg” object prints a modelsummary-like table of point estimates,
+CIs, and p-values for each event, and returns the underlying summary
+list invisibly. The summary component can be passed to external tools
+such as `modelsummary` or `broom` for additional formatting if desired,
+but no external packages are required to inspect the model fit.
