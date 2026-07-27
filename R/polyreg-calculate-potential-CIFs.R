@@ -325,9 +325,6 @@ LevenbergMarquardt <- function(start,
                                ls_shrink = 0.5,
                                verbose   = FALSE) {
   lp   <- as.numeric(start)
-
-
-
   if (!all(is.finite(lp))) {
     stop("All starting values must be finite.")
   }
