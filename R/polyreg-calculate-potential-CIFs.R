@@ -18,7 +18,11 @@ calculatePotentialCIFs <- function(alpha_beta_tmp, x_a, x_l, offset, epsilon, es
   p0     <- clampP(p0, prob.bound)
   log_p0 <- log(p0)
 
-  keys <- apply(x_l, 1, function(r) paste0(r, collapse = "\r"))
+  keys <- apply(
+    cbind(alpha_tmp_1, alpha_tmp_2),
+    1,
+    function(r) paste0(format(r, digits = 17), collapse = "\r")
+  )
   uniq <- match(keys, unique(keys))
   cache_log_CIFs <- vector("list", length = max(uniq))
 
