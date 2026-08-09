@@ -1,11 +1,17 @@
-# cifmodeling 1.0.0
-
-* Third CRAN release.
+# cifmodeling 1.1.0.9000
 
 * Added `cifsimulate()` to generate coherent two-cause competing-risks data
   under constant, early, late, and Fleming--Harrington-shaped
   subdistribution-hazard alternatives, with optional dependent censoring and
   returned population-truth curves.
+
+* Added `ciftest()` for standard and weighted log-rank/Gray tests and
+  closed-form augmented competing-risk score tests with separately specified
+  censoring and competing-risk nuisance strata.
+
+# cifmodeling 1.0.0
+
+* Third CRAN release.
 
 * Added `cifflowchart()` for lightweight flowchart summaries of exclusions, groups, and outcome status.
 * Added one-sided normal approximation tests in `cifcurve()` via `time.point` and `null.hypothesis`.
