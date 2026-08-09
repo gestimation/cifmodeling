@@ -18,7 +18,11 @@ calculatePotentialCIFs <- function(alpha_beta_tmp, x_a, x_l, offset, epsilon, es
   p0     <- clampP(p0, prob.bound)
   log_p0 <- log(p0)
 
-  keys <- apply(x_l, 1, function(r) paste0(r, collapse = "\r"))
+  keys <- apply(
+    cbind(alpha_tmp_1, alpha_tmp_2),
+    1,
+    function(r) paste0(format(r, digits = 17), collapse = "\r")
+  )
   uniq <- match(keys, unique(keys))
   cache_log_CIFs <- vector("list", length = max(uniq))
 
@@ -317,7 +321,7 @@ LevenbergMarquardt <- function(start,
                                ptol  = 1e-10,
                                lambda0    = 1e-3,
                                lambda_max = 10,
-                               lambda_min = 0.1,
+                               lambda_min = 1e-6,
                                lambda_increment    = 2.0,
                                lambda_decrement    = 0.5,
                                do_linesearch = TRUE,
@@ -325,12 +329,27 @@ LevenbergMarquardt <- function(start,
                                ls_shrink = 0.5,
                                verbose   = FALSE) {
   lp   <- as.numeric(start)
+  if (!all(is.finite(lp))) {
+    stop("All starting values must be finite.")
+  }
+  if (!is.finite(lambda_min) ||
+              !is.finite(lambda0) ||
+              !is.finite(lambda_max) ||
+              lambda_min < 0 ||
+              lambda_min > lambda0 ||
+              lambda0 > lambda_max) {
+    stop("Require 0 <= lambda_min <= lambda0 <= lambda_max.")
+  }
+
   r    <- res_fun(lp)
-  f2   <- drop(crossprod(r))
+  f    <- 0.5*drop(crossprod(r))
   J    <- jac_fun(lp)
   g    <- drop(crossprod(J, r))
   lam  <- lambda0
-  prev_f2 <- Inf
+
+  converged  <- FALSE
+  termination <- "maximum number of iterations reached"
+  iterations <- 0L
 
   if (isTRUE(verbose)) {
     hist <- list(it=integer(), f2=double(),
@@ -339,33 +358,56 @@ LevenbergMarquardt <- function(start,
   }
 
   for (k in seq_len(maxit)) {
+    iterations <- k
+    f_before <- f
+    rho <- NA_real_
     grad_inf <- max(abs(g))
-    if (is.finite(grad_inf) && grad_inf < 1e-6) break
+
+    if (!is.finite(grad_inf)) {
+        termination <- "non-finite gradient"
+        break
+    }
+    if (grad_inf < 1e-6) {
+        converged <- TRUE
+        termination <- "gradient tolerance satisfied"
+        break
+    }
+
     A <- crossprod(J)
     diag(A) <- diag(A) + lam
     R <- try(chol(A), silent = TRUE)
     if (inherits(R, "try-error")) {
+      if (lam >= lambda_max) {
+          termination <- "Cholesky factorization failed at lambda_max"
+          break
+      }
       lam <- min(lam * 10, lambda_max)
       next
     }
     delta <- -backsolve(R, forwardsolve(t(R), g))
     step_norm <- max(abs(delta))
 
-    if (is.finite(step_norm) &&
-        step_norm <= ptol * (ptol + max(1, max(abs(lp))))) break
+    if (!is.finite(step_norm)) {
+        termination <- "non-finite step"
+        break
+    }
+    if (step_norm <= ptol * (ptol + max(1, max(abs(lp))))) {
+        converged <- TRUE
+        termination <- "parameter tolerance satisfied"
+        break
+    }
 
     pred <- 0.5 * sum(delta * (lam * delta - g))
     if (!is.finite(pred) || pred <= 0) pred <- .Machine$double.eps
 
     lp_try <- lp + delta
     r_try  <- res_fun(lp_try)
-    f2_try <- drop(crossprod(r_try))
-
-    rho <- (f2 - f2_try) / pred
+    f_try  <- 0.5 * drop(crossprod(r_try))
+    rho <- (f - f_try) / pred
     accepted <- FALSE
 
     if (is.finite(rho) && rho > 0) {
-      lp <- lp_try; r <- r_try; f2 <- f2_try
+      lp <- lp_try; r <- r_try; f <- f_try
       lam <- max(lambda_min, lam * max(lambda_decrement, 1/(1 + rho)))
       accepted <- TRUE
     } else {
@@ -375,10 +417,11 @@ LevenbergMarquardt <- function(start,
         while (t > 1e-6) {
           lp_ls <- lp + t * delta
           r_ls  <- res_fun(lp_ls)
-          f2_ls <- drop(crossprod(r_ls))
-          if (is.finite(f2_ls) &&
-              f2_ls <= f2 + ls_c * t * gTd) {
-            lp <- lp_ls; r <- r_ls; f2 <- f2_ls
+
+
+          f_ls  <- 0.5 * drop(crossprod(r_ls))
+          if (is.finite(f_ls) && f_ls <= f + ls_c * t * gTd) {
+            lp <- lp_ls; r <- r_ls; f <- f_ls
             accepted <- TRUE
             break
           }
@@ -386,23 +429,33 @@ LevenbergMarquardt <- function(start,
         }
       }
     }
+
     J <- jac_fun(lp)
     g <- drop(crossprod(J, r))
 
-    if (k > 1L &&
-        is.finite(prev_f2) && is.finite(f2) &&
-        abs(prev_f2 - f2) <= ftol * (abs(f2) + ftol)) break
-
-    if (isTRUE(verbose)) { # ログの記録
+    if (isTRUE(verbose)) {
       hist$it        <- c(hist$it, k)
-      hist$f2        <- c(hist$f2, f2)
+      hist$f2        <- c(hist$f2, 2*f)
       hist$grad_inf  <- c(hist$grad_inf, grad_inf)
       hist$lambda    <- c(hist$lambda, lam)
       hist$step_norm <- c(hist$step_norm, step_norm)
-      hist$rho       <- c(hist$rho, if (exists("rho")) rho else NA_real_)
+      hist$rho       <- c(hist$rho, rho)
+
     }
-    prev_f2 <- f2
+
+      if (accepted &&
+               is.finite(f_before) &&
+               is.finite(f) &&
+               abs(f_before - f) <= ftol * (abs(f) + ftol)) {
+        converged <- TRUE
+        termination <- "objective-function tolerance satisfied"
+        break
+      }
   }
+
+  attr(lp, "converged") <- converged
+  attr(lp, "iterations") <- iterations
+  attr(lp, "termination") <- termination
   if (isTRUE(verbose)) attr(lp, "history") <- hist
   return(lp)
 }
@@ -425,7 +478,7 @@ callLevenbergMarquardt <- function(log_CIFs0, alpha1, beta1, alpha2, beta2, opti
     ptol          = optim.method$optim.parameter8   %||% 1e-10,
     lambda0       = optim.method$optim.parameter9   %||% 1e-3,
     lambda_max    = optim.method$optim.parameter10  %||% 10,
-    lambda_min    = optim.method$optim.parameter11  %||% 0.1,
+    lambda_min    = optim.method$optim.parameter11  %||% 1e-6,
     lambda_increment  = optim.method$optim.parameter12  %||% 2.0,
     lambda_decrement  = optim.method$optim.parameter13  %||% 0.5,
     do_linesearch = TRUE,
