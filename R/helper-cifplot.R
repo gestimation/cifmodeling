@@ -315,7 +315,13 @@ plot_normalize_strata <- function(x, median_threshold = 9L) {
   res
 }
 
-plot_normalize_formula_data <- function(formula, data, median_threshold = 9L) {
+plot_normalize_formula_data <- function(
+    formula,
+    data,
+    median_threshold = 9L,
+    subset.condition = NULL,
+    na.action = stats::na.omit
+) {
   if (!inherits(formula, "formula")) {
     return(list(data = data, info = list()))
   }
@@ -327,12 +333,31 @@ plot_normalize_formula_data <- function(formula, data, median_threshold = 9L) {
   }
 
   out_data <- data
+  prep <- createAnalysisDataset(
+    formula = formula,
+    data = data,
+    subset.condition = subset.condition,
+    na.action = util_normalize_na_action(na.action),
+    return.info = TRUE
+  )
+  reference_rows <- prep$row.index
   info <- list()
   for (var_name in rhs_vars) {
     if (!nzchar(var_name) || grepl("\\(", var_name, fixed = FALSE)) next
     if (!var_name %in% names(out_data)) next
-    norm <- plot_normalize_strata(out_data[[var_name]], median_threshold = median_threshold)
-    out_data[[var_name]] <- norm$values
+    norm <- plot_normalize_strata(
+      out_data[[var_name]][reference_rows],
+      median_threshold = median_threshold
+    )
+    if (identical(norm$strategy, "median")) {
+      below <- plot_default_labels$strata$below_median
+      above <- plot_default_labels$strata$above_median
+      values <- ifelse(out_data[[var_name]] > norm$cutpoint, above, below)
+      values[is.na(out_data[[var_name]])] <- NA_character_
+      out_data[[var_name]] <- factor(values, levels = c(below, above))
+    } else {
+      out_data[[var_name]] <- factor(out_data[[var_name]], levels = norm$levels)
+    }
     info[[var_name]] <- norm
   }
   list(data = out_data, info = info)

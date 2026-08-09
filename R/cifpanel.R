@@ -336,6 +336,8 @@ cifpanel <- function(
     engine                        = "cifplot",
     ...
 ){
+  weights.expr <- substitute(weights)
+  weights.missing <- missing(weights)
   legend.position  <- "none"
   add.risktable     <- FALSE
   add.estimate.table <- FALSE
@@ -642,6 +644,31 @@ cifpanel <- function(
   n_slots <- nrow * ncol
 
   if (is.null(data)) stop("data must be provided.")
+  weights.resolved <- util_resolve_weights(
+    weights.expr = weights.expr,
+    data = data,
+    envir = parent.frame(),
+    missing = weights.missing
+  )
+  if (is.null(outcome.type) && is.null(code.events)) {
+    detection_formula <- if (!is.null(formulas) && length(formulas)) {
+      panel_as_formula(formulas[[1L]])
+    } else if (!is.null(formula)) {
+      panel_as_formula(formula)
+    } else {
+      NULL
+    }
+    if (!is.null(detection_formula)) {
+      outcome.type <- util_check_outcome_type_for_analysis(
+        formula = detection_formula,
+        data = data,
+        subset.condition = subset.condition,
+        na.action = na.action,
+        weights = weights.resolved,
+        auto_message = FALSE
+      )
+    }
+  }
   if (is.null(code.events)) {
     out_flag <- NULL
     if (!is.null(outcome.type)) {
@@ -780,6 +807,8 @@ cifpanel <- function(
     K               = K,
     formulas        = formulas,
     data            = data,
+    weights         = weights.resolved,
+    subset.condition = subset.condition,
     code.events     = code.events,
     outcome.flags   = outcome.flags,
     outcome.list    = outcome.list,
@@ -848,6 +877,7 @@ cifpanel <- function(
         pa$visual.info$competing.risk.time <- extract_time_to_event(
           formula          = formulas[[i]],
           data             = data,
+          weights          = weights.resolved,
           subset.condition = subset.condition,
           na.action        = na.action,
           which.event      = "event2",

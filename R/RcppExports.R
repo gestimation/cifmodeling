@@ -5,7 +5,7 @@ calculateAJ_Rcpp <- function(t, epsilon, w = NULL, strata = NULL, n_risk_type = 
     .Call(`_cifmodeling_calculateAJ_Rcpp`, t, epsilon, w, strata, n_risk_type, error, conf_type, conf_int, return_if, prob_bound)
 }
 
-calculateKM <- function(t, d, w = as.numeric( c()), strata = as.integer( c()), error = "greenwood") {
-    .Call(`_cifmodeling_calculateKM`, t, d, w, strata, error)
+calculateKM_engine <- function(t, d, w = as.numeric( c()), strata = as.integer( c()), error = "greenwood") {
+    .Call(`_cifmodeling_calculateKM_engine`, t, d, w, strata, error)
 }
 

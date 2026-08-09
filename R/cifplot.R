@@ -217,7 +217,7 @@ cifplot <- function(
     weights                       = NULL,
     subset.condition              = NULL,
     na.action                     = na.omit,
-    outcome.type                  = c("competing-risk", "survival"),
+    outcome.type                  = "competing-risk",
     code.event1                   = 1,
     code.event2                   = 2,
     code.censoring                = 0,
@@ -282,8 +282,16 @@ cifplot <- function(
     ggsave.info                   = NULL,
     ...
 ) {
+  weights.expr <- substitute(weights)
+  weights.missing <- missing(weights)
   dots <- list(...)
   dots$print.panel <- dots$print.panel %||% print.panel
+  weights <- util_resolve_weights(
+    weights.expr = weights.expr,
+    data = data,
+    envir = parent.frame(),
+    missing = weights.missing
+  )
 
   n.risk.type.missing <- missing(n.risk.type)
   n.risk.type <- util_check_n_risk_type(n.risk.type)
@@ -396,10 +404,13 @@ cifplot <- function(
   )
 
   if (!inherits(formula_or_fit, "survfit")) {
-    outcome.type <- util_check_outcome_type(
-      outcome.type,
+    outcome.type <- util_check_outcome_type_for_analysis(
+      x = outcome.type,
       formula = formula_or_fit,
-      data    = data
+      data = data,
+      subset.condition = subset.condition,
+      na.action = na.action,
+      weights = weights
     )
   } else if (!n.risk.type.missing) {
     warning("`n.risk.type` is ignored when a fitted survfit object is supplied.", call. = FALSE)
@@ -503,6 +514,7 @@ cifplot <- function(
       out_pe <- plot_panel.per.event(
         formula            = formula_or_fit,
         data               = data,
+        weights            = weights,
         axis.info          = axis.info,
         visual.info        = visual.info,
         panel.info         = panel.info,
@@ -531,6 +543,7 @@ cifplot <- function(
       out_pe <- plot_panel.censoring(
         formula            = formula_or_fit,
         data               = data,
+        weights            = weights,
         axis.info          = axis.info,
         visual.info        = visual.info,
         panel.info         = panel.info,
@@ -668,10 +681,12 @@ plot_panel.per.variable <- function(
   }
 
   if (is.null(outcome.type)) {
-    outcome.type <- util_check_outcome_type(
+    outcome.type <- util_check_outcome_type_for_analysis(
       formula      = formula,
       data         = data,
+      subset.condition = subset.condition,
       na.action    = na.action,
+      weights      = weights,
       auto_message = FALSE
     )
   }
@@ -730,6 +745,7 @@ plot_panel.per.variable <- function(
 plot_panel.per.event <- function(
     formula,
     data,
+    weights,
     axis.info,
     visual.info,
     panel.info,
@@ -785,6 +801,7 @@ plot_panel.per.event <- function(
   panel_args  <- list(
     formula           = formula,
     data              = data,
+    weights           = weights,
     subset.condition  = subset.condition,
     na.action         = na.action,
     outcome.type      = "competing-risk",
@@ -822,6 +839,7 @@ plot_panel.per.event <- function(
 plot_panel.censoring <- function(
     formula,
     data,
+    weights,
     axis.info,
     visual.info,
     panel.info,
@@ -861,6 +879,7 @@ plot_panel.censoring <- function(
   panel_args  <- list(
     formula           = formula,
     data              = data,
+    weights           = weights,
     subset.condition  = subset.condition,
     na.action         = na.action,
     outcome.type      = "survival",
@@ -896,7 +915,7 @@ cifplot_single <- function(
     weights          = NULL,
     subset.condition = NULL,
     na.action        = na.omit,
-    outcome.type     = c("competing-risk", "survival"),
+    outcome.type     = "competing-risk",
     code.event1      = 1,
     code.event2      = 2,
     code.censoring   = 0,
@@ -1112,8 +1131,14 @@ cifplot_single <- function(
   order.strata <- axis.info$order.strata
 
   if (is.null(outcome.type)) {
-    outcome.type <- util_check_outcome_type(formula = if (inherits(formula_or_fit,"survfit")) NULL
-                                            else formula_or_fit, data = data, na.action = na.action, auto_message = FALSE)
+    outcome.type <- util_check_outcome_type_for_analysis(
+      formula = if (inherits(formula_or_fit, "survfit")) NULL else formula_or_fit,
+      data = data,
+      subset.condition = subset.condition,
+      na.action = na.action,
+      weights = weights,
+      auto_message = FALSE
+    )
   } else {
     outcome.type <- match.arg(outcome.type, c("competing-risk","survival"))
   }
@@ -1128,7 +1153,12 @@ cifplot_single <- function(
 
   if (!inherits(formula_or_fit, "survfit")) {
     if (is.null(data)) stop("When `formula` is a formula, `data` must be provided.")
-    norm_inputs <- plot_normalize_formula_data(formula_or_fit, data)
+    norm_inputs <- plot_normalize_formula_data(
+      formula_or_fit,
+      data,
+      subset.condition = subset.condition,
+      na.action = na.action
+    )
     data_working <- norm_inputs$data
 
     formula_or_fit <- cifcurve(formula_or_fit, data = data_working, weights = weights, subset.condition = subset.condition, na.action = na.action,

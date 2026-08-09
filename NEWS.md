@@ -2,6 +2,11 @@
 
 * Third CRAN release.
 
+* Added `cifsimulate()` to generate coherent two-cause competing-risks data
+  under constant, early, late, and Fleming--Harrington-shaped
+  subdistribution-hazard alternatives, with optional dependent censoring and
+  returned population-truth curves.
+
 * Added `cifflowchart()` for lightweight flowchart summaries of exclusions, groups, and outcome status.
 * Added one-sided normal approximation tests in `cifcurve()` via `time.point` and `null.hypothesis`.
 * Improved handling of risk-set display and event coding options.

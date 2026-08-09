@@ -4,17 +4,19 @@
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-Rcpp::List calculateKM(Rcpp::NumericVector t, Rcpp::IntegerVector d,
-                       Rcpp::NumericVector w = Rcpp::NumericVector::create(),
-                       Rcpp::IntegerVector strata = Rcpp::IntegerVector::create(),
-                       std::string error = "greenwood") {
+Rcpp::List calculateKM_engine(Rcpp::NumericVector t, Rcpp::IntegerVector d,
+                              Rcpp::NumericVector w = Rcpp::NumericVector::create(),
+                              Rcpp::IntegerVector strata = Rcpp::IntegerVector::create(),
+                              std::string error = "greenwood") {
   Rcpp::List survfit_list;
 
   std::vector<double> combined_times;
   std::vector<double> combined_surv;
-  std::vector<int> combined_n_risk;
-  std::vector<int> combined_n_event;
-  std::vector<int> combined_n_censor;
+  // Weighted counts must remain double. Integer storage silently truncated
+  // non-integer case weights in the pooled and combined output paths.
+  std::vector<double> combined_n_risk;
+  std::vector<double> combined_n_event;
+  std::vector<double> combined_n_censor;
   std::vector<double> combined_std_err;
   std::vector<int> combined_n_stratum;
   std::vector<int> combined_u_stratum;
@@ -28,9 +30,9 @@ Rcpp::List calculateKM(Rcpp::NumericVector t, Rcpp::IntegerVector d,
     int u = unique_times.size();
     Rcpp::NumericVector km(u);
     Rcpp::NumericVector km_i(u);
-    Rcpp::IntegerVector weighted_n_risk(u);
-    Rcpp::IntegerVector weighted_n_event(u);
-    Rcpp::IntegerVector weighted_n_censor(u);
+    Rcpp::NumericVector weighted_n_risk(u);
+    Rcpp::NumericVector weighted_n_event(u);
+    Rcpp::NumericVector weighted_n_censor(u);
     Rcpp::NumericVector std_err(u);
 
     int n_stratum = t.size();
@@ -114,9 +116,9 @@ Rcpp::List calculateKM(Rcpp::NumericVector t, Rcpp::IntegerVector d,
     int u = unique_times.size();
     Rcpp::NumericVector km(u);
     Rcpp::NumericVector km_i(u);
-    Rcpp::IntegerVector weighted_n_risk(u);
-    Rcpp::IntegerVector weighted_n_event(u);
-    Rcpp::IntegerVector weighted_n_censor(u);
+    Rcpp::NumericVector weighted_n_risk(u);
+    Rcpp::NumericVector weighted_n_event(u);
+    Rcpp::NumericVector weighted_n_censor(u);
     Rcpp::NumericVector std_err(u);
 
     int n_stratum = t.size();
@@ -334,9 +336,9 @@ Rcpp::List calculateKM(Rcpp::NumericVector t, Rcpp::IntegerVector d,
 
   Rcpp::NumericVector all_times      = Rcpp::wrap(combined_times);
   Rcpp::NumericVector all_surv       = Rcpp::wrap(combined_surv);
-  Rcpp::IntegerVector all_n_risk     = Rcpp::wrap(combined_n_risk);
-  Rcpp::IntegerVector all_n_event    = Rcpp::wrap(combined_n_event);
-  Rcpp::IntegerVector all_n_censor   = Rcpp::wrap(combined_n_censor);
+  Rcpp::NumericVector all_n_risk     = Rcpp::wrap(combined_n_risk);
+  Rcpp::NumericVector all_n_event    = Rcpp::wrap(combined_n_event);
+  Rcpp::NumericVector all_n_censor   = Rcpp::wrap(combined_n_censor);
   Rcpp::NumericVector all_std_err    = Rcpp::wrap(combined_std_err);
   Rcpp::IntegerVector all_n_stratum  = Rcpp::wrap(combined_n_stratum);
   Rcpp::IntegerVector all_u_stratum  = Rcpp::wrap(combined_u_stratum);

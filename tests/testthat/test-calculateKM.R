@@ -225,3 +225,33 @@ test_that("influence.function has expected dims per stratum/time", {
     if (nrow(IF[[k]])>0) expect_true(ncol(IF[[k]]) > 0)
   }
 })
+test_that("calculateKM selects integer reporting or exact numeric counts", {
+  fit_integer <- calculateKM(
+    t = c(1, 2, 3),
+    d = c(0L, 1L, 0L),
+    w = c(0.5, 1.5, 2),
+    strata = rep.int(1L, 3),
+    error = "none"
+  )
+  fit_numeric <- calculateKM(
+    t = c(1, 2, 3),
+    d = c(0L, 1L, 0L),
+    w = c(0.5, 1.5, 2),
+    strata = rep.int(1L, 3),
+    error = "none",
+    count.type = "numeric"
+  )
+
+  expect_identical(fit_integer$n.risk, c(4L, 4L, 2L))
+  expect_identical(fit_integer$n.event, c(0L, 2L, 0L))
+  expect_identical(fit_integer$n.censor, c(1L, 0L, 2L))
+  expect_equal(fit_numeric$n.risk, c(4, 3.5, 2), tolerance = 1e-12)
+  expect_equal(fit_numeric$n.event, c(0, 1.5, 0), tolerance = 1e-12)
+  expect_equal(fit_numeric$n.censor, c(0.5, 0, 2), tolerance = 1e-12)
+  expect_equal(fit_integer$surv, fit_numeric$surv, tolerance = 1e-12)
+  expect_equal(fit_numeric$surv, c(1, 4 / 7, 4 / 7), tolerance = 1e-12)
+  expect_error(
+    calculateKM(1:2, c(0L, 1L), count.type = "fractional"),
+    "should be one of"
+  )
+})

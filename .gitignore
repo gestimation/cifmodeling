@@ -10,3 +10,5 @@ inst/doc
 inst/doc/
 vignettes/*.html
 vignettes/*.R
+/simulation/results/
+/simulation/results_old/

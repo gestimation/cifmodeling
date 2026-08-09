@@ -1,11 +1,21 @@
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
+util_resolve_weights <- function(weights.expr, data, envir = parent.frame(), missing = FALSE) {
+  if (isTRUE(missing) || identical(weights.expr, quote(NULL))) return(NULL)
+  if (is.name(weights.expr)) {
+    nm <- as.character(weights.expr)
+    if (nm %in% names(data)) return(nm)
+  }
+  eval(weights.expr, envir = envir)
+}
+
 createAnalysisDataset <- function(formula,
                                   data,
                                   other.variables.analyzed = NULL,
                                   subset.condition = NULL,
                                   na.action = na.pass,
-                                  fill_missing = FALSE) {
+                                  fill_missing = FALSE,
+                                  return.info = FALSE) {
   stopifnot(is.data.frame(data))
   stopifnot(is.function(na.action))
 
@@ -33,6 +43,9 @@ createAnalysisDataset <- function(formula,
       index <- val
     }
   }
+  row_id_name <- ".cifmodeling_row_id"
+  while (row_id_name %in% names(data)) row_id_name <- paste0(row_id_name, "_")
+  data[[row_id_name]] <- seq_len(nrow(data))
   analysis_dataset <- data[index, , drop = FALSE]
 
   all_vars <- unique(c(all.vars(formula), other.variables.analyzed))
@@ -46,8 +59,26 @@ createAnalysisDataset <- function(formula,
       stop(sprintf("Undefined columns selected: %s", paste(missing_cols, collapse = ", ")))
     }
   }
-  analysis_dataset <- analysis_dataset[, all_vars, drop = FALSE]
-  return(na.action(analysis_dataset))
+  analysis_dataset <- analysis_dataset[, c(all_vars, row_id_name), drop = FALSE]
+  analysis_dataset <- na.action(analysis_dataset)
+
+  row.index <- as.integer(analysis_dataset[[row_id_name]])
+  analysis_dataset[[row_id_name]] <- NULL
+  if (!isTRUE(return.info)) return(analysis_dataset)
+
+  included <- rep_len(FALSE, nrow(data))
+  included[row.index] <- TRUE
+  exclusion.reason <- rep_len(NA_character_, nrow(data))
+  exclusion.reason[!index] <- "subset"
+  exclusion.reason[index & !included] <- "missing"
+
+  list(
+    data = analysis_dataset,
+    row.index = row.index,
+    included = included,
+    exclusion.reason = exclusion.reason,
+    subset.index = index
+  )
 }
 
 util_get_surv <- function(
@@ -142,9 +173,184 @@ util_get_surv <- function(
   predicted.surv
 }
 
+util_validate_event_codes <- function(
+    code.event1,
+    code.event2,
+    code.censoring,
+    outcome.type = NULL
+) {
+  codes <- c(code.event1, code.event2, code.censoring)
+  if (!is.numeric(codes) || length(codes) != 3L || anyNA(codes) ||
+      any(!is.finite(codes)) || any(codes < 0) || any(codes != floor(codes)) ||
+      anyDuplicated(codes)) {
+    stop(
+      "`code.event1`, `code.event2`, and `code.censoring` must be distinct non-negative integers.",
+      call. = FALSE
+    )
+  }
+  as.integer(codes)
+}
+
+cif_prepare_input <- function(
+    formula,
+    data,
+    weights = NULL,
+    other.variables.analyzed = NULL,
+    subset.condition = NULL,
+    na.action = stats::na.omit,
+    outcome.type = NULL,
+    code.event1 = 1,
+    code.event2 = 2,
+    code.censoring = 0,
+    auto_message = TRUE,
+    validate.observed.codes = TRUE
+) {
+  if (!inherits(formula, "formula")) stop("`formula` must be a formula.", call. = FALSE)
+  if (!is.data.frame(data)) stop("`data` must be a data.frame.", call. = FALSE)
+
+  codes <- util_validate_event_codes(
+    code.event1 = code.event1,
+    code.event2 = code.event2,
+    code.censoring = code.censoring,
+    outcome.type = outcome.type
+  )
+  code.event1 <- codes[1L]
+  code.event2 <- codes[2L]
+  code.censoring <- codes[3L]
+  na.action <- util_normalize_na_action(na.action)
+
+  data_work <- data
+  weight_name <- NULL
+  if (is.character(weights) && length(weights) == 1L) {
+    if (!weights %in% names(data_work)) {
+      stop("weights = '", weights, "' is not found in data.", call. = FALSE)
+    }
+    weight_name <- weights
+  } else if (!is.null(weights)) {
+    if (!is.numeric(weights) || length(weights) != nrow(data_work)) {
+      stop("Numeric `weights` must have length nrow(data).", call. = FALSE)
+    }
+    weight_name <- ".cifmodeling_weights"
+    while (weight_name %in% names(data_work)) weight_name <- paste0(weight_name, "_")
+    data_work[[weight_name]] <- weights
+  }
+
+  other_vars <- unique(c(other.variables.analyzed, weight_name))
+  prep <- createAnalysisDataset(
+    formula = formula,
+    data = data_work,
+    other.variables.analyzed = other_vars,
+    subset.condition = subset.condition,
+    na.action = na.action,
+    return.info = TRUE
+  )
+  analysis_data <- prep$data
+  if (nrow(analysis_data) == 0L) {
+    stop("No observations remain after subsetting and missing-data handling.", call. = FALSE)
+  }
+
+  allowed <- unique(c(code.censoring, code.event1, code.event2))
+  old_opt <- getOption("cifmodeling.allowed", NULL)
+  on.exit(options(cifmodeling.allowed = old_opt), add = TRUE)
+  options(cifmodeling.allowed = allowed)
+
+  outcome.type <- util_check_outcome_type(
+    x = outcome.type,
+    formula = formula,
+    data = analysis_data,
+    na.action = stats::na.pass,
+    auto_message = auto_message
+  )
+  if (!outcome.type %in% c("survival", "competing-risk")) {
+    stop("This interface supports only survival and competing-risk outcomes.", call. = FALSE)
+  }
+
+  Terms <- stats::terms(
+    formula,
+    specials = c("strata", "offset", "cluster"),
+    data = analysis_data
+  )
+  mf <- stats::model.frame(Terms, data = analysis_data, na.action = stats::na.pass)
+  Y <- stats::model.extract(mf, "response")
+  if (!inherits(Y, c("Event", "Surv"))) .err("surv_expected")
+
+  te <- util_normalize_time_event(Y[, 1L], Y[, 2L], allowed = allowed)
+  t <- te$time
+  epsilon <- te$event
+  if (anyNA(t) || anyNA(epsilon)) {
+    stop("Missing time or event values remain after `na.action`.", call. = FALSE)
+  }
+
+  allowed_observed <- if (identical(outcome.type, "survival")) {
+    c(code.censoring, code.event1)
+  } else {
+    c(code.censoring, code.event1, code.event2)
+  }
+  unexpected <- setdiff(unique(epsilon), allowed_observed)
+  if (isTRUE(validate.observed.codes) && length(unexpected)) {
+    stop(
+      "Observed status codes are incompatible with `outcome.type`: ",
+      paste(sort(unexpected), collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  term_labels <- attr(Terms, "term.labels")
+  if (length(term_labels) == 0L) {
+    strata_name <- NULL
+    formula_strata <- factor(rep.int(1L, nrow(mf)))
+  } else if (length(term_labels) == 1L) {
+    strata_name <- term_labels[1L]
+    formula_strata <- factor(mf[[strata_name]])
+  } else {
+    strata_name <- paste(term_labels, collapse = ":")
+    formula_strata <- interaction(mf[term_labels], drop = TRUE)
+  }
+
+  if (is.null(weight_name)) {
+    w <- rep.int(1, nrow(analysis_data))
+  } else {
+    w <- analysis_data[[weight_name]]
+    check_weights(w)
+  }
+
+  if (!is.null(weight_name) && startsWith(weight_name, ".cifmodeling_weights")) {
+    analysis_data[[weight_name]] <- NULL
+  }
+
+  structure(
+    list(
+      formula = formula,
+      terms = Terms,
+      data = analysis_data,
+      data.original = data,
+      row.index = prep$row.index,
+      included = prep$included,
+      exclusion.reason = prep$exclusion.reason,
+      outcome.type = outcome.type,
+      code.event1 = code.event1,
+      code.event2 = code.event2,
+      code.censoring = code.censoring,
+      t = t,
+      epsilon = epsilon,
+      d = as.integer(epsilon != code.censoring),
+      d0 = as.integer(epsilon == code.censoring),
+      d1 = as.integer(epsilon == code.event1),
+      d2 = as.integer(epsilon == code.event2),
+      strata = formula_strata,
+      strata_name = strata_name,
+      w = as.numeric(w)
+    ),
+    class = "cif_prepared_input"
+  )
+}
+
 util_read_surv <- function(formula, data, weights = NULL,
                            code.event1 = 1, code.event2 = 2, code.censoring = 0,
-                           subset.condition = NULL, na.action = stats::na.omit) {
+                           subset.condition = NULL, na.action = stats::na.omit,
+                           outcome.type = NULL, auto_message = TRUE,
+                           other.variables.analyzed = NULL,
+                           validate.observed.codes = TRUE) {
 
   # --- resolve weights without forcing evaluation ---
   weights_expr <- substitute(weights)
@@ -172,67 +378,36 @@ util_read_surv <- function(formula, data, weights = NULL,
   }
   # -------------------------------------------------
 
-  data <- createAnalysisDataset(formula, data, weights_resolved, subset.condition, na.action)
-  weights <- weights_resolved
+  prepared <- cif_prepare_input(
+    formula = formula,
+    data = data,
+    weights = weights_resolved,
+    other.variables.analyzed = other.variables.analyzed,
+    subset.condition = subset.condition,
+    na.action = na.action,
+    outcome.type = outcome.type,
+    code.event1 = code.event1,
+    code.event2 = code.event2,
+    code.censoring = code.censoring,
+    auto_message = auto_message,
+    validate.observed.codes = validate.observed.codes
+  )
 
-  # 以下、あなたの既存コードをそのまま
-  allowed <- c(code.censoring, code.event1, code.event2)
-  allowed <- unique(stats::na.omit(allowed))
-  old_opt <- getOption("cifmodeling.allowed", NULL)
-  on.exit(options(cifmodeling.allowed = old_opt), add = TRUE)
-  options(cifmodeling.allowed = allowed)
-
-  Terms <- terms(formula, specials = c("strata","offset","cluster"), data = data)
-  mf    <- model.frame(Terms, data = data, na.action = na.action)
-
-  Y <- model.extract(mf, "response")
-  if (!inherits(Y, c("Event","Surv"))) .err("surv_expected")
-
-  te <- util_normalize_time_event(Y[,1], Y[,2], allowed = allowed)
-  t <- te$time
-  epsilon <- te$event
-  if (any(t < 0, na.rm = TRUE)) .err("time_nonneg", arg = "time")
-
-  d  <- as.integer(epsilon != code.censoring)
-  d0 <- as.integer(epsilon == code.censoring)
-  d1 <- as.integer(epsilon == code.event1)
-  d2 <- as.integer(epsilon == code.event2)
-
-  mf_rows <- rownames(mf)
-  idx <- suppressWarnings(as.integer(mf_rows))
-  if (any(is.na(idx))) {
-    rn <- rownames(data)
-    if (!is.null(rn)) idx <- match(mf_rows, rn)
-  }
-  if (any(is.na(idx))) .err("align_rows_fail")
-
-  data_sync <- data[idx, , drop = FALSE]
-  term_labels <- attr(Terms, "term.labels")
-  if (length(term_labels) == 0L) {
-    strata_name <- NULL
-    strata <- factor(rep(1, nrow(mf)))
-  } else if (length(term_labels) == 1) {
-    strata_name <- term_labels[1]
-    strata <- factor(mf[[strata_name]])
-  } else {
-    strata_name <- paste(term_labels, collapse = ":")
-    strata <- interaction(mf[term_labels], drop = TRUE)
-  }
-
-  if (is.null(weights)) {
-    w <- rep(1, nrow(mf))
-  } else if (is.character(weights) && length(weights) == 1) {
-    if (!weights %in% names(data)) {
-      w <- rep(1, nrow(data))
-    } else {
-      w <- data[[weights]]
-      check_weights(w)
-    }
-  } else {
-    check_weights(weights)
-    w <- weights
-  }
-
-  list(t=t, epsilon=epsilon, d=d, d0=d0, d1=d1, d2=d2,
-       strata=strata, strata_name=strata_name, w=w, data_sync=data_sync)
+  list(
+    t = prepared$t,
+    epsilon = prepared$epsilon,
+    d = prepared$d,
+    d0 = prepared$d0,
+    d1 = prepared$d1,
+    d2 = prepared$d2,
+    strata = prepared$strata,
+    strata_name = prepared$strata_name,
+    w = prepared$w,
+    data_sync = prepared$data,
+    outcome.type = prepared$outcome.type,
+    row.index = prepared$row.index,
+    included = prepared$included,
+    exclusion.reason = prepared$exclusion.reason,
+    prepared = prepared
+  )
 }

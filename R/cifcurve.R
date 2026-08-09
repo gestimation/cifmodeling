@@ -139,7 +139,6 @@ cifcurve <- function(
     engine = "calculateAJ_Rcpp",
     prob.bound = 1e-7
 ) {
-  outcome.type <- util_check_outcome_type(outcome.type, formula = formula, data = data)
   n.risk.type <- util_check_n_risk_type(n.risk.type)
   substitute_weights <- substitute(weights)
   has_weights_user <- !(missing(weights) || identical(substitute_weights, quote(NULL)))
@@ -147,10 +146,12 @@ cifcurve <- function(
     util_read_surv(
       formula = formula, data = data, weights = arg_weights,
       code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
-      subset.condition = subset.condition, na.action = na.action
+      subset.condition = subset.condition, na.action = na.action,
+      outcome.type = outcome.type
     ),
     list(arg_weights = substitute_weights)
   ))
+  outcome.type <- out_read_surv$outcome.type
   error <- curve_check_error(error, outcome.type, weights = out_read_surv$w, has_weights = has_weights_user)
   call <- match.call()
 
@@ -169,8 +170,14 @@ cifcurve <- function(
   epsilon_norm[out_read_surv$epsilon == code.censoring] <- 0L
 
   if (identical(outcome.type, "survival") && identical(engine, "calculateKM")) {
-    out_km <- calculateKM(out_read_surv$t, out_read_surv$d,
-                          out_read_surv$w, as.integer(out_read_surv$strata), error)
+    out_km <- calculateKM(
+      out_read_surv$t,
+      out_read_surv$d,
+      out_read_surv$w,
+      as.integer(out_read_surv$strata),
+      error,
+      count.type = "integer"
+    )
     out_km$std.err <- out_km$surv * out_km$std.err
     out_ci <- calculateCI(out_km, conf.int, conf.type, conf.lower = NULL)
     if (isTRUE(report.survfit.std.err))
@@ -309,7 +316,14 @@ cifcurve <- function(
 }
 
 calculateAJ <- function(data) {
-  out_km0 <- calculateKM(data$t, data$d0, data$w, as.integer(data$strata), "none")
+  out_km0 <- calculateKM(
+    data$t,
+    data$d0,
+    data$w,
+    as.integer(data$strata),
+    "none",
+    count.type = "integer"
+  )
   km0 <- util_get_surv(data$t, out_km0$surv, out_km0$time, as.integer(data$strata), out_km0$strata, out_km0$strata.levels)
   ip.weight <- (data$d0 == 0) * ifelse(km0 > 0, 1 / km0, 0)
   d1_ipw <- as.matrix(data$w * data$d1 * ip.weight)

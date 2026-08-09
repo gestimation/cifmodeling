@@ -74,6 +74,10 @@ reference:
     contents:
       - polyreg
       - polyreg-methods
+  - title: Testing and simulation
+    contents:
+      - ciftest
+      - cifsimulate
   - title: Data
     contents:
       - diabetes.complications

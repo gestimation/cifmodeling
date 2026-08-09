@@ -30,9 +30,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// calculateKM
-Rcpp::List calculateKM(Rcpp::NumericVector t, Rcpp::IntegerVector d, Rcpp::NumericVector w, Rcpp::IntegerVector strata, std::string error);
-RcppExport SEXP _cifmodeling_calculateKM(SEXP tSEXP, SEXP dSEXP, SEXP wSEXP, SEXP strataSEXP, SEXP errorSEXP) {
+// calculateKM_engine
+Rcpp::List calculateKM_engine(Rcpp::NumericVector t, Rcpp::IntegerVector d, Rcpp::NumericVector w, Rcpp::IntegerVector strata, std::string error);
+RcppExport SEXP _cifmodeling_calculateKM_engine(SEXP tSEXP, SEXP dSEXP, SEXP wSEXP, SEXP strataSEXP, SEXP errorSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -41,14 +41,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type w(wSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type strata(strataSEXP);
     Rcpp::traits::input_parameter< std::string >::type error(errorSEXP);
-    rcpp_result_gen = Rcpp::wrap(calculateKM(t, d, w, strata, error));
+    rcpp_result_gen = Rcpp::wrap(calculateKM_engine(t, d, w, strata, error));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
     {"_cifmodeling_calculateAJ_Rcpp", (DL_FUNC) &_cifmodeling_calculateAJ_Rcpp, 10},
-    {"_cifmodeling_calculateKM", (DL_FUNC) &_cifmodeling_calculateKM, 5},
+    {"_cifmodeling_calculateKM_engine", (DL_FUNC) &_cifmodeling_calculateKM_engine, 5},
     {NULL, NULL, 0}
 };
 

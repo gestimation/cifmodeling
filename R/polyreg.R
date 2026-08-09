@@ -344,6 +344,13 @@ polyreg <- function(
   # 1. Pre-processing (function: checkSpell, checkInput, reg_normalize_covariate, sortByCovariate)
   #######################################################################################################
   computation.time0 <- proc.time()
+  data <- createAnalysisDataset(
+    formula = nuisance.model,
+    data = data,
+    other.variables.analyzed = c(exposure, strata),
+    subset.condition = subset.condition,
+    na.action = na.action
+  )
   outcome.type  <- util_check_outcome_type(outcome.type, formula=nuisance.model, data=data)
   ce <- reg_check_effect.measure(effect.measure1, effect.measure2)
   ci <- reg_check_input(data, nuisance.model, exposure, code.event1, code.event2, code.censoring, code.exposure.ref, outcome.type, conf.int, report.sandwich.conf, report.boot.conf, nleqslv.method, normalize.covariate)
@@ -351,7 +358,6 @@ polyreg <- function(
   report.sandwich.conf <- ci$report.sandwich.conf
   report.boot.conf <- ci$report.boot.conf
 
-  data <- createAnalysisDataset(formula=nuisance.model, data=data, other.variables.analyzed=c(exposure, strata), subset.condition=subset.condition, na.action=na.action)
   out_normalizeCovariate <- reg_normalize_covariate(nuisance.model, data, normalize.covariate, outcome.type, ci$out_readExposureDesign$exposure.levels)
   normalized_data <- out_normalizeCovariate$normalized_data
   tp <- reg_read_time.point(nuisance.model, normalized_data, ci$out_readExposureDesign$x_a, outcome.type, code.censoring, terminate.time.point, time.point)
