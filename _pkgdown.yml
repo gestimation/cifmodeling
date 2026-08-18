@@ -8,7 +8,7 @@ development:
 
 home:
   title: cifmodeling
-  description: A compact and unified toolkit for Kaplan-Meier/Aalen-Johansen curves, visualization, and direct polytomous regression for survival and competing risks data.
+  description: A compact toolkit for Kaplan-Meier/Aalen-Johansen curves, curve-comparison tests, visualization, and direct polytomous regression for survival and competing risks data.
 
 navbar:
   structure:
@@ -74,10 +74,10 @@ reference:
     contents:
       - polyreg
       - polyreg-methods
-  - title: Testing and simulation
+  - title: Hypothesis testing
     contents:
       - ciftest
-      - cifsimulate
+      - ciftest_mdir
   - title: Data
     contents:
       - diabetes.complications

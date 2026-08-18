@@ -71,7 +71,7 @@
 #' fit <- ciftest(
 #'   Event(time, status) ~ A,
 #'   data = dat,
-#'   augmentation = FALSE,
+#'   test = "gray",
 #'   tau = 1
 #' )
 #'
@@ -79,7 +79,8 @@
 #' truth$summary$time_averaged_cif_difference
 #'
 #' @seealso [ciftest()], [cifcurve()], [polyreg()]
-#' @export
+#' @keywords internal
+#' @noRd
 cifsimulate <- function(
     n,
     effect = c("constant", "early", "late", "fh-early", "fh-late"),

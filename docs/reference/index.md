@@ -30,6 +30,13 @@
   [`augment(`*`<polyreg>`*`)`](https://gestimation.github.io/cifmodeling/reference/polyreg-methods.md)
   : Methods for polyreg objects
 
+## Hypothesis testing
+
+- [`ciftest()`](https://gestimation.github.io/cifmodeling/reference/ciftest.md)
+  : Tests for survival and cumulative incidence curves
+- [`ciftest_mdir()`](https://gestimation.github.io/cifmodeling/reference/ciftest_mdir.md)
+  : Multiple-direction quadratic score test
+
 ## Data
 
 - [`diabetes.complications`](https://gestimation.github.io/cifmodeling/reference/diabetes.complications.md)

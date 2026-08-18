@@ -45,10 +45,234 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// ciftest_fg_iid_kernel_cpp
+Rcpp::List ciftest_fg_iid_kernel_cpp(Rcpp::NumericVector t, Rcpp::IntegerVector epsilon, Rcpp::NumericMatrix x, Rcpp::NumericVector weights, Rcpp::IntegerVector strata_id, int code_event1, int code_event2, int code_censoring, Rcpp::NumericVector event_times, Rcpp::NumericVector fh_weight, Rcpp::NumericVector g_at_competing, Rcpp::NumericMatrix g_event_stratum, Rcpp::NumericVector hazard_time, Rcpp::IntegerVector hazard_stratum, Rcpp::NumericVector hazard, Rcpp::NumericVector hazard_n_risk, double prob_bound);
+RcppExport SEXP _cifmodeling_ciftest_fg_iid_kernel_cpp(SEXP tSEXP, SEXP epsilonSEXP, SEXP xSEXP, SEXP weightsSEXP, SEXP strata_idSEXP, SEXP code_event1SEXP, SEXP code_event2SEXP, SEXP code_censoringSEXP, SEXP event_timesSEXP, SEXP fh_weightSEXP, SEXP g_at_competingSEXP, SEXP g_event_stratumSEXP, SEXP hazard_timeSEXP, SEXP hazard_stratumSEXP, SEXP hazardSEXP, SEXP hazard_n_riskSEXP, SEXP prob_boundSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type t(tSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type epsilon(epsilonSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type strata_id(strata_idSEXP);
+    Rcpp::traits::input_parameter< int >::type code_event1(code_event1SEXP);
+    Rcpp::traits::input_parameter< int >::type code_event2(code_event2SEXP);
+    Rcpp::traits::input_parameter< int >::type code_censoring(code_censoringSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type event_times(event_timesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type fh_weight(fh_weightSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type g_at_competing(g_at_competingSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type g_event_stratum(g_event_stratumSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard_time(hazard_timeSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type hazard_stratum(hazard_stratumSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard(hazardSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard_n_risk(hazard_n_riskSEXP);
+    Rcpp::traits::input_parameter< double >::type prob_bound(prob_boundSEXP);
+    rcpp_result_gen = Rcpp::wrap(ciftest_fg_iid_kernel_cpp(t, epsilon, x, weights, strata_id, code_event1, code_event2, code_censoring, event_times, fh_weight, g_at_competing, g_event_stratum, hazard_time, hazard_stratum, hazard, hazard_n_risk, prob_bound));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ciftest_fg_iid_multi_kernel_cpp
+Rcpp::List ciftest_fg_iid_multi_kernel_cpp(Rcpp::NumericVector t, Rcpp::IntegerVector epsilon, Rcpp::NumericMatrix x, Rcpp::NumericVector weights, Rcpp::IntegerVector strata_id, int code_event1, int code_event2, int code_censoring, Rcpp::NumericVector event_times, Rcpp::NumericMatrix fh_weight, Rcpp::NumericVector g_at_competing, Rcpp::NumericMatrix g_event_stratum, Rcpp::NumericVector hazard_time, Rcpp::IntegerVector hazard_stratum, Rcpp::NumericVector hazard, Rcpp::NumericVector hazard_n_risk, double prob_bound);
+RcppExport SEXP _cifmodeling_ciftest_fg_iid_multi_kernel_cpp(SEXP tSEXP, SEXP epsilonSEXP, SEXP xSEXP, SEXP weightsSEXP, SEXP strata_idSEXP, SEXP code_event1SEXP, SEXP code_event2SEXP, SEXP code_censoringSEXP, SEXP event_timesSEXP, SEXP fh_weightSEXP, SEXP g_at_competingSEXP, SEXP g_event_stratumSEXP, SEXP hazard_timeSEXP, SEXP hazard_stratumSEXP, SEXP hazardSEXP, SEXP hazard_n_riskSEXP, SEXP prob_boundSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type t(tSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type epsilon(epsilonSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type strata_id(strata_idSEXP);
+    Rcpp::traits::input_parameter< int >::type code_event1(code_event1SEXP);
+    Rcpp::traits::input_parameter< int >::type code_event2(code_event2SEXP);
+    Rcpp::traits::input_parameter< int >::type code_censoring(code_censoringSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type event_times(event_timesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type fh_weight(fh_weightSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type g_at_competing(g_at_competingSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type g_event_stratum(g_event_stratumSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard_time(hazard_timeSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type hazard_stratum(hazard_stratumSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard(hazardSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard_n_risk(hazard_n_riskSEXP);
+    Rcpp::traits::input_parameter< double >::type prob_bound(prob_boundSEXP);
+    rcpp_result_gen = Rcpp::wrap(ciftest_fg_iid_multi_kernel_cpp(t, epsilon, x, weights, strata_id, code_event1, code_event2, code_censoring, event_times, fh_weight, g_at_competing, g_event_stratum, hazard_time, hazard_stratum, hazard, hazard_n_risk, prob_bound));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ciftest_fg_iid_prefix_multi_kernel_cpp
+Rcpp::List ciftest_fg_iid_prefix_multi_kernel_cpp(Rcpp::NumericVector t, Rcpp::IntegerVector epsilon, Rcpp::NumericMatrix x, Rcpp::NumericVector weights, Rcpp::IntegerVector strata_id, int code_event1, int code_event2, int code_censoring, Rcpp::NumericVector event_times, Rcpp::NumericMatrix fh_weight, Rcpp::NumericVector g_at_competing, Rcpp::NumericMatrix g_event_stratum, Rcpp::NumericVector hazard_time, Rcpp::IntegerVector hazard_stratum, Rcpp::NumericVector hazard, Rcpp::NumericVector hazard_n_risk, double prob_bound);
+RcppExport SEXP _cifmodeling_ciftest_fg_iid_prefix_multi_kernel_cpp(SEXP tSEXP, SEXP epsilonSEXP, SEXP xSEXP, SEXP weightsSEXP, SEXP strata_idSEXP, SEXP code_event1SEXP, SEXP code_event2SEXP, SEXP code_censoringSEXP, SEXP event_timesSEXP, SEXP fh_weightSEXP, SEXP g_at_competingSEXP, SEXP g_event_stratumSEXP, SEXP hazard_timeSEXP, SEXP hazard_stratumSEXP, SEXP hazardSEXP, SEXP hazard_n_riskSEXP, SEXP prob_boundSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type t(tSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type epsilon(epsilonSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type strata_id(strata_idSEXP);
+    Rcpp::traits::input_parameter< int >::type code_event1(code_event1SEXP);
+    Rcpp::traits::input_parameter< int >::type code_event2(code_event2SEXP);
+    Rcpp::traits::input_parameter< int >::type code_censoring(code_censoringSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type event_times(event_timesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type fh_weight(fh_weightSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type g_at_competing(g_at_competingSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type g_event_stratum(g_event_stratumSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard_time(hazard_timeSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type hazard_stratum(hazard_stratumSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard(hazardSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard_n_risk(hazard_n_riskSEXP);
+    Rcpp::traits::input_parameter< double >::type prob_bound(prob_boundSEXP);
+    rcpp_result_gen = Rcpp::wrap(ciftest_fg_iid_prefix_multi_kernel_cpp(t, epsilon, x, weights, strata_id, code_event1, code_event2, code_censoring, event_times, fh_weight, g_at_competing, g_event_stratum, hazard_time, hazard_stratum, hazard, hazard_n_risk, prob_bound));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ciftest_fg_iid_prefix_kernel_cpp
+Rcpp::List ciftest_fg_iid_prefix_kernel_cpp(Rcpp::NumericVector t, Rcpp::IntegerVector epsilon, Rcpp::NumericMatrix x, Rcpp::NumericVector weights, Rcpp::IntegerVector strata_id, int code_event1, int code_event2, int code_censoring, Rcpp::NumericVector event_times, Rcpp::NumericVector fh_weight, Rcpp::NumericVector g_at_competing, Rcpp::NumericMatrix g_event_stratum, Rcpp::NumericVector hazard_time, Rcpp::IntegerVector hazard_stratum, Rcpp::NumericVector hazard, Rcpp::NumericVector hazard_n_risk, double prob_bound);
+RcppExport SEXP _cifmodeling_ciftest_fg_iid_prefix_kernel_cpp(SEXP tSEXP, SEXP epsilonSEXP, SEXP xSEXP, SEXP weightsSEXP, SEXP strata_idSEXP, SEXP code_event1SEXP, SEXP code_event2SEXP, SEXP code_censoringSEXP, SEXP event_timesSEXP, SEXP fh_weightSEXP, SEXP g_at_competingSEXP, SEXP g_event_stratumSEXP, SEXP hazard_timeSEXP, SEXP hazard_stratumSEXP, SEXP hazardSEXP, SEXP hazard_n_riskSEXP, SEXP prob_boundSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type t(tSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type epsilon(epsilonSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type strata_id(strata_idSEXP);
+    Rcpp::traits::input_parameter< int >::type code_event1(code_event1SEXP);
+    Rcpp::traits::input_parameter< int >::type code_event2(code_event2SEXP);
+    Rcpp::traits::input_parameter< int >::type code_censoring(code_censoringSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type event_times(event_timesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type fh_weight(fh_weightSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type g_at_competing(g_at_competingSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type g_event_stratum(g_event_stratumSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard_time(hazard_timeSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type hazard_stratum(hazard_stratumSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard(hazardSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard_n_risk(hazard_n_riskSEXP);
+    Rcpp::traits::input_parameter< double >::type prob_bound(prob_boundSEXP);
+    rcpp_result_gen = Rcpp::wrap(ciftest_fg_iid_prefix_kernel_cpp(t, epsilon, x, weights, strata_id, code_event1, code_event2, code_censoring, event_times, fh_weight, g_at_competing, g_event_stratum, hazard_time, hazard_stratum, hazard, hazard_n_risk, prob_bound));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ciftest_augmentation_iid_kernel_cpp
+Rcpp::List ciftest_augmentation_iid_kernel_cpp(Rcpp::NumericVector t, Rcpp::IntegerVector epsilon, Rcpp::NumericVector weights, Rcpp::IntegerVector censor_stratum_id, Rcpp::IntegerVector augmentation_cell_id, Rcpp::IntegerVector working_cell_id, int code_censoring, Rcpp::NumericVector event_times, Rcpp::NumericVector hazard_time, Rcpp::IntegerVector hazard_stratum, Rcpp::NumericVector hazard, Rcpp::NumericVector hazard_n_risk, Rcpp::NumericVector hazard_g_left, Rcpp::NumericVector working_survival, Rcpp::NumericVector working_cif2, Rcpp::NumericVector h_process, double prob_bound);
+RcppExport SEXP _cifmodeling_ciftest_augmentation_iid_kernel_cpp(SEXP tSEXP, SEXP epsilonSEXP, SEXP weightsSEXP, SEXP censor_stratum_idSEXP, SEXP augmentation_cell_idSEXP, SEXP working_cell_idSEXP, SEXP code_censoringSEXP, SEXP event_timesSEXP, SEXP hazard_timeSEXP, SEXP hazard_stratumSEXP, SEXP hazardSEXP, SEXP hazard_n_riskSEXP, SEXP hazard_g_leftSEXP, SEXP working_survivalSEXP, SEXP working_cif2SEXP, SEXP h_processSEXP, SEXP prob_boundSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type t(tSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type epsilon(epsilonSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type censor_stratum_id(censor_stratum_idSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type augmentation_cell_id(augmentation_cell_idSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type working_cell_id(working_cell_idSEXP);
+    Rcpp::traits::input_parameter< int >::type code_censoring(code_censoringSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type event_times(event_timesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard_time(hazard_timeSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type hazard_stratum(hazard_stratumSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard(hazardSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard_n_risk(hazard_n_riskSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard_g_left(hazard_g_leftSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type working_survival(working_survivalSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type working_cif2(working_cif2SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type h_process(h_processSEXP);
+    Rcpp::traits::input_parameter< double >::type prob_bound(prob_boundSEXP);
+    rcpp_result_gen = Rcpp::wrap(ciftest_augmentation_iid_kernel_cpp(t, epsilon, weights, censor_stratum_id, augmentation_cell_id, working_cell_id, code_censoring, event_times, hazard_time, hazard_stratum, hazard, hazard_n_risk, hazard_g_left, working_survival, working_cif2, h_process, prob_bound));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ciftest_augmentation_iid_multi_kernel_cpp
+Rcpp::List ciftest_augmentation_iid_multi_kernel_cpp(Rcpp::NumericVector t, Rcpp::IntegerVector epsilon, Rcpp::NumericVector weights, Rcpp::IntegerVector censor_stratum_id, Rcpp::IntegerVector augmentation_cell_id, Rcpp::IntegerVector working_cell_id, int code_censoring, Rcpp::NumericVector event_times, Rcpp::NumericVector hazard_time, Rcpp::IntegerVector hazard_stratum, Rcpp::NumericVector hazard, Rcpp::NumericVector hazard_n_risk, Rcpp::NumericVector hazard_g_left, Rcpp::NumericVector working_survival, Rcpp::NumericVector working_cif2, Rcpp::NumericVector h_process, double prob_bound);
+RcppExport SEXP _cifmodeling_ciftest_augmentation_iid_multi_kernel_cpp(SEXP tSEXP, SEXP epsilonSEXP, SEXP weightsSEXP, SEXP censor_stratum_idSEXP, SEXP augmentation_cell_idSEXP, SEXP working_cell_idSEXP, SEXP code_censoringSEXP, SEXP event_timesSEXP, SEXP hazard_timeSEXP, SEXP hazard_stratumSEXP, SEXP hazardSEXP, SEXP hazard_n_riskSEXP, SEXP hazard_g_leftSEXP, SEXP working_survivalSEXP, SEXP working_cif2SEXP, SEXP h_processSEXP, SEXP prob_boundSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type t(tSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type epsilon(epsilonSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type censor_stratum_id(censor_stratum_idSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type augmentation_cell_id(augmentation_cell_idSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type working_cell_id(working_cell_idSEXP);
+    Rcpp::traits::input_parameter< int >::type code_censoring(code_censoringSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type event_times(event_timesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard_time(hazard_timeSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type hazard_stratum(hazard_stratumSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard(hazardSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard_n_risk(hazard_n_riskSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard_g_left(hazard_g_leftSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type working_survival(working_survivalSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type working_cif2(working_cif2SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type h_process(h_processSEXP);
+    Rcpp::traits::input_parameter< double >::type prob_bound(prob_boundSEXP);
+    rcpp_result_gen = Rcpp::wrap(ciftest_augmentation_iid_multi_kernel_cpp(t, epsilon, weights, censor_stratum_id, augmentation_cell_id, working_cell_id, code_censoring, event_times, hazard_time, hazard_stratum, hazard, hazard_n_risk, hazard_g_left, working_survival, working_cif2, h_process, prob_bound));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ciftest_augmentation_iid_prefix_multi_kernel_cpp
+Rcpp::List ciftest_augmentation_iid_prefix_multi_kernel_cpp(Rcpp::NumericVector t, Rcpp::IntegerVector epsilon, Rcpp::NumericVector weights, Rcpp::IntegerVector censor_stratum_id, Rcpp::IntegerVector augmentation_cell_id, Rcpp::IntegerVector working_cell_id, int code_censoring, Rcpp::NumericVector event_times, Rcpp::NumericVector hazard_time, Rcpp::IntegerVector hazard_stratum, Rcpp::NumericVector hazard, Rcpp::NumericVector hazard_n_risk, Rcpp::NumericVector hazard_g_left, Rcpp::NumericVector working_survival, Rcpp::NumericVector working_cif2, Rcpp::NumericVector h_process, double prob_bound);
+RcppExport SEXP _cifmodeling_ciftest_augmentation_iid_prefix_multi_kernel_cpp(SEXP tSEXP, SEXP epsilonSEXP, SEXP weightsSEXP, SEXP censor_stratum_idSEXP, SEXP augmentation_cell_idSEXP, SEXP working_cell_idSEXP, SEXP code_censoringSEXP, SEXP event_timesSEXP, SEXP hazard_timeSEXP, SEXP hazard_stratumSEXP, SEXP hazardSEXP, SEXP hazard_n_riskSEXP, SEXP hazard_g_leftSEXP, SEXP working_survivalSEXP, SEXP working_cif2SEXP, SEXP h_processSEXP, SEXP prob_boundSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type t(tSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type epsilon(epsilonSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type censor_stratum_id(censor_stratum_idSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type augmentation_cell_id(augmentation_cell_idSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type working_cell_id(working_cell_idSEXP);
+    Rcpp::traits::input_parameter< int >::type code_censoring(code_censoringSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type event_times(event_timesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard_time(hazard_timeSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type hazard_stratum(hazard_stratumSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard(hazardSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard_n_risk(hazard_n_riskSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard_g_left(hazard_g_leftSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type working_survival(working_survivalSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type working_cif2(working_cif2SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type h_process(h_processSEXP);
+    Rcpp::traits::input_parameter< double >::type prob_bound(prob_boundSEXP);
+    rcpp_result_gen = Rcpp::wrap(ciftest_augmentation_iid_prefix_multi_kernel_cpp(t, epsilon, weights, censor_stratum_id, augmentation_cell_id, working_cell_id, code_censoring, event_times, hazard_time, hazard_stratum, hazard, hazard_n_risk, hazard_g_left, working_survival, working_cif2, h_process, prob_bound));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ciftest_augmentation_iid_prefix_kernel_cpp
+Rcpp::List ciftest_augmentation_iid_prefix_kernel_cpp(Rcpp::NumericVector t, Rcpp::IntegerVector epsilon, Rcpp::NumericVector weights, Rcpp::IntegerVector censor_stratum_id, Rcpp::IntegerVector augmentation_cell_id, Rcpp::IntegerVector working_cell_id, int code_censoring, Rcpp::NumericVector event_times, Rcpp::NumericVector hazard_time, Rcpp::IntegerVector hazard_stratum, Rcpp::NumericVector hazard, Rcpp::NumericVector hazard_n_risk, Rcpp::NumericVector hazard_g_left, Rcpp::NumericVector working_survival, Rcpp::NumericVector working_cif2, Rcpp::NumericVector h_process, double prob_bound);
+RcppExport SEXP _cifmodeling_ciftest_augmentation_iid_prefix_kernel_cpp(SEXP tSEXP, SEXP epsilonSEXP, SEXP weightsSEXP, SEXP censor_stratum_idSEXP, SEXP augmentation_cell_idSEXP, SEXP working_cell_idSEXP, SEXP code_censoringSEXP, SEXP event_timesSEXP, SEXP hazard_timeSEXP, SEXP hazard_stratumSEXP, SEXP hazardSEXP, SEXP hazard_n_riskSEXP, SEXP hazard_g_leftSEXP, SEXP working_survivalSEXP, SEXP working_cif2SEXP, SEXP h_processSEXP, SEXP prob_boundSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type t(tSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type epsilon(epsilonSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type censor_stratum_id(censor_stratum_idSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type augmentation_cell_id(augmentation_cell_idSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type working_cell_id(working_cell_idSEXP);
+    Rcpp::traits::input_parameter< int >::type code_censoring(code_censoringSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type event_times(event_timesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard_time(hazard_timeSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type hazard_stratum(hazard_stratumSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard(hazardSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard_n_risk(hazard_n_riskSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type hazard_g_left(hazard_g_leftSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type working_survival(working_survivalSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type working_cif2(working_cif2SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type h_process(h_processSEXP);
+    Rcpp::traits::input_parameter< double >::type prob_bound(prob_boundSEXP);
+    rcpp_result_gen = Rcpp::wrap(ciftest_augmentation_iid_prefix_kernel_cpp(t, epsilon, weights, censor_stratum_id, augmentation_cell_id, working_cell_id, code_censoring, event_times, hazard_time, hazard_stratum, hazard, hazard_n_risk, hazard_g_left, working_survival, working_cif2, h_process, prob_bound));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_cifmodeling_calculateAJ_Rcpp", (DL_FUNC) &_cifmodeling_calculateAJ_Rcpp, 10},
     {"_cifmodeling_calculateKM_engine", (DL_FUNC) &_cifmodeling_calculateKM_engine, 5},
+    {"_cifmodeling_ciftest_fg_iid_kernel_cpp", (DL_FUNC) &_cifmodeling_ciftest_fg_iid_kernel_cpp, 17},
+    {"_cifmodeling_ciftest_fg_iid_multi_kernel_cpp", (DL_FUNC) &_cifmodeling_ciftest_fg_iid_multi_kernel_cpp, 17},
+    {"_cifmodeling_ciftest_fg_iid_prefix_multi_kernel_cpp", (DL_FUNC) &_cifmodeling_ciftest_fg_iid_prefix_multi_kernel_cpp, 17},
+    {"_cifmodeling_ciftest_fg_iid_prefix_kernel_cpp", (DL_FUNC) &_cifmodeling_ciftest_fg_iid_prefix_kernel_cpp, 17},
+    {"_cifmodeling_ciftest_augmentation_iid_kernel_cpp", (DL_FUNC) &_cifmodeling_ciftest_augmentation_iid_kernel_cpp, 17},
+    {"_cifmodeling_ciftest_augmentation_iid_multi_kernel_cpp", (DL_FUNC) &_cifmodeling_ciftest_augmentation_iid_multi_kernel_cpp, 17},
+    {"_cifmodeling_ciftest_augmentation_iid_prefix_multi_kernel_cpp", (DL_FUNC) &_cifmodeling_ciftest_augmentation_iid_prefix_multi_kernel_cpp, 17},
+    {"_cifmodeling_ciftest_augmentation_iid_prefix_kernel_cpp", (DL_FUNC) &_cifmodeling_ciftest_augmentation_iid_prefix_kernel_cpp, 17},
     {NULL, NULL, 0}
 };
 

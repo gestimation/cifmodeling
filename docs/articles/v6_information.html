@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -199,7 +199,7 @@ Starting values are obtained from the nuisance model fits via
 user-supplied data frame of starting values.
 Inverse-probability-of-censoring weights for survival and
 competing-risks outcomes are calculated by <code>calculateIPCW()</code>,
-which in turn wraps the <code>calculateKM()</code> C++ routine to obtain
+which in turn wraps the <code><a href="../reference/calculateKM.html">calculateKM()</a></code> C++ routine to obtain
 the Kaplan-Meier estimates of censoring, while the proportional models
 assemble matrices through <code>calculateIPCWMatrix()</code>.</p>
 <p>The weighted estimating equations are then solved by

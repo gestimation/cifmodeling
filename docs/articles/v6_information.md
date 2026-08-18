@@ -118,9 +118,10 @@ via `getInitialValues()` or `getInitialValuesProportional()`, or, when
 necessary, from user-supplied data frame of starting values.
 Inverse-probability-of-censoring weights for survival and
 competing-risks outcomes are calculated by `calculateIPCW()`, which in
-turn wraps the `calculateKM()` C++ routine to obtain the Kaplan-Meier
-estimates of censoring, while the proportional models assemble matrices
-through `calculateIPCWMatrix()`.
+turn wraps the
+[`calculateKM()`](https://gestimation.github.io/cifmodeling/reference/calculateKM.md)
+C++ routine to obtain the Kaplan-Meier estimates of censoring, while the
+proportional models assemble matrices through `calculateIPCWMatrix()`.
 
 The weighted estimating equations are then solved by
 `solveEstimatingEquation()`, which dispatches to specific score

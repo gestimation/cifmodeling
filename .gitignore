@@ -10,6 +10,5 @@ inst/doc
 inst/doc/
 vignettes/*.html
 vignettes/*.R
-/simulation/results/
-/simulation/results_old/
-/simulation/results_phase3*/
+/simulation/
+/20260816*.png

@@ -22,8 +22,8 @@ publication-ready survival and competing risk plots – with just a few
 lines of R.
 
 It provides a unified, high-level interface for survival and competing
-risks analysis, combining nonparametric estimation, regression modeling,
-and visualization. It is centered around three tightly connected
+risks analysis, combining nonparametric estimation, hypothesis testing,
+regression modeling, and visualization. It is centered around four tightly connected
 functions:
 
 - `cifplot()` generates a survival or cumulative incidence function
@@ -31,6 +31,8 @@ functions:
   `ggplot2`.
 - `cifpanel()` creates multi-panel displays for survival/CIF curves,
   arranged either **in a grid layout or as an inset overlay**.
+- `ciftest()` compares survival or CIF curves using log-rank, Gray,
+  robust score, augmented score, or multiple-direction tests.
 - `polyreg()` fits **coherent regression models** on all cause-specific
   CIFs simultaneously to estimate RR/OR/SHR, offering a practical
   complement to Fine-Gray.
@@ -76,6 +78,26 @@ data frame, `epsilon` follows this convention. With
 `panel.per.event = TRUE`, `cifplot()` visualizes both competing events,
 with the CIF of diabetic retinopathy (`epsilon = 1`) shown on the left
 and the CIF of macrovascular complications (`epsilon = 2`) on the right.
+
+### Tests of survival and cumulative incidence curves
+
+`ciftest()` uses the same formula interface. Its default is log-rank for
+a survival outcome and the augmented score test for a competing-risk
+outcome. Short aliases are available for interactive use:
+`"L"`/`"LR"`/`"log-rank"`, `"G"`, and
+`"A"`/`"aug"`/`"augmentation"`. The `"early"` and `"late"` presets
+choose the outcome-specific test with Fleming--Harrington weights, while
+`"multiple"` (or `"multi"`/`"m"`) combines the default directions
+`(2, 0)`, `(0, 2)`, and `(0, 0)`. Optional lower truncation of nuisance
+probabilities is controlled by `prob.truncation`.
+
+``` r
+ciftest(
+  Event(t, epsilon) ~ fruitq1,
+  data = diabetes.complications,
+  test = "G"
+)
+```
 
 ## A workflow of competing risks analysis
 
@@ -291,6 +313,9 @@ data. The tools assist users in the following ways:
   models all cause-specific CIFs together, parameterizing the nuisance
   structure with polytomous log odds products and enforcing that their
   CIFs sum to at most one.
+- **Curve-comparison tests**: `ciftest()` provides log-rank, Gray,
+  robust score, augmented score, and rank-adaptive multiple-direction
+  tests through the same formula syntax.
 - **Tidy summaries and reporting**: support for `generics::tidy()`,
   `glance()`, and `augment()`, which integrate `polyreg()` smoothly with
   `modelsummary` and other broom-style tools.
@@ -360,7 +385,8 @@ existing package currently offers in one place.
 |----|----|----|----|----|----|
 | AJ estimator | Yes | Yes (multistate `survfit`) | Yes (`cuminc`) | Yes | Depends on input |
 | Weighted AJ estimator and valid SE | Yes (IPW + IF-based SE) | Yes (case weights / robust SE) | No | Yes (IPW + IF-based SE) | Depends on input |
-| Gray test | No | No (only log-rank via `survdiff`) | Yes (`cuminc`) | No | `tidycmprsk::glance()` + `add_pvalue()` |
+| Gray test | Yes (`ciftest`) | No (only log-rank via `survdiff`) | Yes (`cuminc`) | No | `tidycmprsk::glance()` + `add_pvalue()` |
+| Time-weighted / augmented score test | Yes (`ciftest`) | No | No | Related methods | No |
 | Fine–Gray model | No | `finegray`+`coxph` | `crr` | `cifregFG` | No |
 | Direct CIF regression | `polyreg` | No | No | `cifreg`, `binreg` | No |
 | Surv()/Event() interface | Yes (`Event`, `Surv`) | Yes (`Surv`) | No (`ftime`/`fstatus`) | Yes (`Event`, `Surv`) | Yes (`Surv`, `ggcuminc` + tidiers) |
@@ -387,9 +413,7 @@ install.packages(c("ggplot2", "ggsurvfit", "patchwork", "modelsummary"))
 
 **cifmodeling** includes an extensive test suite built with
 **testthat**, which checks the numerical accuracy and graphical
-consistency of all core functions (`cifcurve()`, `cifplot()`,
-`cifpanel()`, and `polyreg()`). The estimators are routinely compared
-against related functions in **survival**, **cmprsk** and **mets**
-packages to ensure consistency. The package is continuously tested on
-GitHub Actions (Windows, macOS, Linux) to maintain reproducibility and
-CRAN-level compliance.
+consistency of the core estimation, testing, modeling, and plotting
+functions, including `ciftest()`. Numerical results are compared against
+related functions in **survival**, **cmprsk**, and **mets** where
+independent reference implementations are available.

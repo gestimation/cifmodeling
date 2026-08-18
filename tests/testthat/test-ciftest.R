@@ -1,6 +1,234 @@
 # tests/testthat/test-ciftest-logrank-components.R
 testthat::local_edition(3)
 
+testthat::test_that("the public test resolver follows outcome defaults and presets", {
+  survival_data <- data.frame(
+    time = 1:8,
+    status = c(1, 0, 1, 0, 1, 1, 0, 1),
+    group = factor(rep(c("A", "B"), 4))
+  )
+  competing_data <- transform(
+    survival_data,
+    status = c(1, 0, 2, 0, 1, 2, 0, 1)
+  )
+
+  survival_fit <- ciftest(Event(time, status) ~ group, survival_data)
+  competing_fit <- ciftest(Event(time, status) ~ group, competing_data)
+  early_fit <- ciftest(
+    Event(time, status) ~ group, competing_data, test = "early"
+  )
+  late_fit <- ciftest(
+    Event(time, status) ~ group, competing_data, test = "late"
+  )
+  multiple_fit <- ciftest(
+    Event(time, status) ~ group, survival_data, test = "m"
+  )
+
+  testthat::expect_identical(survival_fit$test, "logrank")
+  testthat::expect_identical(competing_fit$test, "augmented")
+  for (alias in c("L", "LR", "log-rank")) {
+    spec <- ciftest_resolve_test_spec("survival", test = alias)
+    testthat::expect_identical(spec$test, "logrank")
+  }
+  testthat::expect_identical(
+    ciftest_resolve_test_spec("competing-risk", test = "G")$test,
+    "gray"
+  )
+  for (alias in c("A", "aug", "augmentation")) {
+    spec <- ciftest_resolve_test_spec("competing-risk", test = alias)
+    testthat::expect_identical(spec$test, "augmented")
+  }
+  logrank_alias_fit <- ciftest(
+    Event(time, status) ~ group, survival_data, test = "LR"
+  )
+  testthat::expect_equal(
+    logrank_alias_fit$statistic, survival_fit$statistic,
+    tolerance = 1e-12
+  )
+  testthat::expect_identical(c(early_fit$rho, early_fit$gamma), c(1, 0))
+  testthat::expect_identical(c(late_fit$rho, late_fit$gamma), c(0, 1))
+  testthat::expect_s3_class(multiple_fit, "ciftest_mdir")
+  testthat::expect_identical(
+    unname(as.matrix(multiple_fit$directions[, c("rho", "gamma")])),
+    matrix(c(2, 0, 0, 0, 2, 0), ncol = 2)
+  )
+  testthat::expect_error(
+    ciftest(Event(time, status) ~ group, competing_data,
+            test = "early", rho = 0.5),
+    "fixed preset"
+  )
+})
+
+testthat::test_that("survival score uses individual robust score covariance", {
+  df <- data.frame(
+    time = 1:10,
+    status = c(1, 0, 1, 0, 1, 1, 0, 1, 0, 1),
+    group = factor(rep(c("A", "B"), 5)),
+    block = factor(rep(c("X", "Y"), each = 5))
+  )
+  fit <- ciftest(
+    Event(time, status) ~ group, df,
+    outcome.type = "S", test = "score", strata = "block"
+  )
+  testthat::expect_s3_class(fit, "ciftest_score")
+  testthat::expect_equal(fit$vcov.score, crossprod(fit$score.iid))
+  testthat::expect_equal(colSums(fit$score.iid), fit$score)
+  testthat::expect_identical(fit$variance.method, "score-iid")
+})
+
+testthat::test_that("competing-risk score permits censoring strata", {
+  df <- data.frame(
+    time = 1:12,
+    status = c(0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2),
+    group = factor(rep(c("A", "B"), 6)),
+    censor = factor(rep(c("L", "H"), each = 6))
+  )
+  fit <- ciftest(
+    Event(time, status) ~ group, df,
+    test = "score", strata.censor = "censor"
+  )
+  testthat::expect_s3_class(fit, "ciftest_score")
+  testthat::expect_identical(fit$strata.censor.info$columns, "censor")
+  testthat::expect_length(fit$strata.competing.risk.info$columns, 0L)
+})
+
+testthat::test_that("probability truncation reports raw and used nuisance support", {
+  df <- data.frame(
+    time = 1:10,
+    status = c(0, 0, 2, 2, 1, 1, 2, 1, 1, 1),
+    group = factor(rep(c("A", "B"), 5))
+  )
+  fit <- ciftest(
+    Event(time, status) ~ group, df,
+    test = "score", prob.truncation = 0.8
+  )
+  diagnostic <- fit$diagnostics$truncation
+  testthat::expect_true(diagnostic$requested)
+  testthat::expect_true(diagnostic$applied)
+  testthat::expect_gt(diagnostic$censoring.count, 0L)
+  testthat::expect_lt(diagnostic$censoring.minimum.raw,
+                      diagnostic$censoring.minimum.used)
+  testthat::expect_identical(fit$diagnostics$score.engine, "R")
+  testthat::expect_error(
+    ciftest(Event(time, status) ~ group, df,
+            test = "gray", prob.truncation = 0.8),
+    "only for competing-risk score and augmented"
+  )
+})
+
+testthat::test_that("multigroup augmented score is an omnibus test", {
+  df <- data.frame(
+    time = rep(1:6, 3),
+    status = rep(c(1, 2, 0, 1, 2, 0), 3),
+    group = factor(rep(c("A", "B", "C"), each = 6))
+  )
+  fit <- ciftest(Event(time, status) ~ group, df)
+  testthat::expect_s3_class(fit, "ciftest_augmented")
+  testthat::expect_identical(ncol(fit$score.iid), 2L)
+  testthat::expect_true(unname(fit$parameter) %in% 1:2)
+  testthat::expect_true(is.finite(fit$p.value))
+})
+
+testthat::test_that("multiple-direction wrapper preserves one-direction tests", {
+  survival_data <- data.frame(
+    time = 1:10,
+    status = c(1, 0, 1, 0, 1, 1, 0, 1, 0, 1),
+    group = factor(rep(c("A", "B"), 5))
+  )
+  scalar <- ciftest(
+    Event(time, status) ~ group, survival_data, test = "logrank"
+  )
+  combined <- ciftest_mdir(
+    Event(time, status) ~ group, survival_data,
+    directions = "unweighted", test = "logrank"
+  )
+  testthat::expect_s3_class(combined, "ciftest_mdir")
+  testthat::expect_equal(combined$statistic, scalar$statistic,
+                         tolerance = 1e-10)
+  testthat::expect_equal(combined$vcov.score, scalar$vcov.score,
+                         ignore_attr = TRUE, tolerance = 1e-10)
+
+  multiple <- ciftest_mdir(
+    Event(time, status) ~ group, survival_data,
+    directions = c("early", "late", "unweighted")
+  )
+  testthat::expect_identical(ncol(multiple$score.iid), 3L)
+  testthat::expect_equal(
+    unname(as.matrix(multiple$directions[, c("rho", "gamma")])),
+    matrix(c(2, 0, 0, 0, 2, 0), ncol = 2)
+  )
+  testthat::expect_true(unname(multiple$parameter) %in% 1:3)
+  testthat::expect_true(is.finite(multiple$p.value))
+})
+
+testthat::test_that("multiple-direction classical covariances preserve FH spans", {
+  survival_data <- data.frame(
+    time = rep(1:6, 3),
+    status = c(
+      1, 1, 0, 1, 0, 1,
+      1, 0, 1, 1, 1, 0,
+      0, 1, 1, 0, 1, 1
+    ),
+    group = factor(rep(c("A", "B", "C"), each = 6))
+  )
+  competing_data <- transform(
+    survival_data,
+    status = c(
+      1, 2, 0, 1, 2, 1,
+      1, 0, 2, 1, 1, 2,
+      2, 1, 1, 0, 2, 1
+    )
+  )
+
+  check_span <- function(data, test) {
+    two_directions <- rbind(
+      early1 = c(rho = 1, gamma = 0),
+      late1 = c(rho = 0, gamma = 1)
+    )
+    three_directions <- rbind(
+      unweighted = c(rho = 0, gamma = 0),
+      early1 = c(rho = 1, gamma = 0),
+      late1 = c(rho = 0, gamma = 1)
+    )
+    two <- ciftest_mdir(
+      Event(time, status) ~ group, data,
+      directions = two_directions, test = test
+    )
+    three <- ciftest_mdir(
+      Event(time, status) ~ group, data,
+      directions = three_directions, test = test
+    )
+    scalar <- ciftest(
+      Event(time, status) ~ group, data,
+      test = test, rho = 1, gamma = 0
+    )
+
+    testthat::expect_equal(three$statistic, two$statistic,
+                           tolerance = 1e-10)
+    testthat::expect_equal(three$p.value, two$p.value,
+                           tolerance = 1e-10)
+    testthat::expect_identical(unname(three$parameter), 4L)
+    testthat::expect_equal(
+      two$vcov.score[1:2, 1:2, drop = FALSE],
+      scalar$vcov.score,
+      ignore_attr = TRUE,
+      tolerance = 1e-10
+    )
+    two
+  }
+
+  logrank <- check_span(survival_data, "logrank")
+  gray <- check_span(competing_data, "gray")
+  testthat::expect_identical(
+    logrank$diagnostics$covariance.source,
+    "joint hypergeometric"
+  )
+  testthat::expect_identical(
+    gray$diagnostics$covariance.source,
+    "joint Gray"
+  )
+})
+
 testthat::test_that("ciftest survival UI returns an htest-compatible result", {
   testthat::skip_if_not_installed("survival")
   df <- data.frame(
@@ -18,6 +246,8 @@ testthat::test_that("ciftest survival UI returns an htest-compatible result", {
 
   testthat::expect_s3_class(fit, "ciftest")
   testthat::expect_s3_class(fit, "htest")
+  testthat::expect_s3_class(fit, "survdiff")
+  testthat::expect_s3_class(fit$survdiff, "survdiff")
   testthat::expect_equal(unname(fit$statistic), unname(ref$chisq), tolerance = 1e-10)
   testthat::expect_identical(fit$variance.method, "hypergeometric")
   testthat::expect_true(is.matrix(fit$score.iid))
@@ -67,6 +297,7 @@ testthat::test_that("ciftest defaults to augmentation and retains standard Gray"
     augmented$method,
     "Closed-form augmented Fine-Gray score test"
   )
+  testthat::expect_identical(augmented$iteration, 0L)
   testthat::expect_identical(augmented$variance.method, "score-iid")
   fit <- ciftest(Event(time, status) ~ group, data = df, augmentation = FALSE)
   testthat::expect_s3_class(fit, "ciftest")
@@ -76,8 +307,8 @@ testthat::test_that("ciftest defaults to augmentation and retains standard Gray"
   testthat::expect_identical(unname(fit$parameter), 1L)
   testthat::expect_error(
     ciftest(Event(time, status) ~ group, data = df,
-            augmentation = FALSE, iteration = TRUE),
-    "requires `augmentation = TRUE`"
+            augmentation = FALSE, iteration = 1),
+    "requires `test = \"augmented\"`"
   )
 })
 
@@ -190,7 +421,8 @@ testthat::test_that("standard Gray reports unsupported weighting boundaries", {
     time = 1:6,
     status = c(0L, 1L, 2L, 0L, 1L, 2L),
     group = factor(rep(c("A", "B"), 3)),
-    censor_stratum = factor(rep(c("X", "Y"), 3))
+    censor_stratum = factor(rep(c("X", "Y"), 3)),
+    analysis_stratum = factor(c("X", "X", "Y", "Y", "X", "X"))
   )
 
   testthat::expect_error(
@@ -201,13 +433,14 @@ testthat::test_that("standard Gray reports unsupported weighting boundaries", {
   testthat::expect_error(
     ciftest(Event(time, status) ~ group, df,
             augmentation = FALSE, strata.censor = "censor_stratum"),
-    "require `augmentation = TRUE`"
+    "only for competing-risk score and augmented"
   )
-  testthat::expect_error(
-    ciftest(Event(time, status) ~ group, df,
-            strata = "censor_stratum"),
-    "matches multiple formal arguments"
+  stratified <- ciftest(
+    Event(time, status) ~ group, df,
+    test = "gray", strata = "analysis_stratum"
   )
+  testthat::expect_identical(stratified$strata.info$columns,
+                             "analysis_stratum")
 })
 
 testthat::test_that("standard Gray survives an unavailable diagnostic score iid", {
@@ -254,8 +487,19 @@ testthat::test_that("ciftest validates formula and control arguments", {
     "`rho`"
   )
   testthat::expect_error(
-    ciftest(Event(time, status) ~ g1, df, outcome.type = "survival", iter.max = 0),
-    "`iter.max`"
+    ciftest(Event(time, status) ~ g1, df,
+            outcome.type = "survival", iteration = -1),
+    "non-negative integer"
+  )
+  testthat::expect_error(
+    ciftest(Event(time, status) ~ g1, df,
+            outcome.type = "survival", iteration = 1.5),
+    "non-negative integer"
+  )
+  testthat::expect_error(
+    ciftest(Event(time, status) ~ g1, df,
+            outcome.type = "survival", iteration = TRUE),
+    "non-negative integer"
   )
 })
 

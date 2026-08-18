@@ -104,7 +104,7 @@ test_that("cifsimulate output can be analyzed directly by ciftest", {
   fit <- ciftest(
     Event(time, status) ~ A,
     data = dat,
-    augmentation = FALSE,
+    test = "gray",
     tau = 1
   )
   expect_s3_class(fit, "ciftest")

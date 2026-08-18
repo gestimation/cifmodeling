@@ -23,8 +23,13 @@
 <url><loc>https://gestimation.github.io/cifmodeling/LICENSE.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/news/index.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/binregRatioLOP.html</loc></url>
+<url><loc>https://gestimation.github.io/cifmodeling/reference/build_closed_form_augmentation.html</loc></url>
+<url><loc>https://gestimation.github.io/cifmodeling/reference/build_fg_score_iid.html</loc></url>
+<url><loc>https://gestimation.github.io/cifmodeling/reference/build_iterated_score_iid.html</loc></url>
+<url><loc>https://gestimation.github.io/cifmodeling/reference/calculateKM.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/calculatePercentageLOP.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/calculate_A12_logrank_weightit.html</loc></url>
+<url><loc>https://gestimation.github.io/cifmodeling/reference/calculate_gray.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/cif-stat-arguments.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/cif-visual-arguments.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/cifcurve.html</loc></url>
@@ -32,7 +37,12 @@
 <url><loc>https://gestimation.github.io/cifmodeling/reference/cifmodeling-package.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/cifpanel.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/cifplot.html</loc></url>
+<url><loc>https://gestimation.github.io/cifmodeling/reference/ciftest.html</loc></url>
+<url><loc>https://gestimation.github.io/cifmodeling/reference/ciftest_iteration_setup.html</loc></url>
+<url><loc>https://gestimation.github.io/cifmodeling/reference/ciftest_mdir.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/diabetes.complications.html</loc></url>
+<url><loc>https://gestimation.github.io/cifmodeling/reference/estimate_censoring_km.html</loc></url>
+<url><loc>https://gestimation.github.io/cifmodeling/reference/estimate_working_aj.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/Event.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/extract_time_to_event.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/fd_step_safe.html</loc></url>
@@ -41,6 +51,8 @@
 <url><loc>https://gestimation.github.io/cifmodeling/reference/methods.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/polyreg-methods.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/polyreg.html</loc></url>
+<url><loc>https://gestimation.github.io/cifmodeling/reference/predict_censoring_km.html</loc></url>
+<url><loc>https://gestimation.github.io/cifmodeling/reference/predict_working_aj.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/prostate.html</loc></url>
 </urlset>
 

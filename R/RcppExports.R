@@ -9,3 +9,35 @@ calculateKM_engine <- function(t, d, w = as.numeric( c()), strata = as.integer( 
     .Call(`_cifmodeling_calculateKM_engine`, t, d, w, strata, error)
 }
 
+ciftest_fg_iid_kernel_cpp <- function(t, epsilon, x, weights, strata_id, code_event1, code_event2, code_censoring, event_times, fh_weight, g_at_competing, g_event_stratum, hazard_time, hazard_stratum, hazard, hazard_n_risk, prob_bound) {
+    .Call(`_cifmodeling_ciftest_fg_iid_kernel_cpp`, t, epsilon, x, weights, strata_id, code_event1, code_event2, code_censoring, event_times, fh_weight, g_at_competing, g_event_stratum, hazard_time, hazard_stratum, hazard, hazard_n_risk, prob_bound)
+}
+
+ciftest_fg_iid_multi_kernel_cpp <- function(t, epsilon, x, weights, strata_id, code_event1, code_event2, code_censoring, event_times, fh_weight, g_at_competing, g_event_stratum, hazard_time, hazard_stratum, hazard, hazard_n_risk, prob_bound) {
+    .Call(`_cifmodeling_ciftest_fg_iid_multi_kernel_cpp`, t, epsilon, x, weights, strata_id, code_event1, code_event2, code_censoring, event_times, fh_weight, g_at_competing, g_event_stratum, hazard_time, hazard_stratum, hazard, hazard_n_risk, prob_bound)
+}
+
+ciftest_fg_iid_prefix_multi_kernel_cpp <- function(t, epsilon, x, weights, strata_id, code_event1, code_event2, code_censoring, event_times, fh_weight, g_at_competing, g_event_stratum, hazard_time, hazard_stratum, hazard, hazard_n_risk, prob_bound) {
+    .Call(`_cifmodeling_ciftest_fg_iid_prefix_multi_kernel_cpp`, t, epsilon, x, weights, strata_id, code_event1, code_event2, code_censoring, event_times, fh_weight, g_at_competing, g_event_stratum, hazard_time, hazard_stratum, hazard, hazard_n_risk, prob_bound)
+}
+
+ciftest_fg_iid_prefix_kernel_cpp <- function(t, epsilon, x, weights, strata_id, code_event1, code_event2, code_censoring, event_times, fh_weight, g_at_competing, g_event_stratum, hazard_time, hazard_stratum, hazard, hazard_n_risk, prob_bound) {
+    .Call(`_cifmodeling_ciftest_fg_iid_prefix_kernel_cpp`, t, epsilon, x, weights, strata_id, code_event1, code_event2, code_censoring, event_times, fh_weight, g_at_competing, g_event_stratum, hazard_time, hazard_stratum, hazard, hazard_n_risk, prob_bound)
+}
+
+ciftest_augmentation_iid_kernel_cpp <- function(t, epsilon, weights, censor_stratum_id, augmentation_cell_id, working_cell_id, code_censoring, event_times, hazard_time, hazard_stratum, hazard, hazard_n_risk, hazard_g_left, working_survival, working_cif2, h_process, prob_bound) {
+    .Call(`_cifmodeling_ciftest_augmentation_iid_kernel_cpp`, t, epsilon, weights, censor_stratum_id, augmentation_cell_id, working_cell_id, code_censoring, event_times, hazard_time, hazard_stratum, hazard, hazard_n_risk, hazard_g_left, working_survival, working_cif2, h_process, prob_bound)
+}
+
+ciftest_augmentation_iid_multi_kernel_cpp <- function(t, epsilon, weights, censor_stratum_id, augmentation_cell_id, working_cell_id, code_censoring, event_times, hazard_time, hazard_stratum, hazard, hazard_n_risk, hazard_g_left, working_survival, working_cif2, h_process, prob_bound) {
+    .Call(`_cifmodeling_ciftest_augmentation_iid_multi_kernel_cpp`, t, epsilon, weights, censor_stratum_id, augmentation_cell_id, working_cell_id, code_censoring, event_times, hazard_time, hazard_stratum, hazard, hazard_n_risk, hazard_g_left, working_survival, working_cif2, h_process, prob_bound)
+}
+
+ciftest_augmentation_iid_prefix_multi_kernel_cpp <- function(t, epsilon, weights, censor_stratum_id, augmentation_cell_id, working_cell_id, code_censoring, event_times, hazard_time, hazard_stratum, hazard, hazard_n_risk, hazard_g_left, working_survival, working_cif2, h_process, prob_bound) {
+    .Call(`_cifmodeling_ciftest_augmentation_iid_prefix_multi_kernel_cpp`, t, epsilon, weights, censor_stratum_id, augmentation_cell_id, working_cell_id, code_censoring, event_times, hazard_time, hazard_stratum, hazard, hazard_n_risk, hazard_g_left, working_survival, working_cif2, h_process, prob_bound)
+}
+
+ciftest_augmentation_iid_prefix_kernel_cpp <- function(t, epsilon, weights, censor_stratum_id, augmentation_cell_id, working_cell_id, code_censoring, event_times, hazard_time, hazard_stratum, hazard, hazard_n_risk, hazard_g_left, working_survival, working_cif2, h_process, prob_bound) {
+    .Call(`_cifmodeling_ciftest_augmentation_iid_prefix_kernel_cpp`, t, epsilon, weights, censor_stratum_id, augmentation_cell_id, working_cell_id, code_censoring, event_times, hazard_time, hazard_stratum, hazard, hazard_n_risk, hazard_g_left, working_survival, working_cif2, h_process, prob_bound)
+}
+

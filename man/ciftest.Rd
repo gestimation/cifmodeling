@@ -2,111 +2,137 @@
 % Please edit documentation in R/ciftest.R
 \name{ciftest}
 \alias{ciftest}
-\alias{print.ciftest}
-\alias{summary.ciftest}
-\alias{nobs.ciftest}
-\alias{tidy.ciftest}
-\alias{glance.ciftest}
-\alias{augment.ciftest}
-\title{Score tests for survival and cumulative incidence curves}
+\title{Tests for survival and cumulative incidence curves}
 \usage{
 ciftest(
   formula,
   data,
   weights = NULL,
   subset.condition = NULL,
-  outcome.type = "competing-risk",
+  na.action = na.omit,
+  outcome.type = "auto",
+  test = "auto",
   code.event1 = 1,
   code.event2 = 2,
   code.censoring = 0,
-  rho = 0,
-  gamma = 0,
-  augmentation = NULL,
-  iteration = FALSE,
-  iter.max = 50L,
-  iter.tol = NULL,
+  rho = NULL,
+  gamma = NULL,
+  iteration = 0L,
+  tolerance = NULL,
+  strata = NULL,
   strata.censor = NULL,
   strata.competing.risk = NULL,
   tau = NULL,
-  na.action = stats::na.omit,
+  prob.bound = 1e-07,
+  prob.truncation = NULL,
   ...
 )
-
-\method{print}{ciftest}(x, ...)
-
-\method{summary}{ciftest}(object, ...)
-
-\method{nobs}{ciftest}(object, ...)
-
-\method{tidy}{ciftest}(x, ...)
-
-\method{glance}{ciftest}(x, ...)
-
-\method{augment}{ciftest}(x, ...)
 }
 \arguments{
-\item{formula}{A two-sided formula with an \code{Event()} or \code{Surv()}
-response and one grouping variable on the right-hand side.}
+\item{formula}{A two-sided formula with an \code{Event()} or \code{Surv()} response
+and one grouping variable on the right-hand side.}
 
-\item{data}{A data frame.}
+\item{data}{A data frame containing variables in the formula.}
 
 \item{weights}{Optional numeric case weights or the name of a weight column.
 The standard Gray branch currently accepts integer frequency weights.}
 
-\item{subset.condition}{Optional logical subset specification accepted by the
-package input interface.}
+\item{subset.condition}{Optional character string giving a logical condition to subset
+\code{data} (default \code{NULL}).}
 
-\item{outcome.type}{One of \code{"competing-risk"} or \code{"survival"}.
-The default is \code{"competing-risk"}; use \code{NULL} for automatic detection.}
+\item{na.action}{A function specifying the action to take on missing values (default \code{na.omit}).}
 
-\item{code.event1, code.event2, code.censoring}{Distinct non-negative integer
-event codes.}
+\item{outcome.type}{One of \code{"auto"}, \code{"competing-risk"}, or \code{"survival"}.
+The aliases \code{"C"} and \code{"S"} are accepted.}
 
-\item{rho, gamma}{Non-negative Fleming-Harrington weight parameters.}
+\item{test}{One of \code{"auto"}, \code{"early"}, \code{"late"}, \code{"logrank"}, \code{"gray"},
+\code{"score"}, \code{"augmented"}, or \code{"multiple"}. The aliases \code{"L"}, \code{"LR"},
+and \code{"log-rank"} select log-rank; \code{"G"} selects Gray; and \code{"A"}, \code{"aug"},
+and \code{"augmentation"} select the augmented score test. The early and late
+choices are outcome-specific single-direction presets. \code{"multiple"}
+(aliases \code{"multi"} and \code{"m"}) returns \code{\link[=ciftest_mdir]{ciftest_mdir()}} using the default
+directions \verb{(rho, gamma) = (2, 0), (0, 2), (0, 0)}. \code{"score"} uses the
+null score-IID variance; for competing-risk outcomes it may use censoring
+Kaplan--Meier strata.}
 
-\item{augmentation}{Logical or \code{NULL}. \code{NULL} selects the
-outcome-specific default (\code{FALSE} for survival and \code{TRUE} for
-competing risks).}
+\item{code.event1}{Integer code of the event of interest (default \code{1}).}
 
-\item{iteration}{Use fixed-point refinement of the augmented score.}
+\item{code.event2}{Integer code of the competing risk (default \code{2}).}
 
-\item{iter.max}{Maximum number of fixed-point iterations.}
+\item{code.censoring}{Integer code of censoring (default \code{0}).}
 
-\item{iter.tol}{Positive convergence tolerance, or \code{NULL} for the
-simulation-calibrated default.}
+\item{rho, gamma}{Optional non-negative Fleming-Harrington weight
+parameters. Omitted values default to zero. They cannot be combined with
+the fixed \code{"early"} and \code{"late"} presets.}
 
-\item{strata.censor}{Optional single column name defining the censoring
-Kaplan-Meier strata.}
+\item{iteration}{Non-negative integer giving the number of Scheike
+fixed-point refinements. \code{0} returns the closed-form augmented score;
+positive values use the closed-form-anchored AIPWCC difference.}
 
-\item{strata.competing.risk}{Optional single column name defining the
-exposure-by-stratum working Aalen-Johansen models used for the competing
-risk nuisance distribution.}
+\item{tolerance}{Optional positive convergence tolerance. \code{NULL} performs
+exactly the requested number of finite iterations.}
+
+\item{strata}{Optional character vector of one or more column names
+defining analysis strata. Multiple columns define their observed
+interaction. The grouping variable cannot be included.
+Event risk sets, null event distributions, and Fleming--Harrington weight
+processes are constructed separately within these strata, and their score
+vectors are summed. This is distinct from the two nuisance-model strata.}
+
+\item{strata.censor}{Optional character vector of one or more column names
+defining censoring Kaplan-Meier strata. The grouping variable may be
+included explicitly when group-specific censoring distributions are
+required.}
+
+\item{strata.competing.risk}{Optional character vector of one or more column
+names defining the exposure-by-stratum working Aalen-Johansen models used
+for the competing-risk nuisance distribution. The grouping variable must
+not be included because it is crossed with these strata automatically.}
 
 \item{tau}{Optional finite non-negative analysis horizon.}
 
-\item{na.action}{Missing-data action.}
+\item{prob.bound}{Strictly positive numerical/positivity bound. Required
+nuisance probabilities at or below this value produce an error rather
+than being silently replaced.}
+
+\item{prob.truncation}{Optional probability lower truncation strictly above
+\code{prob.bound}. It is applied only to positive censoring and working-survival
+denominators used by score and augmented tests.}
 
 \item{...}{Reserved for future extensions.}
-
-\item{x, object}{A \code{ciftest} object.}
 }
 \value{
-An object inheriting from \code{"ciftest"} and \code{"htest"} for an
-implemented test branch. Augmented results include \code{score.iid.base},
-\code{score.iid.censor}, and \code{score.iid.augment} matrices and use their
-summed empirical cross-product as \code{vcov.score}. Standard Gray results
-retain the classical Gray covariance. If the optional standard-Gray score-IID
+An object inheriting from \code{"ciftest"} and \code{"htest"}, with a
+test-specific subclass. An ordinary unweighted log-rank result also
+inherits from \code{"survdiff"} and contains a fully compatible object in
+\code{survdiff}. Every score-based branch returns an analysis-row by contrast
+matrix of individual null-score contributions in \code{score.iid}.
+Augmented results include \code{score.iid.base},
+\code{score.iid.censor}, and \code{score.iid.augment} matrices and use their summed
+empirical cross-product as \code{vcov.score}. Standard Gray results retain the
+classical Gray covariance. If the optional standard-Gray score-IID
 diagnostic cannot be constructed, the Gray test is still returned; its
 score-IID matrices contain \code{NA} and the reason is recorded in
-\code{diagnostics$score.iid.error}. Tidy methods return data frames;
-\code{augment()} restores results to the original rows.
+\code{diagnostics$score.iid.error}. Positive \code{iteration} values return the
+requested finite-iteration score, its subject-level score matrix,
+anchoring diagnostics, and fixed-point diagnostics. The event-time FH
+process actually used by the fit is returned in
+\code{diagnostics$fh.weight.process}, including whether it came from the pooled
+or event-stratified AJ left limit or the native Gray subdistribution
+construction.
 }
 \description{
 Provides a formula-based interface for log-rank, Fleming-Harrington, Gray,
-and augmented Fine-Gray score tests. Standard and Fleming-Harrington-type
-Gray tests are selected with \code{augmentation = FALSE}. With
-\code{augmentation = TRUE}, working Aalen-Johansen distributions are estimated
+and augmented score tests. \code{test = "auto"} selects log-rank for survival
+outcomes and the augmented score test for competing-risk outcomes. The
+\code{"early"} and \code{"late"} presets select that same outcome-specific test with
+Fleming--Harrington parameters \verb{(rho, gamma) = (1, 0)} and \verb{(0, 1)},
+respectively. Analysis strata can be specified independently with \code{strata}.
+For augmented tests, working Aalen-Johansen distributions are estimated
 within exposure-by-\code{strata.competing.risk} cells, censoring distributions
 are estimated within \code{strata.censor}, and the closed-form augmentation is
-used.
+used. Setting \code{iteration} to a positive integer applies that many Scheike
+fixed-point refinements. Finite iterates are anchored as the closed-form
+score plus the change in the AIPWCC image from the seed to the refined
+direction, preserving the zeroth-step identity in the observed sample.
 }

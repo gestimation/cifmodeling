@@ -15,7 +15,7 @@ Source:
 [`DESCRIPTION`](https://github.com/gestimation/cifmodeling/blob/HEAD/DESCRIPTION)
 
 Tanaka S (2026). *cifmodeling: Visualization and Polytomous Modeling of
-Survival and Competing Risks*. R package version 1.0.0,
+Survival and Competing Risks*. R package version 1.2.0,
 https://github.com/gestimation/cifmodeling,
 <https://gestimation.github.io/cifmodeling/>.
 
@@ -23,6 +23,6 @@ https://github.com/gestimation/cifmodeling,
       title = {cifmodeling: Visualization and Polytomous Modeling of Survival and Competing Risks},
       author = {Shiro Tanaka},
       year = {2026},
-      note = {R package version 1.0.0, https://github.com/gestimation/cifmodeling},
+      note = {R package version 1.2.0, https://github.com/gestimation/cifmodeling},
       url = {https://gestimation.github.io/cifmodeling/},
     }

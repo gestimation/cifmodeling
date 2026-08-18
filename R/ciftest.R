@@ -1,73 +1,133 @@
-#' Score tests for survival and cumulative incidence curves
+#' Tests for survival and cumulative incidence curves
 #'
 #' @description
 #' Provides a formula-based interface for log-rank, Fleming-Harrington, Gray,
-#' and augmented Fine-Gray score tests. Standard and Fleming-Harrington-type
-#' Gray tests are selected with `augmentation = FALSE`. With
-#' `augmentation = TRUE`, working Aalen-Johansen distributions are estimated
+#' and augmented score tests. `test = "auto"` selects log-rank for survival
+#' outcomes and the augmented score test for competing-risk outcomes. The
+#' `"early"` and `"late"` presets select that same outcome-specific test with
+#' Fleming--Harrington parameters `(rho, gamma) = (1, 0)` and `(0, 1)`,
+#' respectively. Analysis strata can be specified independently with `strata`.
+#' For augmented tests, working Aalen-Johansen distributions are estimated
 #' within exposure-by-`strata.competing.risk` cells, censoring distributions
 #' are estimated within `strata.censor`, and the closed-form augmentation is
-#' used.
+#' used. Setting `iteration` to a positive integer applies that many Scheike
+#' fixed-point refinements. Finite iterates are anchored as the closed-form
+#' score plus the change in the AIPWCC image from the seed to the refined
+#' direction, preserving the zeroth-step identity in the observed sample.
 #'
 #' @param formula A two-sided formula with an `Event()` or `Surv()` response
 #'   and one grouping variable on the right-hand side.
-#' @param data A data frame.
+#' @param data A data frame containing variables in the formula.
 #' @param weights Optional numeric case weights or the name of a weight column.
 #'   The standard Gray branch currently accepts integer frequency weights.
-#' @param subset.condition Optional logical subset specification accepted by
-#'   the package input interface.
-#' @param outcome.type One of `"competing-risk"` or `"survival"`. The default
-#'   is `"competing-risk"`; use `NULL` for automatic detection.
-#' @param code.event1,code.event2,code.censoring Distinct non-negative integer
-#'   event codes.
-#' @param rho,gamma Non-negative Fleming-Harrington weight parameters.
-#' @param augmentation Logical or `NULL`. `NULL` selects the outcome-specific
-#'   default (`FALSE` for survival and `TRUE` for competing risks).
-#' @param iteration Use fixed-point refinement of the augmented score.
-#' @param iter.max Maximum number of fixed-point iterations.
-#' @param iter.tol Positive convergence tolerance, or `NULL` for the eventual
-#'   simulation-calibrated default.
-#' @param strata.censor Optional single column name defining the censoring
-#'   Kaplan-Meier strata.
-#' @param strata.competing.risk Optional single column name defining the
-#'   exposure-by-stratum working Aalen-Johansen models used for the competing
-#'   risk nuisance distribution.
+
+
+#' @param subset.condition Optional character string giving a logical condition to subset
+#' `data` (default `NULL`).
+#' @param na.action A function specifying the action to take on missing values (default `na.omit`).
+#' @param outcome.type One of `"auto"`, `"competing-risk"`, or `"survival"`.
+#'   The aliases `"C"` and `"S"` are accepted.
+#' @param code.event1 Integer code of the event of interest (default `1`).
+#' @param code.event2 Integer code of the competing risk (default `2`).
+#' @param code.censoring Integer code of censoring (default `0`).
+#' @param test One of `"auto"`, `"early"`, `"late"`, `"logrank"`, `"gray"`,
+#'   `"score"`, `"augmented"`, or `"multiple"`. The aliases `"L"`, `"LR"`,
+#'   and `"log-rank"` select log-rank; `"G"` selects Gray; and `"A"`, `"aug"`,
+#'   and `"augmentation"` select the augmented score test. The early and late
+#'   choices are outcome-specific single-direction presets. `"multiple"`
+#'   (aliases `"multi"` and `"m"`) returns [ciftest_mdir()] using the default
+#'   directions `(rho, gamma) = (2, 0), (0, 2), (0, 0)`. `"score"` uses the
+#'   null score-IID variance; for competing-risk outcomes it may use censoring
+#'   Kaplan--Meier strata.
+#' @param rho,gamma Optional non-negative Fleming-Harrington weight
+#'   parameters. Omitted values default to zero. They cannot be combined with
+#'   the fixed `"early"` and `"late"` presets.
+#' @param iteration Non-negative integer giving the number of Scheike
+#'   fixed-point refinements. `0` returns the closed-form augmented score;
+#'   positive values use the closed-form-anchored AIPWCC difference.
+#' @param tolerance Optional positive convergence tolerance. `NULL` performs
+#'   exactly the requested number of finite iterations.
+#' @param strata Optional character vector of one or more column names
+#'   defining analysis strata. Multiple columns define their observed
+#'   interaction. The grouping variable cannot be included.
+#'   Event risk sets, null event distributions, and Fleming--Harrington weight
+#'   processes are constructed separately within these strata, and their score
+#'   vectors are summed. This is distinct from the two nuisance-model strata.
+#' @param strata.censor Optional character vector of one or more column names
+#'   defining censoring Kaplan-Meier strata. The grouping variable may be
+#'   included explicitly when group-specific censoring distributions are
+#'   required.
+#' @param strata.competing.risk Optional character vector of one or more column
+#'   names defining the exposure-by-stratum working Aalen-Johansen models used
+#'   for the competing-risk nuisance distribution. The grouping variable must
+#'   not be included because it is crossed with these strata automatically.
 #' @param tau Optional finite non-negative analysis horizon.
-#' @param na.action Missing-data action.
+#' @param prob.bound Strictly positive numerical/positivity bound. Required
+#'   nuisance probabilities at or below this value produce an error rather
+#'   than being silently replaced.
+#' @param prob.truncation Optional probability lower truncation strictly above
+#'   `prob.bound`. It is applied only to positive censoring and working-survival
+#'   denominators used by score and augmented tests.
 #' @param ... Reserved for future extensions.
 #'
-#' @return An object inheriting from `"ciftest"` and `"htest"` for an
-#'   implemented test branch. Augmented results include `score.iid.base`,
+#' @return An object inheriting from `"ciftest"` and `"htest"`, with a
+#'   test-specific subclass. An ordinary unweighted log-rank result also
+#'   inherits from `"survdiff"` and contains a fully compatible object in
+#'   `survdiff`. Every score-based branch returns an analysis-row by contrast
+#'   matrix of individual null-score contributions in `score.iid`.
+#'   Augmented results include `score.iid.base`,
 #'   `score.iid.censor`, and `score.iid.augment` matrices and use their summed
 #'   empirical cross-product as `vcov.score`. Standard Gray results retain the
 #'   classical Gray covariance. If the optional standard-Gray score-IID
 #'   diagnostic cannot be constructed, the Gray test is still returned; its
 #'   score-IID matrices contain `NA` and the reason is recorded in
-#'   `diagnostics$score.iid.error`.
+#'   `diagnostics$score.iid.error`. Positive `iteration` values return the
+#'   requested finite-iteration score, its subject-level score matrix,
+#'   anchoring diagnostics, and fixed-point diagnostics. The event-time FH
+#'   process actually used by the fit is returned in
+#'   `diagnostics$fh.weight.process`, including whether it came from the pooled
+#'   or event-stratified AJ left limit or the native Gray subdistribution
+#'   construction.
 #' @export
 ciftest <- function(
     formula,
     data,
     weights = NULL,
     subset.condition = NULL,
-    outcome.type = "competing-risk",
+    na.action = na.omit,
+    outcome.type = "auto",
+    test = "auto",
     code.event1 = 1,
     code.event2 = 2,
     code.censoring = 0,
-    rho = 0,
-    gamma = 0,
-    augmentation = NULL,
-    iteration = FALSE,
-    iter.max = 50L,
-    iter.tol = NULL,
+    rho = NULL,
+    gamma = NULL,
+    iteration = 0L,
+    tolerance = NULL,
+    strata = NULL,
     strata.censor = NULL,
     strata.competing.risk = NULL,
     tau = NULL,
-    na.action = stats::na.omit,
+    prob.bound = 1e-7,
+    prob.truncation = NULL,
     ...
 ) {
   call <- match.call()
   dots <- list(...)
+  # Temporary development bridge. These names are no longer part of the
+  # public signature and will be removed after package tests and simulation
+  # profiles have been migrated to `test` and `strata`.
+  legacy_augmentation <- dots$augmentation
+  legacy_strata <- dots$strata.event
+  dots$augmentation <- NULL
+  dots$strata.event <- NULL
+  if (!is.null(legacy_strata)) {
+    if (!is.null(strata)) {
+      stop("Use only `strata`; the removed `strata.event` alias was also supplied.",
+           call. = FALSE)
+    }
+    strata <- legacy_strata
+  }
   if (length(dots)) {
     dot_names <- names(dots)
     displayed <- if (is.null(dot_names)) {
@@ -89,44 +149,390 @@ ciftest <- function(
     missing = missing(weights)
   )
 
+  test_key <- if (is.character(test) && length(test) == 1L && !is.na(test)) {
+    gsub("[-_. ]", "", tolower(trimws(test)))
+  } else {
+    ""
+  }
+  if (test_key %in% c("multiple", "multi", "m")) {
+    if (!is.null(rho) || !is.null(gamma)) {
+      stop(
+        "`test = \"multiple\"` uses the fixed directions (2, 0), (0, 2), ",
+        "and (0, 0); use `ciftest_mdir()` for custom directions.",
+        call. = FALSE
+      )
+    }
+    if (!is.null(legacy_augmentation)) {
+      stop(
+        "Use `test = \"multiple\"` without the removed `augmentation` argument.",
+        call. = FALSE
+      )
+    }
+    out <- ciftest_mdir(
+      formula = formula,
+      data = data,
+      directions = c("early", "late", "unweighted"),
+      weights = weights.resolved,
+      subset.condition = subset.condition,
+      outcome.type = outcome.type,
+      test = "auto",
+      code.event1 = code.event1,
+      code.event2 = code.event2,
+      code.censoring = code.censoring,
+      iteration = iteration,
+      tolerance = tolerance,
+      strata = strata,
+      strata.censor = strata.censor,
+      strata.competing.risk = strata.competing.risk,
+      tau = tau,
+      prob.bound = prob.bound,
+      prob.truncation = prob.truncation,
+      na.action = na.action
+    )
+    out$call <- call
+    out$test.requested <- "multiple"
+    return(out)
+  }
+
   input <- ciftest_prepare(
     formula = formula,
     data = data,
     weights = weights.resolved,
     subset.condition = subset.condition,
     outcome.type = outcome.type,
+    test = test,
     code.event1 = code.event1,
     code.event2 = code.event2,
     code.censoring = code.censoring,
     rho = rho,
     gamma = gamma,
-    augmentation = augmentation,
     iteration = iteration,
-    iter.max = iter.max,
-    iter.tol = iter.tol,
+    tolerance = tolerance,
+    strata = strata,
     strata.censor = strata.censor,
     strata.competing.risk = strata.competing.risk,
     tau = tau,
+    prob.bound = prob.bound,
+    prob.truncation = prob.truncation,
+    legacy.augmentation = legacy_augmentation,
     na.action = na.action
   )
-  score_parts <- NULL
-  augmentation_parts <- NULL
-  score_iid_error <- NULL
+  ciftest_fit_prepared(
+    input = input,
+    formula = formula,
+    call = call,
+    nuisance.cache = NULL
+  )
+}
 
-  if (identical(input$outcome.type, "competing-risk")) {
-    if (isTRUE(input$iteration)) {
+ciftest_resolve_test_spec <- function(
+    outcome.type,
+    test = "auto",
+    rho = NULL,
+    gamma = NULL,
+    iteration = 0L,
+    legacy.augmentation = NULL
+) {
+  if (!is.character(test) || length(test) != 1L || is.na(test) ||
+      !nzchar(trimws(test))) {
+    stop("`test` must be one non-missing character value.", call. = FALSE)
+  }
+  requested <- tolower(trimws(test))
+  requested <- gsub("[-_. ]", "", requested)
+  aliases <- c(
+    auto = "auto", early = "early", late = "late",
+    logrank = "logrank", l = "logrank", lr = "logrank",
+    gray = "gray", g = "gray", score = "score",
+    augmented = "augmented", a = "augmented", aug = "augmented",
+    augmentation = "augmented"
+  )
+  if (!requested %in% names(aliases)) {
+    stop(
+      "`test` must be one of 'auto', 'early', 'late', 'logrank', ",
+      "'gray', 'score', or 'augmented' (documented aliases are accepted).",
+      call. = FALSE
+    )
+  }
+  requested <- unname(aliases[requested])
+
+  if (!is.null(legacy.augmentation)) {
+    if (!is.logical(legacy.augmentation) ||
+        length(legacy.augmentation) != 1L || is.na(legacy.augmentation)) {
+      stop("The removed `augmentation` argument must be TRUE or FALSE.",
+           call. = FALSE)
+    }
+    if (!identical(requested, "auto")) {
+      stop("Use `test` instead of combining it with the removed `augmentation` argument.",
+           call. = FALSE)
+    }
+    requested <- if (isTRUE(legacy.augmentation)) {
+      "augmented"
+    } else if (identical(outcome.type, "survival")) {
+      "logrank"
+    } else {
+      "gray"
+    }
+  }
+
+  if (requested %in% c("early", "late")) {
+    if (!is.null(rho) || !is.null(gamma)) {
       stop(
-        "Phase 3 fixed-point iteration is not implemented yet; ",
-        "use `iteration = FALSE` for closed-form augmentation.",
+        "`test = \"", requested,
+        "\"` is a fixed preset; specify the underlying test with `rho` and `gamma` for a custom weight.",
         call. = FALSE
       )
     }
+    resolved <- if (identical(outcome.type, "survival")) {
+      "logrank"
+    } else {
+      "augmented"
+    }
+    rho <- if (identical(requested, "early")) 1 else 0
+    gamma <- if (identical(requested, "late")) 1 else 0
+    weight.label <- requested
+  } else {
+    resolved <- if (identical(requested, "auto")) {
+      if (identical(outcome.type, "survival")) "logrank" else "augmented"
+    } else {
+      requested
+    }
+    rho <- if (is.null(rho)) 0 else rho
+    gamma <- if (is.null(gamma)) 0 else gamma
+    weight.label <- if (rho == 0 && gamma == 0) "unweighted" else "custom"
+  }
+
+  if (!is.numeric(rho) || length(rho) != 1L || !is.finite(rho) || rho < 0) {
+    stop("`rho` must be NULL or one finite non-negative number.", call. = FALSE)
+  }
+  if (!is.numeric(gamma) || length(gamma) != 1L ||
+      !is.finite(gamma) || gamma < 0) {
+    stop("`gamma` must be NULL or one finite non-negative number.", call. = FALSE)
+  }
+
+  allowed <- if (identical(outcome.type, "survival")) {
+    c("logrank", "score")
+  } else {
+    c("gray", "score", "augmented")
+  }
+  if (!resolved %in% allowed) {
+    stop(
+      "`test = \"", resolved, "\"` is not available for outcome.type = \"",
+      outcome.type, "\".",
+      call. = FALSE
+    )
+  }
+  if (iteration > 0L && !identical(resolved, "augmented")) {
+    stop("Positive `iteration` requires `test = \"augmented\"`.",
+         call. = FALSE)
+  }
+
+  list(
+    requested = if (is.null(legacy.augmentation)) requested else "legacy",
+    test = resolved,
+    rho = as.numeric(rho),
+    gamma = as.numeric(gamma),
+    weight.label = weight.label,
+    augmentation = identical(resolved, "augmented"),
+    score.construction = if (identical(resolved, "score") &&
+      identical(outcome.type, "competing-risk")) "fine-gray" else "standard"
+  )
+}
+
+# Normalize the public analysis/nuisance strata specification.  The returned
+# value is always NULL or a non-empty character vector of distinct data-column
+# names.  The exposure restrictions are role-specific: it is a valid censoring
+# stratum but cannot define an analysis stratum or be repeated in the working
+# AJ strata because working AJ cells are already exposure-specific.
+ciftest_normalize_strata_columns <- function(
+    value,
+    argument,
+    data,
+    exposure = NULL,
+    role = c("event", "censor", "competing-risk")) {
+  role <- match.arg(role)
+  if (is.null(value)) return(NULL)
+  if (!is.character(value) || !length(value) || anyNA(value) ||
+      any(!nzchar(value))) {
+    stop(
+      "`", argument,
+      "` must be NULL or a non-empty character vector of column names.",
+      call. = FALSE
+    )
+  }
+  if (anyDuplicated(value)) {
+    duplicated_names <- unique(value[duplicated(value)])
+    stop(
+      "`", argument, "` contains duplicated column names: ",
+      paste(duplicated_names, collapse = ", "), ".",
+      call. = FALSE
+    )
+  }
+  missing_names <- setdiff(value, names(data))
+  if (length(missing_names)) {
+    stop(
+      "`", argument, "` column", if (length(missing_names) == 1L) "" else "s",
+      " not found in data: ", paste(missing_names, collapse = ", "), ".",
+      call. = FALSE
+    )
+  }
+  if (!is.null(exposure) && exposure %in% value) {
+    if (identical(role, "event")) {
+      stop(
+        "`", argument, "` must not include the grouping variable `", exposure,
+        "`; within-stratum exposure contrasts would be lost.",
+        call. = FALSE
+      )
+    }
+    if (identical(role, "competing-risk")) {
+      stop(
+        "`strata.competing.risk` must not include the grouping variable `",
+        exposure, "`; working Aalen-Johansen models are already fitted ",
+        "within exposure-by-stratum cells.",
+        call. = FALSE
+      )
+    }
+  }
+  value
+}
+
+ciftest_make_strata_info <- function(
+    data,
+    columns = NULL,
+    role = c("event", "censor", "competing-risk"),
+    weights = NULL) {
+  role <- match.arg(role)
+  n <- nrow(data)
+  if (is.null(weights)) weights <- rep.int(1, n)
+  if (length(weights) != n || anyNA(weights) || any(!is.finite(weights)) ||
+      any(weights < 0)) {
+    stop("Internal ciftest strata weights are invalid.", call. = FALSE)
+  }
+  if (is.null(columns)) {
+    values <- factor(rep.int("pooled", n), levels = "pooled")
+    mapping <- data.frame(stratum = "pooled", stringsAsFactors = FALSE)
+  } else {
+    parts <- lapply(data[columns], function(value) {
+      droplevels(factor(value))
+    })
+    if (any(vapply(parts, anyNA, logical(1L)))) {
+      stop("Missing strata values remain after preprocessing.", call. = FALSE)
+    }
+    if (length(columns) == 1L) {
+      values <- parts[[1L]]
+      mapping <- data.frame(
+        stratum = levels(values), stringsAsFactors = FALSE,
+        check.names = FALSE
+      )
+      mapping[[columns[[1L]]]] <- levels(values)
+    } else {
+      raw <- do.call(
+        interaction,
+        c(parts, list(drop = TRUE, lex.order = TRUE, sep = "\r"))
+      )
+      first <- match(levels(raw), as.character(raw))
+      source_values <- data[first, columns, drop = FALSE]
+      labels <- vapply(seq_len(nrow(source_values)), function(index) {
+        paste(
+          paste0(columns, "=", vapply(
+            source_values[index, , drop = FALSE], as.character,
+            character(1L)
+          )),
+          collapse = " | "
+        )
+      }, character(1L))
+      labels <- make.unique(labels, sep = " #")
+      values <- factor(
+        as.integer(raw), levels = seq_along(levels(raw)), labels = labels
+      )
+      mapping <- data.frame(
+        stratum = labels, source_values,
+        stringsAsFactors = FALSE, check.names = FALSE
+      )
+    }
+  }
+  level_names <- levels(values)
+  count_n <- tabulate(as.integer(values), nbins = length(level_names))
+  weight_sum <- vapply(seq_along(level_names), function(index) {
+    sum(weights[as.integer(values) == index])
+  }, numeric(1L))
+  counts <- data.frame(
+    stratum = level_names,
+    n = as.integer(count_n),
+    weight = as.numeric(weight_sum),
+    stringsAsFactors = FALSE
+  )
+  list(
+    name = if (is.null(columns)) NULL else paste(columns, collapse = ":"),
+    columns = if (is.null(columns)) character() else columns,
+    key = if (is.null(columns)) NULL else paste(columns, collapse = "\r"),
+    values = values,
+    mapping = mapping,
+    counts = counts,
+    role = role
+  )
+}
+
+ciftest_score_fh_process <- function(score.parts) {
+  if (isTRUE(score.parts$diagnostics$event.stratified)) {
+    out <- do.call(rbind, lapply(seq_along(score.parts$event.strata), function(i) {
+      data.frame(
+        time = score.parts$event.time,
+        weight = score.parts$fh.weight[, i],
+        stratum = score.parts$event.strata[i],
+        source = "event-stratified-aj-left",
+        stringsAsFactors = FALSE
+      )
+    }))
+    rownames(out) <- NULL
+    return(out)
+  }
+  data.frame(
+    time = score.parts$event.time,
+    weight = score.parts$fh.weight,
+    stratum = "pooled",
+    source = "pooled-aj-left",
+    stringsAsFactors = FALSE
+  )
+}
+
+# Internal fit engine shared by the scalar UI and simulation batch path.
+ciftest_fit_prepared <- function(
+    input,
+    formula,
+    call,
+    nuisance.cache = NULL,
+    precomputed = NULL
+) {
+  score_parts <- NULL
+  augmentation_parts <- NULL
+  score_iid_error <- NULL
+  fh_weight_process <- NULL
+
+  iteration_parts <- NULL
+  iteration_anchor <- NULL
+  fixed_point_solver <- if (is.null(input$fixed.point.solver)) {
+    "finite"
+  } else {
+    input$fixed.point.solver
+  }
+  score_construction <- if (is.null(input$score.construction)) {
+    "standard"
+  } else {
+    input$score.construction
+  }
+  if (identical(input$outcome.type, "competing-risk")) {
     exposure_design <- reg_read_exposure_design(
       input$data,
       exposure = input$exposure
     )
 
-    if (isTRUE(input$augmentation)) {
+    if (identical(score_construction, "fine-gray")) {
+      censoring <- ciftest_cache_censoring(
+        nuisance.cache,
+        input = input,
+        strata = input$strata.censor.info$values,
+        key = input$strata.censor.info$key
+      )
       score_parts <- build_fg_score_iid(
         t = input$t,
         epsilon = input$epsilon,
@@ -134,44 +540,203 @@ ciftest <- function(
         code.event1 = input$code.event1,
         code.event2 = input$code.event2,
         code.censoring = input$code.censoring,
+        strata.event = input$strata.event.info$values,
         strata = input$strata.censor.info$values,
         weights = input$weights,
         rho = input$rho,
-        gamma = input$gamma
+        gamma = input$gamma,
+        censoring = censoring,
+        prob.bound = input$prob.bound,
+        prob.truncation = input$prob.truncation
       )
-      working_aj <- estimate_working_aj(
-        t = input$t,
-        epsilon = input$epsilon,
-        exposure = input$data[[input$exposure]],
-        strata = input$strata.competing.risk.info$values,
-        weights = input$weights,
-        code.event1 = input$code.event1,
-        code.event2 = input$code.event2,
-        code.censoring = input$code.censoring
+      fh_weight_process <- ciftest_score_fh_process(score_parts)
+      comp <- list(
+        score = score_parts$score,
+        var = crossprod(score_parts$score.iid),
+        exposure.labels = exposure_design$exposure.labels
       )
-      augmentation_parts <- build_closed_form_augmentation(
-        base = score_parts,
-        working = working_aj,
-        t = input$t,
-        epsilon = input$epsilon,
-        x = exposure_design$x_a,
-        exposure = input$data[[input$exposure]],
-        strata.censor = input$strata.censor.info$values,
-        strata.competing.risk = input$strata.competing.risk.info$values,
-        weights = input$weights,
-        code.event1 = input$code.event1,
-        code.event2 = input$code.event2,
-        code.censoring = input$code.censoring
-      )
-      total_iid <- score_parts$score.iid +
+      method <- "Fine-Gray score test"
+      variance_method <- "score-iid"
+    } else if (isTRUE(input$augmentation)) {
+      if (!is.null(precomputed)) {
+        score_parts <- precomputed$score.parts
+        augmentation_parts <- precomputed$augmentation.parts
+      } else {
+        censoring <- ciftest_cache_censoring(
+          nuisance.cache,
+          input = input,
+          strata = input$strata.censor.info$values,
+          key = input$strata.censor.info$key
+        )
+        score_parts <- build_fg_score_iid(
+          t = input$t,
+          epsilon = input$epsilon,
+          x = exposure_design$x_a,
+          code.event1 = input$code.event1,
+          code.event2 = input$code.event2,
+          code.censoring = input$code.censoring,
+          strata.event = input$strata.event.info$values,
+          strata = input$strata.censor.info$values,
+          weights = input$weights,
+          rho = input$rho,
+          gamma = input$gamma,
+          censoring = censoring,
+          prob.bound = input$prob.bound,
+          prob.truncation = input$prob.truncation
+        )
+        working_aj <- ciftest_cache_working_aj(
+          nuisance.cache,
+          input = input,
+          strata = input$strata.competing.risk.info$values,
+          key = input$strata.competing.risk.info$key
+        )
+        augmentation_parts <- build_closed_form_augmentation(
+          base = score_parts,
+          working = working_aj,
+          t = input$t,
+          epsilon = input$epsilon,
+          x = exposure_design$x_a,
+          exposure = input$data[[input$exposure]],
+          strata.event = input$strata.event.info$values,
+          strata.censor = input$strata.censor.info$values,
+          strata.competing.risk = input$strata.competing.risk.info$values,
+          weights = input$weights,
+          code.event1 = input$code.event1,
+          code.event2 = input$code.event2,
+          code.censoring = input$code.censoring,
+          prob.bound = input$prob.bound
+        )
+      }
+      fh_weight_process <- ciftest_score_fh_process(score_parts)
+      closed_form_iid <- score_parts$score.iid +
         augmentation_parts$score.iid.augment
+      if (identical(fixed_point_solver, "seed-map")) {
+        iteration_parts <- build_seed_aipwcc_score_iid(
+          base = score_parts,
+          working = augmentation_parts$working.aj,
+          t = input$t,
+          epsilon = input$epsilon,
+          x = exposure_design$x_a,
+          exposure = input$data[[input$exposure]],
+          weights = input$weights,
+          code.event1 = input$code.event1,
+          code.event2 = input$code.event2,
+          code.censoring = input$code.censoring,
+          prob.bound = input$prob.bound
+        )
+      } else if (identical(fixed_point_solver, "direct")) {
+        iteration_setup <- ciftest_iteration_setup(
+          base = score_parts,
+          working = augmentation_parts$working.aj,
+          t = input$t,
+          epsilon = input$epsilon,
+          x = exposure_design$x_a,
+          exposure = input$data[[input$exposure]],
+          weights = input$weights,
+          code.event1 = input$code.event1,
+          code.event2 = input$code.event2,
+          code.censoring = input$code.censoring,
+          prob.bound = input$prob.bound
+        )
+        fixed_point_operator <- ciftest_cache_fixed_point_operator(
+          nuisance.cache,
+          key = "pooled",
+          compute = function() ciftest_appendix_e_operator(
+            iteration_setup, score_parts, augmentation_parts$working.aj
+          )
+        )
+        iteration_parts <- build_direct_fixed_point_score_iid(
+          base = score_parts,
+          working = augmentation_parts$working.aj,
+          t = input$t,
+          epsilon = input$epsilon,
+          x = exposure_design$x_a,
+          exposure = input$data[[input$exposure]],
+          weights = input$weights,
+          code.event1 = input$code.event1,
+          code.event2 = input$code.event2,
+          code.censoring = input$code.censoring,
+          prob.bound = input$prob.bound,
+          tolerance = if (is.null(input$tolerance)) 1e-8 else input$tolerance,
+          setup = iteration_setup,
+          operator = fixed_point_operator
+        )
+      } else if (input$iteration > 0L) {
+        iteration_parts <- build_iterated_score_iid(
+          base = score_parts,
+          working = augmentation_parts$working.aj,
+          t = input$t,
+          epsilon = input$epsilon,
+          x = exposure_design$x_a,
+          exposure = input$data[[input$exposure]],
+          weights = input$weights,
+          iterations = input$iteration,
+          code.event1 = input$code.event1,
+          code.event2 = input$code.event2,
+          code.censoring = input$code.censoring,
+          prob.bound = input$prob.bound,
+          tolerance = input$tolerance
+        )
+      }
+      total_iid <- if (is.null(iteration_parts)) {
+        closed_form_iid
+      } else if (identical(fixed_point_solver, "seed-map")) {
+        iteration_anchor <- list(
+          applied = FALSE,
+          construction = "raw AIPWCC(seed) diagnostic",
+          closed.form.score = colSums(closed_form_iid),
+          seed.aipwcc.score = colSums(iteration_parts$score.iid.seed),
+          raw.aipwcc.score = colSums(iteration_parts$score.iid),
+          score.adjustment = rep.int(0, ncol(closed_form_iid)),
+          seed.score.difference =
+            colSums(iteration_parts$score.iid.seed) -
+              colSums(closed_form_iid),
+          seed.iid.rms.difference = sqrt(mean(
+            (iteration_parts$score.iid.seed - closed_form_iid)^2
+          )),
+          identity.error = 0
+        )
+        iteration_parts$score.iid
+      } else {
+        if (is.null(iteration_parts$score.iid.seed)) {
+          stop("The iterated score is missing its AIPWCC seed image.",
+               call. = FALSE)
+        }
+        anchored <- ciftest_anchor_aipwcc_iid(
+          closed.form.iid = closed_form_iid,
+          value.aipwcc.iid = iteration_parts$score.iid,
+          seed.aipwcc.iid = iteration_parts$score.iid.seed
+        )
+        anchored_iid <- anchored$score.iid
+        iteration_anchor <- list(
+          applied = TRUE,
+          construction =
+            "closed-form + AIPWCC(value) - AIPWCC(seed)",
+          closed.form.score = colSums(closed_form_iid),
+          seed.aipwcc.score = colSums(iteration_parts$score.iid.seed),
+          raw.aipwcc.score = colSums(iteration_parts$score.iid),
+          score.adjustment = colSums(anchored$score.adjustment),
+          seed.score.difference = anchored$seed.score.difference,
+          seed.iid.rms.difference = anchored$seed.iid.rms.difference,
+          identity.error = anchored$identity.error
+        )
+        anchored_iid
+      }
       total_score <- colSums(total_iid)
       comp <- list(
         score = stats::setNames(total_score, colnames(exposure_design$x_a)),
         var = crossprod(total_iid),
         exposure.labels = exposure_design$exposure.labels
       )
-      method <- "Closed-form augmented Fine-Gray score test"
+      method <- if (is.null(iteration_parts)) {
+        "Closed-form augmented Fine-Gray score test"
+      } else if (identical(fixed_point_solver, "seed-map")) {
+        "AIPWCC seed-map diagnostic score test"
+      } else if (identical(fixed_point_solver, "direct")) {
+        "Direct fixed-point time-weighted Fine-Gray score test"
+      } else {
+        "Iterated time-weighted Fine-Gray score test"
+      }
       variance_method <- "score-iid"
     } else {
       if (!is.null(input$strata.censor.info$name) ||
@@ -188,31 +753,64 @@ ciftest <- function(
           2L * as.integer(input$epsilon == input$code.event2),
         exposure = input$exposure,
         weights = input$weights,
-        strata = rep.int(1L, length(input$t)),
+        strata = input$strata.event.info$values,
         data = input$data,
         rho = input$rho,
-        gamma = input$gamma
+        gamma = input$gamma,
+        prob.bound = input$prob.bound
       )
-      gray_censoring_strata <- factor(
-        input$data[[input$exposure]],
-        levels = comp$exposure.labels
+      fh_weight_process <- do.call(
+        rbind,
+        lapply(names(comp$fh.weight.process), function(level) {
+          process <- comp$fh.weight.process[[level]]
+          if (is.null(process) || !nrow(process)) return(NULL)
+          data.frame(
+            time = process$time,
+            weight = process$weight,
+            stratum = level,
+            source = if (is.null(input$strata.event.info$name)) {
+              "gray-pooled-subdistribution-left"
+            } else {
+              "gray-event-stratified-subdistribution-left"
+            },
+            stringsAsFactors = FALSE
+          )
+        })
       )
-      score_attempt <- tryCatch(
-        build_fg_score_iid(
-          t = input$t,
-          epsilon = input$epsilon,
-          x = exposure_design$x_a,
-          code.event1 = input$code.event1,
-          code.event2 = input$code.event2,
-          code.censoring = input$code.censoring,
+      if (!is.null(fh_weight_process)) rownames(fh_weight_process) <- NULL
+      score_attempt <- if (!is.null(input$strata.event.info$name)) {
+        simpleError(
+          "The stratified standard-Gray score-IID diagnostic is not yet available."
+        )
+      } else {
+        gray_censoring_strata <- factor(
+          input$data[[input$exposure]], levels = comp$exposure.labels
+        )
+        gray_censoring <- ciftest_cache_censoring(
+          nuisance.cache,
+          input = input,
           strata = gray_censoring_strata,
-          weights = input$weights,
-          rho = input$rho,
-          gamma = input$gamma,
-          fh.weight = comp$fh.weight.process[[1L]]$weight
-        ),
-        error = identity
-      )
+          key = paste0(".gray-exposure:", input$exposure)
+        )
+        tryCatch(
+          build_fg_score_iid(
+            t = input$t,
+            epsilon = input$epsilon,
+            x = exposure_design$x_a,
+            code.event1 = input$code.event1,
+            code.event2 = input$code.event2,
+            code.censoring = input$code.censoring,
+            strata = gray_censoring_strata,
+            weights = input$weights,
+            rho = input$rho,
+            gamma = input$gamma,
+            fh.weight = comp$fh.weight.process[[1L]]$weight,
+            censoring = gray_censoring,
+            prob.bound = input$prob.bound
+          ),
+          error = identity
+        )
+      }
       if (inherits(score_attempt, "error")) {
         score_iid_error <- conditionMessage(score_attempt)
       } else {
@@ -242,17 +840,40 @@ ciftest <- function(
       epsilon = as.integer(input$epsilon == input$code.event1),
       exposure = input$exposure,
       weights = input$weights,
-      strata = rep.int(1L, length(input$t)),
+      strata = input$strata.event.info$values,
       data = input$data,
       rho = input$rho,
-      gamma = input$gamma
+      gamma = input$gamma,
+      prob.bound = input$prob.bound
     )
-    method <- if (input$rho == 0 && input$gamma == 0) {
-      "Log-rank score test"
+    zero_iid <- matrix(
+      0, nrow = nrow(comp$score.iid), ncol = ncol(comp$score.iid),
+      dimnames = dimnames(comp$score.iid)
+    )
+    score_parts <- list(
+      score = comp$score,
+      score.iid = comp$score.iid,
+      score.iid.base = comp$score.iid,
+      score.iid.censor = zero_iid,
+      censoring = NULL,
+      diagnostics = list(
+        score.decomposition.error = max(abs(
+          colSums(comp$score.iid) - comp$score
+        )),
+        engine = "R"
+      )
+    )
+    if (identical(input$test, "score")) {
+      comp$var <- crossprod(comp$score.iid)
+      method <- "Null robust log-rank score test"
+      variance_method <- "score-iid"
+    } else if (input$rho == 0 && input$gamma == 0) {
+      method <- "Log-rank test"
+      variance_method <- "hypergeometric"
     } else {
-      "Fleming-Harrington weighted log-rank test"
+      method <- "Fleming-Harrington weighted log-rank test"
+      variance_method <- "hypergeometric"
     }
-    variance_method <- "hypergeometric"
   }
   test_stat <- ciftest_quadratic_form(comp$score, comp$var)
 
@@ -276,11 +897,58 @@ ciftest <- function(
     } else {
       augmentation_parts$score.iid.augment
     }
-    score_iid <- score_parts$score.iid + score_iid_augment
+    closed_form_iid <- score_parts$score.iid + score_iid_augment
+    score_iid <- if (exists("total_iid", inherits = FALSE)) {
+      total_iid
+    } else if (is.null(iteration_parts)) {
+      closed_form_iid
+    } else {
+      iteration_parts$score.iid
+    }
     score_iid_base <- score_parts$score.iid.base
     score_iid_censor <- score_parts$score.iid.censor
-    score_iid_iterated <- score_iid
+    score_iid_iterated <- if (is.null(iteration_parts)) {
+      matrix(
+        NA_real_,
+        nrow = nrow(score_iid),
+        ncol = ncol(score_iid),
+        dimnames = dimnames(score_iid)
+      )
+    } else {
+      score_iid
+    }
   }
+
+  censoring_truncation <- if (is.null(score_parts)) NULL else
+    score_parts$censoring
+  working_truncation <- if (is.null(augmentation_parts)) NULL else
+    augmentation_parts$working.aj
+  censoring_truncation_count <- if (is.null(censoring_truncation)) 0L else
+    as.integer(censoring_truncation$truncation.count)
+  working_truncation_count <- if (is.null(working_truncation)) 0L else
+    as.integer(working_truncation$truncation.count)
+  truncation_diagnostics <- list(
+    requested = !is.null(input$prob.truncation),
+    applied = censoring_truncation_count > 0L ||
+      working_truncation_count > 0L,
+    probability = input$prob.truncation,
+    censoring.count = censoring_truncation_count,
+    working.survival.count = working_truncation_count,
+    censoring.minimum.raw = if (is.null(censoring_truncation)) NA_real_ else
+      censoring_truncation$minimum.survival,
+    censoring.minimum.used = if (is.null(censoring_truncation)) NA_real_ else
+      censoring_truncation$minimum.survival.used,
+    working.survival.minimum.raw = if (is.null(working_truncation)) {
+      NA_real_
+    } else {
+      working_truncation$minimum.survival
+    },
+    working.survival.minimum.used = if (is.null(working_truncation)) {
+      NA_real_
+    } else {
+      working_truncation$minimum.survival.used
+    }
+  )
 
   out <- list(
     statistic = stats::setNames(test_stat$statistic, "X-squared"),
@@ -290,6 +958,9 @@ ciftest <- function(
     data.name = paste(deparse(formula), collapse = " "),
     call = call,
     outcome.type = input$outcome.type,
+    test.requested = input$test.requested,
+    test = input$test,
+    weight.label = input$weight.label,
     code.event1 = input$code.event1,
     code.event2 = input$code.event2,
     code.censoring = input$code.censoring,
@@ -297,39 +968,72 @@ ciftest <- function(
     gamma = input$gamma,
     augmentation = input$augmentation,
     iteration = input$iteration,
+    tolerance = input$tolerance,
     tau = input$tau,
+    prob.bound = input$prob.bound,
+    prob.truncation = input$prob.truncation,
     variance.method = variance_method,
     score = comp$score,
     vcov.score = comp$var,
+    observed = if (is.null(comp$observed)) NULL else comp$observed,
+    expected = if (is.null(comp$expected)) NULL else comp$expected,
+    z = if (length(comp$score) == 1L && comp$var[1L, 1L] > 0) {
+      as.numeric(comp$score / sqrt(comp$var[1L, 1L]))
+    } else {
+      NA_real_
+    },
     score.iid = score_iid,
     score.iid.base = score_iid_base,
     score.iid.censor = score_iid_censor,
     score.iid.augment = score_iid_augment,
     score.iid.iterated = score_iid_iterated,
-    iterations = 0L,
-    converged = NA,
-    fixed.point.residual = NA_real_,
-    last.increment = NA_real_,
-    contraction.ratio = NA_real_,
+    iterations = if (is.null(iteration_parts)) input$iteration else
+      iteration_parts$iterations,
+    converged = if (is.null(iteration_parts)) NA else
+      iteration_parts$converged,
+    fixed.point.residual = if (is.null(iteration_parts)) NA_real_ else
+      iteration_parts$fixed.point.residual,
+    last.increment = if (is.null(iteration_parts)) NA_real_ else
+      iteration_parts$last.increment,
+    contraction.ratio = if (is.null(iteration_parts)) NA_real_ else
+      iteration_parts$contraction.ratio,
     n = length(input$t),
     n.events = table(factor(input$epsilon,
                             levels = c(input$code.censoring,
                                        input$code.event1,
                                        input$code.event2))),
+    strata.info = input$strata.event.info,
+    strata.event.info = input$strata.event.info,
     strata.censor.info = input$strata.censor.info,
     strata.competing.risk.info = input$strata.competing.risk.info,
     diagnostics = list(
-      iter.max = input$iter.max,
-      iter.tol = input$iter.tol,
+      exposure = input$exposure,
+      iteration.history = if (is.null(iteration_parts)) NULL else
+        iteration_parts$history,
+      iteration.components = if (is.null(iteration_parts) ||
+        is.null(iteration_parts$components)) NULL else
+        iteration_parts$components,
+      fixed.point = if (is.null(iteration_parts)) NULL else
+        iteration_parts$fixed.point,
+      iteration.support = if (is.null(iteration_parts)) NULL else
+        iteration_parts$diagnostics,
+      iteration.anchor = iteration_anchor,
+      fixed.point.solver = fixed_point_solver,
+      score.construction = score_construction,
       score.iid.available = !is.null(score_parts),
       score.iid.error = score_iid_error,
       score.iid.variance.role = if (is.null(score_parts)) {
         "not available"
-      } else if (!is.null(augmentation_parts)) {
+      } else if (identical(input$test, "score") ||
+                 !is.null(augmentation_parts) ||
+                 identical(score_construction, "fine-gray")) {
         "empirical score-iid cross-product used as the test variance"
+      } else if (identical(input$test, "logrank")) {
+        "diagnostic only; hypergeometric covariance remains the test variance"
       } else {
         "diagnostic only; Gray covariance remains the test variance"
       },
+      fh.weight.process = fh_weight_process,
       censoring.km = if (is.null(score_parts)) NULL else score_parts$censoring,
       working.aj = if (is.null(augmentation_parts)) NULL else
         augmentation_parts$working.aj,
@@ -347,14 +1051,637 @@ ciftest <- function(
       } else {
         score_parts$diagnostics$score.decomposition.error
       },
+      score.engine = if (is.null(score_parts)) {
+        NA_character_
+      } else {
+        score_parts$diagnostics$engine
+      },
+      augmentation.engine = if (is.null(augmentation_parts)) {
+        NA_character_
+      } else {
+        augmentation_parts$diagnostics$engine
+      },
+      truncation = truncation_diagnostics,
       analysis.row.index = input$row.index,
       analysis.included = input$included,
       exclusion.reason = input$exclusion.reason
     ),
     data = input$data.original
   )
-  class(out) <- c("ciftest", "htest")
+  survdiff_compatible <- identical(input$outcome.type, "survival") &&
+    identical(input$test, "logrank") && input$rho == 0 && input$gamma == 0 &&
+    all(input$weights == 1) && !is.null(comp$n.group)
+  if (survdiff_compatible) {
+    out$survdiff <- structure(
+      list(
+        n = comp$n.group,
+        obs = comp$observed,
+        exp = comp$expected,
+        var = comp$var.full,
+        chisq = unname(test_stat$statistic),
+        pvalue = out$p.value,
+        call = call
+      ),
+      class = "survdiff"
+    )
+  } else {
+    out$survdiff <- NULL
+  }
+  subclass <- switch(
+    input$test,
+    logrank = "ciftest_logrank",
+    gray = "ciftest_gray",
+    score = "ciftest_score",
+    augmented = "ciftest_augmented",
+    "ciftest_result"
+  )
+  class(out) <- c(
+    subclass, "ciftest", "htest",
+    if (survdiff_compatible) "survdiff" else NULL
+  )
   out
+}
+
+new_ciftest_nuisance_cache <- function() {
+  cache <- new.env(parent = emptyenv())
+  cache$censoring <- new.env(parent = emptyenv())
+  cache$working.aj <- new.env(parent = emptyenv())
+  cache$fixed.point.operator <- new.env(parent = emptyenv())
+  cache$prepare.seconds <- 0
+  cache$hits <- 0L
+  cache$misses <- 0L
+  class(cache) <- "ciftest_nuisance_cache"
+  cache
+}
+
+ciftest_cache_fixed_point_operator <- function(cache, key, compute) {
+  if (is.null(cache)) return(compute())
+  if (!inherits(cache, "ciftest_nuisance_cache")) {
+    stop("Internal ciftest nuisance cache has an invalid class.",
+         call. = FALSE)
+  }
+  cache_key <- ciftest_cache_key("fixed-point", key)
+  if (exists(cache_key, envir = cache$fixed.point.operator,
+             inherits = FALSE)) {
+    cache$hits <- cache$hits + 1L
+    return(get(cache_key, envir = cache$fixed.point.operator,
+               inherits = FALSE))
+  }
+  started <- proc.time()[["elapsed"]]
+  value <- compute()
+  cache$prepare.seconds <- cache$prepare.seconds +
+    proc.time()[["elapsed"]] - started
+  cache$misses <- cache$misses + 1L
+  assign(cache_key, value, envir = cache$fixed.point.operator)
+  value
+}
+
+ciftest_cache_key <- function(prefix, key) {
+  label <- if (is.null(key) || !length(key) || is.na(key) || !nzchar(key)) {
+    "pooled"
+  } else {
+    as.character(key)
+  }
+  paste(prefix, label, sep = "::")
+}
+
+ciftest_cache_censoring <- function(cache, input, strata, key = NULL) {
+  compute <- function() {
+    estimate_censoring_km(
+      t = input$t,
+      epsilon = input$epsilon,
+      code.censoring = input$code.censoring,
+      strata = strata,
+      weights = input$weights,
+      censoring.event = input$censoring.event,
+      prob.bound = input$prob.bound,
+      prob.truncation = input$prob.truncation
+    )
+  }
+  if (is.null(cache)) return(compute())
+  if (!inherits(cache, "ciftest_nuisance_cache")) {
+    stop("Internal ciftest nuisance cache has an invalid class.",
+         call. = FALSE)
+  }
+  probability_key <- paste(
+    format(input$prob.bound, digits = 17L),
+    if (is.null(input$prob.truncation)) "none" else
+      format(input$prob.truncation, digits = 17L),
+    sep = ":"
+  )
+  cache_key <- ciftest_cache_key(
+    paste0("censoring[", probability_key, "]"), key
+  )
+  if (exists(cache_key, envir = cache$censoring, inherits = FALSE)) {
+    cache$hits <- cache$hits + 1L
+    return(get(cache_key, envir = cache$censoring, inherits = FALSE))
+  }
+  started <- proc.time()[["elapsed"]]
+  value <- compute()
+  cache$prepare.seconds <- cache$prepare.seconds +
+    proc.time()[["elapsed"]] - started
+  cache$misses <- cache$misses + 1L
+  assign(cache_key, value, envir = cache$censoring)
+  value
+}
+
+ciftest_cache_working_aj <- function(cache, input, strata, key = NULL) {
+  compute <- function() {
+    estimate_working_aj(
+      t = input$t,
+      epsilon = input$epsilon,
+      exposure = input$data[[input$exposure]],
+      strata = strata,
+      weights = input$weights,
+      code.event1 = input$code.event1,
+      code.event2 = input$code.event2,
+      code.censoring = input$code.censoring,
+      prob.bound = input$prob.bound,
+      prob.truncation = input$prob.truncation
+    )
+  }
+  if (is.null(cache)) return(compute())
+  if (!inherits(cache, "ciftest_nuisance_cache")) {
+    stop("Internal ciftest nuisance cache has an invalid class.",
+         call. = FALSE)
+  }
+  probability_key <- paste(
+    format(input$prob.bound, digits = 17L),
+    if (is.null(input$prob.truncation)) "none" else
+      format(input$prob.truncation, digits = 17L),
+    sep = ":"
+  )
+  cache_key <- ciftest_cache_key(
+    paste0("working-aj[", probability_key, "]"), key
+  )
+  if (exists(cache_key, envir = cache$working.aj, inherits = FALSE)) {
+    cache$hits <- cache$hits + 1L
+    return(get(cache_key, envir = cache$working.aj, inherits = FALSE))
+  }
+  started <- proc.time()[["elapsed"]]
+  value <- compute()
+  cache$prepare.seconds <- cache$prepare.seconds +
+    proc.time()[["elapsed"]] - started
+  cache$misses <- cache$misses + 1L
+  assign(cache_key, value, envir = cache$working.aj)
+  value
+}
+
+ciftest_batch_strata_value <- function(method, name) {
+  if (!name %in% names(method)) return(NULL)
+  column <- method[[name]]
+  value <- if (is.list(column)) column[[1L]] else column[1L]
+  if (is.null(value) ||
+      (length(value) == 1L && is.na(value))) return(NULL)
+  value
+}
+
+ciftest_batch_has_strata <- function(methods, name) {
+  vapply(seq_len(nrow(methods)), function(index) {
+    !is.null(ciftest_batch_strata_value(
+      methods[index, , drop = FALSE], name
+    ))
+  }, logical(1L))
+}
+
+ciftest_batch_strata_key <- function(method, name) {
+  value <- ciftest_batch_strata_value(method, name)
+  if (is.null(value)) "pooled" else paste(value, collapse = "\r")
+}
+
+ciftest_batch_method_input <- function(input, method) {
+  scalar <- function(name, default = NULL) {
+    if (!name %in% names(method)) return(default)
+    value <- method[[name]][1L]
+    if (!length(value) || is.na(value)) default else value
+  }
+  rho <- scalar("rho", 0)
+  gamma <- scalar("gamma", 0)
+  augmentation <- scalar("augmentation", FALSE)
+  iteration <- scalar("iteration", 0L)
+  fixed_point_solver <- scalar("fixed.point.solver", "finite")
+  score_construction <- scalar("score.construction", "standard")
+  strata.event <- ciftest_batch_strata_value(method, "strata.event")
+  strata.censor <- ciftest_batch_strata_value(method, "strata.censor")
+  strata.competing.risk <- ciftest_batch_strata_value(
+    method, "strata.competing.risk"
+  )
+  if (!is.numeric(rho) || length(rho) != 1L || !is.finite(rho) || rho < 0 ||
+      !is.numeric(gamma) || length(gamma) != 1L ||
+      !is.finite(gamma) || gamma < 0) {
+    stop("Batch method rho and gamma must be finite non-negative numbers.",
+         call. = FALSE)
+  }
+  if (!is.logical(augmentation) || length(augmentation) != 1L ||
+      is.na(augmentation)) {
+    stop("Batch method augmentation must be TRUE or FALSE.", call. = FALSE)
+  }
+  if (!is.numeric(iteration) || is.logical(iteration) ||
+      length(iteration) != 1L || is.na(iteration) ||
+      !is.finite(iteration) || iteration < 0 ||
+      iteration != floor(iteration)) {
+    stop("Batch method iteration must be one non-negative integer.",
+         call. = FALSE)
+  }
+  if (iteration > 0L && !augmentation) {
+    stop("Positive batch iteration requires augmentation = TRUE.",
+         call. = FALSE)
+  }
+  if (!is.character(fixed_point_solver) ||
+      length(fixed_point_solver) != 1L ||
+      !fixed_point_solver %in% c("finite", "seed-map", "direct")) {
+    stop("Batch fixed.point.solver must be 'finite', 'seed-map', or 'direct'.",
+         call. = FALSE)
+  }
+  if (fixed_point_solver %in% c("seed-map", "direct") && !augmentation) {
+    stop("Seed-map and direct fixed-point methods require augmentation = TRUE.",
+         call. = FALSE)
+  }
+  if (fixed_point_solver %in% c("seed-map", "direct") && iteration != 0L) {
+    stop("Seed-map and direct fixed-point methods require iteration = 0.",
+         call. = FALSE)
+  }
+  if (!is.character(score_construction) ||
+      length(score_construction) != 1L ||
+      !score_construction %in% c("standard", "fine-gray")) {
+    stop("Batch score.construction must be 'standard' or 'fine-gray'.",
+         call. = FALSE)
+  }
+  if (identical(score_construction, "fine-gray") && augmentation) {
+    stop("Fine-Gray score construction requires augmentation = FALSE.",
+         call. = FALSE)
+  }
+  if (identical(score_construction, "fine-gray") &&
+      !is.null(strata.competing.risk)) {
+    stop("The Fine-Gray score does not use `strata.competing.risk`.",
+         call. = FALSE)
+  }
+  if (!augmentation &&
+      (!is.null(strata.competing.risk) ||
+       (!identical(score_construction, "fine-gray") &&
+        !is.null(strata.censor)))) {
+    stop("Batch nuisance strata require augmentation = TRUE.", call. = FALSE)
+  }
+  if ((iteration > 0L || fixed_point_solver %in% c("seed-map", "direct")) &&
+      (!is.null(strata.event) || !is.null(strata.censor) ||
+       !is.null(strata.competing.risk))) {
+    stop("Batch iteration currently requires pooled analysis and nuisance models.",
+         call. = FALSE)
+  }
+  strata.event <- ciftest_normalize_strata_columns(
+    strata.event, "strata.event", input$data, input$exposure, role = "event"
+  )
+  strata.censor <- ciftest_normalize_strata_columns(
+    strata.censor, "strata.censor", input$data, input$exposure,
+    role = "censor"
+  )
+  strata.competing.risk <- ciftest_normalize_strata_columns(
+    strata.competing.risk, "strata.competing.risk", input$data,
+    input$exposure, role = "competing-risk"
+  )
+  input$rho <- as.numeric(rho)
+  input$gamma <- as.numeric(gamma)
+  input$augmentation <- augmentation
+  input$iteration <- as.integer(iteration)
+  input$fixed.point.solver <- fixed_point_solver
+  input$score.construction <- score_construction
+  input$test <- if (identical(score_construction, "fine-gray")) {
+    "score"
+  } else if (isTRUE(augmentation)) {
+    "augmented"
+  } else if (identical(input$outcome.type, "survival")) {
+    "logrank"
+  } else {
+    "gray"
+  }
+  input$test.requested <- "batch"
+  input$weight.label <- if (rho == 0 && gamma == 0) {
+    "unweighted"
+  } else if (rho == 1 && gamma == 0) {
+    "early"
+  } else if (rho == 0 && gamma == 1) {
+    "late"
+  } else {
+    "custom"
+  }
+  input$strata.event.info <- ciftest_make_strata_info(
+    input$data, strata.event, role = "event", weights = input$weights
+  )
+  input$strata.censor.info <- ciftest_make_strata_info(
+    input$data, strata.censor, role = "censor", weights = input$weights
+  )
+  input$strata.competing.risk.info <- ciftest_make_strata_info(
+    input$data, strata.competing.risk, role = "competing-risk",
+    weights = input$weights
+  )
+  input
+}
+
+ciftest_batch_precompute_multi <- function(base_input, methods, cache) {
+  values <- vector("list", nrow(methods))
+  available <- identical(base_input$outcome.type, "competing-risk") &&
+    any(methods$augmentation) &&
+    !any(ciftest_batch_has_strata(methods, "strata.event")) &&
+    ciftest_use_cpp_kernel(
+      "_cifmodeling_ciftest_fg_iid_multi_kernel_cpp"
+    ) &&
+    ciftest_use_cpp_kernel(
+      "_cifmodeling_ciftest_augmentation_iid_multi_kernel_cpp"
+    )
+  if (!available) {
+    return(list(values = values, elapsed = 0, errors = character()))
+  }
+  started <- proc.time()[["elapsed"]]
+  augmented <- which(methods$augmentation)
+  group_key <- vapply(augmented, function(index) {
+    paste(
+      ciftest_batch_strata_key(
+        methods[index, , drop = FALSE], "strata.censor"
+      ),
+      ciftest_batch_strata_key(
+        methods[index, , drop = FALSE], "strata.competing.risk"
+      ),
+      sep = "\034"
+    )
+  }, character(1L))
+  groups <- split(augmented, group_key)
+  score_cache <- new.env(parent = emptyenv())
+  errors <- character()
+  for (indices in groups) {
+    if (length(indices) < 2L) next
+    attempt <- tryCatch({
+      input <- ciftest_batch_method_input(
+        base_input, methods[indices[1L], , drop = FALSE]
+      )
+      exposure_design <- reg_read_exposure_design(
+        input$data, exposure = input$exposure
+      )
+      censoring <- ciftest_cache_censoring(
+        cache, input, input$strata.censor.info$values,
+        input$strata.censor.info$key
+      )
+      working <- ciftest_cache_working_aj(
+        cache, input, input$strata.competing.risk.info$values,
+        input$strata.competing.risk.info$key
+      )
+      score_key <- paste(
+        if (is.null(input$strata.censor.info$key)) {
+          "pooled"
+        } else input$strata.censor.info$key,
+        paste(methods$rho[indices], methods$gamma[indices], sep = ":",
+              collapse = ","),
+        sep = "::"
+      )
+      if (exists(score_key, envir = score_cache, inherits = FALSE)) {
+        score_parts <- get(score_key, envir = score_cache, inherits = FALSE)
+      } else {
+        score_parts <- build_fg_score_iid_multi(
+          t = input$t,
+          epsilon = input$epsilon,
+          x = exposure_design$x_a,
+          rho = methods$rho[indices],
+          gamma = methods$gamma[indices],
+          code.event1 = input$code.event1,
+          code.event2 = input$code.event2,
+          code.censoring = input$code.censoring,
+          strata = input$strata.censor.info$values,
+          weights = input$weights,
+          censoring = censoring
+        )
+        assign(score_key, score_parts, envir = score_cache)
+      }
+      augmentation_parts <- build_closed_form_augmentation_multi(
+        bases = score_parts,
+        working = working,
+        t = input$t,
+        epsilon = input$epsilon,
+        x = exposure_design$x_a,
+        exposure = input$data[[input$exposure]],
+        strata.censor = input$strata.censor.info$values,
+        strata.competing.risk = input$strata.competing.risk.info$values,
+        weights = input$weights,
+        code.event1 = input$code.event1,
+        code.event2 = input$code.event2,
+        code.censoring = input$code.censoring
+      )
+      list(score = score_parts, augmentation = augmentation_parts)
+    }, error = identity)
+    if (inherits(attempt, "error")) {
+      errors <- c(errors, conditionMessage(attempt))
+      next
+    }
+    for (local_index in seq_along(indices)) {
+      values[[indices[local_index]]] <- list(
+        score.parts = attempt$score[[local_index]],
+        augmentation.parts = attempt$augmentation[[local_index]]
+      )
+    }
+  }
+  list(
+    values = values,
+    elapsed = proc.time()[["elapsed"]] - started,
+    errors = unique(errors)
+  )
+}
+
+# Internal batch path. It intentionally is not exported: public ciftest()
+# remains scalar while simulations can share nuisance fits within a replicate.
+ciftest_batch_internal <- function(
+    formula,
+    data,
+    methods,
+    weights = NULL,
+    subset.condition = NULL,
+    outcome.type = "competing-risk",
+    code.event1 = 1,
+    code.event2 = 2,
+    code.censoring = 0,
+    tau = NULL,
+    na.action = stats::na.omit
+) {
+  if (!is.data.frame(methods) || !nrow(methods)) {
+    stop("`methods` must be a non-empty data frame.", call. = FALSE)
+  }
+  required <- c("augmentation", "strata.censor",
+                "strata.competing.risk", "rho", "gamma")
+  if (!all(required %in% names(methods))) {
+    stop("`methods` is missing required batch columns: ",
+         paste(setdiff(required, names(methods)), collapse = ", "),
+         call. = FALSE)
+  }
+  if (!is.logical(methods$augmentation) || anyNA(methods$augmentation)) {
+    stop("Batch augmentation values must be non-missing logical values.",
+         call. = FALSE)
+  }
+  if (!"iteration" %in% names(methods)) {
+    methods$iteration <- 0L
+  }
+  if (!"fixed.point.solver" %in% names(methods)) {
+    methods$fixed.point.solver <- "finite"
+  }
+  if (!"score.construction" %in% names(methods)) {
+    methods$score.construction <- "standard"
+  }
+  if (!"strata.event" %in% names(methods)) {
+    methods$strata.event <- NA_character_
+  }
+  has_event_strata <- ciftest_batch_has_strata(methods, "strata.event")
+  has_censor_strata <- ciftest_batch_has_strata(methods, "strata.censor")
+  has_competing_strata <- ciftest_batch_has_strata(
+    methods, "strata.competing.risk"
+  )
+  if (!is.numeric(methods$iteration) || is.logical(methods$iteration) ||
+      anyNA(methods$iteration) || any(!is.finite(methods$iteration)) ||
+      any(methods$iteration < 0) ||
+      any(methods$iteration != floor(methods$iteration))) {
+    stop("Batch iteration values must be non-negative integers.",
+         call. = FALSE)
+  }
+  if (!is.numeric(methods$rho) || anyNA(methods$rho) ||
+      any(!is.finite(methods$rho)) || any(methods$rho < 0) ||
+      !is.numeric(methods$gamma) || anyNA(methods$gamma) ||
+      any(!is.finite(methods$gamma)) || any(methods$gamma < 0)) {
+    stop("Batch rho and gamma values must be finite and non-negative.",
+         call. = FALSE)
+  }
+  if (!is.character(methods$fixed.point.solver) ||
+      anyNA(methods$fixed.point.solver) ||
+      any(!methods$fixed.point.solver %in% c("finite", "seed-map", "direct"))) {
+    stop(
+      "Batch fixed.point.solver values must be 'finite', 'seed-map', or 'direct'.",
+         call. = FALSE)
+  }
+  if (!is.character(methods$score.construction) ||
+      anyNA(methods$score.construction) ||
+      any(!methods$score.construction %in% c("standard", "fine-gray"))) {
+    stop("Batch score.construction values must be 'standard' or 'fine-gray'.",
+         call. = FALSE)
+  }
+  fine_gray <- methods$score.construction == "fine-gray"
+  if (any(fine_gray & methods$augmentation)) {
+    stop("Fine-Gray score methods require augmentation = FALSE.",
+         call. = FALSE)
+  }
+  if (any(fine_gray & (has_censor_strata | has_competing_strata))) {
+    stop("Fine-Gray score methods currently require pooled nuisance models.",
+         call. = FALSE)
+  }
+  fixed_point <- methods$fixed.point.solver %in% c("seed-map", "direct")
+  if (any(fixed_point & !methods$augmentation)) {
+    stop("Seed-map and direct fixed-point methods require augmentation = TRUE.",
+         call. = FALSE)
+  }
+  if (any(fixed_point & methods$iteration != 0L)) {
+    stop("Seed-map and direct fixed-point methods require iteration = 0.",
+         call. = FALSE)
+  }
+  if (any(fixed_point & (has_event_strata | has_censor_strata |
+                         has_competing_strata))) {
+    stop("Seed-map and direct methods currently require pooled analysis and nuisance models.",
+         call. = FALSE)
+  }
+  method_ids <- if ("method_id" %in% names(methods)) {
+    as.character(methods$method_id)
+  } else {
+    paste0("method", seq_len(nrow(methods)))
+  }
+  if (anyNA(method_ids) || any(!nzchar(method_ids)) || anyDuplicated(method_ids)) {
+    stop("Batch method IDs must be unique and non-missing.", call. = FALSE)
+  }
+  collect_strata_names <- function(name) {
+    unique(unlist(lapply(seq_len(nrow(methods)), function(index) {
+      ciftest_batch_strata_value(methods[index, , drop = FALSE], name)
+    }), use.names = FALSE))
+  }
+  event_names <- collect_strata_names("strata.event")
+  censor_names <- collect_strata_names("strata.censor")
+  competing_names <- collect_strata_names("strata.competing.risk")
+  strata_names <- unique(c(event_names, censor_names, competing_names))
+  if (length(strata_names) &&
+      any(!strata_names %in% names(data))) {
+    stop("A batch analysis or nuisance stratum is not present in `data`.",
+         call. = FALSE)
+  }
+  weights.resolved <- if (is.null(weights)) {
+    NULL
+  } else if (is.character(weights) && length(weights) == 1L &&
+             weights %in% names(data)) {
+    data[[weights]]
+  } else {
+    weights
+  }
+  input_started <- proc.time()[["elapsed"]]
+  base_input <- ciftest_prepare(
+    formula = formula,
+    data = data,
+    weights = weights.resolved,
+    subset.condition = subset.condition,
+    outcome.type = outcome.type,
+    code.event1 = code.event1,
+    code.event2 = code.event2,
+    code.censoring = code.censoring,
+    rho = 0,
+    gamma = 0,
+    iteration = 0L,
+    strata = if (length(event_names)) event_names else NULL,
+    strata.censor = if (length(censor_names)) censor_names else NULL,
+    strata.competing.risk = if (length(competing_names)) {
+      competing_names
+    } else NULL,
+    tau = tau,
+    legacy.augmentation = any(methods$augmentation),
+    na.action = na.action
+  )
+  input_prepare_seconds <- proc.time()[["elapsed"]] - input_started
+  cache <- new_ciftest_nuisance_cache()
+  batch_started <- proc.time()[["elapsed"]]
+  precomputed_bundle <- ciftest_batch_precompute_multi(
+    base_input, methods, cache
+  )
+  precomputed <- precomputed_bundle$values
+  results <- vector("list", nrow(methods))
+  names(results) <- method_ids
+  timing <- vector("list", nrow(methods))
+  batch_call <- match.call()
+  for (i in seq_len(nrow(methods))) {
+    method_started <- proc.time()[["elapsed"]]
+    prepare_before <- cache$prepare.seconds
+    input <- ciftest_batch_method_input(
+      base_input,
+      methods[i, , drop = FALSE]
+    )
+    results[[i]] <- tryCatch(
+      ciftest_fit_prepared(
+        input = input,
+        formula = formula,
+        call = batch_call,
+        nuisance.cache = cache,
+        precomputed = precomputed[[i]]
+      ),
+      error = identity
+    )
+    total <- proc.time()[["elapsed"]] - method_started
+    prepare_delta <- cache$prepare.seconds - prepare_before
+    timing[[i]] <- data.frame(
+      method_id = method_ids[[i]],
+      elapsed_prepare_seconds = prepare_delta,
+      elapsed_method_seconds = max(0, total - prepare_delta),
+      elapsed_seconds = total,
+      stringsAsFactors = FALSE
+    )
+  }
+  attr(results, "timing") <- do.call(rbind, timing)
+  attr(results, "batch.timing") <- list(
+    elapsed_input_prepare_seconds = input_prepare_seconds,
+    elapsed_nuisance_prepare_seconds = cache$prepare.seconds,
+    elapsed_multiweight_precompute_seconds = precomputed_bundle$elapsed,
+    elapsed_batch_seconds = proc.time()[["elapsed"]] - batch_started,
+    cache_hits = cache$hits,
+    cache_misses = cache$misses,
+    multiweight_errors = precomputed_bundle$errors
+  )
+  class(results) <- c("ciftest_batch", "list")
+  results
 }
 
 ciftest_prepare <- function(
@@ -362,58 +1689,63 @@ ciftest_prepare <- function(
     data,
     weights = NULL,
     subset.condition = NULL,
-    outcome.type = "competing-risk",
+    outcome.type = "auto",
+    test = "auto",
     code.event1 = 1,
     code.event2 = 2,
     code.censoring = 0,
-    rho = 0,
-    gamma = 0,
-    augmentation = NULL,
-    iteration = FALSE,
-    iter.max = 50L,
-    iter.tol = NULL,
+    rho = NULL,
+    gamma = NULL,
+    iteration = 0L,
+    tolerance = NULL,
+    strata = NULL,
     strata.censor = NULL,
     strata.competing.risk = NULL,
     tau = NULL,
+    prob.bound = 1e-7,
+    prob.truncation = NULL,
+    legacy.augmentation = NULL,
+    augmentation = NULL,
     na.action = stats::na.omit
 ) {
-  if (!is.numeric(rho) || length(rho) != 1L || !is.finite(rho) || rho < 0) {
-    stop("`rho` must be one finite non-negative number.", call. = FALSE)
+  if (!is.null(augmentation)) {
+    if (!is.null(legacy.augmentation)) {
+      stop("Supply only one internal legacy augmentation argument.",
+           call. = FALSE)
+    }
+    legacy.augmentation <- augmentation
   }
-  if (!is.numeric(gamma) || length(gamma) != 1L || !is.finite(gamma) || gamma < 0) {
-    stop("`gamma` must be one finite non-negative number.", call. = FALSE)
+  if (!is.numeric(iteration) || is.logical(iteration) ||
+      length(iteration) != 1L || is.na(iteration) ||
+      !is.finite(iteration) || iteration < 0 ||
+      iteration != floor(iteration)) {
+    stop("`iteration` must be one non-negative integer.", call. = FALSE)
   }
-  if (!is.logical(iteration) || length(iteration) != 1L || is.na(iteration)) {
-    stop("`iteration` must be TRUE or FALSE.", call. = FALSE)
+  if (!is.null(tolerance) &&
+      (!is.numeric(tolerance) || length(tolerance) != 1L ||
+       !is.finite(tolerance) || tolerance <= 0)) {
+    stop("`tolerance` must be NULL or one positive finite number.",
+         call. = FALSE)
   }
-  if (length(iter.max) != 1L || is.na(iter.max) || !is.finite(iter.max) ||
-      iter.max < 1 || iter.max != floor(iter.max)) {
-    stop("`iter.max` must be a positive integer.", call. = FALSE)
+  if (!is.null(tolerance) && iteration < 1L) {
+    stop("`tolerance` requires a positive `iteration`.", call. = FALSE)
   }
-  if (!is.null(iter.tol) &&
-      (!is.numeric(iter.tol) || length(iter.tol) != 1L ||
-       !is.finite(iter.tol) || iter.tol <= 0)) {
-    stop("`iter.tol` must be NULL or one finite positive number.", call. = FALSE)
+  if (!is.numeric(prob.bound) || length(prob.bound) != 1L ||
+      !is.finite(prob.bound) || prob.bound <= 0 || prob.bound >= 1) {
+    stop("`prob.bound` must be one number strictly between zero and one.",
+         call. = FALSE)
+  }
+  if (!is.null(prob.truncation) &&
+      (!is.numeric(prob.truncation) || length(prob.truncation) != 1L ||
+       !is.finite(prob.truncation) || prob.truncation <= prob.bound ||
+       prob.truncation >= 1)) {
+    stop("`prob.truncation` must be NULL or one number strictly between `prob.bound` and one.",
+         call. = FALSE)
   }
   if (!is.null(tau) &&
       (!is.numeric(tau) || length(tau) != 1L || !is.finite(tau) || tau < 0)) {
     stop("`tau` must be NULL or one finite non-negative number.", call. = FALSE)
   }
-  nuisance_strata <- list(
-    strata.censor = strata.censor,
-    strata.competing.risk = strata.competing.risk
-  )
-  for (argument in names(nuisance_strata)) {
-    value <- nuisance_strata[[argument]]
-    if (!is.null(value) &&
-        (!is.character(value) || length(value) != 1L || !nzchar(value))) {
-      stop("`", argument, "` must be NULL or one column name.", call. = FALSE)
-    }
-    if (!is.null(value) && !value %in% names(data)) {
-      stop(argument, " = '", value, "' is not found in data.", call. = FALSE)
-    }
-  }
-
   Terms0 <- stats::terms(formula, specials = c("strata", "offset", "cluster"), data = data)
   term_labels <- attr(Terms0, "term.labels")
   if (length(term_labels) != 1L || grepl("[:*(]", term_labels, fixed = FALSE)) {
@@ -425,75 +1757,89 @@ ciftest_prepare <- function(
   }
   exposure <- exposure_vars[[1L]]
 
+  strata <- ciftest_normalize_strata_columns(
+    strata, "strata", data, exposure, role = "event"
+  )
+  strata.censor <- ciftest_normalize_strata_columns(
+    strata.censor, "strata.censor", data, exposure, role = "censor"
+  )
+  strata.competing.risk <- ciftest_normalize_strata_columns(
+    strata.competing.risk, "strata.competing.risk", data, exposure,
+    role = "competing-risk"
+  )
+
   prepared <- cif_prepare_input(
     formula = formula,
     data = data,
     weights = weights,
-    other.variables.analyzed = unique(c(strata.censor, strata.competing.risk)),
+    other.variables.analyzed = unique(c(
+      strata, strata.censor, strata.competing.risk
+    )),
     subset.condition = subset.condition,
     na.action = na.action,
-    outcome.type = outcome.type,
+    outcome.type = if (is.character(outcome.type) && length(outcome.type) == 1L &&
+      identical(tolower(trimws(outcome.type)), "auto")) NULL else outcome.type,
     code.event1 = code.event1,
     code.event2 = code.event2,
     code.censoring = code.censoring
   )
   reg_read_exposure_design(prepared$data, exposure = exposure)
 
-  augmentation <- if (is.null(augmentation)) {
-    identical(prepared$outcome.type, "competing-risk")
-  } else {
-    if (!is.logical(augmentation) || length(augmentation) != 1L || is.na(augmentation)) {
-      stop("`augmentation` must be NULL, TRUE, or FALSE.", call. = FALSE)
-    }
-    augmentation
+  spec <- ciftest_resolve_test_spec(
+    outcome.type = prepared$outcome.type,
+    test = test,
+    rho = rho,
+    gamma = gamma,
+    iteration = as.integer(iteration),
+    legacy.augmentation = legacy.augmentation
+  )
+  if (!is.null(strata.censor) &&
+      !(identical(spec$test, "augmented") ||
+        (identical(spec$test, "score") &&
+         identical(prepared$outcome.type, "competing-risk")))) {
+    stop("`strata.censor` is available only for competing-risk score and augmented tests.",
+         call. = FALSE)
   }
-  if (identical(prepared$outcome.type, "survival") && isTRUE(augmentation)) {
-    stop("`augmentation = TRUE` is not available for survival outcomes.", call. = FALSE)
+  if (!is.null(strata.competing.risk) && !identical(spec$test, "augmented")) {
+    stop("`strata.competing.risk` requires `test = \"augmented\"`.",
+         call. = FALSE)
   }
-  if (isTRUE(iteration) && !isTRUE(augmentation)) {
-    stop("`iteration = TRUE` requires `augmentation = TRUE`.", call. = FALSE)
+  if (!is.null(prob.truncation) &&
+      !(identical(prepared$outcome.type, "competing-risk") &&
+        spec$test %in% c("score", "augmented"))) {
+    stop("`prob.truncation` is available only for competing-risk score and augmented tests.",
+         call. = FALSE)
   }
-  if (identical(prepared$outcome.type, "survival") && isTRUE(iteration)) {
-    stop("`iteration = TRUE` is not available for survival outcomes.", call. = FALSE)
-  }
-  if (!isTRUE(augmentation) &&
-      (!is.null(strata.censor) || !is.null(strata.competing.risk))) {
+  if (iteration > 0L &&
+      (!is.null(strata) || !is.null(strata.censor) ||
+       !is.null(strata.competing.risk))) {
     stop(
-      "`strata.censor` and `strata.competing.risk` require ",
-      "`augmentation = TRUE`.",
+      "Analysis and nuisance-model strata are not available with iteration in the initial release.",
       call. = FALSE
     )
   }
-  if (isTRUE(iteration) &&
-      (!is.null(strata.censor) || !is.null(strata.competing.risk))) {
-    stop(
-      "Nuisance-model strata are not available with iteration in the initial release.",
-      call. = FALSE
-    )
-  }
-  if (isTRUE(iteration) && rho + gamma > 0) {
-    stop("Weighted iteration is release-gated pending simulation validation.", call. = FALSE)
-  }
-
   t <- prepared$t
   epsilon <- prepared$epsilon
   tau.used <- if (is.null(tau)) max(t) else tau
+  horizon.complete <- rep.int(FALSE, length(t))
   if (!is.null(tau)) {
+    horizon.complete <- t >= tau
     after_tau <- t > tau
     t[after_tau] <- tau
     epsilon[after_tau] <- prepared$code.censoring
   }
+  censoring.event <- epsilon == prepared$code.censoring & !horizon.complete
 
-  strata_censor_values <- if (is.null(strata.censor)) {
-    factor(rep.int("pooled", length(t)))
-  } else {
-    factor(prepared$data[[strata.censor]])
-  }
-  strata_competing_risk_values <- if (is.null(strata.competing.risk)) {
-    factor(rep.int("pooled", length(t)))
-  } else {
-    factor(prepared$data[[strata.competing.risk]])
-  }
+  strata_event_info <- ciftest_make_strata_info(
+    prepared$data, strata, role = "event", weights = prepared$w
+  )
+  strata_censor_info <- ciftest_make_strata_info(
+    prepared$data, strata.censor, role = "censor", weights = prepared$w
+  )
+  strata_competing_risk_info <- ciftest_make_strata_info(
+    prepared$data, strata.competing.risk, role = "competing-risk",
+    weights = prepared$w
+  )
 
   list(
     formula = formula,
@@ -509,22 +1855,24 @@ ciftest_prepare <- function(
     code.censoring = prepared$code.censoring,
     t = t,
     epsilon = epsilon,
+    horizon.complete = horizon.complete,
+    censoring.event = censoring.event,
     weights = prepared$w,
-    rho = as.numeric(rho),
-    gamma = as.numeric(gamma),
-    augmentation = augmentation,
-    iteration = iteration,
-    iter.max = as.integer(iter.max),
-    iter.tol = iter.tol,
+    test.requested = spec$requested,
+    test = spec$test,
+    weight.label = spec$weight.label,
+    rho = spec$rho,
+    gamma = spec$gamma,
+    augmentation = spec$augmentation,
+    score.construction = spec$score.construction,
+    iteration = as.integer(iteration),
+    tolerance = tolerance,
     tau = tau.used,
-    strata.censor.info = list(
-      name = strata.censor,
-      values = strata_censor_values
-    ),
-    strata.competing.risk.info = list(
-      name = strata.competing.risk,
-      values = strata_competing_risk_values
-    )
+    prob.bound = as.numeric(prob.bound),
+    prob.truncation = prob.truncation,
+    strata.event.info = strata_event_info,
+    strata.censor.info = strata_censor_info,
+    strata.competing.risk.info = strata_competing_risk_info
   )
 }
 
@@ -547,9 +1895,8 @@ ciftest_quadratic_form <- function(score, variance) {
 #' `(1 - F_1(t-))^rho * F_1(t-)^gamma`; `gamma = 0` recovers the family used
 #' by `cmprsk::cuminc()`.
 #'
-#' `weights` are frequency weights. The public UI currently supplies one test
-#' stratum; the internal `strata` argument is retained for reference checks and
-#' a future explicitly stratified test interface.
+#' `weights` are frequency weights. `strata` defines independent analysis
+#' strata; stratum-specific scores and covariance matrices are summed.
 #'
 #' @keywords internal
 calculate_gray <- function(
@@ -834,7 +2181,82 @@ gray_stratum_components <- function(
 print.ciftest <- function(x, ...) {
   cat("\n", x$method, "\n\n", sep = "")
   cat("Outcome: ", x$outcome.type, "\n", sep = "")
+  cat("Test: ", x$test, "\n", sep = "")
   cat("FH weights: rho = ", x$rho, ", gamma = ", x$gamma, "\n", sep = "")
+  strata_text <- function(info) {
+    if (is.null(info) || is.null(info$name)) return("pooled")
+    columns <- info$columns
+    if (is.null(columns) || !length(columns)) columns <- info$name
+    paste0(
+      paste(columns, collapse = " x "), " (",
+      nlevels(info$values),
+      if (nlevels(info$values) == 1L) {
+        " observed stratum)"
+      } else {
+        " observed strata)"
+      }
+    )
+  }
+  cat("Analysis strata: ", strata_text(x$strata.info), "\n", sep = "")
+  if (identical(x$test, "augmented")) {
+    cat("Censoring strata: ", strata_text(x$strata.censor.info), "\n",
+        sep = "")
+    working_columns <- x$strata.competing.risk.info$columns
+    if (is.null(working_columns) || !length(working_columns)) {
+      working_text <- paste0(x$diagnostics$exposure, " only")
+    } else {
+      working_text <- paste(
+        c(x$diagnostics$exposure, working_columns), collapse = " x "
+      )
+    }
+    working_cells <- x$diagnostics$working.aj$cells
+    cat(
+      "Working AJ strata: ", working_text,
+      if (!is.null(working_cells)) paste0(" (", nrow(working_cells),
+                                          " fitted cells)") else "",
+      "\n", sep = ""
+    )
+  } else if (identical(x$test, "score") &&
+             identical(x$outcome.type, "competing-risk")) {
+    cat("Censoring strata: ", strata_text(x$strata.censor.info), "\n",
+        sep = "")
+    cat("Working AJ strata: not used by this test\n")
+  } else {
+    cat("Censoring strata: not used by this test\n")
+    cat("Working AJ strata: not used by this test\n")
+  }
+  fixed_point_solver <- x$diagnostics$fixed.point.solver
+  if (identical(fixed_point_solver, "seed-map")) {
+    cat("Diagnostic state: Appendix-E seed mapped to observed data\n")
+  } else if (identical(fixed_point_solver, "direct")) {
+    cat("Fixed-point solver: direct\n")
+    cat("Iteration-converged: ", if (isTRUE(x$converged)) "yes" else "no",
+        "\n", sep = "")
+    cat("Fixed-point residual: ",
+        format(x$fixed.point.residual, digits = 5L), "\n", sep = "")
+  } else if (isTRUE(x$iteration > 0L)) {
+    cat("Iteration: ", x$iterations, " of ", x$iteration,
+        " requested refinement", if (x$iteration == 1L) "" else "s",
+        "\n", sep = "")
+    if (!is.null(x$tolerance)) {
+      cat("Iteration tolerance: ", format(x$tolerance, digits = 5L),
+          " (converged: ", if (isTRUE(x$converged)) "yes" else "no",
+          ")\n", sep = "")
+    }
+    cat("Fixed-point residual: ",
+        format(x$fixed.point.residual, digits = 5L), "\n", sep = "")
+  } else if (identical(x$test, "augmented")) {
+    cat("Iteration: 0 (closed-form augmentation)\n")
+  }
+  if (isTRUE(x$diagnostics$truncation$requested)) {
+    truncation <- x$diagnostics$truncation
+    cat(
+      "Probability truncation: ", truncation$probability,
+      " (censoring ", truncation$censoring.count,
+      ", working survival ", truncation$working.survival.count,
+      " replacements)\n", sep = ""
+    )
+  }
   cat("Variance: ", x$variance.method, "\n\n", sep = "")
   cat(
     "Chi-squared = ", format(unname(x$statistic), digits = 5L),
@@ -859,6 +2281,10 @@ tidy.ciftest <- function(x, ...) {
     parameter = unname(x$parameter),
     method = x$method,
     outcome.type = x$outcome.type,
+    test = x$test,
+    weight = x$weight.label,
+    iteration = x$iteration,
+    fixed.point.residual = x$fixed.point.residual,
     n = x$n,
     stringsAsFactors = FALSE
   )
@@ -935,6 +2361,9 @@ calculate_log_rank <- function(
   p <- K - 1L
   score_total <- rep.int(0, p)
   var_total <- matrix(0, nrow = p, ncol = p)
+  score_iid <- matrix(0, nrow = n, ncol = p)
+  observed_total <- expected_total <- numeric(K)
+  var_full_total <- matrix(0, nrow = K, ncol = K)
 
   # helper: compute FH weights from pooled survival in a stratum
   fh_weights <- function(Yw, dNw, rho, gamma, prob.bound) {
@@ -1008,6 +2437,30 @@ calculate_log_rank <- function(
     U_full <- dNw_mat - P * dNw
     U_red  <- U_full[, -1, drop = FALSE]             # drop reference group
     score_l <- as.vector(crossprod(Kt, U_red))       # (K-1)-vector
+    observed_total <- observed_total +
+      as.vector(crossprod(Kt, dNw_mat))
+    expected_total <- expected_total +
+      as.vector(crossprod(Kt, P * dNw))
+
+    # Subject-level null score contributions. The compensator term sums to
+    # zero at every event time, so the column sums reproduce the score while
+    # retaining the individual martingale variation needed by robust score
+    # covariance calculations.
+    x_red <- matrix(0, nrow = length(idx), ncol = p)
+    for (column in seq_len(p)) {
+      x_red[, column] <- as.numeric(gg == column + 1L)
+    }
+    for (j in seq_len(M)) {
+      if (!is.finite(Yw[j]) || Yw[j] <= 0 || dNw[j] <= 0) next
+      centered <- sweep(x_red, 2L, P[j, -1L], "-")
+      event_here <- ee & tt == times[j]
+      at_risk <- tt >= times[j]
+      martingale <- ww * (
+        as.numeric(event_here) - as.numeric(at_risk) * dNw[j] / Yw[j]
+      )
+      score_iid[idx, ] <- score_iid[idx, , drop = FALSE] +
+        centered * (Kt[j] * martingale)
+    }
 
     # --- variance-covariance: sum_t K(t)^2 * Cov( O-E at t ) ---
     # Multigroup log-rank covariance increment (survdiff-style):
@@ -1024,6 +2477,7 @@ calculate_log_rank <- function(
       C_full <- cfac * (diag(Yvec, nrow = K, ncol = K) - tcrossprod(Yvec) / Y)
       C_red  <- C_full[-1, -1, drop = FALSE]
       var_l  <- var_l + (Kt[j]^2) * C_red
+      var_full_total <- var_full_total + (Kt[j]^2) * C_full
     }
 
     score_total <- score_total + score_l
@@ -1032,10 +2486,22 @@ calculate_log_rank <- function(
 
   colnames(var_total) <- rownames(var_total) <- colnames(exp_info$x_a)
   names(score_total) <- colnames(exp_info$x_a)
+  colnames(score_iid) <- colnames(exp_info$x_a)
+  names(observed_total) <- names(expected_total) <- exp_info$exposure.labels
+  dimnames(var_full_total) <- list(
+    exp_info$exposure.labels, exp_info$exposure.labels
+  )
 
   list(
     score = score_total,
     var = var_total,
+    score.iid = score_iid,
+    observed = observed_total,
+    expected = expected_total,
+    var.full = var_full_total,
+    n.group = stats::setNames(
+      tabulate(gid, nbins = K), exp_info$exposure.labels
+    ),
     df = length(score_total),
     exposure.levels = exp_info$exposure.levels,
     exposure.labels = exp_info$exposure.labels,
