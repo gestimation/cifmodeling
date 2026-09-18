@@ -354,15 +354,16 @@ Rcpp::List calculateAJ_Rcpp(
       S_any[m]     = Sprev * fac;
 
       if (dj > 0.0 && Yj > 0.0) {
-        double Yn   = Nrisk_all[j];
         double Mi   = Mi_all[j];
         double invM = (Mi > 0.0 ? 1.0 / Mi : 1.0);
 
         if (error_tsiatis) {
-          accKM += dj * Yn * invM / (Yj * Yj);
+          // Tsiatis-type weighted variance contribution: d_j^w / (M_j Y_j^w)
+          accKM += dj * invM / Yj;
         } else {
           if (Yj > dj) {
-            accKM += dj * Yn * invM / (Yj * (Yj - dj));
+            // Xie-Liu adjusted Greenwood contribution: d_j^w / {M_j (Y_j^w - d_j^w)}
+            accKM += dj * invM / (Yj - dj);
           } else {
             accKM = std::numeric_limits<double>::infinity();
           }
