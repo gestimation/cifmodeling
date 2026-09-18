@@ -1,6 +1,8 @@
 template:
   bootstrap: 5
 
+destination: docs
+
 url: https://gestimation.github.io/cifmodeling/
 
 development:

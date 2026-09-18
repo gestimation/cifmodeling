@@ -23,8 +23,8 @@ lines of R.
 
 It provides a unified, high-level interface for survival and competing
 risks analysis, combining nonparametric estimation, hypothesis testing,
-regression modeling, and visualization. It is centered around four tightly connected
-functions:
+regression modeling, and visualization. It is centered around four
+tightly connected functions:
 
 - `cifplot()` generates a survival or cumulative incidence function
   (CIF) curve. The visualization is built on top of `ggsurvfit` and
@@ -84,12 +84,12 @@ and the CIF of macrovascular complications (`epsilon = 2`) on the right.
 `ciftest()` uses the same formula interface. Its default is log-rank for
 a survival outcome and the augmented score test for a competing-risk
 outcome. Short aliases are available for interactive use:
-`"L"`/`"LR"`/`"log-rank"`, `"G"`, and
-`"A"`/`"aug"`/`"augmentation"`. The `"early"` and `"late"` presets
-choose the outcome-specific test with Fleming--Harrington weights, while
-`"multiple"` (or `"multi"`/`"m"`) combines the default directions
-`(2, 0)`, `(0, 2)`, and `(0, 0)`. Optional lower truncation of nuisance
-probabilities is controlled by `prob.truncation`.
+`"L"`/`"LR"`/`"log-rank"`, `"G"`, and `"A"`/`"aug"`/`"augmentation"`.
+The `"early"` and `"late"` presets choose the outcome-specific test with
+Fleming–Harrington weights, while `"multiple"` (or `"multi"`/`"m"`)
+combines the default directions `(2, 0)`, `(0, 2)`, and `(0, 0)`.
+Optional lower truncation of nuisance probabilities is controlled by
+`prob.truncation`.
 
 ``` r
 ciftest(
