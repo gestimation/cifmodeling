@@ -30,6 +30,7 @@
 #' @noRd
 panel_prepare <- function(
     K, formulas, data, code.events, outcome.flags,
+    weights = NULL, subset.condition = NULL,
     outcome.list = NULL,
     typey.list = NULL, labely.list = NULL, labelx.list = NULL,
     limsx.list = NULL, limsy.list = NULL,
@@ -100,7 +101,12 @@ panel_prepare <- function(
     if (is.list(nrt_i)) nrt_i <- nrt_i[[min(i, length(nrt_i))]]
     nrt_i <- util_check_n_risk_type(nrt_i)
 
-    norm_inputs <- plot_normalize_formula_data(formulas[[i]], data)
+    norm_inputs <- plot_normalize_formula_data(
+      formulas[[i]],
+      data,
+      subset.condition = subset.condition,
+      na.action = na.action
+    )
     cur_formula <- norm_inputs$formula %||% formulas[[i]]
     data_i      <- norm_inputs$data
 
@@ -109,6 +115,8 @@ panel_prepare <- function(
         list(
             formula        = cur_formula,
             data           = data_i,
+            weights        = weights,
+            subset.condition = subset.condition,
             outcome.type   = if (!is.null(outcome.list)) outcome.list[[i]] else NULL,
             code.event1    = ce1,
             code.event2    = ce2,

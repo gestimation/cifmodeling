@@ -7,6 +7,7 @@
 extract_time_to_event(
   formula,
   data,
+  weights = NULL,
   subset.condition = NULL,
   na.action = na.omit,
   which.event = c("event2", "event1", "censor", "censoring", "user_specified"),
@@ -22,6 +23,9 @@ extract_time_to_event(
 \item{formula}{A model formula specifying the outcome and (optionally) \code{strata()}.}
 
 \item{data}{A data frame containing variables in \code{formula}.}
+
+\item{weights}{Optional numeric case weights or the name of a weight column.
+Rows with missing weights are excluded consistently with curve estimation.}
 
 \item{subset.condition}{Optional expression (as a character string) defining a
 subset of \code{data} to analyse. Defaults to \code{NULL}.}

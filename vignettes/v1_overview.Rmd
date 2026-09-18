@@ -55,8 +55,8 @@ In competing risks data, censoring is often coded as 0, the event of interest as
 
 Before fitting a model, it is often helpful to check how many observations are in each group and what outcome status they have at a clinically relevant time point. `cifflowchart()` provides a compact, CONSORT-like summary of treatment groups, exclusions, and outcome status using the same formula style.
 
-```{r example01-2, eval=requireNamespace("DiagrammeR", quietly = TRUE), warning=FALSE, message=FALSE}
-cifflowchart(
+```{r example01-2, eval=requireNamespace("DiagrammeR", quietly = TRUE) && exists("cifflowchart", envir = asNamespace("cifmodeling"), inherits = FALSE), warning=FALSE, message=FALSE}
+cifmodeling::cifflowchart(
   Event(t, epsilon) ~ fruitq1,
   data = diabetes.complications,
   time.point = 8,

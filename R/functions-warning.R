@@ -119,6 +119,82 @@
   invisible(TRUE)
 }
 
+util_normalize_na_action <- function(na.action) {
+  if (is.function(na.action)) return(na.action)
+  if (is.character(na.action) && length(na.action) == 1L &&
+      na.action %in% c("na.omit", "na.exclude", "na.pass", "na.fail")) {
+    return(get(na.action, envir = asNamespace("stats"), inherits = FALSE))
+  }
+  stats::na.omit
+}
+
+util_normalize_outcome_type <- function(x) {
+  if (is.null(x)) return(character())
+
+  z <- tolower(trimws(as.character(x)))
+  z <- gsub("[[:space:]_.]+", "-", z)
+  z <- gsub("-{2,}", "-", z)
+  z <- gsub("^-|-$", "", z)
+  map <- c(
+    "c" = "competing-risk", "cr" = "competing-risk",
+    "competing" = "competing-risk",
+    "s" = "survival", "surv" = "survival",
+    "b" = "binomial", "bin" = "binomial",
+    "pc" = "proportional-competing-risk",
+    "pcr" = "proportional-competing-risk",
+    "ps" = "proportional-survival"
+  )
+  ifelse(z %in% names(map), unname(map[z]), z)
+}
+
+util_detect_outcome_type <- function(
+    formula,
+    data,
+    na.action = stats::na.omit,
+    auto_message = TRUE
+) {
+  if (is.null(formula) || is.null(data)) {
+    stop(
+      "Provide either `outcome.type` or both `formula` and `data` for automatic detection.",
+      call. = FALSE
+    )
+  }
+
+  na.action <- util_normalize_na_action(na.action)
+  Terms <- stats::terms(
+    formula,
+    specials = c("strata", "offset", "cluster"),
+    data = data
+  )
+  mf <- tryCatch(
+    stats::model.frame(Terms, data = data, na.action = na.action),
+    error = function(e) stats::model.frame(
+      Terms,
+      data = data,
+      na.action = stats::na.omit
+    )
+  )
+
+  Y <- stats::model.extract(mf, "response")
+  if (!inherits(Y, c("Event", "Surv"))) {
+    stop("Response must be Event() or Surv().", call. = FALSE)
+  }
+
+  status <- suppressWarnings(as.numeric(Y[, 2L]))
+  n_levels <- length(unique(stats::na.omit(status)))
+  if (n_levels > 2L) {
+    if (isTRUE(auto_message)) {
+      message("Detected >2 status levels; outcome.type set to 'competing-risk'.")
+    }
+    "competing-risk"
+  } else {
+    if (isTRUE(auto_message)) {
+      message("Detected <= 2 status levels; outcome.type set to 'survival'.")
+    }
+    "survival"
+  }
+}
+
 util_check_outcome_type <- function(
     x = NULL,
     formula = NULL,
@@ -127,65 +203,13 @@ util_check_outcome_type <- function(
     auto_message = TRUE,
     allow_multiple = FALSE
 ) {
-  normalize_na_action <- function(na) {
-    if (is.function(na)) return(na)
-    if (is.character(na) && length(na) == 1L) {
-      if (na %in% c("na.omit", "na.exclude", "na.pass", "na.fail")) {
-        return(get(na, envir = asNamespace("stats"), inherits = FALSE))
-      }
-    }
-    stats::na.omit
-  }
-  na.action <- normalize_na_action(na.action)
+  na.action <- util_normalize_na_action(na.action)
 
   ok <- c("competing-risk", "survival", "binomial",
           "proportional-competing-risk", "proportional-survival")
 
-  normalize <- function(z) {
-    if (is.null(z)) return(character())
-    z <- as.character(z)
-    z <- tolower(trimws(z))
-    z <- gsub("[[:space:]_.]+", "-", z)
-    z <- gsub("-{2,}", "-", z)
-    z <- gsub("^-|-$", "", z)
-    map <- c(
-      "c"   = "competing-risk", "cr"  = "competing-risk", "competing" = "competing-risk",
-      "s"   = "survival",       "surv" = "survival",
-      "b"   = "binomial",       "bin" = "binomial",
-      "pc"  = "proportional-competing-risk", "pcr" = "proportional-competing-risk",
-      "ps"  = "proportional-survival"
-    )
-    ifelse(z %in% names(map), unname(map[z]), z)
-  }
-
-  detect_from_formula <- function(formula, data, na.action, auto_message = TRUE) {
-    if (is.null(formula) || is.null(data)) {
-      stop("Provide either `outcome.type` or both `formula` and `data` for automatic detection.", call. = FALSE)
-    }
-
-    Terms <- stats::terms(formula, specials = c("strata", "offset", "cluster"), data = data)
-    mf <- tryCatch(
-      stats::model.frame(Terms, data = data, na.action = na.action),
-      error = function(e) stats::model.frame(Terms, data = data, na.action = stats::na.omit)
-    )
-
-    Y <- stats::model.extract(mf, "response")
-    if (!inherits(Y, c("Event", "Surv")))
-      stop("Response must be Event() or Surv().", call. = FALSE)
-
-    status <- suppressWarnings(as.numeric(Y[, 2]))
-    n_levels <- length(unique(stats::na.omit(status)))
-    if (n_levels > 2L) {
-      if (isTRUE(auto_message)) message("Detected >2 status levels; outcome.type set to 'competing-risk'.")
-      "competing-risk"
-    } else {
-      if (isTRUE(auto_message)) message("Detected <= 2 status levels; outcome.type set to 'survival'.")
-      "survival"
-    }
-  }
-
   if (!is.null(x)) {
-    canon <- normalize(x)
+    canon <- util_normalize_outcome_type(x)
     invalid <- is.na(canon) | !nzchar(canon) | !(canon %in% ok)
     if (any(invalid)) {
       bad <- unique(canon[invalid])
@@ -199,7 +223,7 @@ util_check_outcome_type <- function(
     if (length(u) == 1L) {
       if (!is.null(formula) && !is.null(data)) {
         detected <- tryCatch(
-          detect_from_formula(formula, data, na.action, auto_message = FALSE),
+          util_detect_outcome_type(formula, data, na.action, auto_message = FALSE),
           error = function(e) NULL
         )
         if (!is.null(detected) &&
@@ -224,7 +248,57 @@ util_check_outcome_type <- function(
     stop("`outcome.type` is ambiguous and matched multiple types: ",
          paste(u, collapse = ", "), call. = FALSE)
   }
-  detect_from_formula(formula, data, na.action, auto_message = auto_message)
+  util_detect_outcome_type(formula, data, na.action, auto_message = auto_message)
+}
+
+util_check_outcome_type_for_analysis <- function(
+    x = NULL,
+    formula = NULL,
+    data = NULL,
+    subset.condition = NULL,
+    na.action = stats::na.omit,
+    other.variables.analyzed = NULL,
+    weights = NULL,
+    auto_message = TRUE
+) {
+  if (!is.null(x)) {
+    return(util_check_outcome_type(x = x, auto_message = FALSE))
+  }
+  if (is.null(formula) || is.null(data)) {
+    return(util_check_outcome_type(
+      formula = formula,
+      data = data,
+      na.action = na.action,
+      auto_message = auto_message
+    ))
+  }
+
+  data_work <- data
+  if (is.character(weights) && length(weights) == 1L) {
+    other.variables.analyzed <- unique(c(other.variables.analyzed, weights))
+  } else if (!is.null(weights)) {
+    if (!is.numeric(weights) || length(weights) != nrow(data_work)) {
+      stop("Numeric `weights` must have length nrow(data).", call. = FALSE)
+    }
+    weight_name <- ".cifmodeling_outcome_weights"
+    while (weight_name %in% names(data_work)) weight_name <- paste0(weight_name, "_")
+    data_work[[weight_name]] <- weights
+    other.variables.analyzed <- unique(c(other.variables.analyzed, weight_name))
+  }
+
+  analysis_data <- createAnalysisDataset(
+    formula = formula,
+    data = data_work,
+    other.variables.analyzed = other.variables.analyzed,
+    subset.condition = subset.condition,
+    na.action = util_normalize_na_action(na.action)
+  )
+  util_check_outcome_type(
+    formula = formula,
+    data = analysis_data,
+    na.action = stats::na.pass,
+    auto_message = auto_message
+  )
 }
 
 

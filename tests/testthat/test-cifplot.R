@@ -157,6 +157,28 @@ test_that("formula normalization converts numeric RHS strata", {
                      cifmodeling:::plot_default_labels$strata$above_median))
 })
 
+test_that("formula normalization estimates its cutpoint in the analysis subset", {
+  df <- data.frame(
+    time = 1:12,
+    status = rep(c(0, 1), 6),
+    z = c(1:10, 1000, 2000),
+    keep = c(rep(TRUE, 10), FALSE, FALSE)
+  )
+  out <- cifmodeling:::plot_normalize_formula_data(
+    Event(time, status) ~ z,
+    df,
+    subset.condition = ~ keep
+  )
+
+  expect_equal(out$info$z$cutpoint, stats::median(1:10))
+  expect_identical(
+    as.character(out$data$z[1:10]),
+    ifelse(1:10 > stats::median(1:10),
+           cifmodeling:::plot_default_labels$strata$above_median,
+           cifmodeling:::plot_default_labels$strata$below_median)
+  )
+})
+
 
 test_that("cifplot does not print by default", {
   data(diabetes.complications)
@@ -166,6 +188,22 @@ test_that("cifplot does not print by default", {
             outcome.type = "competing-risk",
             code.events = c(1,2,0))
   )
+})
+
+test_that("cifplot defaults to competing-risk without an ambiguous match", {
+  df <- data.frame(
+    time = 1:6,
+    status = c(0, 1, 2, 0, 1, 2),
+    group = factor(rep(c("A", "B"), 3))
+  )
+  out <- cifplot(
+    Event(time, status) ~ group,
+    data = df,
+    add.risktable = FALSE
+  )
+
+  expect_s3_class(out, "cifplot")
+  expect_identical(out$survfit.info$outcome.type, "competing-risk")
 })
 
 

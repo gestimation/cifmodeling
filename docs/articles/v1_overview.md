@@ -44,7 +44,7 @@ exclusions, and outcome status using the same formula style.
 
 ``` r
 
-cifflowchart(
+cifmodeling::cifflowchart(
   Event(t, epsilon) ~ fruitq1,
   data = diabetes.complications,
   time.point = 8,

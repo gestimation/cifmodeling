@@ -8,6 +8,8 @@
 #'
 #' @param formula A model formula specifying the outcome and (optionally) \code{strata()}.
 #' @param data A data frame containing variables in \code{formula}.
+#' @param weights Optional numeric case weights or the name of a weight column.
+#'   Rows with missing weights are excluded consistently with curve estimation.
 #' @param subset.condition Optional expression (as a character string) defining a
 #'   subset of \code{data} to analyse. Defaults to \code{NULL}.
 #' @param na.action Function to handle missing values (default: \code{na.omit} in \pkg{stats}).
@@ -58,6 +60,7 @@
 extract_time_to_event <- function(
     formula,
     data,
+    weights = NULL,
     subset.condition = NULL,
     na.action = na.omit,
     which.event = c("event2", "event1", "censor", "censoring", "user_specified"),
@@ -69,11 +72,16 @@ extract_time_to_event <- function(
     drop.empty = TRUE
 ){
   which.event <- match.arg(which.event)
-  out_read_surv <- util_read_surv(
-    formula = formula, data = data, weights = NULL,
-    code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
-    subset.condition = subset.condition, na.action = na.action
-  )
+  weights.expr <- substitute(weights)
+  out_read_surv <- eval(substitute(
+    util_read_surv(
+      formula = formula, data = data, weights = arg_weights,
+      code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
+      subset.condition = subset.condition, na.action = na.action,
+      auto_message = FALSE, validate.observed.codes = FALSE
+    ),
+    list(arg_weights = weights.expr)
+  ))
   util_get_event_time(
     out_read_surv = out_read_surv,
     which.event = which.event, code.user.specified = code.user.specified,

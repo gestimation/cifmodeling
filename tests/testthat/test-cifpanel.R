@@ -143,6 +143,55 @@ test_that("panel_prepare() returns curves and plot arguments", {
   expect_identical(prep$K, inputs$K)
 })
 
+test_that("panel_prepare() forwards subset and weights to cifcurve", {
+  df <- data.frame(
+    time = 1:8,
+    status = c(0, 1, 2, 1, 0, 2, 1, 0),
+    group = factor(rep(c("A", "B"), 4)),
+    keep = c(TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE),
+    w = c(1, 1, 5, 1, 1, 4, 1, 1)
+  )
+
+  prep <- cifmodeling:::panel_prepare(
+    K = 1L,
+    formulas = list(Event(time, status) ~ group),
+    data = df,
+    weights = "w",
+    subset.condition = ~ keep,
+    code.events = list(c(1, 2, 0)),
+    outcome.flags = "C",
+    outcome.list = list("competing-risk")
+  )
+  direct <- cifcurve(
+    Event(time, status) ~ group,
+    data = df,
+    weights = "w",
+    subset.condition = ~ keep,
+    outcome.type = "competing-risk"
+  )
+  unweighted <- cifcurve(
+    Event(time, status) ~ group,
+    data = df,
+    subset.condition = ~ keep,
+    outcome.type = "competing-risk"
+  )
+  public_panel <- cifpanel(
+    formula = Event(time, status) ~ group,
+    data = df,
+    weights = "w",
+    subset.condition = ~ keep,
+    outcome.type = "competing-risk",
+    code.events = list(c(1, 2, 0)),
+    print.panel = FALSE
+  )
+
+  testthat::expect_equal(prep$curves[[1L]]$time, direct$time)
+  testthat::expect_equal(prep$curves[[1L]]$surv, direct$surv)
+  testthat::expect_equal(public_panel$survfit.info$curves[[1L]]$surv, direct$surv)
+  testthat::expect_lte(max(prep$curves[[1L]]$time), 6)
+  testthat::expect_false(isTRUE(all.equal(direct$surv, unweighted$surv)))
+})
+
 test_that("panel_prepare() returns per-panel objects with expected structure", {
   skip_on_cran()
   skip_if_not_installed("survival")

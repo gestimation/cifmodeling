@@ -124,7 +124,7 @@ output3 <- polyreg(nuisance.model=Event(t,epsilon)~1, exposure="fruitq1",
           time.point=8, outcome.type="competing-risk", 
           report.nuisance.parameter=TRUE)
 coef(output3)
-#> [1] -1.38313159 -0.30043899 -3.99147264 -0.07582589
+#> [1] -1.38313159 -0.30043942 -3.99147406 -0.07582595
 vcov(output3)
 #>              [,1]         [,2]         [,3]         [,4]
 #> [1,]  0.017018160 -0.012351309  0.009609321 -0.008372500

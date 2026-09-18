@@ -15,6 +15,7 @@ user-specified codes.
 extract_time_to_event(
   formula,
   data,
+  weights = NULL,
   subset.condition = NULL,
   na.action = na.omit,
   which.event = c("event2", "event1", "censor", "censoring", "user_specified"),
@@ -36,6 +37,11 @@ extract_time_to_event(
 - data:
 
   A data frame containing variables in `formula`.
+
+- weights:
+
+  Optional numeric case weights or the name of a weight column. Rows
+  with missing weights are excluded consistently with curve estimation.
 
 - subset.condition:
 

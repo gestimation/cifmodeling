@@ -27,7 +27,7 @@ cifplot(
   weights = NULL,
   subset.condition = NULL,
   na.action = na.omit,
-  outcome.type = c("competing-risk", "survival"),
+  outcome.type = "competing-risk",
   code.event1 = 1,
   code.event2 = 2,
   code.censoring = 0,
