@@ -47,18 +47,18 @@ The variance proposed by Xie and Liu (2005) is expressed as an adjusted Greenwoo
 **Greenwood variance for weighted Kaplan–Meier**
 $$
 \textrm{Var}\!\left\{\hat{S}(t)\right \}
-= \hat{S}(t)^2\sum_{t_j \le t} \frac{d_j^w Y_j}{M_j Y_j^w(Y_j^w - d_j^w)}, 
+= \hat{S}(t)^2\sum_{t_j \le t} \frac{d_j^w}{M_j (Y_j^w - d_j^w)}, 
 $$
 where $M_j$ is an adjustment factor defined as 
 $$
 M_j = \frac{\left(\sum_{t_i \geq t_j} w_i \right)^2}{\sum_{t_i \geq t_j} w_i^2}. 
 $$
-The Tsiatis-type variance is calculated as follows in the same spirit. 
+A Tsiatis-type variance, obtained in the same spirit by replacing the Greenwood denominator with its first-order counterpart, is calculated as follows. This extension is not the variance formula proposed by Xie and Liu (2005). 
 
 **Tsiatis variance for weighted Kaplan–Meier**
 $$
 \textrm{Var}\!\left\{\hat{S}(t)\right \}
-= \hat{S}(t)^2\sum_{t_j \le t} \frac{d_j^w Y_j}{M_j (Y_j^w)^2}
+= \hat{S}(t)^2\sum_{t_j \le t} \frac{d_j^w}{M_j Y_j^w}
 $$
 
 ## Formulas for the Aalen-Johansen estimator
@@ -105,7 +105,7 @@ $$
 \frac{d_j}{Y_j\,(Y_j - d_j)}
 \\[2pt]
 &\quad + \sum_{t_j \le t}
-\hat{S}^2(t_{i-1})
+\hat{S}^2(t_{j-1})
 \frac{d_{jk}\,(Y_j - d_{jk})}{Y_j^3}
 \\[2pt]
 &\quad - 2 \sum_{t_j \le t}
@@ -117,21 +117,48 @@ $$
 
 **Variance based on influence functions**
 
-It is known that the Aalen-Johansen estimator can be expanded under regularity conditions as  
+For the unweighted Aalen-Johansen estimator, Zhang and Fine (2008) give the asymptotic linear expansion
 $$
-  n^{1/2}\{\hat F_k(t) - F_k(t)\} = n^{-1/2} \sum_{i=1}^n IF_{ik}(t) + o_p(1)
+  n^{1/2}\{\hat F_k(t) - F_k(t)\}
+  = n^{-1/2} \sum_{i=1}^n IF_{ik}(t) + o_p(1),
 $$
-and the process $n^{1/2}\{\hat F_{ik}(t) - F_{ik}(t)\}$ converges weakly to a tight Gaussian process. Here $IF_{ik}(t)$ is the influence function, the contribution of $i$-th observation to the Aalen-Johansen estimator, and may be written as 
+and the process $n^{1/2}\{\hat F_k(t) - F_k(t)\}$ converges weakly to a tight Gaussian process. Let $Y(t)$ denote the sample at-risk process and let
 $$
-  IF_{ik}(t) =
-  \int_0^t
-    \frac{n S(u^-)}{Y(u)}\,dM_i(u)
-  -
-  \int_0^t
-    \frac{n F_k(u^-)}{Y(u)}\,dM_{ik}(u), 
+  y(t) = \lim_{n\to\infty} n^{-1}Y(t).
+$$
+If $M_i(t)$ and $M_{ik}(t)$ are the martingales for the total event count and the cause-$k$ event count of observation $i$, respectively, the influence function may be written as
+$$
+\begin{aligned}
+  IF_{ik}(t)
+  &= \int_0^t
+       S(u^-)
+       \frac{dM_{ik}(u)}{y(u)} \\
+  &\quad - \int_0^t
+       S(u^-)
+       \left\{
+         \int_0^{u^-} \frac{dM_i(v)}{y(v)}
+       \right\}
+       d\Lambda_k(u).
+\end{aligned}
+$$
+Equivalently, after changing the order of integration,
+$$
+  IF_{ik}(t)
+  = \int_0^t \frac{S(u^-)}{y(u)}\,dM_{ik}(u)
+    - \int_0^t
+      \frac{F_k(t)-F_k(u^-)}{y(u)}\,dM_i(u).
+$$
+A consistent estimator of the asymptotic variance of $n^{1/2}\{\hat F_k(t)-F_k(t)\}$ is
+$$
+  \frac{1}{n}\sum_{i=1}^n \{\widehat{IF}_{ik}(t)\}^2,
+$$
+so the variance of $\hat F_k(t)$ itself is estimated by
+$$
+  \widehat{\textrm{Var}}\!\left\{\hat F_k(t)\right\}
+  = \frac{1}{n^2}\sum_{i=1}^n \{\widehat{IF}_{ik}(t)\}^2.
 $$
 
-where $M_i(t)$ and $M_{ik}(t)$ is the Martingale process of the total count and the count of cause $k$ of $i$-th observation, respectively, and $Y(t)$ is the at-risk process. A consistent variance estimator for $n^{1/2}\{\hat F_k(t) - F_k(t)\}$ is $n^{-1} \sum_{i=1}^n \{\widehat{IF}_{ik}(t)\}^2$.
+For weighted data, `cifcurve()` uses the corresponding weighted empirical recursion: the risk set $Y(t)$ and event increments are replaced by their weighted counterparts, and the individual martingale residuals are multiplied by the observation weights. Internally, the C++ routine stores the empirical contribution $\widehat{IF}_{ik}(t)/n$; consequently, its probability-scale standard error is calculated as the square root of the sum of squared empirical contributions. The Zhang and Fine (2008) result above directly justifies the unweighted formula; the weighted calculation is its implemented analogue.
 
 ## Confidence interval options
 
