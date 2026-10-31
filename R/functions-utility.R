@@ -191,6 +191,60 @@ util_validate_event_codes <- function(
   as.integer(codes)
 }
 
+# Shared response/data preparation without interpreting the RHS as strata.
+# Evaluate transformations before applying na.action, and retain source rows.
+cif_prepare_event <- function(formula, data, other.variables.analyzed = NULL,
+                              subset.condition = NULL, na.action = stats::na.omit,
+                              allowed = NULL) {
+  if (!inherits(formula, "formula") || length(formula) != 3L)
+    stop("`formula` must be a two-sided formula.", call. = FALSE)
+  action <- util_normalize_na_action(na.action)
+  prep <- createAnalysisDataset(formula, data, other.variables.analyzed,
+    subset.condition, stats::na.pass, return.info = TRUE)
+  env <- new.env(parent = environment(formula))
+  # This avoids changing a global option and supports more than two causes.
+  constructor.env <- new.env(parent = environment(Event))
+  constructor.env$.constructor <- Event
+  constructor.env$.permitted <- allowed
+  constructor <- function(time, event, allowed = .permitted)
+    .constructor(time, event, allowed = allowed)
+  environment(constructor) <- constructor.env
+  env$Event <- constructor
+  environment(formula) <- env
+  terms <- stats::terms(formula, specials = c("strata", "offset", "cluster"),
+                        data = prep$data)
+  frame <- stats::model.frame(terms, prep$data, na.action = stats::na.pass)
+  response <- stats::model.response(frame)
+  if (!inherits(response, c("Event", "Surv"))) .err("surv_expected")
+  check <- frame
+  for (i in seq_along(other.variables.analyzed)) {
+    nm <- paste0(".cif_extra_", i)
+    while (nm %in% names(check)) nm <- paste0(nm, "_")
+    check[[nm]] <- prep$data[[other.variables.analyzed[i]]]
+  }
+  selected <- action(check)
+  positions <- match(rownames(selected), rownames(check))
+  if (anyNA(positions) || anyDuplicated(positions))
+    stop("`na.action` must preserve unique row labels.", call. = FALSE)
+  original_class <- class(response)
+  response_type <- attr(response, "type")
+  response <- response[positions, , drop = FALSE]
+  class(response) <- original_class
+  attr(response, "type") <- response_type
+  frame <- frame[positions, , drop = FALSE]
+  frame[[attr(terms, "response")]] <- response
+  te <- util_normalize_time_event(response[, 1L], response[, 2L], allowed)
+  row.index <- prep$row.index[positions]
+  included <- rep.int(FALSE, nrow(data))
+  included[row.index] <- TRUE
+  reason <- prep$exclusion.reason
+  reason[prep$subset.index & !included] <- "missing"
+  list(formula = formula, terms = terms, frame = frame,
+    data = prep$data[positions, , drop = FALSE], t = te$time, epsilon = te$event,
+    row.index = row.index, included = included, exclusion.reason = reason,
+    na.action = attr(selected, "na.action"))
+}
+
 cif_prepare_input <- function(
     formula,
     data,
@@ -265,18 +319,12 @@ cif_prepare_input <- function(
     stop("This interface supports only survival and competing-risk outcomes.", call. = FALSE)
   }
 
-  Terms <- stats::terms(
-    formula,
-    specials = c("strata", "offset", "cluster"),
-    data = analysis_data
-  )
-  mf <- stats::model.frame(Terms, data = analysis_data, na.action = stats::na.pass)
-  Y <- stats::model.extract(mf, "response")
-  if (!inherits(Y, c("Event", "Surv"))) .err("surv_expected")
-
-  te <- util_normalize_time_event(Y[, 1L], Y[, 2L], allowed = allowed)
-  t <- te$time
-  epsilon <- te$event
+  event_input <- cif_prepare_event(formula, analysis_data,
+    na.action = stats::na.pass, allowed = allowed)
+  Terms <- event_input$terms
+  mf <- event_input$frame
+  t <- event_input$t
+  epsilon <- event_input$epsilon
   if (anyNA(t) || anyNA(epsilon)) {
     stop("Missing time or event values remain after `na.action`.", call. = FALSE)
   }

@@ -37,6 +37,10 @@ navbar:
           href: articles/v6_information.html
         - text: Full lists of arguments
           href: articles/v7_arguments.html
+        - text: Reporting cumulative incidence
+          href: articles/v8_reporting_cif.html
+        - text: Reporting CIF regression
+          href: articles/v9_reporting_polyreg.html
     github:
       icon: fa-github
       aria-label: GitHub repository
@@ -64,6 +68,12 @@ articles:
   - title: Full lists of arguments
     contents:
       - v7_arguments
+  - title: Reporting cumulative incidence
+    contents:
+      - v8_reporting_cif
+  - title: Reporting CIF regression
+    contents:
+      - v9_reporting_polyreg
 
 reference:
   - title: Nonparametric estimation and visualization
@@ -88,3 +98,6 @@ reference:
     contents:
       - extract_time_to_event
       - Event
+      - as_ggplot
+      - as_modelsummary
+      - as_prediction_data

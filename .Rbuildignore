@@ -15,3 +15,7 @@
 ^private$
 ^simulation$
 ^20260816.*\.png$
+^dev$
+^output$
+^paper$
+^tmp$

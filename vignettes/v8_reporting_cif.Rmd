@@ -1,0 +1,143 @@
+---
+title: "Reporting Cumulative Incidence with gtsummary"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Reporting Cumulative Incidence with gtsummary}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+reporting_ready <- requireNamespace("gtsummary", quietly = TRUE) &&
+  utils::packageVersion("gtsummary") >= "2.6.1"
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = reporting_ready)
+```
+
+```{r optional-packages, echo=FALSE, results='asis', eval=!reporting_ready}
+cat("Install gtsummary version 2.6.1 or later to run these reporting examples. Estimation with cifmodeling does not require gtsummary.")
+```
+
+## A cumulative incidence table
+
+The `diabetes.complications` dataset is the anonymized cohort used in the
+package overview. Follow-up is measured in years; event 1 is diabetic
+retinopathy and event 2 is a macrovascular complication. This example reports
+retinopathy probabilities by fruit-intake group.
+
+```{r first-table}
+library(cifmodeling)
+library(gtsummary)
+data(diabetes.complications)
+report_data <- diabetes.complications
+report_data$fruitq1 <- factor(report_data$fruitq1, levels = c(0, 1),
+                            labels = c("Other intake", "Low intake"))
+
+curve <- cifcurve(Event(t, epsilon) ~ fruitq1, data = report_data,
+                  outcome.type = "competing-risk")
+cif_table <- tbl_survfit(curve, times = c(4, 8), type = "risk",
+                         label_header = "**{time}-year CIF**")
+cif_table
+```
+
+For competing risks, the `survfit`-compatible object stores `surv = 1 - CIF`.
+The `type = "risk"` argument displays the CIF and reverses the saved interval
+limits: the reported limits are `1 - upper` and `1 - lower`. The table does
+not re-fit the curve or construct a different confidence interval.
+
+## Selecting confidence intervals
+
+Choose inference when fitting the curve. Here IF-based standard errors,
+Student critical values and a log-log transformation are requested. For the
+stored `1 - CIF`, this transformation is the complementary log-log
+transformation of the CIF.
+
+```{r student-intervals}
+student_curve <- cifcurve(Event(t, epsilon) ~ fruitq1, data = report_data,
+  outcome.type = "competing-risk", error = "if", conf.dist = "t",
+  conf.type = "log-log")
+student_table <- tbl_survfit(student_curve, times = c(4, 8), type = "risk",
+  label_header = "**{time}-year CIF**") |>
+  modify_footnote_header(columns = all_stat_cols(),
+    footnote = "95% pointwise IF-t intervals; log-log transformation of 1 - CIF; deletion allocation for degrees of freedom.")
+student_table
+```
+
+`error = "fay"` selects the Fay--Graubard-type variance correction, and
+`df.method = "equal"` is an alternative allocation for IF-t. Supplied weights
+are treated as fixed. Details of the inference methods are in `?cifcurve`.
+Degrees of freedom vary by group and time; they are available in a summary
+without adding diagnostic columns to the publication table.
+
+```{r inference-diagnostics}
+s <- summary(student_curve, times = c(4, 8), extend = TRUE)
+data.frame(group = s$strata, time = s$time, df = s$df,
+           interval_status = s$conf.status)
+```
+
+An unavailable interval remains missing. In particular, a valid interval is
+not carried beyond the last positive-weight follow-up. Exact structural
+boundaries retain the fitted singleton interval. These are pointwise
+intervals, not simultaneous confidence bands.
+
+## Comparing curves through a specified horizon
+
+The following tests compare the CIF curves through 8 years. They are not
+separate tests of the probabilities in each column of the preceding table.
+The score tests emphasize earlier or later differences through their
+Fleming--Harrington weights. The method labels are taken from the saved fits.
+
+```{r curve-tests}
+tests <- list(
+  gray = ciftest(Event(t, epsilon) ~ fruitq1, report_data,
+                 test = "gray", tau = 8),
+  early = ciftest(Event(t, epsilon) ~ fruitq1, report_data,
+                  test = "score", rho = 1, gamma = 0, tau = 8),
+  late = ciftest(Event(t, epsilon) ~ fruitq1, report_data,
+                 test = "score", rho = 0, gamma = 1, tau = 8)
+)
+test_results <- do.call(rbind, lapply(tests, function(fit) {
+  x <- generics::tidy(fit)
+  data.frame(method = paste(x$method, x$weight), p.value = x$p.value)
+}))
+test_table <- as_gtsummary(test_results) |>
+  modify_header(method = "**Curve comparison through 8 years**",
+                p.value = "**p-value**") |>
+  modify_fmt_fun(p.value = label_style_pvalue(digits = 3))
+test_table
+```
+
+This recipe reports the selected `ciftest()` results directly. The usual
+`add_p()` default for a survival table is a log-rank test and does not select
+these CIF tests. The ordinary Gray branch supports integer frequency
+weights; it does not treat fractional IPTW as frequency weights.
+
+To include the statistic and degrees of freedom, select `statistic` and
+`parameter` from `generics::tidy(fit)`. The latter is the effective rank of
+the test covariance, distinct from the time-specific Student degrees of
+freedom used for the curve intervals.
+
+## Labels and risk-set counts
+
+Use gtsummary's existing label, header and formatting arguments to customize
+the table. For a weighted fit, distinguish the number of observations,
+the sum of weights and the effective sample size. `n.risk.type` chooses the
+quantity exposed as `n.risk`; the legacy `n.risk`, `n.event` and `n.censor`
+fields are rounded upward, while `n.risk.weighted`, `n.risk.unweighted` and
+`n.risk.ess` retain their respective values on the native grid. An event count
+in this curve object includes both event causes, not only retinopathy.
+
+## Exporting the table
+
+The table can be converted with standard gtsummary methods. The temporary
+paths below can be replaced with the desired output filenames.
+
+```{r export-cif}
+html_file <- tempfile(fileext = ".html")
+gt::gtsave(as_gt(student_table), filename = html_file)
+```
+
+```{r export-cif-word, eval=reporting_ready && requireNamespace('flextable', quietly=TRUE)}
+word_file <- tempfile(fileext = ".docx")
+flextable::save_as_docx(as_flex_table(student_table), path = word_file)
+```
+

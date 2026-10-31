@@ -290,6 +290,12 @@
 #' nobs(output)
 #' summary(output)
 #'
+#' if (requireNamespace("gtsummary", quietly = TRUE) &&
+#'     utils::packageVersion("gtsummary") >= "2.6.1") {
+#'   gtsummary::tbl_regression(output, exponentiate = TRUE)
+#'   gtsummary::tbl_regression(output, exponentiate = TRUE, event = "event2")
+#' }
+#'
 #' @name polyreg
 #' @section Lifecycle:
 #' \lifecycle{experimental}
@@ -344,6 +350,8 @@ polyreg <- function(
   # 1. Pre-processing (function: checkSpell, checkInput, reg_normalize_covariate, sortByCovariate)
   #######################################################################################################
   computation.time0 <- proc.time()
+  reporting.label <- if (is.data.frame(data) && is.character(exposure) &&
+    length(exposure) == 1L && exposure %in% names(data)) attr(data[[exposure]], "label") else NULL
   data <- createAnalysisDataset(
     formula = nuisance.model,
     data = data,
@@ -372,6 +380,7 @@ polyreg <- function(
     code.censoring       = code.censoring,
     code.exposure.ref    = ci$out_readExposureDesign$ref,
     exposure.levels      = ci$out_readExposureDesign$exposure.levels,
+    exposure.labels      = c(ci$out_readExposureDesign$ref, sub("^a_", "", colnames(ci$x_a))),
     index.vector         = index.vector
   )
 
@@ -674,6 +683,7 @@ polyreg <- function(
     diagnostics        = out_data,
     outcome.type       = outcome.type,
     exposure           = exposure,
+    predictors         = unique(c(all.vars(nuisance.model[[3L]]), exposure)),
     conf.int           = conf.int,
     estimand           = estimand,
     boot.method        = boot.method,
@@ -682,6 +692,8 @@ polyreg <- function(
     call               = match.call()
   )
   class(out) <- "polyreg"
+  out$reporting <- .polyreg_reporting_metadata(out)
+  if (!is.null(reporting.label)) out$reporting$label <- as.character(reporting.label)
   return(out)
 }
 

@@ -10,8 +10,9 @@
 #' CIs, censoring marks, competing-risk marks, and intercurrent-event marks.
 #'
 #' For usual single-panel mode, the function returns an object whose `plot`
-#' component is a regular ggplot object that can be further modified
-#' (compatible with `+` and `%+%`).
+#' component is a regular ggplot object that can be further modified.
+#' Use `as_ggplot(result) + ggplot2::labs(...)` or `result$plot + ...`;
+#' the wrapper itself is not a ggplot.
 #' For more complex multi-panel displays, [cifplot()] can internally call
 #' [cifpanel()] via several “panel modes” (per event, per variable, or
 #' censoring-focused).

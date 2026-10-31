@@ -132,9 +132,11 @@ For panel displays (e.g. \code{cifpanel()} or when \code{panel.per.event = TRUE}
 \code{panel.censoring = TRUE}), \code{code.events} may also be a list of such numeric vectors, one per panel.}
 
 \item{error}{Character string specifying the method for SEs and CIs used internally.
-For \code{"survival"} without weights, choose one of \code{"greenwood"} (default), \code{"tsiatis"}, or \code{"if"}.
-For \code{"competing-risk"} without weights, choose one of \code{"delta"} (default), \code{"aalen"}, or \code{"if"}.
-SEs and CIs based on influence functions (\code{"if"}) is recommended for weighted analysis.}
+For \code{"survival"} without weights, choose one of \code{"greenwood"} (default), \code{"tsiatis"}, \code{"if"}, or \code{"fay"}.
+For \code{"competing-risk"} without weights, choose one of \code{"delta"} (default), \code{"aalen"}, \code{"if"}, or \code{"fay"}.
+Weighted analysis defaults to influence-function SEs (\code{"if"}). The C++ curve
+engine also supports \code{"fay"}, a Fay--Graubard-type correction. Supplied weights
+are held fixed; uncertainty from estimating a propensity score is not included.}
 
 \item{conf.type}{Character specifying the method of transformation for CIs
 used internally (default \verb{arcsine-square root}).}

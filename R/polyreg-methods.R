@@ -27,6 +27,17 @@ print.cifpanel <- function(x, ...) {
 #'   sandwich and bootstrap variance based on the original `polyreg()`
 #'   settings, using `outcome.type`, `report.sandwich.conf`, and
 #'   `report.boot.conf`. (Used only by `vcov.polyreg()`.)
+#' @param variance Explicit covariance choice, `"if"` or `"bootstrap"`.
+#'   `NULL` preserves legacy selection. Explicit choices fail if unavailable.
+#' @param conf.int Numeric interval level for `tidy.polyreg()`, defaulting to
+#'   the level stored in the fit. A changed level uses normal Wald intervals;
+#'   stored BCa intervals require refitting to change their level.
+#'   A logical value is also accepted: `TRUE` includes confidence limits and
+#'   `FALSE` omits them. Use `conf.level` to select the level in this form.
+#' @param conf.level Optional confidence level for the broom-compatible
+#'   logical `conf.int` interface. Defaults to the fitted level.
+#' @param exponentiate Logical; exponentiate effect estimates and confidence
+#'   limits for reporting. Standard errors and statistics stay on the log scale.
 #' @param x Object to be printed or summarised. Typically a
 #'   `"summary.polyreg"` object for `print.summary.polyreg()`, or
 #'   a `"polyreg"` object for `tidy.polyreg()`, `glance.polyreg()`,
@@ -90,15 +101,27 @@ coef.polyreg <- function(object, ...) {
 #' @rdname polyreg-methods
 vcov.polyreg <- function(object,
                          type = c("default", "sandwich", "bootstrap"),
+                         variance = NULL,
                          ...) {
-
+  output_check_dots(...)
+  if (!is.null(variance)) {
+    variance <- match.arg(variance, c("if", "bootstrap"))
+    requested <- if (variance == "if") "sandwich" else "bootstrap"
+    if (!missing(type) && !identical(match.arg(type), "default") && match.arg(type) != requested)
+      stop("type and variance specify different covariance estimators")
+    type <- requested
+    value <- if (variance == "if") object[["vcov"]] else object$vcov_bootstrap
+    if (is.null(value) || !is.matrix(value) || !length(value) || any(!is.finite(value)))
+      stop("Requested variance is unavailable: ", variance)
+    return(value)
+  }
   type <- match.arg(type)
 
   outcome.type         <- object$outcome.type
   report.sandwich.conf <- object$boot.method$report.sandwich.conf
   report.boot.conf     <- object$boot.method$report.boot.conf
 
-  V_sand <- object$vcov
+  V_sand <- object[["vcov"]]
   V_boot <- object$vcov_bootstrap
 
   ok_mat <- function(V) {
@@ -361,7 +384,27 @@ effect_label.polyreg <- function(x,
 #' @rdname polyreg-methods
 tidy.polyreg <- function(x,
                          event = c("event1", "event2", "both"),
+                         conf.int = x$conf.int, variance = NULL,
+                         exponentiate = FALSE, conf.level = NULL,
                          ...) {
+  output_check_dots(...)
+  if (!is.logical(exponentiate) || length(exponentiate) != 1L || is.na(exponentiate))
+    stop("exponentiate must be TRUE or FALSE")
+  if (!is.null(conf.level)) output_check_level(conf.level, "conf.level")
+  include_ci <- TRUE
+  if (is.logical(conf.int)) {
+    if (length(conf.int) != 1L || is.na(conf.int)) stop("conf.int must be TRUE or FALSE")
+    include_ci <- conf.int
+    conf.int <- conf.level %||% x$conf.int
+  } else {
+    output_check_level(conf.int)
+    if (!missing(conf.int) && !is.null(conf.level) &&
+        !isTRUE(all.equal(conf.int, conf.level)))
+      stop("conf.int and conf.level specify different confidence levels")
+    conf.int <- conf.level %||% conf.int
+  }
+  output_check_level(conf.int)
+  if (!is.null(variance)) variance <- match.arg(variance, c("if", "bootstrap"))
   event <- match.arg(event)
   s     <- x$summary
   ot    <- x$outcome.type
@@ -377,7 +420,45 @@ tidy.polyreg <- function(x,
   make_df <- function(part, label) {
     if (is.null(part)) return(NULL)
     df <- part$tidy
+    recompute <- !is.null(variance) || !isTRUE(all.equal(conf.int, x$conf.int))
+    if (recompute) {
+      index <- attr(df, "coefficient.index")
+      if (is.null(index)) stop("Coefficient indices are unavailable; refit this legacy polyreg model")
+      selected <- variance
+      if (is.null(selected)) selected <- if (isTRUE(x$boot.method$report.sandwich.conf)) "if" else "bootstrap"
+      if (selected == "bootstrap" && isTRUE(x$boot.method$boot.bca) &&
+          x$outcome.type %in% c("proportional-survival", "proportional-competing-risk"))
+        stop("BCa intervals cannot be reconstructed from covariance; use the stored intervals or refit")
+      V <- vcov.polyreg(x, variance = selected)
+      beta <- x$coef[index]
+      se <- sqrt(pmax(0, diag(V)[index]))
+      z <- stats::qnorm((1 + conf.int) / 2)
+      df$estimate <- unname(beta)
+      df$std.error <- unname(se)
+      df$p.value <- 2 * stats::pnorm(abs(beta / se), lower.tail = FALSE)
+      df$conf.low <- unname(beta - z * se)
+      df$conf.high <- unname(beta + z * se)
+    }
     df$event <- label
+    df$statistic <- df$estimate / df$std.error
+    if (exponentiate) {
+      df$estimate <- exp(df$estimate)
+      df$conf.low <- exp(df$conf.low)
+      df$conf.high <- exp(df$conf.high)
+    }
+    if (!include_ci) df[c("conf.low", "conf.high")] <- NULL
+    attr(df, "conf.int") <- conf.int
+    attr(df, "interval") <- if (include_ci && any(is.finite(df$conf.low) & is.finite(df$conf.high)))
+      "confidence" else "none"
+    selected <- if (!is.null(variance)) variance else if
+      (isTRUE(x$boot.method$report.sandwich.conf)) "if" else if
+      (isTRUE(x$boot.method$report.boot.conf)) "bootstrap" else "none"
+    attr(df, "variance.info") <- list(type = selected, source = if (selected == "if")
+      "polyreg estimating-equation covariance" else selected,
+      smoothing.uncertainty = "not applicable",
+      interval.approximation = if (selected == "bootstrap" && isTRUE(x$boot.method$boot.bca) &&
+          x$outcome.type %in% c("proportional-survival", "proportional-competing-risk"))
+        "BCa" else "normal")
     df
   }
 
@@ -405,6 +486,7 @@ tidy.polyreg <- function(x,
 glance.polyreg <- function(x,
                            event = c("event1", "event2"),
                            ...) {
+  output_check_dots(...)
   event <- match.arg(event)
   s     <- x$summary
   ot    <- x$outcome.type
@@ -420,6 +502,7 @@ glance.polyreg <- function(x,
   make_df <- function(part, label) {
     if (is.null(part)) return(NULL)
     df <- part$glance
+    df$nobs <- if (is.data.frame(x$diagnostics)) nrow(x$diagnostics) else NA_integer_
     df$event <- label
     df
   }
@@ -446,6 +529,7 @@ glance.polyreg <- function(x,
 #' @export
 #' @rdname polyreg-methods
 augment.polyreg <- function(x, ...) {
+  output_check_dots(...)
   df <- x$diagnostics
 
   if ("ip.weight" %in% names(df)) {

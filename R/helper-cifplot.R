@@ -135,14 +135,7 @@ plot_apply_style <- function(
   if (style=="g") style <- "grid"
   style <- tolower(style)
   style <- match.arg(style)
-  style_theme <- switch(
-    style,
-    classic    = plot_style_classic(font.family, font.size, legend.position),
-    bold       = plot_style_bold(font.family, font.size, legend.position),
-    framed     = plot_style_framed(font.family, font.size, legend.position),
-    grid       = plot_style_grid(font.family, font.size, legend.position),
-    gray       = plot_style_gray(font.family, font.size, legend.position)
-  )
+  style_theme <- output_plot_style(style, font.family, font.size, legend.position)
 
   p <- p + style_theme
 
@@ -361,73 +354,6 @@ plot_normalize_formula_data <- function(
     info[[var_name]] <- norm
   }
   list(data = out_data, info = info)
-}
-
-plot_style_classic <- function(font.family = "sans", font.size = 12, legend.position = "top") {
-  ggplot2::theme_classic(base_size = font.size, base_family = font.family) +
-    ggplot2::theme(
-      legend.position   = legend.position,
-      axis.title        = ggplot2::element_text(size = font.size + 3, family = font.family),
-      axis.text         = ggplot2::element_text(size = font.size + 1, family = font.family),
-      legend.text       = ggplot2::element_text(size = font.size + 3, family = font.family),
-      legend.background = ggplot2::element_rect(fill = "transparent", color = NA),
-      panel.background  = element_rect(fill = "transparent", color = NA),
-      panel.border      = ggplot2::element_blank()
-    )
-}
-
-plot_style_bold <- function(font.family = "sans", font.size = 12, legend.position = "top") {
-  ggplot2::theme_classic(base_size = font.size, base_family = font.family) +
-    ggplot2::theme(
-      legend.position   = legend.position,
-      axis.title        = ggplot2::element_text(size = font.size + 2, face = "bold", family = font.family),
-      axis.text         = ggplot2::element_text(size = font.size,     family = font.family),
-      legend.text       = ggplot2::element_text(size = font.size + 2, family = font.family),
-      legend.background = ggplot2::element_rect(fill = "transparent", color = NA),
-      panel.background  = element_rect(fill = "transparent", color = NA),
-      panel.border      = ggplot2::element_blank()
-    )
-}
-
-plot_style_framed <- function(font.family = "sans", font.size = 12, legend.position = "top") {
-  ggplot2::theme_bw(base_size = font.size, base_family = font.family) +
-    ggplot2::theme(
-      legend.position   = legend.position,
-      axis.title        = ggplot2::element_text(size = font.size + 2, face = "bold", family = font.family),
-      axis.text         = ggplot2::element_text(size = font.size,     family = font.family),
-      legend.text       = ggplot2::element_text(size = font.size + 2, family = font.family),
-      legend.background = ggplot2::element_rect(fill = "transparent", color = NA),
-      panel.background  = element_rect(fill = "transparent", color = NA),
-      panel.grid        = ggplot2::element_blank(),
-      panel.border      = ggplot2::element_rect(color = "black", linewidth = 2)
-    )
-}
-
-plot_style_grid <- function(font.family = "sans", font.size = 12, legend.position = "top") {
-  ggplot2::theme_bw(base_size = font.size, base_family = font.family) +
-    ggplot2::theme(
-      legend.position   = legend.position,
-      axis.title        = ggplot2::element_text(size = font.size + 2, face = "bold", family = font.family),
-      axis.text         = ggplot2::element_text(size = font.size,     family = font.family),
-      legend.text       = ggplot2::element_text(size = font.size + 2, family = font.family),
-      legend.background = ggplot2::element_rect(fill = "transparent", color = NA),
-      panel.background  = element_rect(fill = "transparent", color = NA),
-      panel.border      = ggplot2::element_rect(color = "black", linewidth = 2)
-    )
-}
-
-plot_style_gray <- function(font.family = "sans", font.size = 12, legend.position = "top") {
-  ggplot2::theme_bw(base_size = font.size, base_family = font.family) +
-    ggplot2::theme(
-      legend.position   = legend.position,
-      axis.title        = ggplot2::element_text(size = font.size + 2, face = "bold", family = font.family),
-      axis.text         = ggplot2::element_text(size = font.size,     family = font.family),
-      legend.text       = ggplot2::element_text(size = font.size + 2, family = font.family),
-      legend.background = ggplot2::element_rect(fill = "transparent", color = NA),
-      panel.background  = element_rect(fill = 'gray97'),
-      panel.grid        = ggplot2::element_blank(),
-      panel.border      = ggplot2::element_rect(color = "black", linewidth = 0.2)
-    )
 }
 
 plot_draw_marks <- function(p, survfit_object, marks, type.y, shape, size) {

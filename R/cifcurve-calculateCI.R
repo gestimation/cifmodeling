@@ -1,8 +1,9 @@
-calculateCI <- function(survfit_object, conf.int, conf.type, conf.lower=NULL) {
+calculateCI <- function(survfit_object, conf.int, conf.type, conf.lower=NULL,
+                        critical_value=NULL) {
   if (conf.int <= 0 | conf.int >= 1)
     stop("Confidence level must be between 0 and 1")
   alpha <- 1 - conf.int
-  critical_value <- qnorm(1 - alpha / 2)
+  if (is.null(critical_value)) critical_value <- qnorm(1 - alpha / 2)
   if (is.null(conf.type) | conf.type == "none" | conf.type == "n") {
     lower <- NULL
     upper <- NULL
