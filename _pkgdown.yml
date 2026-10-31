@@ -8,6 +8,18 @@ url: https://gestimation.github.io/cifmodeling/
 development:
   mode: auto
 
+# Preserve URLs from the historical checked-in site on clean CI builds.
+redirects:
+  - ["articles/overview.html", "articles/v1_overview.html"]
+  - ["articles/polyreg.html", "articles/v2_polyreg.html"]
+  - ["articles/formula.html", "articles/v3_formulas.html"]
+  - ["articles/formulas.html", "articles/v3_formulas.html"]
+  - ["articles/examples.html", "articles/v4_examples.html"]
+  - ["articles/gallery.html", "articles/v5_gallery.html"]
+  - ["articles/information.html", "articles/v6_information.html"]
+  - ["articles/arguments.html", "articles/v7_arguments.html"]
+  - ["articles/functions.html", "articles/v1_overview.html"]
+
 home:
   title: cifmodeling
   description: A compact toolkit for Kaplan-Meier/Aalen-Johansen curves, curve-comparison tests, visualization, and direct polytomous regression for survival and competing risks data.
