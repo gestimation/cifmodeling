@@ -1,0 +1,89 @@
+name: pkgdown
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Keep production deployments in order; PR builds use separate groups.
+concurrency:
+  group: pkgdown-${{ github.event.pull_request.number || 'master' }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build pkgdown site
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      PKGDOWN_DEV_MODE: release
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::pkgdown, local::.
+          needs: website
+
+      - name: Build and verify site
+        shell: Rscript {0}
+        run: |
+          destination <- file.path(Sys.getenv("RUNNER_TEMP"), "pkgdown-site")
+          pkgdown::build_site(
+            install = FALSE, new_process = FALSE, preview = FALSE,
+            override = list(destination = destination)
+          )
+
+          # Fail if optional reporting dependencies silently skip the examples.
+          articles <- sub("[.]Rmd$", ".html", list.files("vignettes", pattern = "[.]Rmd$"))
+          required <- c("index.html", "reference/cifcurve.html", file.path("articles", articles))
+          redirects <- yaml::read_yaml("_pkgdown.yml")$redirects
+          required <- c(required, vapply(redirects, `[[`, character(1), 1L))
+          stopifnot(all(file.exists(file.path(destination, required))))
+          for (article in c("v8_reporting_cif.html", "v9_reporting_polyreg.html")) {
+            page <- xml2::read_html(file.path(destination, "articles", article))
+            stopifnot(length(xml2::xml_find_all(page, "//table[contains(@class, 'gt_table')]")) > 0L)
+          }
+          version <- read.dcf("DESCRIPTION", fields = "Version")[[1L]]
+          home <- paste(readLines(file.path(destination, "index.html"), warn = FALSE), collapse = "\n")
+          stopifnot(grepl(version, home, fixed = TRUE))
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ${{ runner.temp }}/pkgdown-site
+          retention-days: 7
+
+  deploy:
+    name: Deploy pkgdown site
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
