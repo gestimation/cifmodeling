@@ -81,7 +81,11 @@ summary.cifcurve <- function(object, ...) {
   scale <- matched$scale %||% 1
   out <- NextMethod("summary")
   if (!length(out$time)) return(out)
-  values <- .cifcurve_reporting_at(info, out$time * scale, out$strata)
+  # Reversing the division by scale can move an event time to its left.
+  # Let survival select the same rows in native units instead; retain its
+  # scaled output (including the restricted-mean table) unchanged.
+  time <- if (scale == 1) out$time else NextMethod("summary", scale = 1)$time
+  values <- .cifcurve_reporting_at(info, time, out$strata)
   out$std.err <- values$se
   if (info$has.ci) {
     out$lower <- values$lower; out$upper <- values$upper

@@ -420,24 +420,28 @@ tidy.polyreg <- function(x,
   make_df <- function(part, label) {
     if (is.null(part)) return(NULL)
     df <- part$tidy
-    recompute <- !is.null(variance) || !isTRUE(all.equal(conf.int, x$conf.int))
+    recompute_ci <- include_ci &&
+      (!is.null(variance) || !isTRUE(all.equal(conf.int, x$conf.int)))
+    recompute <- !is.null(variance) || recompute_ci
     if (recompute) {
       index <- attr(df, "coefficient.index")
       if (is.null(index)) stop("Coefficient indices are unavailable; refit this legacy polyreg model")
       selected <- variance
       if (is.null(selected)) selected <- if (isTRUE(x$boot.method$report.sandwich.conf)) "if" else "bootstrap"
-      if (selected == "bootstrap" && isTRUE(x$boot.method$boot.bca) &&
+      if (recompute_ci && selected == "bootstrap" && isTRUE(x$boot.method$boot.bca) &&
           x$outcome.type %in% c("proportional-survival", "proportional-competing-risk"))
         stop("BCa intervals cannot be reconstructed from covariance; use the stored intervals or refit")
       V <- vcov.polyreg(x, variance = selected)
       beta <- x$coef[index]
       se <- sqrt(pmax(0, diag(V)[index]))
-      z <- stats::qnorm((1 + conf.int) / 2)
       df$estimate <- unname(beta)
       df$std.error <- unname(se)
       df$p.value <- 2 * stats::pnorm(abs(beta / se), lower.tail = FALSE)
-      df$conf.low <- unname(beta - z * se)
-      df$conf.high <- unname(beta + z * se)
+      if (recompute_ci) {
+        z <- stats::qnorm((1 + conf.int) / 2)
+        df$conf.low <- unname(beta - z * se)
+        df$conf.high <- unname(beta + z * se)
+      }
     }
     df$event <- label
     df$statistic <- df$estimate / df$std.error

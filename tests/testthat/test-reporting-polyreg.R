@@ -51,6 +51,37 @@ test_that("polyreg accepts broom confidence arguments without replacing stored l
   expect_error(generics::tidy(f, conf.level = .8), "BCa")
 })
 
+test_that("omitting BCa intervals does not reconstruct them or block SE selection", {
+  f <- reporting_polyreg_fixture()
+  f$outcome.type <- "proportional-competing-risk"
+  f$boot.method <- list(report.sandwich.conf=FALSE,report.boot.conf=TRUE,boot.bca=TRUE)
+  f$vcov_bootstrap <- f$vcov * 4
+  original <- serialize(f,NULL)
+  for (event in c("event1","event2","both")) {
+    stored <- generics::tidy(f,event=event,conf.int=FALSE)
+    changed.level <- generics::tidy(f,event=event,conf.int=FALSE,conf.level=.95)
+    for (nm in names(stored)) expect_identical(changed.level[[nm]],stored[[nm]])
+    expect_false(any(c("conf.low","conf.high") %in% names(changed.level)))
+    selected <- generics::tidy(f,event=event,conf.int=FALSE,
+                              conf.level=.95,variance="bootstrap")
+    expect_equal(selected$std.error,rep(.4,nrow(selected)),tolerance=0)
+    expect_equal(selected$statistic,selected$estimate/selected$std.error,tolerance=0)
+    expect_equal(selected$p.value,2*pnorm(abs(selected$statistic),lower.tail=FALSE),tolerance=0)
+    expect_false(any(c("conf.low","conf.high") %in% names(selected)))
+    ratios <- generics::tidy(f,event=event,conf.int=FALSE,
+                            conf.level=.95,variance="bootstrap",exponentiate=TRUE)
+    expect_equal(ratios$estimate,exp(selected$estimate),tolerance=0)
+    expect_identical(ratios$std.error,selected$std.error)
+  }
+  # A legacy fit needs no coefficient mapping to omit its stored limits.
+  legacy <- f
+  attr(legacy$summary$event1$tidy,"coefficient.index") <- NULL
+  expect_silent(generics::tidy(legacy,conf.int=FALSE,conf.level=.95))
+  expect_error(generics::tidy(f,conf.int=TRUE,conf.level=.95),"BCa")
+  expect_error(generics::tidy(f,conf.int=TRUE,variance="bootstrap"),"BCa")
+  expect_identical(serialize(f,NULL),original)
+})
+
 test_that("tbl_regression selects the event, contrast and effect label automatically", {
   skip_if_not_installed("gtsummary", "2.6.1")
   skip_if_not_installed("broom.helpers", "1.20.0")

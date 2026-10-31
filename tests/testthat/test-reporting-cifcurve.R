@@ -63,6 +63,40 @@ test_that("curve subsetting retains the selected stratum's inference", {
   expect_equal(positional$lower, scaled$lower, tolerance = 0)
 })
 
+test_that("decimal times retain native inference when summary units change", {
+  d <- data.frame(t=c(.1,1.1,2.1,3.1), e=c(1,1,0,0))
+  times <- c(0, .1-.Machine$double.eps, .1, 1.1, 3.1,
+             3.1+4*.Machine$double.eps)
+  for (stratified in c(FALSE, TRUE)) for (dist in c("normal", "t")) {
+    data <- if (stratified) rbind(transform(d,g="a"),transform(d,g="b")) else d
+    formula <- if (stratified) Event(t,e)~g else Event(t,e)~1
+    f <- cifcurve(formula, data, outcome.type="survival", error="if", conf.dist=dist)
+    original <- serialize(f,NULL)
+    native <- summary(f,times=times,extend=TRUE)
+    scaled <- summary(f,times=times,extend=TRUE,scale=365.25)
+    positional <- summary(f,times,FALSE,365.25,extend=TRUE)
+    framed <- summary(f,times=times,extend=TRUE,scale=365.25,data.frame=TRUE)
+    fields <- c("surv","std.err","lower","upper","df","df.reason",
+                "critical.value","conf.status","n.risk","n.event","n.censor")
+    for (nm in fields) {
+      expect_identical(scaled[[nm]],native[[nm]])
+      expect_identical(positional[[nm]],native[[nm]])
+      expect_identical(framed[[nm]],native[[nm]])
+    }
+    expect_identical(scaled$time,native$time/365.25)
+    # Without requested times, survival chooses the native event rows.
+    events <- summary(f)
+    scaled.events <- summary(f,scale=365.25)
+    for (nm in fields) expect_identical(scaled.events[[nm]],events[[nm]])
+    # Preserve survival's scaled aggregate table and its rmean conventions.
+    parent <- utils::getS3method("summary","survfit")
+    expected <- parent(f,times=times,extend=TRUE,scale=365.25)
+    expect_identical(scaled$table,expected$table)
+    expect_identical(scaled$rmean.endtime,expected$rmean.endtime)
+    expect_identical(serialize(f,NULL),original)
+  }
+})
+
 test_that("tbl_survfit uses saved CIF intervals and exposes no internal diagnostics", {
   skip_if_not_installed("gtsummary", "2.6.1")
   d <- data.frame(t=c(1,2,4,6,8), e=c(1L,2L,1L,0L,0L), w=c(1,1,1,1,0))

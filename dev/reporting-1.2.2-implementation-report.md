@@ -130,3 +130,29 @@ and TinyTeX were used.
   this reporting change. Pandoc emits its deprecated `--highlight-style`
   tooling notice; devtools emits a `build_vignettes()` deprecation notice.
   Neither was suppressed.
+
+## Review corrections (2026-10-31)
+
+`summary.cifcurve()` now uses native selected times to align inference when
+`scale != 1`, instead of multiplying scaled times back into native units.
+The latter could round an event time to its left and return a pre-event SE,
+interval and degrees of freedom alongside the post-event probability.
+The standard survival method still supplies the scaled output and aggregate
+table. Regression tests cover decimal event times, neighboring requested
+times, strata, normal/Student intervals, positional scale arguments,
+data-frame output, and summaries without explicitly requested times.
+
+`tidy.polyreg()` now separates covariance/SE selection from CI reconstruction.
+With `conf.int = FALSE`, changing only `conf.level` preserves the saved
+estimates, SEs and p-values, including for legacy fits without coefficient
+indices. An explicit covariance choice can update SEs without attempting to
+reconstruct BCa limits. Unsupported requests for actual BCa reconstruction
+still fail. Tests cover both events, combined extraction and exponentiation.
+
+The targeted reporting/inference/output suite and the complete
+`devtools::test()` suite passed after these fixes, with the same seven
+pre-existing skips and the existing Rcpp build-version warning. Logs are
+`tmp/reporting-1.2.2/review-fixes-tests.log` and
+`tmp/reporting-1.2.2/review-fixes-full-tests.log`. The package-check and website
+results above describe the initial implementation; these local checks were
+not repeated for this follow-up.
