@@ -33,6 +33,7 @@ reportEffects <- function(outcome.type,
 
 
   tg_event1_tidy <- tidy_df(coef1, terms_text)
+  attr(tg_event1_tidy, "coefficient.index") <- out_getCoefTerm$index1
   if (outcome.type == "competing-risk" | outcome.type == "survival" | outcome.type == "binomial") {
     effect1_text <- paste(estimand$effect.measure1, "at", estimand$time.point)
   } else if (outcome.type == "proportional-survival" | outcome.type == "proportional-competing-risk") {
@@ -63,6 +64,7 @@ reportEffects <- function(outcome.type,
       effect2_text <- paste(estimand$effect.measure2, "of", exposure, "over time")
     }
     tg_event2_tidy <- tidy_df(coef2, terms_text)
+    attr(tg_event2_tidy, "coefficient.index") <- out_getCoefTerm$index2
     tg_event2_glance <- glance_df(
       report.optim.convergence,
       effect_text                  = effect2_text,
@@ -198,7 +200,7 @@ getCoefTerm <- function(report.nuisance.parameter, report.sandwich.conf, report.
     character(0)
   }
   terms_text <- c(nuisance_terms, terms_text_exposure)
-  return(list(coef1=coef1, coef2=coef2, terms_text=terms_text))
+  return(list(coef1=coef1, coef2=coef2, terms_text=terms_text, index1=index1, index2=index2))
 }
 
 getCoef <- function(

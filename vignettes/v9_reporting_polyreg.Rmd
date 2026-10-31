@@ -1,0 +1,137 @@
+---
+title: "Reporting CIF Regression with gtsummary"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Reporting CIF Regression with gtsummary}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+reporting_ready <- requireNamespace("gtsummary", quietly = TRUE) &&
+  utils::packageVersion("gtsummary") >= "2.6.1" &&
+  requireNamespace("broom.helpers", quietly = TRUE)
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = reporting_ready)
+```
+
+```{r optional-packages, echo=FALSE, results='asis', eval=!reporting_ready}
+cat("Install gtsummary version 2.6.1 or later and broom.helpers version 1.20.0 or later to run these examples. Reporting packages are optional for estimation.")
+```
+
+## An event-specific regression table
+
+Fit the direct CIF regression, then pass the result to `tbl_regression()`.
+The example uses the anonymized diabetes cohort from the overview. Effects
+compare low fruit intake with the reference group at 8 years; age and sex
+enter the nuisance model. See the direct regression vignette for model
+assumptions and estimation details.
+
+```{r first-regression-table}
+library(cifmodeling)
+library(gtsummary)
+data(diabetes.complications)
+report_data <- diabetes.complications
+report_data$fruitq1 <- factor(report_data$fruitq1, levels = c(0, 1),
+                            labels = c("Other intake", "Low intake"))
+attr(report_data$fruitq1, "label") <- "Fruit intake"
+fit <- polyreg(Event(t, epsilon) ~ age + sex, exposure = "fruitq1",
+  code.exposure.ref = "Other intake", data = report_data, time.point = 8,
+  effect.measure1 = "RR", effect.measure2 = "RR")
+
+retinopathy_table <- tbl_regression(fit, exponentiate = TRUE)
+retinopathy_table
+```
+
+The default event is event 1, diabetic retinopathy. The table reports
+exponentiated effect estimates and their saved confidence limits. Standard
+errors and test statistics remain on the coefficient's log scale. The
+reference row describes the contrast; it is not an additional estimated
+coefficient. These observational estimates do not by themselves establish
+a causal effect of fruit intake.
+
+## Reporting the competing event
+
+Select event 2 explicitly to report macrovascular complications. The
+numeric results, exposure labels and effect-measure heading all follow
+the selected event.
+
+```{r competing-event}
+macrovascular_table <- tbl_regression(fit, exponentiate = TRUE, event = "event2")
+tbl_merge(list(retinopathy_table, macrovascular_table),
+  tab_spanner = c("**Retinopathy**", "**Macrovascular complications**"))
+```
+
+For a tidy data frame containing both events, use
+`generics::tidy(fit, event = "both")`. Publication regression tables select
+one event at a time and are combined with `tbl_merge()`.
+
+## RR, OR and SHR
+
+Choose the effect measure during estimation, not while formatting the table.
+RR compares cumulative incidence probabilities, OR compares their odds, and
+SHR is the subdistribution hazard ratio parameterization. At a fixed time,
+the latter is the ratio of `-log(1 - CIF)` values; it is not a cause-specific
+hazard ratio. The following tables use the same exposure comparison and
+8-year target, with three different effect-measure models.
+
+```{r effect-measures}
+fit_or <- polyreg(Event(t, epsilon) ~ age + sex, exposure = "fruitq1",
+  code.exposure.ref = "Other intake", data = report_data, time.point = 8,
+  effect.measure1 = "OR", effect.measure2 = "OR")
+fit_shr <- polyreg(Event(t, epsilon) ~ age + sex, exposure = "fruitq1",
+  code.exposure.ref = "Other intake", data = report_data, time.point = 8,
+  effect.measure1 = "SHR", effect.measure2 = "SHR")
+tbl_merge(list(tbl_regression(fit, exponentiate = TRUE),
+               tbl_regression(fit_or, exponentiate = TRUE),
+               tbl_regression(fit_shr, exponentiate = TRUE)),
+  tab_spanner = c("**RR model**", "**OR model**", "**SHR model**"))
+```
+
+The two events can also use different effect measures. Headings are read
+from the fitted `estimand` information; no effect measure is inferred from
+the size of a coefficient.
+
+```{r mixed-effect-measures}
+fit_mixed <- polyreg(Event(t, epsilon) ~ age + sex, exposure = "fruitq1",
+  code.exposure.ref = "Other intake", data = report_data, time.point = 8,
+  effect.measure1 = "RR", effect.measure2 = "SHR")
+tbl_merge(list(tbl_regression(fit_mixed, exponentiate = TRUE),
+               tbl_regression(fit_mixed, exponentiate = TRUE, event = "event2")),
+  tab_spanner = c("**Retinopathy**", "**Macrovascular complications**"))
+```
+
+## Confidence intervals and labels
+
+With unchanged inference settings, the table extracts the fitted intervals.
+This also applies to stored bootstrap intervals: they are not replaced by
+Wald limits during exponentiation. To retain the fitted confidence level
+explicitly, pass `conf.level = fit$conf.int`. A request for a different level
+uses the existing supported reconstruction, or fails if the saved method
+cannot provide that level without refitting, as with BCa limits.
+
+```{r labels}
+tbl_regression(fit, exponentiate = TRUE, conf.level = fit$conf.int,
+               label = list(fruitq1 ~ "Low fruit intake versus other intake"))
+```
+
+For direct extraction, `generics::tidy(fit)` retains log-scale estimates.
+Use `exponentiate = TRUE` for ratios. The broom convention uses logical
+`conf.int` and numeric `conf.level`; the older numeric `conf.int` argument
+remains accepted by `tidy.polyreg()` for compatibility. There is no need to
+modify the saved fit or supply a custom tidier to produce these tables.
+
+## Exporting a regression table
+
+Use the standard gtsummary conversions. Replace the temporary filenames
+with the intended destination when saving the final report.
+
+```{r export-regression}
+html_file <- tempfile(fileext = ".html")
+gt::gtsave(as_gt(retinopathy_table), filename = html_file)
+```
+
+```{r export-regression-word, eval=reporting_ready && requireNamespace('flextable', quietly=TRUE)}
+word_file <- tempfile(fileext = ".docx")
+flextable::save_as_docx(as_flex_table(retinopathy_table), path = word_file)
+```
+

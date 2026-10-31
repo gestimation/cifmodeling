@@ -89,29 +89,30 @@ Rcpp::List calculateAJ_Rcpp(
 
   // --- ここから整理版 ---
   // SE方式としてIFを使うか（= error="if" の意味）
-  const bool use_if_se = (ERROR == "if");
+  const bool use_fay_se = (ERROR == "fay" || ERROR == "fg" || ERROR == "fay-graubard");
+  const bool use_if_se = (ERROR == "if" || use_fay_se);
 
   // IF行列を「返す」か（返却要求）
   const bool want_if_output = return_if;
 
   // IFを「計算する」必要があるか（SEに使う or 返す）
-  const bool compute_if = (use_if_se || want_if_output) && has_cause1;
+  const bool compute_if = use_if_se || want_if_output;
 
   // 実際に用いるSE方式（文字列）を確定
   std::string used_error;
   if (has_competing) {
-    // competing risks がある場合：{aalen, delta, if} に寄せる
+    // competing risks がある場合：{aalen, delta, if, fay} に寄せる
     if (use_if_se) {
-      used_error = "if";
+      used_error = use_fay_se ? "fay" : "if";
     } else if (ERROR == "aalen" || ERROR == "a") {
       used_error = "aalen";
     } else {
       used_error = "delta"; // default + fallback
     }
   } else {
-    // survival の場合：{greenwood, tsiatis, if}
+    // survival の場合：{greenwood, tsiatis, if, fay}
     if (use_if_se) {
-      used_error = "if";
+      used_error = use_fay_se ? "fay" : "if";
     } else if (ERROR == "tsiatis" || ERROR == "t") {
       used_error = "tsiatis";
     } else {
@@ -128,7 +129,7 @@ Rcpp::List calculateAJ_Rcpp(
   // AJ計算（= CIF/1-S を含む経路）を走らせるか
   // - competing risks があるなら当然 AJ
   // - survival でも IF をSEに使う or IF を返したいなら AJ 経路が必要（現行設計のIFがF1ベースのため）
-  const bool return_aj    = (has_cause1 && (has_competing || compute_if));
+  const bool return_aj    = has_competing || (has_cause1 && compute_if);
   const bool need_any_cif = return_aj;
   // --- ここまで整理版 ---
 
@@ -199,6 +200,7 @@ Rcpp::List calculateAJ_Rcpp(
 
   const double z = qnorm_from_conf(conf_int);
   const double PI = 3.14159265358979323846;
+  std::vector<int> time_group(N, -1);
 
   for (int kg=0; kg<K; ++kg){
     const std::vector<int>& ids = idx_of_strata[kg];
@@ -229,15 +231,26 @@ Rcpp::List calculateAJ_Rcpp(
     w_total_all.reserve(n_g); w_event1_all.reserve(n_g);
     std::vector<double> w2_total_all; w2_total_all.reserve(n_g);
     std::vector<int> count_total_all; count_total_all.reserve(n_g);
+    int last_positive_group = -1;
+    bool complete_exit = false, has_positive_competing = false;
+    bool last_positive_competing = false;
 
     for (size_t p = 0; p < v.size(); ) {
       const double curT = v[p].t;
       double wE = 0.0, wC = 0.0, wTot = 0.0, wE1 = 0.0;
       double w2Tot = 0.0;
       int cTot = 0;
+      int positive_total = 0, positive_events = 0;
+      bool positive_competing = false;
       size_t q = p;
       while (q < v.size() && feq(v[q].t, curT)) {
+        time_group[v[q].id] = (int)t_all.size();
         const bool isEvent = (v[q].eps >= 1);
+        if (v[q].w > 0.0) {
+          ++positive_total;
+          if (isEvent) ++positive_events;
+          if (v[q].eps >= 2) positive_competing = true;
+        }
         if (isEvent) {
           wE  += v[q].w;
           if (v[q].eps == 1) wE1 += v[q].w;
@@ -249,6 +262,12 @@ Rcpp::List calculateAJ_Rcpp(
         ++cTot;
         ++q;
       }
+      if (positive_total > 0) {
+        last_positive_group = (int)t_all.size();
+        complete_exit = (positive_events == positive_total);
+        last_positive_competing = positive_competing;
+      }
+      has_positive_competing = has_positive_competing || positive_competing;
       t_all.push_back(curT);
       w_event_all.push_back(wE);
       w_censor_all.push_back(wC);
@@ -260,6 +279,9 @@ Rcpp::List calculateAJ_Rcpp(
     }
 
     const int Uall = (int)t_all.size();
+    // Only structure, not proximity to 0/1, establishes a boundary. At the
+    // last positive-weight time all remaining subjects must exit by events.
+    const bool unit_cif = complete_exit && !has_positive_competing;
 
     std::vector<double> Nrisk_all(Uall, 0.0);
     {
@@ -319,7 +341,7 @@ Rcpp::List calculateAJ_Rcpp(
       for (int m=0; m<M_any; ++m){
         int j = ev_any_idx[m];
         double dj = w_event_all[j];
-        dl_any[m] = dj * invY_all[j];
+        dl_any[m] = (complete_exit && j == last_positive_group) ? 1.0 : dj * invY_all[j];
       }
 
       std::vector<char> is_c1_at_all(Uall, 0);
@@ -327,6 +349,8 @@ Rcpp::List calculateAJ_Rcpp(
       for (int m=0; m<M_any; ++m){
         int j = ev_any_idx[m];
         dl_c1[m] = is_c1_at_all[j] ? (w_event1_all[j] * invY_all[j]) : 0.0;
+        if (complete_exit && j == last_positive_group && !last_positive_competing)
+          dl_c1[m] = 1.0;
       }
       double Sprev = 1.0, Fprev = 0.0;
       for (int m=0;m<M_any;++m){
@@ -339,7 +363,8 @@ Rcpp::List calculateAJ_Rcpp(
       for (int m=0;m<M_any;++m){
         int j = ev_any_idx[m];
         double Yj = Y_all[j], dj = w_event_all[j];
-        dl_any[m] = (Yj>0.0) ? (dj/Yj) : 0.0;
+        dl_any[m] = (complete_exit && j == last_positive_group) ? 1.0 :
+          ((Yj>0.0) ? (dj/Yj) : 0.0);
       }
     }
 
@@ -349,8 +374,7 @@ Rcpp::List calculateAJ_Rcpp(
       int j = ev_any_idx[m];
       double Yj = Y_all[j], dj = w_event_all[j];
       double Sprev = (m==0? 1.0 : S_any[m-1]);
-      double invY = invY_all[j];
-      double fac  = (invY > 0.0) ? (1.0 - dj * invY) : 1.0;
+      double fac  = 1.0 - dl_any[m];
       S_any[m]     = Sprev * fac;
 
       if (dj > 0.0 && Yj > 0.0) {
@@ -402,6 +426,7 @@ Rcpp::List calculateAJ_Rcpp(
       for (int j = 0; j < Uall; ++j){
         int c = all2any[j];
         F1_all[j] = (c>0 ? aj1_any[c-1] : 0.0);
+        if (unit_cif && j >= last_positive_group) F1_all[j] = 1.0;
       }
     }
 
@@ -414,29 +439,44 @@ Rcpp::List calculateAJ_Rcpp(
 
       for (int r=0; r<n_g; ++r) {
         int i = ids[r];
-        double Ti = t[i], wi = W[i];
+        double wi = W[i];
         int Ei = epsilon[i];
-        double xs_prev = 0.0, xf_prev = 0.0;
+        double ds_prev = 0.0, xf_prev = 0.0;
+        double ds_fay_prev = 0.0, xf_fay_prev = 0.0;
 
         for (int m=0; m<M_any; ++m) {
           int j_all = ev_any_idx[m];
-          double tj = t_all[j_all];
           double dlam_any = dl_any[m];
           double dlam_c1  = (need_any_cif ? dl_c1[m] : 0.0);
 
           double dm_any = 0.0, dm_c1 = 0.0;
-          if (Ti + prob_bound >= tj){
-          dm_any = wi * ((feq(Ti,tj) && (Ei >= 1)) ? (1.0 - dlam_any) : (0.0 - dlam_any));
-            dm_c1 = wi * ((feq(Ti,tj) && (Ei == 1)) ? (1.0 - dlam_c1 ) : (0.0 - dlam_c1 ));
+          const bool at_risk = time_group[i] >= j_all;
+          if (at_risk){
+            dm_any = wi * ((time_group[i] == j_all && Ei >= 1) - dlam_any);
+            dm_c1 = wi * ((time_group[i] == j_all && Ei == 1) - dlam_c1);
           }
           double invY = invY_all[j_all];
-          double xs_now = xs_prev + dm_any * invY;
-          double term = dm_c1 * invY - xs_prev * dlam_c1;
           double Sprev = (m==0? 1.0 : S_any[m-1]);
-          double xf_now = xf_prev + Sprev * term;
-          xs_prev = xs_now;
+          // Differentiate the actual product limit, including tied jumps.
+          double xf_now = xf_prev + dlam_c1 * ds_prev + Sprev * dm_c1 * invY;
+          double ds_now = (1.0-dlam_any) * ds_prev - Sprev * dm_any * invY;
+          if (use_fay_se) {
+            const double H = at_risk ? 1.0/std::sqrt(1.0-std::min(0.75,wi*invY)) : 1.0;
+            xf_fay_prev += dlam_c1 * ds_fay_prev + Sprev * H * dm_c1 * invY;
+            ds_fay_prev = (1.0-dlam_any) * ds_fay_prev - Sprev * H * dm_any * invY;
+          }
+          if (unit_cif && j_all == last_positive_group) {
+            // The unit CIF is locally constant under positive case weights.
+            xf_now = ds_now = xf_fay_prev = ds_fay_prev = 0.0;
+          }
+          ds_prev = ds_now;
           xf_prev = xf_now;
-          IF_AJ_any(r, m) = xf_now;
+          IF_AJ_any(r, m) = use_fay_se ? xf_fay_prev : xf_now;
+          if (want_if_output) {
+            // The returned IF is always the unadjusted case derivative.
+            for (int j=j_all; j<Uall && all2any[j]==m+1; ++j)
+              IF_AJ_all(r,j) = xf_now;
+          }
         }
       }
       std::vector<long double> ss(Uall, 0.0L);
@@ -445,7 +485,6 @@ Rcpp::List calculateAJ_Rcpp(
         for (int r = 0; r < n_g; ++r) {
           double v = (c==0 ? 0.0 : IF_AJ_any(r, c-1));
           ss[j] += (long double)v * v;
-          if (want_if_output) IF_AJ_all(r,j) = v;
         }
       }
       for (int j=0; j<Uall; ++j)

@@ -113,9 +113,11 @@ For panel displays (e.g. \code{cifpanel()} or when \code{panel.per.event = TRUE}
 \code{panel.censoring = TRUE}), \code{code.events} may also be a list of such numeric vectors, one per panel.}
 
 \item{error}{Character string specifying the method for SEs and CIs used internally.
-For \code{"survival"} without weights, choose one of \code{"greenwood"} (default), \code{"tsiatis"}, or \code{"if"}.
-For \code{"competing-risk"} without weights, choose one of \code{"delta"} (default), \code{"aalen"}, or \code{"if"}.
-SEs and CIs based on influence functions (\code{"if"}) is recommended for weighted analysis.}
+For \code{"survival"} without weights, choose one of \code{"greenwood"} (default), \code{"tsiatis"}, \code{"if"}, or \code{"fay"}.
+For \code{"competing-risk"} without weights, choose one of \code{"delta"} (default), \code{"aalen"}, \code{"if"}, or \code{"fay"}.
+Weighted analysis defaults to influence-function SEs (\code{"if"}). The C++ curve
+engine also supports \code{"fay"}, a Fay--Graubard-type correction. Supplied weights
+are held fixed; uncertainty from estimating a propensity score is not included.}
 
 \item{conf.type}{Character specifying the method of transformation for CIs
 used internally (default \verb{arcsine-square root}).}
@@ -298,8 +300,9 @@ an optional stratification variable. In addition to the curves themselves,
 CIs, censoring marks, competing-risk marks, and intercurrent-event marks.
 
 For usual single-panel mode, the function returns an object whose \code{plot}
-component is a regular ggplot object that can be further modified
-(compatible with \code{+} and \verb{\%+\%}).
+component is a regular ggplot object that can be further modified.
+Use \code{as_ggplot(result) + ggplot2::labs(...)} or \code{result$plot + ...};
+the wrapper itself is not a ggplot.
 For more complex multi-panel displays, \code{\link[=cifplot]{cifplot()}} can internally call
 \code{\link[=cifpanel]{cifpanel()}} via several “panel modes” (per event, per variable, or
 censoring-focused).

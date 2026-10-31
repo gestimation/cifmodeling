@@ -20,9 +20,11 @@
 #' @param code.event2 Integer code of the competing risk (default `2`).
 #' @param code.censoring Integer code of censoring (default `0`).
 #' @param error Character string specifying the method for SEs and CIs used internally.
-#' For `"survival"` without weights, choose one of `"greenwood"` (default), `"tsiatis"`, or `"if"`.
-#' For `"competing-risk"` without weights, choose one of `"delta"` (default), `"aalen"`, or `"if"`.
-#' SEs and CIs based on influence functions (`"if"`) is recommended for weighted analysis.
+#' For `"survival"` without weights, choose one of `"greenwood"` (default), `"tsiatis"`, `"if"`, or `"fay"`.
+#' For `"competing-risk"` without weights, choose one of `"delta"` (default), `"aalen"`, `"if"`, or `"fay"`.
+#' Weighted analysis defaults to influence-function SEs (`"if"`). The C++ curve
+#' engine also supports `"fay"`, a Fay--Graubard-type correction. Supplied weights
+#' are held fixed; uncertainty from estimating a propensity score is not included.
 #' @param conf.type Character specifying the method of transformation for CIs
 #' used internally (default `arcsine-square root`).
 #' @param conf.int Numeric two-sided level of CIs (default `0.95`).

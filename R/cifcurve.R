@@ -28,6 +28,11 @@
 #' scale (survfit's convention). Otherwise SE is on the probability scale.
 #' @param engine Character. One of `"auto"`, `"calculateKM"`, or `"calculateAJ_Rcpp"` (default `"calculateAJ_Rcpp"`).
 #' @param prob.bound Numeric lower bound used to internally truncate probabilities away from 0 and 1 (default `1e-7`).
+#' @param conf.dist Reference distribution for pointwise CIs: `"normal"`
+#'   (default) or `"t"`. Student intervals require `error = "if"` or `"fay"`;
+#'   omitting `error` with `conf.dist = "t"` selects `"if"`.
+#' @param df.method Allocation used for Student degrees of freedom:
+#'   `"deletion"` (default, FG-type) or `"equal"` (IF-t only).
 #'
 #' @details
 #'
@@ -47,9 +52,32 @@
 #'
 #' | Argument | Description | Default |
 #' |---|---|---|
-#' | `error` | SE for KM: `"greenwood"`, `"tsiatis"`, `"if"`. For CIF: `"aalen"`, `"delta"`, `"if"`. | `"greenwood"`, `"delta"` or `"if"` |
+#' | `error` | SE for KM: `"greenwood"`, `"tsiatis"`, `"if"`, `"fay"`. For CIF: `"aalen"`, `"delta"`, `"if"`, `"fay"`. | `"greenwood"`, `"delta"` or `"if"` |
 #' | `conf.type` | Transformation for CIs: `"plain"`, `"log"`, `"log-log"`, `"arcsin"`, `"logit"`, or `"none"`. | `"arcsin"` |
 #' | `conf.int` | Two-sided CI level. | `0.95` |
+#'
+#' With the C++ engine, `error = "fay"` applies the Fay--Graubard-type
+#' sandwich correction with leverage capped at 0.75. Combining `error = "if"`
+#' or `"fay"` with `conf.dist = "t"` gives IF-t or FG-t, respectively.
+#' `"fg"` and `"fay-graubard"` are accepted aliases for `"fay"`;
+#' the returned `error` is always `"fay"` for this correction.
+#' All supplied weights are held fixed, including externally estimated IPTW;
+#' uncertainty from fitting a propensity-score model is not included.
+#' Deletion degrees of freedom use unscaled hazard-score equations and
+#' no-event-baseline hazard logits (a positive cause is the baseline at complete
+#' exit). Equal allocation is invariant to fixed invertible score transformations
+#' within this system; its small-sample coverage need not equal deletion allocation.
+#' These are working quadratic-form approximations, not exact Student laws.
+#'
+#' With the C++ engine, IF and FG intervals use exact boundary singletons; interior zero
+#' variance, unavailable degrees of freedom, and times beyond positive-weight
+#' follow-up produce missing limits with reasons in `$conf.status`. No normal
+#' fallback is used for a failed Student interval. Degrees of freedom vary by
+#' stratum and time; calculation can be expensive for large risk sets. The
+#' optional one-sided test retains its documented normal reference distribution.
+#' Returned influence functions are uncorrected case-weight derivatives (IF/n)
+#' of the event probability `1 - $surv`,
+#' even when the SE uses FG-adjusted contributions.
 #'
 #' ### One-sided normal approximation test
 #'
@@ -73,7 +101,8 @@
 #' calculated separately within each stratum.
 
 #' @return
-#' A `"survfit"` object. For `outcome.type="survival"`, `$surv` is the survival function.
+#' An object inheriting from `"cifcurve"` and `"survfit"`.
+#' For `outcome.type="survival"`, `$surv` is the survival function.
 #' For `outcome.type="competing-risk"`, `$surv` equals `1 - CIF` for `code.event1`.
 #' SE and CIs are provided per  `error`, `conf.type` and `conf.int`.
 #' This enables an independent use of standard methods for `survfit` such as:
@@ -88,6 +117,19 @@
 #' Note that `$n.risk`, `$n.event`, and `$n.censor` are rounded up to the nearest integer
 #' regardless of whether the data is weighted or not.
 #' Some methods (e.g. `residuals.survfit`) may not be supported.
+#' IF/FG results also record `conf.dist`, `df`, `df.reason`,
+#' `critical.value`, and `conf.status`; Student results record `df.method`.
+#' These vectors follow the fitted curve's stratum/time ordering. FG results
+#' record the fixed leverage cap in `fay.bound`. Influence matrices have one
+#' row per original observation within each stratum, including zero-weight rows.
+#' `summary(fit, times = ..., extend = TRUE)` extracts the saved intervals,
+#' probability-scale SEs and time-specific inference diagnostics. Unsupported
+#' times retain missing limits. Use this summary rather than indexing added
+#' inference vectors on copies whose time grid was expanded by `survfit0()`.
+#' `logse` records the scale of the stored `std.err`. The internal `reporting`
+#' component preserves the native inference grid for this extraction.
+#' @param object A fitted `cifcurve` object to summarize.
+#' @param ... Arguments passed to `summary.survfit()`, including `times`.
 #'
 #' @examples
 #' data(diabetes.complications)
@@ -137,11 +179,19 @@ cifcurve <- function(
     report.influence.function = FALSE,
     report.survfit.std.err = FALSE,
     engine = "calculateAJ_Rcpp",
-    prob.bound = 1e-7
+    prob.bound = 1e-7,
+    conf.dist = c("normal", "t"),
+    df.method = c("deletion", "equal")
 ) {
+  conf.dist <- match.arg(conf.dist)
+  df.method <- match.arg(df.method)
   n.risk.type <- util_check_n_risk_type(n.risk.type)
   substitute_weights <- substitute(weights)
-  has_weights_user <- !(missing(weights) || identical(substitute_weights, quote(NULL)))
+  # Keep bare data-column lookup, but resolve other inputs in their original
+  # promise environment. In particular, a forwarded NULL is not a weight.
+  if (!is.name(substitute_weights) || !as.character(substitute_weights) %in% names(data))
+    substitute_weights <- weights
+  has_weights_user <- !is.null(substitute_weights)
   out_read_surv <- eval(substitute(
     util_read_surv(
       formula = formula, data = data, weights = arg_weights,
@@ -152,7 +202,9 @@ cifcurve <- function(
     list(arg_weights = substitute_weights)
   ))
   outcome.type <- out_read_surv$outcome.type
+  if (conf.dist == "t" && is.null(error)) error <- "if"
   error <- curve_check_error(error, outcome.type, weights = out_read_surv$w, has_weights = has_weights_user)
+  shared_ci <- .cifcurve_check_inference(error, conf.dist, df.method, engine, conf.int)
   call <- match.call()
 
   strata_fac   <- as.factor(out_read_surv$strata)
@@ -180,8 +232,6 @@ cifcurve <- function(
     )
     out_km$std.err <- out_km$surv * out_km$std.err
     out_ci <- calculateCI(out_km, conf.int, conf.type, conf.lower = NULL)
-    if (isTRUE(report.survfit.std.err))
-      out_km$std.err <- out_km$std.err / out_km$surv
 
     survfit_object <- list(
       time      = out_km$time,
@@ -205,7 +255,8 @@ cifcurve <- function(
     }
     survfit_object$n.risk.type <- n.risk.type
     survfit_object <- harmonize_engine_output(survfit_object)
-    class(survfit_object) <- "survfit"
+    survfit_object <- .cifcurve_reporting(survfit_object, out_read_surv, error,
+      conf.type, conf.int, conf.dist, report.survfit.std.err)
     survfit_object <- .cifcurve_add_one_sided_p(
       fit = survfit_object,
       time.point = time.point,
@@ -240,8 +291,6 @@ cifcurve <- function(
     out_aj$std.err <- std_err_cif
     out_aj$surv <- 1 - out_aj$aj1
     out_ci <- calculateCI(out_aj, conf.int, conf.type, conf.lower = NULL)
-    if (isTRUE(report.survfit.std.err))
-      out_aj$std.err <- out_aj$std.err / out_aj$surv
 
     survfit_object <- list(
       time        = out_aj$time1,
@@ -264,7 +313,8 @@ cifcurve <- function(
 
     survfit_object$n.risk.type <- n.risk.type
     survfit_object <- harmonize_engine_output(survfit_object)
-    class(survfit_object) <- "survfit"
+    survfit_object <- .cifcurve_reporting(survfit_object, out_read_surv, error,
+      conf.type, conf.int, conf.dist, report.survfit.std.err)
     survfit_object <- .cifcurve_add_one_sided_p(
       fit = survfit_object,
       time.point = time.point,
@@ -283,7 +333,7 @@ cifcurve <- function(
     w = if (has_weights_user) out_read_surv$w else NULL,
     strata = as.integer(out_read_surv$strata),
     error = error,
-    conf.type = conf.type,
+    conf.type = if (shared_ci) "none" else conf.type,
     conf.int = conf.int,
     report.influence.function = report.influence.function,
     prob.bound = prob.bound,
@@ -297,12 +347,19 @@ cifcurve <- function(
   }
   out_cpp$call <- call
   out_cpp <- harmonize_engine_output(out_cpp)
+  if (shared_ci) {
+    out_cpp <- .cifcurve_adjusted_ci(
+      out_cpp, out_read_surv$t, epsilon_norm, out_read_surv$w,
+      as.integer(out_read_surv$strata), conf.type = conf.type, level = conf.int,
+      conf.dist = conf.dist, df.method = df.method
+    )
+  }
   out_cpp$n.risk <- ceiling(out_cpp$n.risk)
   out_cpp$n.censor <- ceiling(out_cpp$n.censor)
   out_cpp$n.event <- ceiling(out_cpp$n.event)
   out_cpp$n.risk.type <- n.risk.type
-  if (isTRUE(report.survfit.std.err)) out_cpp$std.err <- out_cpp$std.err / out_cpp$surv
-  class(out_cpp) <- "survfit"
+  out_cpp <- .cifcurve_reporting(out_cpp, out_read_surv, error,
+    conf.type, conf.int, conf.dist, report.survfit.std.err)
   out_cpp <- .cifcurve_add_one_sided_p(
     fit = out_cpp,
     time.point = time.point,
@@ -410,8 +467,8 @@ curve_check_error <- function(x, outcome.type, weights = NULL, has_weights = NUL
 
   choices <- switch(
     ot,
-    "survival"       = c("greenwood", "tsiatis", "if"),
-    "competing-risk" = c("aalen", "delta", "if"),
+    "survival"       = c("greenwood", "tsiatis", "if", "fay"),
+    "competing-risk" = c("aalen", "delta", "if", "fay"),
     stop(sprintf("Invalid outcome.type: %s", outcome.type), call. = FALSE)
   )
 
@@ -436,12 +493,13 @@ curve_check_error <- function(x, outcome.type, weights = NULL, has_weights = NUL
     if (z %in% c("t", "tsiatis"))   return("tsiatis")
     if (z %in% c("if", "influence function", "influence_function",
                  "influence curve", "ic")) return("if")
+    if (z %in% c("fay", "fg", "fay-graubard")) return("fay")
     if (z %in% c("a", "aalen"))     return("aalen")
     if (z %in% c("d", "delta"))     return("delta")
     z
   }
   x_norm <- normalize_error(x)
-  if (has_weights && x_norm != "if") {
+  if (has_weights && !x_norm %in% c("if", "fay")) {
     warning(
       sprintf("%s with weights: error='%s' is not supported; falling back to 'if'.",
               ot, as.character(x)),
@@ -775,11 +833,11 @@ harmonize_engine_output <- function(out) {
   x <- tolower(trimws(as.character(conf.type)[1]))
   x <- gsub("_", "-", x, fixed = TRUE)
 
-  if (x %in% c("none", "n", "plain", "identity")) {
+  if (x %in% c("none", "n", "plain", "identity", "p", "linear")) {
     return("plain")
   }
 
-  if (x %in% c("arcsine-square root", "arcsine", "arcsin", "asin")) {
+  if (x %in% c("arcsine-square root", "arcsine", "arcsin", "asin", "a")) {
     return("arcsine-square root")
   }
 

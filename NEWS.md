@@ -1,3 +1,40 @@
+# cifmodeling 1.2.2
+
+* Added direct optional `gtsummary::tbl_regression()` support for `polyreg`,
+  including event selection, reference rows and event-specific RR/OR/SHR
+  headings. `tidy.polyreg()` supports `exponentiate` and the standard logical
+  `conf.int`/numeric `conf.level` interface while retaining legacy numeric
+  `conf.int`. Stored intervals are retained when inference settings are unchanged.
+* Corrected survival-summary SE scaling and unstratified curve compatibility.
+  `cifcurve()` now returns a subclass of `survfit`; its summary and stratum-subsetting
+  methods keep saved inference aligned and prevent interval extrapolation past
+  positive-weight follow-up. Reporting adapters preserve the fitted statistical results.
+* Added reporting articles for CIF curves/tests and event-specific regression,
+  with gtsummary formatting and Word/HTML export examples.
+* Fixed unweighted `cifplot()` calls being treated as weighted when NULL
+  weights were forwarded internally. Unweighted plots now honor `error = "aalen"`
+  and `"delta"`, and retain the unweighted default variance choice. Actual
+  supplied weights retain the existing weighted-inference rules.
+
+* Added pointwise IF-t, FG-normal and FG-t intervals to `cifcurve()` for
+  independent observations with no weights or known fixed weights. Select
+  `conf.dist = "t"` for Student critical values, or `error = "fay"` for
+  the FG sandwich correction. Existing default method choices are retained.
+* IF-t supports `df.method = "deletion"` (FG-type allocation, default) or
+  `"equal"` (equal-allocation working Satterthwaite degrees of freedom).
+  FG-t uses deletion allocation. Results record time-specific degrees of
+  freedom, critical values and interval availability reasons. These are
+  approximations, not exact t distributions or uniform coverage guarantees.
+* Supplied weights, including externally estimated IPTW, are treated as fixed.
+  Propensity-score estimation and its full IF contribution remain outside
+  this API. IF/FG limits beyond positive-weight follow-up, or with
+  invalid interior variance/df, are missing rather than silently replaced
+  by a normal interval; valid boundary singletons are retained.
+* Corrected the C++ IF recursion to differentiate the actual KM/AJ product
+  limit, including tied jumps. IF standard errors can consequently differ
+  from earlier versions. FG contributions share that recursion. Also fixed
+  zero cause-1 CIFs when only competing events are observed.
+
 # cifmodeling 1.2.0
 
 * Added `ciftest()` for standard and weighted log-rank/Gray tests and

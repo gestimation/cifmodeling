@@ -388,6 +388,12 @@ vcov(output)
 nobs(output)
 summary(output)
 
+if (requireNamespace("gtsummary", quietly = TRUE) &&
+    utils::packageVersion("gtsummary") >= "2.6.1") {
+  gtsummary::tbl_regression(output, exponentiate = TRUE)
+  gtsummary::tbl_regression(output, exponentiate = TRUE, event = "event2")
+}
+
 }
 \seealso{
 \code{\link[=cifcurve]{cifcurve()}} for KM/AJ estimators; \code{\link[=cifplot]{cifplot()}} for display of a CIF; \code{\link[=cifpanel]{cifpanel()}} for display of multiple CIFs; \link[ggsurvfit:ggsurvfit]{ggsurvfit::ggsurvfit}, \link[patchwork:patchwork-package]{patchwork::patchwork} and \link[modelsummary:modelsummary]{modelsummary::modelsummary} for display helpers.

@@ -10,8 +10,9 @@
 #' CIs, censoring marks, competing-risk marks, and intercurrent-event marks.
 #'
 #' For usual single-panel mode, the function returns an object whose `plot`
-#' component is a regular ggplot object that can be further modified
-#' (compatible with `+` and `%+%`).
+#' component is a regular ggplot object that can be further modified.
+#' Use `as_ggplot(result) + ggplot2::labs(...)` or `result$plot + ...`;
+#' the wrapper itself is not a ggplot.
 #' For more complex multi-panel displays, [cifplot()] can internally call
 #' [cifpanel()] via several “panel modes” (per event, per variable, or
 #' censoring-focused).
@@ -1161,7 +1162,8 @@ cifplot_single <- function(
     )
     data_working <- norm_inputs$data
 
-    formula_or_fit <- cifcurve(formula_or_fit, data = data_working, weights = weights, subset.condition = subset.condition, na.action = na.action,
+    # Forward the resolved value, even if data contains a column named weights.
+    formula_or_fit <- cifcurve(formula_or_fit, data = data_working, weights = identity(weights), subset.condition = subset.condition, na.action = na.action,
                                outcome.type = outcome.type, code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
                                error = error, conf.type = conf.type, conf.int = conf.int, n.risk.type = n.risk.type)
     formula_or_fit <- plot_survfit_short_strata_names(formula_or_fit)
