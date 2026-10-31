@@ -46,7 +46,9 @@ test_that("actual supplied weights retain weighted inference and fallback", {
 test_that("unweighted CIF plots retain the requested variance and default delta", {
   data(diabetes.complications)
   render <- function(plot) {
-    grDevices::pdf(file=tempfile(fileext=".pdf"))
+    # Risk-table symbols include Unicode; base PDF cannot encode them on Linux.
+    device <- if (capabilities("cairo")) grDevices::cairo_pdf else grDevices::pdf
+    device(file=tempfile(fileext=".pdf"))
     on.exit(grDevices::dev.off())
     ggsurvfit::ggsurvfit_build(plot)
   }
