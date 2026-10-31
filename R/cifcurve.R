@@ -187,7 +187,11 @@ cifcurve <- function(
   df.method <- match.arg(df.method)
   n.risk.type <- util_check_n_risk_type(n.risk.type)
   substitute_weights <- substitute(weights)
-  has_weights_user <- !(missing(weights) || identical(substitute_weights, quote(NULL)))
+  # Keep bare data-column lookup, but resolve other inputs in their original
+  # promise environment. In particular, a forwarded NULL is not a weight.
+  if (!is.name(substitute_weights) || !as.character(substitute_weights) %in% names(data))
+    substitute_weights <- weights
+  has_weights_user <- !is.null(substitute_weights)
   out_read_surv <- eval(substitute(
     util_read_surv(
       formula = formula, data = data, weights = arg_weights,

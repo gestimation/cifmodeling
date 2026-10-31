@@ -156,3 +156,28 @@ pre-existing skips and the existing Rcpp build-version warning. Logs are
 `tmp/reporting-1.2.2/review-fixes-full-tests.log`. The package-check and website
 results above describe the initial implementation; these local checks were
 not repeated for this follow-up.
+
+## Absent-weight forwarding correction (2026-10-31)
+
+Unweighted `cifplot()` calls forwarded a local `weights = NULL` argument to
+`cifcurve()`. The latter classified weights from the argument expression,
+incorrectly selecting IF inference and falling back from explicit Aalen or
+delta requests. Weight selection now retains bare data-column lookup while
+resolving other supplied values in their original promise environment.
+Plotting forwards the resolved value so an unused column named `weights`
+cannot select weights accidentally. Variance-estimator formulas are unchanged.
+
+The reported diabetes-cohort calls now select delta by default, Aalen when
+requested, and delta when requested. Their estimates, SEs and confidence
+limits match direct `cifcurve()` calls exactly; the three estimate-table plots
+render successfully. The existing axis-range warning remains because maximum
+follow-up is 11.0034 and the requested display ends at 8.
+
+Regression tests cover forwarded/computed NULL, local vectors, bare/quoted
+column names, actual supplied weights including unit weights, the unused
+`weights` column, and the complete reported plotting calls. Targeted tests and
+the complete test suite passed, retaining the seven existing skips and Rcpp
+build-version warning. Rendering tests write to temporary PDF files. Logs are
+`tmp/reporting-1.2.2/weight-fallback-tests.log`,
+`tmp/reporting-1.2.2/weight-fallback-full-tests.log`, and
+`tmp/reporting-1.2.2/weight-fallback-after.log`.

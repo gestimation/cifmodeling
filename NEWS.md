@@ -11,6 +11,10 @@
   positive-weight follow-up. Reporting adapters preserve the fitted statistical results.
 * Added reporting articles for CIF curves/tests and event-specific regression,
   with gtsummary formatting and Word/HTML export examples.
+* Fixed unweighted `cifplot()` calls being treated as weighted when NULL
+  weights were forwarded internally. Unweighted plots now honor `error = "aalen"`
+  and `"delta"`, and retain the unweighted default variance choice. Actual
+  supplied weights retain the existing weighted-inference rules.
 
 * Added pointwise IF-t, FG-normal and FG-t intervals to `cifcurve()` for
   independent observations with no weights or known fixed weights. Select

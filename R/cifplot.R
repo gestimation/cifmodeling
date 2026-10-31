@@ -1162,7 +1162,8 @@ cifplot_single <- function(
     )
     data_working <- norm_inputs$data
 
-    formula_or_fit <- cifcurve(formula_or_fit, data = data_working, weights = weights, subset.condition = subset.condition, na.action = na.action,
+    # Forward the resolved value, even if data contains a column named weights.
+    formula_or_fit <- cifcurve(formula_or_fit, data = data_working, weights = identity(weights), subset.condition = subset.condition, na.action = na.action,
                                outcome.type = outcome.type, code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
                                error = error, conf.type = conf.type, conf.int = conf.int, n.risk.type = n.risk.type)
     formula_or_fit <- plot_survfit_short_strata_names(formula_or_fit)
