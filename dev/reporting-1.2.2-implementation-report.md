@@ -13,8 +13,13 @@ implemented IF/Fay inference and shared output/input helpers. Before editing,
 the working diff, source hashes, complete tests and a limited package check
 were recorded under `tmp/reporting-1.2.2/baseline*`.
 
-The proposed single v1.2.2 PR includes those necessary existing source changes
-as well as this reporting implementation. The earlier C++ IF correction is
+[PR #28](https://github.com/gestimation/cifmodeling/pull/28) included those
+necessary existing source changes as well as this reporting implementation.
+It was merged into `master` on 2026-10-31 as
+[`6de460e`](https://github.com/gestimation/cifmodeling/commit/6de460e7be6b45741400fead55d13681483e1201).
+Its final code commit was
+[`5ee612f`](https://github.com/gestimation/cifmodeling/commit/5ee612f06f59d3aca9e48066bc3db2ebb2766133);
+the merge commit has the same tracked-file tree. The earlier C++ IF correction is
 documented separately in NEWS; it was already present in the numerical baseline
 for this task. Reporting changes do not modify that recursion, estimating
 equations, variance estimators, confidence-limit formulas or optimization.
@@ -62,6 +67,48 @@ load reporting packages during estimation or ordinary extraction.
 
 ## Verification
 
+### Final merged source
+
+The final-code checks below are separate from the historical implementation
+checks. In particular, the earlier count of 2,628 passing expectations is not
+a test count for the final commit.
+
+| Check | Code and environment | Result |
+|---|---|---|
+| [Pull-request CI](https://github.com/gestimation/cifmodeling/actions/runs/41199803111) | `5ee612f`; Ubuntu, R 4.6.2; `--no-manual --ignore-vignettes --as-cran` | Passed: 0 errors, 0 warnings, 2 notes |
+| [Push CI](https://github.com/gestimation/cifmodeling/actions/runs/41199799956) | `5ee612f`; same workflow | Passed |
+| Merged-source audit | `6de460e`; 40 existing R/C++ files compared with the initial working-source snapshot, normalizing CRLF/LF line endings | 5 existing R files changed; the other 35 existing sources, including all existing C++ sources, matched |
+| Event-count scope check | `6de460e`; five observations with status codes `1, 2, 0, 1, 0` | C++ engine: 3 total events; legacy AJ path: 2 cause-1 events |
+| Final-source vignettes | Clean Git export of `6de460e`, freshly installed in an isolated library; Windows, R 4.4.2 | All 9 vignettes rebuilt, including the substantive reporting-table and export examples |
+| Final-source website | Separate clean export of `6de460e`, using the same fresh installation | Complete pkgdown site rebuilt, including all 9 articles and the Reference pages |
+| Final-site audit | Generated reporting articles | 3 curve tables and 5 regression tables; article-local links resolved; saved variable label and effect headings verified; both article layouts visually inspected |
+
+The five changed existing source files are `R/cifcurve.R`, `R/cifplot.R`,
+`R/output-interop.R`, `R/polyreg-methods.R`, and `R/polyreg.R`. The initial
+four-file audit preceded the later weight-forwarding correction in
+`R/cifplot.R`. This audit concerns files already present in the initial working
+source; it does not count newly added files. Its baseline already contained
+the C++ IF correction, so it is not a claim that released v1.2.1 results are
+unchanged.
+
+The final Ubuntu CI's two notes concern the absent prebuilt vignette index
+under the no-build-vignettes workflow and the existing static-analysis
+findings below. They differ from the notes in the historical Windows checks.
+That CI did not rebuild vignettes or the PDF manual.
+
+The final local rebuilds used the Windows dependency versions listed below,
+recorded again in `package-versions.csv`. Source provenance, installation and
+build logs, session information, the event-count check, HTML audit and page
+screenshots are under `tmp/reporting-1.2.2/final-report-validation/`, outside
+the PR. These builds used only tracked merged source, without the unrelated
+working-tree README edit or research files. The generated site was not
+deployed. The PDF manual was not rebuilt in this final documentation audit.
+
+### Initial implementation checks (historical)
+
+These results describe the implementation checkpoints before the later
+decimal-time, CI-free BCa, weight-forwarding and CI graphics-device corrections.
+
 | Check | Result |
 |---|---|
 | Initial working-source tests | Passed; 7 existing intentional skips and 1 existing Rcpp build-version warning |
@@ -71,30 +118,31 @@ load reporting packages during estimation or ordinary extraction.
 | Regression numerical preservation | 6 real-data refits matched coefficients, covariance, stored intervals/p-values, potential CIFs and IFs exactly |
 | Event-specific regression tables | 12 real-data tables matched extracted estimates, limits, SEs and p-values exactly |
 | Frozen inference replay | 64 comparisons; maximum absolute difference 1.78e-14 |
-| Computational-source audit | Of 40 existing R/C++ source files, only the four intended reporting/wrapper files changed; the other sources retained their initial hashes |
+| Initial computational-source audit | 40 existing R/C++ files checked; 4 existing reporting/wrapper files changed at this checkpoint, before the later plotting correction |
 | Optional dependency loading | `library(cifmodeling)` did not load gtsummary, broom.helpers, gt, flextable or officer |
 | Vignettes and exports | All 9 vignettes built; substantive chunks in both new articles and Word/HTML exports executed |
 | Website | Complete pkgdown site built in a temporary destination |
 | Export/page audit | Word ZIP/XML, OR/SHR headings, HTML tables and article-local links checked; representative tables and the regression article visually inspected |
 | Full `devtools::check()` | PDF manual, all tests/examples and all 9 vignettes: 0 errors, 0 warnings, 3 notes |
-| Final-source package recheck | All tests/examples and PDF manual: 0 errors, 0 warnings, 2 notes; 2,628 passing expectations, 7 existing skips and the existing Rcpp build-version warning |
+| Initial Windows package recheck | All tests/examples and PDF manual: 0 errors, 0 warnings, 2 notes; 2,628 passing expectations, 7 existing skips and the existing Rcpp build-version warning |
 
-The full nine-vignette check preceded the final variable-label-only fix.
-The final-source recheck used `--ignore-vignettes`; both affected articles
-were additionally rendered from the final installed package, including their
+The historical nine-vignette check preceded the variable-label fix.
+The initial Windows package recheck used `--ignore-vignettes`; both affected articles
+were additionally rendered from the package installed at that checkpoint, including their
 substantive table/export examples. Their generated pages passed local-link
 and table-content checks, including the saved variable label. This avoids
-attributing an older installed package's output to the final source.
+attributing an older installed package's output to the corrected source at
+that checkpoint; the merged-source rebuild is recorded separately above.
 
-The full check's three notes concern installed size (7.4 MB, including 4.8 MB
+The historical Windows full check's three notes concern installed size (7.4 MB, including 4.8 MB
 of vignette documentation), inability to verify network time, and the existing
-static-analysis findings below. The final-source check without built vignette
+static-analysis findings below. The initial Windows check without built vignette
 documentation has the latter two notes. An intermediate missing direct
 `cardx` dependency declaration was corrected; the rechecks have no dependency
 warnings. Validation logs, session information, numerical snapshots, output
 audit and source hashes remain under `tmp/reporting-1.2.2/`, outside the PR.
 
-Validation used R 4.4.2 on Windows, gtsummary 2.6.1, broom.helpers 1.20.0,
+Historical local validation used R 4.4.2 on Windows, gtsummary 2.6.1, broom.helpers 1.20.0,
 cards 0.9.0, cardx 0.3.4, gt 0.11.1, flextable 0.10.3, officer 0.7.7,
 rmarkdown 2.29, pkgdown 2.2.0 and roxygen2 7.3.3. Reporting dependencies were
 installed in an isolated validation library; the user's default library and
@@ -119,8 +167,16 @@ and TinyTeX were used.
   the class adds `cifcurve` ahead of `survfit`. Non-default confidence levels
   are reflected in the regression table heading. No-CI curve summaries use
   missing limits, while the original fit still has no limit vectors.
-- Curve event counts include all event causes. Weighted sums, actual row
-  counts and ESS remain distinct; legacy count fields retain upward rounding.
+- For competing-risk fits, `n.event` from the default `calculateAJ_Rcpp`
+  engine counts all event causes. Its `n.risk.weighted`, `n.risk.unweighted`
+  and `n.risk.ess` fields distinguish weight sums, actual row counts and ESS;
+  the legacy display fields retain upward rounding.
+- The alternative `engine = "calculateKM"` competing-risk path reports
+  `n.event` from `n.event1`, counting only the event of interest on its own
+  event-time grid. Do not describe that count as all-cause events or assume
+  the C++ engine's additional risk-set fields are present. For status codes
+  `1, 2, 0, 1, 0`, the respective event totals are 3 and 2. This report
+  clarifies the existing engine-specific meanings; it does not change them.
 - Boundary singletons and missing intervals retain the documented inference
   policy. Weights are fixed for inference; an external estimated IPTW is not
   converted into a full propensity-score IF by reporting.
@@ -154,8 +210,9 @@ The targeted reporting/inference/output suite and the complete
 pre-existing skips and the existing Rcpp build-version warning. Logs are
 `tmp/reporting-1.2.2/review-fixes-tests.log` and
 `tmp/reporting-1.2.2/review-fixes-full-tests.log`. The package-check and website
-results above describe the initial implementation; these local checks were
-not repeated for this follow-up.
+results in the historical table describe the initial implementation. They
+were not repeated at the time of this follow-up; the final merged-source
+verification is recorded separately above.
 
 ## Absent-weight forwarding correction (2026-10-31)
 
@@ -181,3 +238,17 @@ build-version warning. Rendering tests write to temporary PDF files. Logs are
 `tmp/reporting-1.2.2/weight-fallback-tests.log`,
 `tmp/reporting-1.2.2/weight-fallback-full-tests.log`, and
 `tmp/reporting-1.2.2/weight-fallback-after.log`.
+
+## CI graphics-device correction and merge (2026-10-31)
+
+The [earlier PR run](https://github.com/gestimation/cifmodeling/actions/runs/41199304319)
+tested `f96cc88` and failed one rendering test on Ubuntu/R 4.6.2: the base PDF
+device could not encode the default risk-table square (`U+25A0`). This was a
+graphics-device failure in the test, not evidence of a failed variance
+calculation. The rendering helper now uses Cairo PDF when available, retaining
+the default symbol and all numerical assertions rather than skipping the test.
+
+The subsequent `5ee612f` pull-request and push runs both passed, as linked in
+the final verification table. PR #28 was then merged as `6de460e`. The earlier
+failed run remains in the Actions history and must not be mistaken for the
+result of the merged code.
