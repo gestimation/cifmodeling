@@ -34,8 +34,8 @@ tightly connected functions:
 - `ciftest()` compares survival or CIF curves using log-rank, Gray,
   robust score, augmented score, or multiple-direction tests.
 - `polyreg()` fits **coherent regression models** on all cause-specific
-  CIFs simultaneously to estimate RR/OR/SHR, offering a practical
-  complement to Fine-Gray.
+  CIFs simultaneously to estimate RR/OR/SHR using direct polytomous
+  regression. [Tanaka and Scheike (2026)](https://doi.org/10.1093/biomtc/ujag160)
 
 > **Explore the main features visually:**  
 > See the
@@ -54,6 +54,9 @@ tightly connected functions:
 > <https://gestimation.github.io/coffee-and-research/en/>
 
 ## Quick start
+
+This example uses `diabetes.complications`, an anonymized dataset from
+the Japan Diabetes Complications Study. [Tanaka et al. (2013)](https://doi.org/10.1097/EDE.0b013e318281725e)
 
 ``` r
 library(cifmodeling)
@@ -238,6 +241,11 @@ CIs, and p-values. Internally, a `"polyreg"` object also supports the
 - `augment()`: observation-level diagnostics (weights for IPCW,
   predicted CIFs, and influence functions).
 
+The working version also provides `as_ggplot()` for single-plot extraction,
+`as_prediction_data()` for explicit prediction-data extraction, and
+`as_modelsummary()` for tables with explicit inference settings. See the
+[shared output API](dev/OUTPUT-API.md), including the development GAM/CIF methods.
+
 ### Risk ratios over time with modelplot()
 
 Finally, we repeat the model at multiple time points and use
@@ -338,13 +346,13 @@ interface.
 Beyond providing a unified interface, `cifcurve()` also extends
 `survfit()` in a few targeted ways. For unweighted survival data, it
 reproduces the standard Kaplan-Meier estimator with **Greenwood and
-Tsiatis SEs** and a unified set of CI transformations. For competing
-risks data, it computes Aalen-Johansen CIFs with both **Aalen-type and
-delta-method SEs**. For weighted survival or competing risks data
-(e.g. inverse probability weighting), it implements **influence-function
-based SEs** (Deng and Wang 2025) as well as **modified Greenwood- and
-Tsiatis-type SEs** (Xie and Liu 2005), which are valid under general
-positive weights.
+Tsiatis SEs** and a unified set of CI transformations. For unweighted
+competing risks data, it computes Aalen-Johansen CIFs with both
+**Aalen-type and delta-method SEs**. The default inference for weighted
+curves uses **influence-function based SEs** (Deng and Wang 2025). The
+[formulas vignette](https://gestimation.github.io/cifmodeling/articles/v3_formulas.html)
+also describes the weighted Kaplan–Meier estimator and the adjusted
+Greenwood variance. [Xie and Liu (2005)](https://doi.org/10.1002/sim.2174)
 
 If you need very fine-grained plot customization, you can compute the
 estimator and keep a survfit-compatible object with `cifcurve()` (or

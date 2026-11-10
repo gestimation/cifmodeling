@@ -38,6 +38,12 @@ print.cifpanel <- function(x, ...) {
 #'   logical `conf.int` interface. Defaults to the fitted level.
 #' @param exponentiate Logical; exponentiate effect estimates and confidence
 #'   limits for reporting. Standard errors and statistics stay on the log scale.
+#' @param vcov Compatibility argument for `modelsummary`. Only `NULL` is
+#'   supported by `tidy.polyreg()`. Use `variance` to choose the covariance estimator.
+#' @param coef_rename Compatibility argument for `modelsummary`. Only `FALSE`
+#'   is supported by `tidy.polyreg()`.
+#' @param gof_map Table formatting argument forwarded by `modelsummary` and
+#'   ignored by `glance.polyreg()`.
 #' @param x Object to be printed or summarised. Typically a
 #'   `"summary.polyreg"` object for `print.summary.polyreg()`, or
 #'   a `"polyreg"` object for `tidy.polyreg()`, `glance.polyreg()`,
@@ -386,8 +392,12 @@ tidy.polyreg <- function(x,
                          event = c("event1", "event2", "both"),
                          conf.int = x$conf.int, variance = NULL,
                          exponentiate = FALSE, conf.level = NULL,
-                         ...) {
+                         ..., vcov = NULL, coef_rename = FALSE) {
   output_check_dots(...)
+  if (!is.null(vcov))
+    stop("Custom vcov is not supported; use variance instead.", call. = FALSE)
+  if (!identical(coef_rename, FALSE))
+    stop("Only coef_rename = FALSE is supported by tidy.polyreg().", call. = FALSE)
   if (!is.logical(exponentiate) || length(exponentiate) != 1L || is.na(exponentiate))
     stop("exponentiate must be TRUE or FALSE")
   if (!is.null(conf.level)) output_check_level(conf.level, "conf.level")
@@ -432,7 +442,9 @@ tidy.polyreg <- function(x,
           x$outcome.type %in% c("proportional-survival", "proportional-competing-risk"))
         stop("BCa intervals cannot be reconstructed from covariance; use the stored intervals or refit")
       V <- vcov.polyreg(x, variance = selected)
-      beta <- x$coef[index]
+      beta <- if (selected == "bootstrap" && !is.null(x$bootstrap$boot.coef)) {
+        x$bootstrap$boot.coef[index]
+      } else x$coef[index]
       se <- sqrt(pmax(0, diag(V)[index]))
       df$estimate <- unname(beta)
       df$std.error <- unname(se)
@@ -489,7 +501,7 @@ tidy.polyreg <- function(x,
 #' @rdname polyreg-methods
 glance.polyreg <- function(x,
                            event = c("event1", "event2"),
-                           ...) {
+                           ..., gof_map = NULL) {
   output_check_dots(...)
   event <- match.arg(event)
   s     <- x$summary

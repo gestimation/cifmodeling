@@ -18,6 +18,7 @@
 #' @param nuisance.model A `formula` describing the outcome and
 #'   nuisance covariates, excluding the exposure of interest.
 #'   The LHS must be `Event(time, status)` or `survival::Surv(time, status)`.
+#'   `Surv()` responses must be right-censored.
 #' @param exposure A character string giving the name of the categorical exposure
 #'   variable in `data`.
 #' @param strata Optional character string with the name of the stratification
@@ -29,7 +30,9 @@
 #' @param na.action A function specifying the action to take on missing values (default `na.omit`).
 #' @param code.event1 Integer code of the event of interest (default `1`).
 #' @param code.event2 Integer code of the competing event (default `2`).
+#'   Used for competing-risk models and when inferring the outcome type.
 #' @param code.censoring  Integer code of censoring (default `0`).
+#'   The event codes used by the model must be distinct non-negative integers.
 #' @param code.exposure.ref Integer code identifying the reference exposure
 #'   category (default `0`).
 #' @param effect.measure1 Character string specifying the effect measure for the
@@ -45,6 +48,8 @@
 #' @param outcome.type Character string selecting the outcome type. Valid values are
 #'   `"competing-risk"`, `"survival"`, `"binomial"`, `"proportional-survival"`,
 #'   and `"proportional-competing-risk"`. The default is `"competing-risk"`.
+#'   Fitting either competing-risk model requires observations of both event types.
+#'   For `"competing-risk"`, both types must be observed by `time.point`.
 #'   If explicitly set to `NULL`, `polyreg()` attempts to infer the outcome type from the data: if the
 #'   event variable has more than two distinct levels, `"competing-risk"`
 #'   is assumed; otherwise, `"survival"` is assumed. Abbreviations such as
@@ -61,6 +66,8 @@
 #' This CI is default for time-point models
 #' (`"outcome.type=competing-risk"`, `"survival"` or `"binomial"`) and
 #' is not available otherwise.
+#' For time-point survival and competing-risk models, the variance accounts
+#' for estimation of the censoring distribution within each supplied stratum.
 #' @param report.boot.conf Logical or `NULL`. When `TRUE`, bootstrap
 #' CIs are computed. When `FALSE`, they are omitted.
 #' If `NULL`, the function chooses based on `outcome.type` (default `NULL`).
@@ -69,6 +76,9 @@
 #' @param boot.bca Logical indicating the bootstrap CI method.
 #'   Use `TRUE` for bias-corrected and accelerated intervals or `FALSE`
 #'   for the normal approximation (default `FALSE`).
+#'   For proportional models, normal intervals are centered on the mean
+#'   bootstrap coefficient and use the requested `conf.int`. BCa limits
+#'   are computed separately for each reported coefficient.
 #' @param boot.multiplier Character string specifying the wild bootstrap weight distribution.
 #' One of `"rademacher"`, `"mammen"` or `"gaussian"` (default `"rademacher"`).
 #' @param boot.replications Integer giving the number of bootstrap replications
@@ -123,9 +133,11 @@
 #' competing events sum to one. This is achieved through
 #' **reparameterization using polytomous log odds products**, which fits so-called
 #' effect-measure models and nuisance models on multiple competing events
-#' simultaneously. Additionally, `polyreg()` supports direct binomial regression
+#' simultaneously (Tanaka and Scheike 2026). Additionally, `polyreg()` supports direct binomial regression
 #' for survival outcomes and the Richardson model for binomial outcomes,
 #' both of which use log odds products.
+#' With more than two exposure levels, the single-outcome model uses the
+#' generalized log odds product, the sum of log odds across exposure levels.
 #'
 #' ### Key arguments
 #' -   `nuisance.model`: a formula with `Event()` or `survivai::Surv()`
@@ -273,6 +285,11 @@
 #' Standard S3 methods are available: `coef.polyreg()`, `vcov.polyreg()`,
 #' `nobs.polyreg()`, and `summary.polyreg()`.
 #'
+#' @references
+#' Tanaka S, Scheike TH. Estimating effects on cumulative incidence probabilities
+#' by direct polytomous regression and polytomous log-odds product.
+#' *Biometrics*. 2026, 82(3), ujag160. \doi{10.1093/biomtc/ujag160}
+#'
 #' @examples
 #' data(diabetes.complications)
 #' output <- polyreg(
@@ -350,6 +367,13 @@ polyreg <- function(
   # 1. Pre-processing (function: checkSpell, checkInput, reg_normalize_covariate, sortByCovariate)
   #######################################################################################################
   computation.time0 <- proc.time()
+  if (!is.null(outcome.type)) outcome.type <- util_check_outcome_type(outcome.type)
+  codes <- if (is.null(outcome.type) || outcome.type %in% c("competing-risk", "proportional-competing-risk")) {
+    util_validate_event_codes(code.event1 = code.event1, code.event2 = code.event2,
+      code.censoring = code.censoring)
+  } else {
+    util_validate_event_codes(code.event1 = code.event1, code.censoring = code.censoring)
+  }
   reporting.label <- if (is.data.frame(data) && is.character(exposure) &&
     length(exposure) == 1L && exposure %in% names(data)) attr(data[[exposure]], "label") else NULL
   data <- createAnalysisDataset(
@@ -359,7 +383,11 @@ polyreg <- function(
     subset.condition = subset.condition,
     na.action = na.action
   )
-  outcome.type  <- util_check_outcome_type(outcome.type, formula=nuisance.model, data=data)
+  event_options <- options(cifmodeling.allowed = unname(codes))
+  on.exit(options(event_options), add = TRUE)
+  if (is.null(outcome.type)) {
+    outcome.type <- util_check_outcome_type(formula = nuisance.model, data = data)
+  }
   ce <- reg_check_effect.measure(effect.measure1, effect.measure2)
   ci <- reg_check_input(data, nuisance.model, exposure, code.event1, code.event2, code.censoring, code.exposure.ref, outcome.type, conf.int, report.sandwich.conf, report.boot.conf, nleqslv.method, normalize.covariate)
   normalize.covariate <- ci$normalize.covariate
@@ -369,6 +397,16 @@ polyreg <- function(
   out_normalizeCovariate <- reg_normalize_covariate(nuisance.model, data, normalize.covariate, outcome.type, ci$out_readExposureDesign$exposure.levels)
   normalized_data <- out_normalizeCovariate$normalized_data
   tp <- reg_read_time.point(nuisance.model, normalized_data, ci$out_readExposureDesign$x_a, outcome.type, code.censoring, terminate.time.point, time.point)
+  if (outcome.type == "competing-risk") {
+    event_codes <- codes[c("code.event1", "code.event2")]
+    observed <- ci$response[which(ci$response[, 1L] <= tp), 2L]
+    absent <- event_codes[!event_codes %in% observed]
+    if (length(absent)) {
+      stop("Competing-risk polyreg() requires both event types by time.point = ", tp,
+        ". No events observed for ", paste(paste(names(absent), absent, sep = " = "), collapse = ", "),
+        ".", call. = FALSE)
+    }
+  }
   index.vector <- reg_index_for_parameter(NA, ci$x_l, ci$x_a, length(tp))
 
   estimand <- list(
@@ -432,20 +470,26 @@ polyreg <- function(
       exposure = exposure,
       estimand = estimand,
       data.initial.values = data.initial.values,
-      prob.bound = prob.bound,
-      out_normalizeCovariate = out_normalizeCovariate
+      prob.bound = prob.bound
     )
   }
 
   #######################################################################################################
-  # 3. Calculating IPCW (function: calculateIPCW, calculateIPCWMatrix)
+  # 3. Calculating IPCW (function: calculateIPCW)
   #######################################################################################################
-  if (outcome.type == "competing-risk" || outcome.type == "survival") {
-    ip.weight.matrix <- calculateIPCW(nuisance.model, normalized_data, code.censoring, strata, estimand$time.point)
-  } else if (outcome.type == "binomial") {
+  ipcw <- NULL
+  if (outcome.type == "binomial") {
     ip.weight.matrix <- matrix(1,nrow(normalized_data),1)
-  } else if (outcome.type == "proportional-survival" || outcome.type == "proportional-competing-risk") {
-    ip.weight.matrix <- calculateIPCWMatrix(nuisance.model, normalized_data, code.censoring, strata, estimand, out_normalizeCovariate)
+  } else {
+    fixed_time <- outcome.type %in% c("competing-risk", "survival")
+    weights <- calculateIPCW(nuisance.model, normalized_data, code.censoring, strata,
+      estimand$time.point, return_censoring = fixed_time)
+    if (fixed_time) {
+      ipcw <- weights
+      ip.weight.matrix <- ipcw$weights
+    } else {
+      ip.weight.matrix <- weights
+    }
   }
 
   #######################################################################################################
@@ -458,11 +502,11 @@ polyreg <- function(
       out_ipcw <<- do.call(fun, list(...))
       out_ipcw$ret
       }
-      estimating_equation_i <- function(p) call_and_capture(
+      estimating_equation_i <- function(p, solver = optim.method) call_and_capture(
         estimating_equation_ipcw,
         formula = nuisance.model, data = normalized_data, exposure = exposure, outcome.type=outcome.type,
         ip.weight.matrix = ip.weight.matrix, alpha_beta = p, estimand = estimand,
-        optim.method = optim.method, prob.bound = prob.bound,
+        optim.method = solver, prob.bound = prob.bound,
         initial.CIFs = initial.CIFs
       )
     setInitialCIFs <- function(new.CIFs) initial.CIFs <<- new.CIFs
@@ -576,19 +620,28 @@ polyreg <- function(
     }
   }
 
-  out_calculateCov <- switch(
+  sensitivity <- NULL
+  multilevel_binomial <- outcome.type == "binomial" && estimand$exposure.levels > 2L
+  if (report_var && (!is.null(ipcw) || multilevel_binomial)) {
+    obj$setInitialCIFs(out_getResults$potential.CIFs)
+    # Resolve potential risks accurately enough for the finite differences.
+    derivative_solver <- optim.method
+    derivative_solver$gradient.tolerance <- 1e-10
+    derivative_solver$optim.parameter8 <- min(optim.method$optim.parameter8, 1e-10)
+    sensitivity <- polyreg_score_sensitivity(
+      function(p) obj$estimating_equation_i(p, solver = derivative_solver), current_params
+    )
+  }
+  out_calculateCov <- if (report_var) switch(
     outcome.type,
-    "competing-risk"   = calculateCov(out_getResults, estimand, boot.method, prob.bound),
-    "survival"         = calculateCovSurvival(out_getResults, estimand, boot.method, prob.bound),
-    "binomial"         = calculateCovSurvival(out_getResults, estimand, boot.method, prob.bound),
+    "competing-risk"   = calculateCov(out_getResults, estimand, boot.method, ipcw, sensitivity),
+    "survival"         = calculateCovSurvival(out_getResults, estimand, boot.method, prob.bound, ipcw, sensitivity),
+    "binomial"         = calculateCovSurvival(out_getResults, estimand, boot.method, prob.bound,
+      sensitivity = sensitivity),
     "proportional-survival"     = NULL,
     "proportional-competing-risk"= NULL,
     stop(sprintf("Unsupported outcome.type for covariance: %s", outcome.type))
   )
-
-  if (!report_var) {
-    out_calculateCov <- NULL
-  }
 
   out_normalizeEstimate <- reg_normalize_estimate(
     outcome.type               = outcome.type,
@@ -608,55 +661,34 @@ polyreg <- function(
   #######################################################################################################
   # 6. Calculating bootstrap confidence interval (functions: boot, solveEstimatingEquation)
   #######################################################################################################
-  if (isTRUE(report.boot.conf) && (outcome.type=="proportional-survival" || outcome.type=="proportional-competing-risk")) {
+  out_bootstrap <- NULL
+  if (isTRUE(report.boot.conf) &&
+      outcome.type %in% c("proportional-survival", "proportional-competing-risk")) {
     set.seed(boot.seed)
-    boot.coef     <- rep(NA,2)
-    boot.coef_se  <- rep(NA,2)
-    boot.p_value  <- rep(NA,2)
-    boot.conf_low <- rep(NA,2)
-    boot.conf_high<- rep(NA,2)
-
-    if (outcome.type=="proportional-competing-risk") {
-      index_coef    <- c(length(estimand$time.point) + 1, 2*length(estimand$time.point) + 2)
-    } else if (outcome.type=="proportional-survival") {
-      index_coef    <- c(length(estimand$time.point) + 1)
-    }
+    layout <- reg_proportional_index(estimand)
+    index <- if (report.nuisance.parameter) seq_len(layout$block) else layout$exposure
+    if (outcome.type == "proportional-competing-risk") index <- c(index, index + layout$block)
+    failed <- rep(NA_real_, length(alpha_beta_estimated))
+    original_rows <- seq_len(nrow(normalized_data))
 
     boot_function <- function(data, indices) {
-      res <- try({
-        coef <- solveEstimatingEquation(nuisance.model=nuisance.model, exposure=exposure, strata=strata, normalized_data = data[indices, , drop = FALSE], outcome.type=outcome.type, estimand=estimand, optim.method=optim.method, out_normalizeCovariate=out_normalizeCovariate, prob.bound=prob.bound, alpha_beta_0=alpha_beta_0)
-      }, silent = TRUE)
-      if (inherits(res, "try-error")) NA_real_ else as.numeric(res)
+      if (identical(indices, original_rows)) return(alpha_beta_estimated)
+      sample_data <- data[indices, , drop = FALSE]
+      if (length(unique(sample_data[[exposure]])) < estimand$exposure.levels) return(failed)
+      result <- tryCatch(solveEstimatingEquation(
+        nuisance.model = nuisance.model, exposure = exposure, strata = strata,
+        normalized_data = sample_data, outcome.type = outcome.type, estimand = estimand,
+        optim.method = optim.method, prob.bound = prob.bound, alpha_beta_0 = alpha_beta_estimated
+      ), error = function(e) failed)
+      if (length(result) != length(failed) || any(!is.finite(result))) return(failed)
+      as.numeric(result)
     }
 
     out_boot <- boot(normalized_data, boot_function, R = boot.replications)
-    for (j in index_coef) {
-      if (isTRUE(boot.bca)) {
-        out_boot.ci       <- boot.ci(out_boot, conf = conf.int, index = index_coef[j], type = c("norm", "bca"))
-        boot.coef[j]      <- (out_boot.ci$normal[2] + out_boot.ci$normal[3])/2
-        ci_range          <- out_boot.ci$normal[3] - out_boot.ci$normal[2]
-        boot.coef_se[j]   <- ci_range/2/qnorm(1 - (1-conf.int)/2)
-        boot.p_value[j]   <- 2 * (1 - pnorm(abs(boot.coef[j]) / boot.coef_se[j]))
-        boot.conf_low[j]  <- out_boot.ci$bca[4]
-        boot.conf_high[j] <- out_boot.ci$bca[5]
-      } else {
-        ok      <- apply(out_boot$t, 1, function(x) all(is.finite(x)))
-        t_ok    <- out_boot$t[ok, , drop = FALSE]
-        mean_ok <- colMeans(t_ok)
-        sd_ok   <- apply(t_ok, 2, sd)
-        ci_ok   <- cbind(
-          lower = mean_ok - qnorm(0.975) * sd_ok,
-          upper = mean_ok + qnorm(0.975) * sd_ok
-        )
-        boot.coef[j]      <- mean_ok[j]
-        boot.coef_se[j]   <- sd_ok[j]
-        boot.p_value[j]   <- 2 * (1 - pnorm(abs(boot.coef[j]) / boot.coef_se[j]))
-        boot.conf_low[j]  <- ci_ok[j,1]
-        boot.conf_high[j] <- ci_ok[j,2]
-      }
-    }
-    out_bootstrap <- list(boot.coef=boot.coef, boot.coef_se=boot.coef_se, boot.p_value=boot.p_value, boot.conf_low=boot.conf_low, boot.conf_high=boot.conf_high)
-  } else {out_bootstrap <- NULL}
+    bootstrap <- reg_summarize_bootstrap(out_boot, index, conf.int, boot.bca)
+    out_bootstrap <- bootstrap$summary
+    cov_bootstrap <- bootstrap$covariance
+  }
 
   #######################################################################################################
   # 7. Output (functions: reportSurvival, reportCOMPETING-RISK, reportPrediction)

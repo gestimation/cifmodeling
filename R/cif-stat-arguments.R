@@ -15,6 +15,7 @@
 #' If `NULL` (default), the function automatically infers the outcome type from the data:
 #' if the event variable has more than two unique levels, `"competing-risk"` is assumed;
 #' otherwise, `"survival"` is used. You can also use abbreviations such as `"S"` or `"C"`.
+#' An explicit `"competing-risk"` remains in effect when a cause is absent in the analysis data.
 #' Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding.
 #' @param code.event1 Integer code of the event of interest (default `1`).
 #' @param code.event2 Integer code of the competing risk (default `2`).

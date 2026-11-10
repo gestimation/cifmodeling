@@ -173,22 +173,17 @@ util_get_surv <- function(
   predicted.surv
 }
 
-util_validate_event_codes <- function(
-    code.event1,
-    code.event2,
-    code.censoring,
-    outcome.type = NULL
-) {
-  codes <- c(code.event1, code.event2, code.censoring)
-  if (!is.numeric(codes) || length(codes) != 3L || anyNA(codes) ||
-      any(!is.finite(codes)) || any(codes < 0) || any(codes != floor(codes)) ||
-      anyDuplicated(codes)) {
-    stop(
-      "`code.event1`, `code.event2`, and `code.censoring` must be distinct non-negative integers.",
-      call. = FALSE
-    )
+util_validate_event_codes <- function(...) {
+  codes <- list(...)
+  valid <- vapply(codes, function(code) {
+    is.numeric(code) && !is.complex(code) && length(code) == 1L && is.null(dim(code)) &&
+      is.finite(code) && code >= 0 && code <= .Machine$integer.max && code == floor(code)
+  }, logical(1L))
+  if (!all(valid) || anyDuplicated(unlist(codes, use.names = FALSE))) {
+    stop(paste0(paste0("`", names(codes), "`", collapse = ", "),
+      " must be distinct non-negative integers."), call. = FALSE)
   }
-  as.integer(codes)
+  vapply(codes, as.integer, integer(1L))
 }
 
 # Shared response/data preparation without interpreting the RHS as strata.
@@ -203,12 +198,8 @@ cif_prepare_event <- function(formula, data, other.variables.analyzed = NULL,
     subset.condition, stats::na.pass, return.info = TRUE)
   env <- new.env(parent = environment(formula))
   # This avoids changing a global option and supports more than two causes.
-  constructor.env <- new.env(parent = environment(Event))
-  constructor.env$.constructor <- Event
-  constructor.env$.permitted <- allowed
-  constructor <- function(time, event, allowed = .permitted)
-    .constructor(time, event, allowed = allowed)
-  environment(constructor) <- constructor.env
+  constructor <- Event
+  formals(constructor)["allowed"] <- list(allowed)
   env$Event <- constructor
   environment(formula) <- env
   terms <- stats::terms(formula, specials = c("strata", "offset", "cluster"),
@@ -216,6 +207,7 @@ cif_prepare_event <- function(formula, data, other.variables.analyzed = NULL,
   frame <- stats::model.frame(terms, prep$data, na.action = stats::na.pass)
   response <- stats::model.response(frame)
   if (!inherits(response, c("Event", "Surv"))) .err("surv_expected")
+  util_check_surv_type(response)
   check <- frame
   for (i in seq_along(other.variables.analyzed)) {
     nm <- paste0(".cif_extra_", i)
@@ -265,12 +257,11 @@ cif_prepare_input <- function(
   codes <- util_validate_event_codes(
     code.event1 = code.event1,
     code.event2 = code.event2,
-    code.censoring = code.censoring,
-    outcome.type = outcome.type
+    code.censoring = code.censoring
   )
-  code.event1 <- codes[1L]
-  code.event2 <- codes[2L]
-  code.censoring <- codes[3L]
+  code.event1 <- codes[["code.event1"]]
+  code.event2 <- codes[["code.event2"]]
+  code.censoring <- codes[["code.censoring"]]
   na.action <- util_normalize_na_action(na.action)
 
   data_work <- data

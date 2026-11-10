@@ -1,6 +1,7 @@
-calculatePotentialCIFs <- function(alpha_beta_tmp, x_a, x_l, offset, epsilon, estimand, optim.method, prob.bound, initial.CIFs = NULL) {
+calculatePotentialCIFs <- function(alpha_beta_tmp, x_a, x_l, offset, event1, event2,
+                                   estimand, optim.method, prob.bound, initial.CIFs = NULL) {
   K <- estimand$exposure.levels
-  n  <- length(epsilon)
+  n  <- nrow(x_l)
   iv <- estimand$index.vector
 
   alpha_1    <- alpha_beta_tmp[seq_len(iv[1])]
@@ -10,13 +11,9 @@ calculatePotentialCIFs <- function(alpha_beta_tmp, x_a, x_l, offset, epsilon, es
   alpha_tmp_1 <- as.numeric(x_l %*% matrix(alpha_1, ncol = 1) + offset)
   alpha_tmp_2 <- as.numeric(x_l %*% matrix(alpha_2, ncol = 1) + offset)
 
-  tmp1 <- sum(epsilon == estimand$code.event1) / n + prob.bound
-  CIF1 <- rep(tmp1, K)
-  tmp2 <- sum(epsilon == estimand$code.event2) / n + prob.bound
-  CIF2 <- rep(tmp2, K)
-  p0 <- c(CIF1,CIF2)
-  p0     <- clampP(p0, prob.bound)
-  log_p0 <- log(p0)
+  # Leave positive probability for the event-free state at the starting point.
+  p0 <- (1 - 3 * prob.bound) * c(mean(event1), mean(event2)) + prob.bound
+  log_p0 <- log(rep(p0, each = K))
 
   keys <- apply(
     cbind(alpha_tmp_1, alpha_tmp_2),
@@ -168,7 +165,10 @@ calculatePotentialRisk_LM <- function(alpha_beta, x_a, x_l, offset, estimand, op
       init_vec <- if (!is.null(risk0)) {
         as.numeric(risk0[i, , drop = FALSE])
       } else {
-        base_pref <- clampP(stats::plogis(alpha_tmp_1[i]), prob.bound)
+        base_pref <- clampP(stats::plogis(alpha_tmp_1[i] / K), prob.bound)
+        if (estimand$effect.measure1 == "RR") {
+          base_pref <- min(base_pref, (1 - prob.bound) * exp(-max(0, beta_tmp_1)))
+        }
         make_initial_risk(base_pref, beta_tmp_1, estimand$effect.measure1)
       }
       log_risk0 <- log(clampP(init_vec, prob.bound))
@@ -327,7 +327,8 @@ LevenbergMarquardt <- function(start,
                                do_linesearch = TRUE,
                                ls_c      = 1e-4,
                                ls_shrink = 0.5,
-                               verbose   = FALSE) {
+                               verbose   = FALSE,
+                               gtol      = 1e-6) {
   lp   <- as.numeric(start)
   if (!all(is.finite(lp))) {
     stop("All starting values must be finite.")
@@ -367,7 +368,7 @@ LevenbergMarquardt <- function(start,
         termination <- "non-finite gradient"
         break
     }
-    if (grad_inf < 1e-6) {
+    if (grad_inf < gtol) {
         converged <- TRUE
         termination <- "gradient tolerance satisfied"
         break
@@ -484,14 +485,15 @@ callLevenbergMarquardt <- function(log_CIFs0, alpha1, beta1, alpha2, beta2, opti
     do_linesearch = TRUE,
     ls_c          = 1e-4,
     ls_shrink     = 0.5,
-    verbose       = FALSE
+    verbose       = FALSE,
+    gtol          = optim.method$gradient.tolerance %||% 1e-6
   )
   return(out_LevenbergMarquardt)
 }
 
 residuals_risk <- function(log_risk, alpha1, beta1, estimand, prob.bound) {
   K <- estimand$exposure.levels
-  clog_risk <- clampLogP(as.numeric(log_risk))
+  clog_risk <- clampLogP(as.numeric(log_risk), prob.bound)
   if (length(clog_risk) != K) stop("log_risk length must equal exposure levels.")
 
   p1 <- exp(clog_risk)
@@ -500,11 +502,8 @@ residuals_risk <- function(log_risk, alpha1, beta1, estimand, prob.bound) {
 
   if (K < 2) stop("exposure.levels must be at least 2.")
 
-  r <- numeric(2 * (K - 1))
-  for (k in 2:K) {
-    idx <- k - 1
-    r[idx] <- alpha1 - clog_risk[1] - clog_risk[k] + logp0[1] + logp0[k]
-  }
+  r <- numeric(K)
+  r[1L] <- alpha1 - sum(clog_risk - logp0)
 
   calculateResidualBeta <- function(effect.measure, pref, pL, clogpref, clogpL, beta) {
     if (length(beta) != length(pL) || length(beta) != length(clogpL)) {
@@ -521,14 +520,13 @@ residuals_risk <- function(log_risk, alpha1, beta1, estimand, prob.bound) {
     } else stop("effect.measure must be RR, OR, or SHR.")
   }
 
-  beta_idx <- (K - 1) + seq_len(K - 1)
-  r[beta_idx] <- calculateResidualBeta(estimand$effect.measure1, p1[1], p1[2:K], clog_risk[1], clog_risk[2:K], beta1)
+  r[2:K] <- calculateResidualBeta(estimand$effect.measure1, p1[1], p1[2:K], clog_risk[1], clog_risk[2:K], beta1)
   r
 }
 
 jacobian_risk <- function(log_risk, alpha1, beta1, estimand, prob.bound) {
   K <- estimand$exposure.levels
-  clog_risk <- clampLogP(as.numeric(log_risk))
+  clog_risk <- clampLogP(as.numeric(log_risk), prob.bound)
   if (length(clog_risk) != K) stop("log_risk length must equal exposure levels.")
 
   p1 <- exp(clog_risk)
@@ -538,19 +536,14 @@ jacobian_risk <- function(log_risk, alpha1, beta1, estimand, prob.bound) {
 
   if (K < 2) stop("exposure.levels must be at least 2.")
 
-  J <- matrix(0.0, nrow = 2 * (K - 1), ncol = K)
-  for (k in 2:K) {
-    r1 <- k - 1
-    J[r1, 1] <- -1 + dlogrem_dlp[1]
-    J[r1, k] <- -1 + dlogrem_dlp[k]
-  }
+  J <- matrix(0.0, nrow = K, ncol = K)
+  J[1L, ] <- -1 + dlogrem_dlp
 
-  row_beta_start <- K
   idx_L <- 2:K
   pL <- p1[2:K]
 
   for (k in seq_along(idx_L)) {
-    row <- row_beta_start + k - 1
+    row <- k + 1L
     idx <- idx_L[k]
     if (estimand$effect.measure1 == "RR") {
       J[row, 1] <- 1

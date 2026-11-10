@@ -47,7 +47,8 @@ Rcpp::List calculateAJ_Rcpp(
     std::string conf_type = "arcsin",
     double conf_int = 0.95,
     bool return_if = true,
-    double prob_bound = 0.00001
+    double prob_bound = 0.00001,
+    bool competing_risk = false
 
 ){
   const int N = t.size();
@@ -85,7 +86,7 @@ Rcpp::List calculateAJ_Rcpp(
     return false;
   };
   const bool has_cause1    = any_of_int(epsilon, [](int e){ return e==1; });
-  const bool has_competing = any_of_int(epsilon, [](int e){ return e>=2; });
+  const bool has_competing = competing_risk || any_of_int(epsilon, [](int e){ return e>=2; });
 
   // --- ここから整理版 ---
   // SE方式としてIFを使うか（= error="if" の意味）
@@ -325,14 +326,12 @@ Rcpp::List calculateAJ_Rcpp(
       }
     }
 
-    std::vector<int> ev_any_idx, ev_c1_idx;
-    ev_any_idx.reserve(Uall); ev_c1_idx.reserve(Uall);
+    std::vector<int> ev_any_idx;
+    ev_any_idx.reserve(Uall);
     for (int j=0;j<Uall;++j){
       if (w_event_all[j]  > 0.0) ev_any_idx.push_back(j);
-      if (need_any_cif && w_event1_all[j] > 0.0) ev_c1_idx.push_back(j);
     }
     const int M_any = (int)ev_any_idx.size();
-    const int M_c1  = (need_any_cif ? (int)ev_c1_idx.size() : 0);
 
     std::vector<double> dl_any(M_any,0.0), dl_c1, aj1_any;
     if (need_any_cif){
@@ -344,11 +343,9 @@ Rcpp::List calculateAJ_Rcpp(
         dl_any[m] = (complete_exit && j == last_positive_group) ? 1.0 : dj * invY_all[j];
       }
 
-      std::vector<char> is_c1_at_all(Uall, 0);
-      for (int u=0; u<M_c1; ++u) is_c1_at_all[ ev_c1_idx[u] ] = 1;
       for (int m=0; m<M_any; ++m){
         int j = ev_any_idx[m];
-        dl_c1[m] = is_c1_at_all[j] ? (w_event1_all[j] * invY_all[j]) : 0.0;
+        dl_c1[m] = w_event1_all[j] * invY_all[j];
         if (complete_exit && j == last_positive_group && !last_positive_competing)
           dl_c1[m] = 1.0;
       }
@@ -492,119 +489,38 @@ Rcpp::List calculateAJ_Rcpp(
     }
     IF_AJ_output[kg] = (want_if_output && compute_if) ? IF_AJ_all : Rcpp::NumericMatrix(0,0);
 
-    std::vector<double> se_cif_aalen(Uall, 0.0), se_cif_delta(Uall, 0.0);
-
+    std::vector<double> SE_aj = use_if_se ? se_cif_if : SE_all;
     if (error_aalen || error_delta) {
-      std::vector<double> var_aalen, var_delta;
-      if (error_aalen) var_aalen.assign(M_c1, 0.0);
-      if (error_delta) var_delta.assign(M_c1, 0.0);
-
-      std::vector<double> c1_n1(M_c1), c1_n2(M_c1), c1_Y(M_c1), c1_F(M_c1);
-      for (int u = 0; u < M_c1; ++u) {
-        const int j = ev_c1_idx[u];
-        c1_n1[u] = w_event1_all[j];
-        c1_n2[u] = w_event_all[j] - w_event1_all[j];
-        c1_Y [u] = Y_all[j];
-        const int cnt_any_before = all2any[j];
-        c1_F[u] = (cnt_any_before > 0 ? aj1_any[cnt_any_before - 1] : 0.0);
-      }
-
-      if (error_aalen) {
-        double first_cum=0.0, second_cum=0.0, third_cum=0.0;
-        for (int i = 0; i < M_c1; ++i) {
-          const int j = ev_c1_idx[i];
-          const int idx_count = std::max(0, all2any[j] - 1);
-          const int idx_cap   = std::min(M_c1 - 1, idx_count);
-
-          const double Spre  = (idx_count == 0 ? 1.0 : S_any[idx_count - 1]);
-          const double F_idx = c1_F[idx_cap];
-          const double Fi    = c1_F[i];
-
-          const double n1 = c1_n1[i], n2 = c1_n2[i], Y = c1_Y[i];
-          const double Ym1   = std::max(Y - 1.0, 1e-12);
-          const double Ymn12 = std::max(Y - n1 - n2, 1e-12);
-          const double Y2    = std::max(Y * Y, 1e-12);
-
-          const double inv_Ym1     = 1.0 / Ym1;
-          const double inv_Ymn12   = 1.0 / Ymn12;
-          const double inv_Y2      = 1.0 / Y2;
-          const double inv_Y       = 1.0 / std::max(Y, 1e-12);
-
-          first_cum  += ((F_idx-Fi)*(F_idx-Fi) * (n1+n2)) * (inv_Ym1 * inv_Ymn12);
-          second_cum += ((Spre*Spre) * n1 * (Y-n1))       * (inv_Y2  * inv_Ym1   );
-          third_cum  += ((F_idx-Fi)*Spre * n1*(Y-n1))     * (inv_Y   * inv_Ymn12 * inv_Ym1);
-          var_aalen[i] = first_cum + second_cum - 2.0*third_cum;
-        }
-      }
-
-      if (error_delta) {
-        double first_cum=0.0, second_cum=0.0, third_cum=0.0;
-        for (int i = 0; i < M_c1; ++i) {
-          const int j = ev_c1_idx[i];
-          const int idx_count = std::max(0, all2any[j] - 1);
-          const int idx_cap   = std::min(M_c1 - 1, idx_count);
-
-          const double Spre  = (idx_count == 0 ? 1.0 : S_any[idx_count - 1]);
-          const double F_idx = c1_F[idx_cap];
-          const double Fi    = c1_F[i];
-
-          const double n1 = c1_n1[i], n2 = c1_n2[i], Y = c1_Y[i];
-          const double Ymn12 = std::max(Y - n1 - n2, 1e-12);
-          const double Y2    = std::max(Y * Y, 1e-12);
-          const double Y3    = std::max(Y * Y * Y, 1e-12);
-
-          const double inv_Y     = 1.0 / std::max(Y, 1e-12);
-          const double inv_Ymn12 = 1.0 / Ymn12;
-          const double inv_Y2    = 1.0 / Y2;
-          const double inv_Y3    = 1.0 / Y3;
-
-          first_cum  += ((F_idx-Fi)*(F_idx-Fi) * (n1+n2)) * (inv_Y * inv_Ymn12);
-          second_cum += ((Spre*Spre) * n1 * (Y-n1))       * (inv_Y3);
-          third_cum  += ((F_idx-Fi)*Spre * n1)            * (inv_Y2);
-          var_delta[i] = first_cum + second_cum - 2.0*third_cum;
-        }
-      }
-
-      std::vector<int> all2c1(Uall, 0);
-      {
-        int c_c1 = 0;
-        for (int j = 0; j < Uall; ++j) {
-          if (w_event1_all[j] > 0.0) ++c_c1;
-          all2c1[j] = c_c1;
-        }
-      }
-
+      // For a new CIF increment x, each previous difference F(t)-F(t_j)
+      // increases by x. Keep the quadratic and linear sums in that difference.
+      long double quadratic = 0.0L, linear = 0.0L, variance = 0.0L, scale = 0.0L;
+      double se = 0.0;
       for (int j = 0; j < Uall; ++j) {
-        int c = all2c1[j];
-        if (c == 0) {
-          if (error_aalen && M_c1 > 0) se_cif_aalen[j] = std::sqrt(std::max(0.0, var_aalen[0]));
-          if (error_delta && M_c1 > 0) se_cif_delta[j] = std::sqrt(std::max(0.0, var_delta[0]));
-        } else {
-          int use = std::min(c, M_c1);
-          if (error_aalen) se_cif_aalen[j] = std::sqrt(std::max(0.0, var_aalen[use - 1]));
-          if (error_delta) se_cif_delta[j] = std::sqrt(std::max(0.0, var_delta[use - 1]));
+        const double d = w_event_all[j];
+        if (d > 0.0) {
+          const int m = all2any[j] - 1;
+          const long double S = m > 0 ? S_any[m - 1] : 1.0;
+          const long double Y = Y_all[j], d1 = w_event1_all[j];
+          const long double x = S * d1 / Y;
+          const long double remaining = Y - d;
+          const long double divisor = error_aalen ? Y - 1.0L : Y;
+          const long double direct = divisor > 0.0L ? x * (S - x) / divisor : 0.0L;
+          const long double change = x * (2.0L * linear + x * quadratic);
+          variance += change + direct;
+          scale += std::abs(change) + direct;
+          linear += x * quadratic;
+          // After a complete exit there can be no subsequent CIF increments.
+          if (remaining > 0.0L && divisor > 0.0L) {
+            quadratic += d / (divisor * remaining);
+            linear -= error_aalen ? x * (Y - d1) / (divisor * remaining) : x / Y;
+          }
+          const long double tol = 64.0L * std::numeric_limits<double>::epsilon() * scale;
+          se = variance < -tol ? NA_REAL : std::sqrt(std::max(0.0L, variance));
+          if (unit_cif && j == last_positive_group) se = 0.0;
         }
+        SE_aj[j] = se;
       }
     }
-
-    if (Uall >= 2) {
-      if (error_aalen) {
-        for (int j = 0; j < Uall - 1; ++j) {
-          se_cif_aalen[j] = se_cif_aalen[j + 1];
-        }
-      }
-      if (error_delta) {
-        for (int j = 0; j < Uall - 1; ++j) {
-          se_cif_delta[j] = se_cif_delta[j + 1];
-        }
-      }
-    }
-
-    std::vector<double> SE_aj(Uall, 0.0);
-    if      (error_aalen) SE_aj = se_cif_aalen;
-    else if (error_delta) SE_aj = se_cif_delta;
-    else if (use_if_se)   SE_aj = se_cif_if;
-    else                  SE_aj = SE_all;
 
     std::vector<double> high_all(Uall, NA_REAL), low_all(Uall, NA_REAL);
     if (canon_conf_type != "none"){

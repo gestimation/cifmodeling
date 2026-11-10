@@ -44,11 +44,31 @@ test_that("polyreg accepts broom confidence arguments without replacing stored l
   expect_error(generics::tidy(f, conf.int = NA), "conf.int")
   expect_error(generics::tidy(f, exponentiate = 1), "exponentiate")
   expect_error(generics::tidy(f, conf.level = 1), "conf.level")
+  expect_error(generics::tidy(f, vcov = f$vcov), "use variance instead")
+  expect_error(generics::tidy(f, coef_rename = TRUE), "coef_rename")
   f$outcome.type <- "proportional-competing-risk"
   f$boot.method <- list(report.sandwich.conf = FALSE, report.boot.conf = TRUE, boot.bca = TRUE)
   f$vcov_bootstrap <- f$vcov
   expect_equal(generics::tidy(f, conf.int = TRUE)$conf.low, stored$conf.low, tolerance = 0)
   expect_error(generics::tidy(f, conf.level = .8), "BCa")
+})
+
+test_that("msummary displays exponentiated polyreg confidence intervals directly", {
+  skip_if_not_installed("modelsummary")
+  skip_if_not_installed("broom")
+  fit <- reporting_polyreg_fixture()
+
+  for (level in c(.95, fit$conf.int)) {
+    expect_silent(tab <- modelsummary::msummary(
+      list(Fit = fit), exponentiate = TRUE, statistic = "conf.int",
+      conf_level = level, fmt = 3, output = "data.frame"
+    ))
+    td <- generics::tidy(fit, conf.level = level, exponentiate = TRUE)
+    expect_equal(tab$Fit[tab$statistic == "estimate"], sprintf("%.3f", td$estimate))
+    expect_equal(tab$Fit[tab$statistic == "conf.int"],
+      sprintf("[%.3f, %.3f]", td$conf.low, td$conf.high))
+    expect_true(any(tab$part == "gof"))
+  }
 })
 
 test_that("omitting BCa intervals does not reconstruct them or block SE selection", {

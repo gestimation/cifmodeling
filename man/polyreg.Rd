@@ -51,7 +51,8 @@ polyreg(
 \arguments{
 \item{nuisance.model}{A \code{formula} describing the outcome and
 nuisance covariates, excluding the exposure of interest.
-The LHS must be \code{Event(time, status)} or \code{survival::Surv(time, status)}.}
+The LHS must be \code{Event(time, status)} or \code{survival::Surv(time, status)}.
+\code{Surv()} responses must be right-censored.}
 
 \item{exposure}{A character string giving the name of the categorical exposure
 variable in \code{data}.}
@@ -69,9 +70,11 @@ covariates referenced by \code{nuisance.model}.}
 
 \item{code.event1}{Integer code of the event of interest (default \code{1}).}
 
-\item{code.event2}{Integer code of the competing event (default \code{2}).}
+\item{code.event2}{Integer code of the competing event (default \code{2}).
+Used for competing-risk models and when inferring the outcome type.}
 
-\item{code.censoring}{Integer code of censoring (default \code{0}).}
+\item{code.censoring}{Integer code of censoring (default \code{0}).
+The event codes used by the model must be distinct non-negative integers.}
 
 \item{code.exposure.ref}{Integer code identifying the reference exposure
 category (default \code{0}).}
@@ -91,6 +94,8 @@ outcomes.}
 \item{outcome.type}{Character string selecting the outcome type. Valid values are
 \code{"competing-risk"}, \code{"survival"}, \code{"binomial"}, \code{"proportional-survival"},
 and \code{"proportional-competing-risk"}. The default is \code{"competing-risk"}.
+Fitting either competing-risk model requires observations of both event types.
+For \code{"competing-risk"}, both types must be observed by \code{time.point}.
 If explicitly set to \code{NULL}, \code{polyreg()} attempts to infer the outcome type from the data: if the
 event variable has more than two distinct levels, \code{"competing-risk"}
 is assumed; otherwise, \code{"survival"} is assumed. Abbreviations such as
@@ -110,7 +115,9 @@ CIs based on sandwich variance are computed.
 When \code{FALSE}, they are omitted (default \code{TRUE}).
 This CI is default for time-point models
 (\code{"outcome.type=competing-risk"}, \code{"survival"} or \code{"binomial"}) and
-is not available otherwise.}
+is not available otherwise.
+For time-point survival and competing-risk models, the variance accounts
+for estimation of the censoring distribution within each supplied stratum.}
 
 \item{report.boot.conf}{Logical or \code{NULL}. When \code{TRUE}, bootstrap
 CIs are computed. When \code{FALSE}, they are omitted.
@@ -120,7 +127,10 @@ This CI is default for proportional models
 
 \item{boot.bca}{Logical indicating the bootstrap CI method.
 Use \code{TRUE} for bias-corrected and accelerated intervals or \code{FALSE}
-for the normal approximation (default \code{FALSE}).}
+for the normal approximation (default \code{FALSE}).
+For proportional models, normal intervals are centered on the mean
+bootstrap coefficient and use the requested \code{conf.int}. BCa limits
+are computed separately for each reported coefficient.}
 
 \item{boot.multiplier}{Character string specifying the wild bootstrap weight distribution.
 One of \code{"rademacher"}, \code{"mammen"} or \code{"gaussian"} (default \code{"rademacher"}).}
@@ -228,9 +238,11 @@ multiplicative effects such as \strong{risk ratios}, \strong{odds ratios}, or
 competing events sum to one. This is achieved through
 \strong{reparameterization using polytomous log odds products}, which fits so-called
 effect-measure models and nuisance models on multiple competing events
-simultaneously. Additionally, \code{polyreg()} supports direct binomial regression
+simultaneously (Tanaka and Scheike 2026). Additionally, \code{polyreg()} supports direct binomial regression
 for survival outcomes and the Richardson model for binomial outcomes,
 both of which use log odds products.
+With more than two exposure levels, the single-outcome model uses the
+generalized log odds product, the sum of log odds across exposure levels.
 }
 
 \subsection{Key arguments}{
@@ -394,6 +406,11 @@ if (requireNamespace("gtsummary", quietly = TRUE) &&
   gtsummary::tbl_regression(output, exponentiate = TRUE, event = "event2")
 }
 
+}
+\references{
+Tanaka S, Scheike TH. Estimating effects on cumulative incidence probabilities
+by direct polytomous regression and polytomous log-odds product.
+\emph{Biometrics}. 2026, 82(3), ujag160. \doi{10.1093/biomtc/ujag160}
 }
 \seealso{
 \code{\link[=cifcurve]{cifcurve()}} for KM/AJ estimators; \code{\link[=cifplot]{cifplot()}} for display of a CIF; \code{\link[=cifpanel]{cifpanel()}} for display of multiple CIFs; \link[ggsurvfit:ggsurvfit]{ggsurvfit::ggsurvfit}, \link[patchwork:patchwork-package]{patchwork::patchwork} and \link[modelsummary:modelsummary]{modelsummary::modelsummary} for display helpers.

@@ -1,3 +1,52 @@
+test_that("one-sided tests use each stratum's positive-weight follow-up", {
+  d <- data.frame(time = c(1, 2, 3, 1, 2, 5, 7),
+    status = c(1, 2, 0, 0, 1, 2, 0), group = rep(c("a", "b"), c(3, 4)))
+  fit_at <- function(data, time, engine = "calculateAJ_Rcpp", weights = NULL) {
+    capture.output(fit <- cifcurve(Event(time, status) ~ group, data,
+      weights = weights, outcome.type = "competing-risk", engine = engine,
+      time.point = time, null.hypothesis = c("group=b" = .4, "group=a" = .3),
+      conf.type = "plain"))
+    fit
+  }
+  for (engine in c("calculateAJ_Rcpp", "calculateKM")) {
+    at_end <- fit_at(d, 3, engine)$one.sided.p$table
+    expect_true(all(is.finite(at_end$p.value)))
+    fit <- fit_at(d, 5, engine)
+    at_five <- fit$one.sided.p$table
+    expect_identical(at_five$test.status, c("outside_observed_followup", "ok"))
+    expect_equal(at_five$null.hypothesis, c(.3, .4))
+    expect_true(is.na(at_five$p.value[1]))
+    expect_equal(at_five$p.value[2], pnorm(at_five$z[2], lower.tail = FALSE))
+    expect_true(all(is.na(fit_at(d, 8, engine)$one.sided.p$table$p.value)))
+    at_five_ci <- summary(fit, times = 5, extend = TRUE)
+    expect_identical(at_five_ci$conf.status, at_five$test.status)
+    expect_true(is.na(at_five_ci$lower[1]))
+  }
+  extended <- rbind(d, data.frame(time = 8, status = 0, group = "a"))
+  fit <- fit_at(extended, 5, weights = c(rep(1, nrow(d)), 0))
+  expect_identical(fit$one.sided.p$table$test.status, c("outside_observed_followup", "ok"))
+  expect_identical(fit$conf.status[fit$time == 8], "outside_observed_followup")
+  expect_true(is.na(fit$upper[fit$time == 8]))
+  expect_error(fit_at(d, Inf), "finite, non-negative")
+})
+
+test_that("the published Aalen variance can be unavailable at large mixed ties", {
+  d <- data.frame(time = c(rep(1, 9), 2), status = c(rep(1, 5), rep(2, 4), 1))
+  for (engine in c("calculateAJ_Rcpp", "calculateKM")) {
+    aalen <- cifcurve(Event(time, status) ~ 1, d, outcome.type = "competing-risk",
+      error = "aalen", engine = engine, conf.type = "plain")
+    expect_equal(1 - aalen$surv, c(.5, .6))
+    expect_equal(aalen$std.err[1]^2, 25 / (100 * 9))
+    expect_true(is.na(aalen$std.err[2]))
+    expect_true(is.na(aalen$lower[2]) && is.na(aalen$upper[2]))
+    expect_identical(aalen$conf.status[2], "invalid_variance")
+    delta <- cifcurve(Event(time, status) ~ 1, d, outcome.type = "competing-risk",
+      error = "delta", engine = engine, conf.type = "plain")
+    expect_equal(delta$std.err^2, c(.025, .024))
+    expect_equal(delta$std.err.cif, delta$std.err)
+  }
+})
+
 test_that("cifcurve computes one-sided p-values by strata", {
   dat <- data.frame(
     time = c(
@@ -629,9 +678,8 @@ test_that("cifcurve one-sided p uses 1-CIF scale for competing-risk log-log test
 
 test_that("cifcurve() produced the same estimates as cif() in mets in competing risks data", {
   testthat::skip_if_not_installed("mets")
-  library(mets)
   data(diabetes.complications)
-  cif_fit <- mets::cif(Event(t,epsilon) ~ +1, data=diabetes.complications, cause=1)
+  cif_fit <- mets::cif(mets::Event(t,epsilon) ~ +1, data=diabetes.complications, cause=1)
   surv_fit <- cifcurve(Event(t, epsilon) ~ +1, data = diabetes.complications, conf.type = "none", outcome.type = "C", error="delta")
   index<-c(1,3,5,6,8,10,12,13,15,16,17,18)
   expected <- round(1-surv_fit$surv[index],digit=5)
@@ -644,9 +692,7 @@ test_that("cifcurve yields the same outputs as cif of mets", {
   skip_if_not_installed("mets")
   skip_if_not_installed("Rcpp")
   testdata <- createTestData1(20, 1, first_zero=TRUE, last_zero=TRUE, subset_present=FALSE, logical_strata=TRUE, na_strata=FALSE)
-  library(mets)
-  library(Rcpp)
-  e <- cif(Event(t,epsilon)~1, data=testdata, cause=1)
+  e <- mets::cif(mets::Event(t,epsilon)~1, data=testdata, cause=1)
   e_surv <- 1-e$mu
   e_time <- e$times
   expected <- as.numeric(c(e_surv[c(1,2,4,6,8,10,12,14)], e_time[c(1,2,4,6,8,10,12,14)]))
@@ -661,8 +707,6 @@ test_that("cifcurve by strata yields the same outputs as subsetting", {
   skip_if_not_installed("Rcpp")
   testdata <- createTestData1(20, 1, first_zero=TRUE, last_zero=TRUE, subset_present=FALSE, logical_strata=TRUE, na_strata=FALSE)
   testdata_f <- testdata[testdata$strata==FALSE,]
-  library(Rcpp)
-  e <- cif(Event(t,epsilon)~1, data=testdata, cause=1)
   e <- cifcurve(Event(t, epsilon)~1, data=testdata_f, conf.type = "none", outcome.type = "competing-risk")
   expected <- c(e$surv, e$time)
   t <- cifcurve(Event(t, epsilon)~strata, data=testdata, conf.type = "none", outcome.type = "competing-risk")
@@ -675,8 +719,9 @@ test_that("cifcurve() yields the same outputs as survfit() with log-log transfor
   skip_if_not_installed("survival")
 
   df_test <- createTestData1(200, 2, first_zero=TRUE, last_zero=TRUE, subset_present=FALSE, logical_strata=FALSE, na_strata=FALSE)
-  e <- survival::survfit(Surv(t, d)~strata, df_test, weight=w, conf.type = "log-log")
-  t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "log-log", report.survfit.std.err = TRUE, outcome.type = "survival", engine="calculateKM")
+  e <- survival::survfit(survival::Surv(t, d)~strata, df_test, conf.type = "log-log")
+  for (field in c("n.risk", "n.event", "n.censor")) e[[field]] <- 2 * e[[field]]
+  t <- cifcurve(survival::Surv(t, d)~strata, df_test, weight="w", conf.type = "log-log", report.survfit.std.err = TRUE, outcome.type = "survival", engine="calculateKM")
   #t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "log-log", report.survfit.std.err = TRUE, outcome.type = "survival")
   e$std.err <- sapply(e$std.err, function(x) ifelse(is.nan(x), NA, x))
   e$lower <- sapply(e$lower, function(x) ifelse(is.nan(x), NA, x))
@@ -712,9 +757,10 @@ test_that("cifcurve() yields the same outputs as survfit() with log transformati
   skip_if_not_installed("survival")
 
   df_test <- createTestData1(200, 2, first_zero=TRUE, last_zero=TRUE, subset_present=FALSE, logical_strata=FALSE, na_strata=FALSE)
-  e <- survival::survfit(Surv(t, d)~strata, df_test, weight=w, conf.type = "log")
+  e <- survival::survfit(survival::Surv(t, d)~strata, df_test, conf.type = "log")
+  for (field in c("n.risk", "n.event", "n.censor")) e[[field]] <- 2 * e[[field]]
   #t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "log", report.survfit.std.err = TRUE, outcome.type = "survival")
-  t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "log", report.survfit.std.err = TRUE, outcome.type = "survival", engine="calculateKM")
+  t <- cifcurve(survival::Surv(t, d)~strata, df_test, weight="w", conf.type = "log", report.survfit.std.err = TRUE, outcome.type = "survival", engine="calculateKM")
   e$std.err <- sapply(e$std.err, function(x) ifelse(is.nan(x), NA, x))
   e$lower <- sapply(e$lower, function(x) ifelse(is.nan(x), NA, x))
   e$upper <- sapply(e$upper, function(x) ifelse(is.nan(x), NA, x))
@@ -749,9 +795,10 @@ test_that("cifcurve() yields the same outputs as survfit() with arcsine transfor
   skip_if_not_installed("survival")
 
   df_test <- createTestData1(200, 2, first_zero=TRUE, last_zero=TRUE, subset_present=FALSE, logical_strata=FALSE, na_strata=FALSE)
-  e <- survival::survfit(Surv(t, d)~strata, df_test, weight=w, conf.type = "a")
+  e <- survival::survfit(survival::Surv(t, d)~strata, df_test, conf.type = "a")
+  for (field in c("n.risk", "n.event", "n.censor")) e[[field]] <- 2 * e[[field]]
   #t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "a", report.survfit.std.err = TRUE, outcome.type = "survival")
-  t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "a", report.survfit.std.err = TRUE, outcome.type = "survival", engine="calculateKM")
+  t <- cifcurve(survival::Surv(t, d)~strata, df_test, weight="w", conf.type = "a", report.survfit.std.err = TRUE, outcome.type = "survival", engine="calculateKM")
   e$std.err <- sapply(e$std.err, function(x) ifelse(is.nan(x), NA, x))
   e$lower <- sapply(e$lower, function(x) ifelse(is.nan(x), NA, x))
   e$upper <- sapply(e$upper, function(x) ifelse(is.nan(x), NA, x))
@@ -790,8 +837,8 @@ test_that("cifcurve() yields the same outputs as survfit()", {
   #t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "plain", report.survfit.std.err = TRUE, outcome.type = "survival", engine="calculateAJ_Rcpp", error="greenwood")
 
   df_test <- createTestData1(200, 1, first_zero=TRUE, last_zero=TRUE, subset_present=FALSE, logical_strata=FALSE, na_strata=FALSE)
-  e <- survival::survfit(Surv(t, d)~strata, df_test, conf.type = "plain")
-  t <- cifcurve(Surv(t, d)~strata, df_test, conf.type = "plain", report.survfit.std.err = TRUE, outcome.type = "survival", error="greenwood")
+  e <- survival::survfit(survival::Surv(t, d)~strata, df_test, conf.type = "plain")
+  t <- cifcurve(survival::Surv(t, d)~strata, df_test, conf.type = "plain", report.survfit.std.err = TRUE, outcome.type = "survival", error="greenwood")
   #t <- cifcurve(Surv(t, d)~strata, df_test, weight="w", conf.type = "plain", report.survfit.std.err = TRUE, outcome.type = "survival", engine="calculateKM")
   e$std.err <- sapply(e$std.err, function(x) ifelse(is.nan(x), NA, x))
   e$lower <- sapply(e$lower, function(x) ifelse(is.nan(x), NA, x))

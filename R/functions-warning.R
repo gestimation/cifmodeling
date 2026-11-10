@@ -179,6 +179,7 @@ util_detect_outcome_type <- function(
   if (!inherits(Y, c("Event", "Surv"))) {
     stop("Response must be Event() or Surv().", call. = FALSE)
   }
+  util_check_surv_type(Y)
 
   status <- suppressWarnings(as.numeric(Y[, 2L]))
   n_levels <- length(unique(stats::na.omit(status)))
@@ -220,28 +221,7 @@ util_check_outcome_type <- function(
     }
 
     u <- unique(canon)
-    if (length(u) == 1L) {
-      if (!is.null(formula) && !is.null(data)) {
-        detected <- tryCatch(
-          util_detect_outcome_type(formula, data, na.action, auto_message = FALSE),
-          error = function(e) NULL
-        )
-        if (!is.null(detected) &&
-            u %in% c("survival", "competing-risk") &&
-            !identical(u, detected)) {
-          stop(
-            sprintf(
-              paste0("`outcome.type` ('%s') is inconsistent with Event()/Surv() response ",
-                     "(detected '%s' from status codes)."),
-              u, detected
-            ),
-            call. = FALSE
-          )
-        }
-      }
-
-      return(u)
-    }
+    if (length(u) == 1L) return(u)
 
     if (isTRUE(allow_multiple)) return(canon)
 

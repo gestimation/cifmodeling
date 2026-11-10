@@ -169,33 +169,25 @@ getCoefTerm <- function(report.nuisance.parameter, report.sandwich.conf, report.
       nuisance_terms <- character(0)
     }
   }
-  if (outcome.type == "proportional-competing-risk") {
+  if (outcome.type %in% c("proportional-survival", "proportional-competing-risk")) {
+    layout <- reg_proportional_index(estimand)
+    index1 <- layout$exposure
+    nuisance_terms <- character(0)
     if (report.nuisance.parameter == TRUE) {
-      index1 <- seq_len(iv[8]/2)
-      index2 <- seq.int(iv[8]/2+1, iv[8])
-      nuisance_terms <- c("Intercept", attr(terms(nuisance.model), "term.labels"))
-    } else {
-      index1 <- seq.int(iv[8]/2-estimand$exposure.levels+2, iv[8]/2)
-      index2 <- seq.int(iv[8]-estimand$exposure.levels+2, iv[8])
-      nuisance_terms <- character(0)
+      index1 <- seq_len(layout$block)
+      nuisance_terms <- sub("^\\(Intercept\\)$", "Intercept", colnames(out_getResults$x_l))
+      if (length(estimand$time.point) > 1L) {
+        nuisance_terms <- as.vector(outer(nuisance_terms, estimand$time.point,
+          function(term, time) paste(term, "at", time)))
+      }
     }
-  }
-  if (outcome.type == "proportional-survival") {
-    if (report.nuisance.parameter == TRUE) {
-      index1 <- seq_len(iv[8]/2)
-      index2 <- NULL
-      nuisance_terms <- c("Intercept", attr(terms(nuisance.model), "term.labels"))
-    } else {
-      index1 <- seq.int(iv[8]/2-estimand$exposure.levels+2, iv[8]/2)
-      index2 <- NULL
-      nuisance_terms <- character(0)
-    }
+    index2 <- if (outcome.type == "proportional-competing-risk") index1 + layout$block else NULL
   }
   coef1 <- getCoef(index1, alpha_beta_estimated, cov_estimated, cov_bootstrap, outcome.type, report.sandwich.conf, report.boot.conf, out_bootstrap, conf.int)
   coef2 <- getCoef(index2, alpha_beta_estimated, cov_estimated, cov_bootstrap, outcome.type, report.sandwich.conf, report.boot.conf, out_bootstrap, conf.int)
   code.exposure.nonref <- colnames(out_getResults$x_a)
   terms_text_exposure <- if (length(code.exposure.nonref)) {
-    paste0(exposure, ", ", sub("^.*_", "", code.exposure.nonref), " vs ", code.exposure.ref)
+    paste0(exposure, ", ", sub("^a_", "", code.exposure.nonref), " vs ", code.exposure.ref)
   } else {
     character(0)
   }
@@ -241,6 +233,42 @@ getCoef <- function(
     p_value   <- rep(NA_real_, length(index))
   }
   list(coef = coef, coef_se = coef_se, conf_low = conf_low, conf_high = conf_high, p_value = p_value)
+}
+
+reg_summarize_bootstrap <- function(fit, index, level, bca) {
+  complete <- rowSums(!is.finite(fit$t)) == 0L
+  if (sum(complete) < 2L) {
+    stop("Fewer than two proportional bootstrap fits succeeded.", call. = FALSE)
+  }
+  replicates <- fit$t[complete, , drop = FALSE]
+  covariance <- stats::cov(replicates)
+  center <- colMeans(replicates)
+  se <- sqrt(diag(covariance))
+  margin <- stats::qnorm((1 + level) / 2) * se
+  lower <- center - margin
+  upper <- center + margin
+  if (isTRUE(bca)) {
+    center <- 2 * fit$t0 - center
+    lower[] <- upper[] <- NA_real_
+    for (j in index[se[index] > 0]) {
+      limits <- tryCatch(boot.ci(fit, conf = level, index = j, type = "bca")$bca,
+        error = function(e) {
+          warning("BCa interval is unavailable for coefficient ", j, ". ",
+            conditionMessage(e), call. = FALSE)
+          NULL
+        })
+      if (!is.null(limits)) {
+        lower[j] <- limits[1L, 4L]
+        upper[j] <- limits[1L, 5L]
+      }
+    }
+  }
+  list(
+    summary = list(boot.coef = center, boot.coef_se = se,
+      boot.p_value = 2 * stats::pnorm(abs(center / se), lower.tail = FALSE),
+      boot.conf_low = lower, boot.conf_high = upper),
+    covariance = covariance
+  )
 }
 
 extractOptimizationInfo <- function(sol, method) {

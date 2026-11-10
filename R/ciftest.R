@@ -17,6 +17,7 @@
 #'
 #' @param formula A two-sided formula with an `Event()` or `Surv()` response
 #'   and one grouping variable on the right-hand side.
+#'   `Surv()` responses must be right-censored.
 #' @param data A data frame containing variables in the formula.
 #' @param weights Optional numeric case weights or the name of a weight column.
 #'   The standard Gray branch currently accepts integer frequency weights.

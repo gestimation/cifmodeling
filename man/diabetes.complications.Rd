@@ -27,7 +27,16 @@ A data frame with 978 observations and 19 variables:
   \item{alcohol_drinker}{Indicator for current alcohol drinking.}
   \item{ltpa}{Leisure-time physical activity (METs).}
 }}
-\source{Anonymized data supplied with the package for documentation and demonstration purposes.}
+\source{
+Anonymized example data from the Japan Diabetes Complications Study.
+The original cohort analysis of fruit intake and incident diabetic retinopathy
+was reported by Tanaka S, Yoshimura Y, Kawasaki R, Kamada C, Tanaka S,
+Horikawa C, Ohashi Y, Araki A, Ito H, Akanuma Y, Yamada N, Yamashita H,
+Sone H, for the Japan Diabetes Complications Study Group.
+Fruit intake and incident diabetic retinopathy with type 2 diabetes.
+\emph{Epidemiology}. 2013, 24(2), 204--211.
+\doi{10.1097/EDE.0b013e318281725e}
+}
 
 \usage{data(diabetes.complications)}
 

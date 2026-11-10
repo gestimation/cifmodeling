@@ -37,6 +37,13 @@ Event <- function(time, event, allowed = getOption("cifmodeling.allowed", c(0, 1
   return(out)
 }
 
+util_check_surv_type <- function(response) {
+  if (inherits(response, "Surv") &&
+      !isTRUE(attr(response, "type", exact = TRUE) %in% c("right", "mright") && ncol(response) == 2L)) {
+    stop("Only right-censored Surv() responses are supported.", call. = FALSE)
+  }
+}
+
 util_normalize_time_event <- function(time, event, allowed = c(0, 1, 2)) {
   if (missing(time))  .err("req", arg = "time")
   if (missing(event)) .err("req", arg = "event")

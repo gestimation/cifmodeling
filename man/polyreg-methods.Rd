@@ -52,10 +52,12 @@ effect_label.polyreg(
   variance = NULL,
   exponentiate = FALSE,
   conf.level = NULL,
-  ...
+  ...,
+  vcov = NULL,
+  coef_rename = FALSE
 )
 
-\method{glance}{polyreg}(x, event = c("event1", "event2"), ...)
+\method{glance}{polyreg}(x, event = c("event1", "event2"), ..., gof_map = NULL)
 
 \method{augment}{polyreg}(x, ...)
 
@@ -129,6 +131,15 @@ limits for reporting. Standard errors and statistics stay on the log scale.}
 
 \item{conf.level}{Optional confidence level for the broom-compatible
 logical \code{conf.int} interface. Defaults to the fitted level.}
+
+\item{vcov}{Compatibility argument for \code{modelsummary}. Only \code{NULL} is
+supported by \code{tidy.polyreg()}. Use \code{variance} to choose the covariance estimator.}
+
+\item{coef_rename}{Compatibility argument for \code{modelsummary}. Only \code{FALSE}
+is supported by \code{tidy.polyreg()}.}
+
+\item{gof_map}{Table formatting argument forwarded by \code{modelsummary} and
+ignored by \code{glance.polyreg()}.}
 }
 \value{
 \itemize{

@@ -96,6 +96,7 @@ One of \code{"survival"} (Kaplan-Meier) or \code{"competing-risk"} (Aalen-Johans
 If \code{NULL} (default), the function automatically infers the outcome type from the data:
 if the event variable has more than two unique levels, \code{"competing-risk"} is assumed;
 otherwise, \code{"survival"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
+An explicit \code{"competing-risk"} remains in effect when a cause is absent in the analysis data.
 Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic detection based on the event coding.}
 
 \item{code.event1}{Integer code of the event of interest (default \code{1}).}

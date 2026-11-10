@@ -12,9 +12,11 @@
 #' @param formula A model formula specifying the time-to-event outcome on the LHS
 #'   (typically `Event(time, status)` or `survival::Surv(time, status)`)
 #'   and, optionally, a stratification variable on the RHS.
+#'   `Surv()` responses must be right-censored.
 #'   Unlike [cifplot()], this function does not accept a fitted survfit object.
-#' @param time.point Optional single time point at which a one-sided normal
-#'   approximation test is performed when `null.hypothesis` is specified.
+#' @param time.point Optional finite, non-negative time for a one-sided normal
+#'   approximation test when `null.hypothesis` is specified. The test returns
+#'   a missing p-value for strata with no positive-weight follow-up at this time.
 #' @param null.hypothesis Optional null value for the survival probability or
 #'   cumulative incidence at `time.point`. For `outcome.type = "survival"`,
 #'   the one-sided alternative is that the observed survival probability is
@@ -26,7 +28,11 @@
 #' the influence function is also computed and returned (default `FALSE`).
 #' @param report.survfit.std.err Logical. If `TRUE`, report SE on the log-survival
 #' scale (survfit's convention). Otherwise SE is on the probability scale.
-#' @param engine Character. One of `"auto"`, `"calculateKM"`, or `"calculateAJ_Rcpp"` (default `"calculateAJ_Rcpp"`).
+#' @param engine Character. One of `"auto"`, `"calculateKM"`, or `"calculateAJ_Rcpp"` (default).
+#'   `"calculateAJ"` is also accepted as an alias for `"calculateAJ_Rcpp"`.
+#'   The legacy engine accepts no weights or positive weights constant within
+#'   each stratum, and normal inference with Greenwood/Tsiatis for survival or
+#'   delta/Aalen for competing risks. Its SEs use subject counts.
 #' @param prob.bound Numeric lower bound used to internally truncate probabilities away from 0 and 1 (default `1e-7`).
 #' @param conf.dist Reference distribution for pointwise CIs: `"normal"`
 #'   (default) or `"t"`. Student intervals require `error = "if"` or `"fay"`;
@@ -75,6 +81,9 @@
 #' fallback is used for a failed Student interval. Degrees of freedom vary by
 #' stratum and time; calculation can be expensive for large risk sets. The
 #' optional one-sided test retains its documented normal reference distribution.
+#' Delta and Aalen variances use all event times up to the reported time.
+#' If the Aalen formula gives a negative variance with tied events, its SE and
+#' confidence limits are missing.
 #' Returned influence functions are uncorrected case-weight derivatives (IF/n)
 #' of the event probability `1 - $surv`,
 #' even when the SE uses FG-adjusted contributions.
@@ -113,6 +122,8 @@
 #'
 #' If `null.hypothesis` is specified, the returned object additionally contains
 #' a `one.sided.p` list with the one-sided normal approximation test results.
+#' Its table marks strata beyond positive-weight follow-up with
+#' `test.status = "outside_observed_followup"`.
 #'
 #' Note that `$n.risk`, `$n.event`, and `$n.censor` are rounded up to the nearest integer
 #' regardless of whether the data is weighted or not.
@@ -185,6 +196,8 @@ cifcurve <- function(
 ) {
   conf.dist <- match.arg(conf.dist)
   df.method <- match.arg(df.method)
+  engine <- match.arg(engine, c("calculateAJ_Rcpp", "auto", "calculateKM", "calculateAJ"))
+  if (engine == "calculateAJ") engine <- "calculateAJ_Rcpp"
   n.risk.type <- util_check_n_risk_type(n.risk.type)
   substitute_weights <- substitute(weights)
   # Keep bare data-column lookup, but resolve other inputs in their original
@@ -203,7 +216,18 @@ cifcurve <- function(
   ))
   outcome.type <- out_read_surv$outcome.type
   if (conf.dist == "t" && is.null(error)) error <- "if"
-  error <- curve_check_error(error, outcome.type, weights = out_read_surv$w, has_weights = has_weights_user)
+  if (engine == "calculateKM") {
+    choices <- if (outcome.type == "survival") c("greenwood", "tsiatis") else c("delta", "aalen")
+    error <- if (is.null(error)) choices[1L] else .cifcurve_normalize_error(error)
+    if (conf.dist != "normal" || !error %in% choices || isTRUE(report.influence.function)) {
+      stop("Legacy engine requires normal inference with ", paste(choices, collapse = " or "),
+        ". Use engine = 'calculateAJ_Rcpp' for IF, Fay--Graubard or Student inference.",
+        call. = FALSE)
+    }
+  } else {
+    error <- curve_check_error(error, outcome.type, weights = out_read_surv$w,
+      has_weights = has_weights_user)
+  }
   shared_ci <- .cifcurve_check_inference(error, conf.dist, df.method, engine, conf.int)
   call <- match.call()
 
@@ -221,110 +245,15 @@ cifcurve <- function(
   epsilon_norm[out_read_surv$epsilon == code.event2]    <- 2L
   epsilon_norm[out_read_surv$epsilon == code.censoring] <- 0L
 
-  if (identical(outcome.type, "survival") && identical(engine, "calculateKM")) {
-    out_km <- calculateKM(
-      out_read_surv$t,
-      out_read_surv$d,
-      out_read_surv$w,
-      as.integer(out_read_surv$strata),
-      error,
-      count.type = "integer"
-    )
-    out_km$std.err <- out_km$surv * out_km$std.err
-    out_ci <- calculateCI(out_km, conf.int, conf.type, conf.lower = NULL)
-
-    survfit_object <- list(
-      time      = out_km$time,
-      surv      = out_km$surv,
-      n         = out_km$n,
-      n.risk    = ceiling(out_km$n.risk),
-      n.event   = ceiling(out_km$n.event),
-      n.censor  = ceiling(out_km$n.censor),
-      std.err   = out_km$std.err,
-      std.err.cif = out_km$`std.err.cif`,
-      upper     = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$upper,
-      lower     = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$lower,
-      conf.type = conf.type,
-      call      = call,
-      type      = "kaplan-meier",
-      method    = "Kaplan-Meier"
-    )
-    if (any(as.integer(out_read_surv$strata) != 1)) {
-      names(out_km$strata) <- strata_fullnames
-      survfit_object$strata <- out_km$strata
-    }
-    survfit_object$n.risk.type <- n.risk.type
-    survfit_object <- harmonize_engine_output(survfit_object)
-    survfit_object <- .cifcurve_reporting(survfit_object, out_read_surv, error,
+  if (engine == "calculateKM") {
+    fit <- .cifcurve_legacy(out_read_surv, error, n.risk.type, strata_fullnames)
+    fit$call <- call
+    fit <- .cifcurve_adjusted_ci(fit, out_read_surv$t, epsilon_norm, out_read_surv$w,
+      as.integer(out_read_surv$strata), conf.type, conf.int, conf.dist, df.method)
+    fit <- .cifcurve_reporting(harmonize_engine_output(fit), out_read_surv, error,
       conf.type, conf.int, conf.dist, report.survfit.std.err)
-    survfit_object <- .cifcurve_add_one_sided_p(
-      fit = survfit_object,
-      time.point = time.point,
-      null.hypothesis = null.hypothesis,
-      outcome.type = outcome.type,
-      conf.type = conf.type,
-      prob.bound = prob.bound,
-      report.survfit.std.err = report.survfit.std.err
-    )
-    return(survfit_object)
-
-  } else if (identical(outcome.type, "competing-risk") && identical(engine, "calculateKM")) {
-    out_aj <- calculateAJ(out_read_surv)
-    names(out_aj$strata1) <- strata_fullnames
-
-    if (any(as.integer(out_read_surv$strata) != 1)) {
-      n <- table(as.integer(out_read_surv$strata))
-      rep_list <- mapply(rep, n, out_aj$strata1, SIMPLIFY = FALSE)
-      n.risk <- do.call(c, rep_list) -
-        out_aj$n.cum.censor - out_aj$n.cum.event1 - out_aj$n.cum.event2
-    } else {
-      n <- length(out_read_surv$strata)
-      n.risk <- n - out_aj$n.cum.censor - out_aj$n.cum.event1 - out_aj$n.cum.event2
-    }
-
-    std_err_cif <- calculateAalenDeltaSE(
-      out_aj$time1, out_aj$aj1,
-      out_aj$n.event1, out_aj$n.event2,
-      n.risk,
-      out_aj$time0, out_aj$km0, out_aj$strata1, error
-    )
-    out_aj$std.err <- std_err_cif
-    out_aj$surv <- 1 - out_aj$aj1
-    out_ci <- calculateCI(out_aj, conf.int, conf.type, conf.lower = NULL)
-
-    survfit_object <- list(
-      time        = out_aj$time1,
-      surv        = out_aj$surv,
-      n           = n,
-      n.risk      = ceiling(n.risk),
-      n.event     = ceiling(out_aj$n.event1),
-      n.censor    = ceiling(out_aj$n.censor),
-      std.err     = out_aj$std.err,
-      std.err.cif = std_err_cif,
-      upper       = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$upper,
-      lower       = if (is.null(conf.type) || conf.type %in% c("none","n")) NULL else out_ci$lower,
-      conf.type   = conf.type,
-      call        = call,
-      type        = "aalen-johansen",
-      method      = "aalen-johansen"
-    )
-    if (any(as.integer(out_read_surv$strata) != 1))
-      survfit_object$strata <- out_aj$strata1
-
-    survfit_object$n.risk.type <- n.risk.type
-    survfit_object <- harmonize_engine_output(survfit_object)
-    survfit_object <- .cifcurve_reporting(survfit_object, out_read_surv, error,
-      conf.type, conf.int, conf.dist, report.survfit.std.err)
-    survfit_object <- .cifcurve_add_one_sided_p(
-      fit = survfit_object,
-      time.point = time.point,
-      null.hypothesis = null.hypothesis,
-      outcome.type = outcome.type,
-      conf.type = conf.type,
-      prob.bound = prob.bound,
-      report.survfit.std.err = report.survfit.std.err
-    )
-    return(survfit_object)
+    return(.cifcurve_add_one_sided_p(fit, time.point, null.hypothesis, outcome.type,
+      conf.type, prob.bound, report.survfit.std.err))
   }
 
   out_cpp <- call_calculateAJ_Rcpp(
@@ -333,11 +262,12 @@ cifcurve <- function(
     w = if (has_weights_user) out_read_surv$w else NULL,
     strata = as.integer(out_read_surv$strata),
     error = error,
-    conf.type = if (shared_ci) "none" else conf.type,
+    conf.type = if (shared_ci) "none" else conf.type %||% "none",
     conf.int = conf.int,
     report.influence.function = report.influence.function,
     prob.bound = prob.bound,
-    n.risk.type = n.risk.type
+    n.risk.type = n.risk.type,
+    competing_risk = outcome.type == "competing-risk"
   )
   if (length(strata_fullnames) && length(out_cpp$strata)) {
     names(out_cpp$strata) <- strata_fullnames
@@ -372,94 +302,86 @@ cifcurve <- function(
   return(out_cpp)
 }
 
-calculateAJ <- function(data) {
-  out_km0 <- calculateKM(
-    data$t,
-    data$d0,
-    data$w,
-    as.integer(data$strata),
-    "none",
-    count.type = "integer"
-  )
-  km0 <- util_get_surv(data$t, out_km0$surv, out_km0$time, as.integer(data$strata), out_km0$strata, out_km0$strata.levels)
-  ip.weight <- (data$d0 == 0) * ifelse(km0 > 0, 1 / km0, 0)
-  d1_ipw <- as.matrix(data$w * data$d1 * ip.weight)
+.cifcurve_legacy <- function(input, error, n.risk.type, labels) {
+  competing <- input$outcome.type == "competing-risk"
+  groups <- split(seq_along(input$t), as.integer(input$strata))
+  pieces <- lapply(groups, function(i) {
+    w <- input$w[i]
+    if (w[1L] <= 0 || any(w != w[1L])) {
+      stop("Legacy engine requires positive weights constant within each stratum. ",
+        "Use engine = 'calculateAJ_Rcpp' for other weights.", call. = FALSE)
+    }
+    time <- sort(unique(input$t[i]))
+    first <- input$d1[i]
+    events <- if (competing) first + input$d2[i] else first
+    counts <- rowsum(cbind(first, events, censor = 1 - events, exits = 1),
+      match(input$t[i], time))
+    Y <- rev(cumsum(rev(counts[, "exits"])))
+    d <- counts[, "events"]
+    survival <- cumprod(1 - d / Y)
+    if (competing) {
+      S <- c(1, utils::head(survival, -1L))
+      increment <- S * counts[, "first"] / Y
+      cif <- cumsum(increment)
+      se <- .cifcurve_legacy_aj_se(Y, d, counts[, "first"], S, increment, error)
+      if (utils::tail(survival, 1L) == 0 && all(counts[, "first"] == d)) {
+        cif[length(cif)] <- 1
+        se[length(se)] <- 0
+      }
+      survival <- 1 - cif
+    } else {
+      denominator <- if (error == "greenwood") Y - d else Y
+      se <- survival * sqrt(cumsum(d / (Y * ifelse(denominator > 0, denominator, Inf))))
+    }
+    data.frame(time = time, surv = survival, std.err = se,
+      n.risk.weighted = w[1L] * Y, n.risk.unweighted = Y, n.risk.ess = Y,
+      n.event = ceiling(w[1L] * d), n.censor = ceiling(w[1L] * counts[, "censor"]))
+  })
+  out <- as.list(do.call(rbind, pieces))
+  out$n.risk <- ceiling(out[[paste0("n.risk.", n.risk.type)]])
+  out$n.risk.type <- n.risk.type
+  out$error <- error
+  out$n <- lengths(groups, use.names = FALSE)
+  if (length(groups) > 1L) out$strata <- stats::setNames(vapply(pieces, nrow, integer(1)), labels)
+  out$type <- if (competing) "aalen-johansen" else "kaplan-meier"
+  out$method <- if (competing) "aalen-johansen" else "Kaplan-Meier"
+  if (competing) out$std.err.cif <- out$std.err.aj <- out$std.err
+  out
+}
 
-  aj1 <- time1 <- integer(0)
-  n.cum.event1 <- n.cum.event2 <- n.cum.censor <- numeric(0)
-  n.event1 <- n.event2 <- n.censor <- numeric(0)
-  strata1 <- integer(0)
-  strata_vec <- as.integer(data$strata)
-
-  for (level in sort(unique(strata_vec))) {
-    idx <- which(strata_vec == level)
-
-    sub_t  <- data$t[idx]
-    sub_d0 <- data$d0[idx]
-    sub_d1 <- data$d1[idx]
-    sub_d2 <- data$d2[idx]
-    sub_d1_ipw <- d1_ipw[idx, , drop = FALSE]
-
-    o <- order(sub_t)
-    sub_t  <- sub_t[o]
-    sub_d0 <- sub_d0[o]
-    sub_d1 <- sub_d1[o]
-    sub_d2 <- sub_d2[o]
-    sub_d1_ipw <- sub_d1_ipw[o, , drop = FALSE]
-
-    not_atrisk <- outer(sub_t, sub_t, FUN = ">=")
-    sub_aj1 <- as.vector(not_atrisk %*% sub_d1_ipw) / length(sub_t)
-    sub_n.censor <- as.vector(not_atrisk %*% as.matrix(sub_d0))
-    sub_n.event1 <- as.vector(not_atrisk %*% as.matrix(sub_d1))
-    sub_n.event2 <- as.vector(not_atrisk %*% as.matrix(sub_d2))
-
-    keep <- !duplicated(rev(sub_t))
-    keep <- rev(keep)
-
-    u_t  <- sub_t[keep]
-    u_aj1 <- sub_aj1[keep]
-    u_nc  <- sub_n.censor[keep]
-    u_ne1 <- sub_n.event1[keep]
-    u_ne2 <- sub_n.event2[keep]
-
-    oo <- order(u_t)
-    u_t  <- u_t[oo]
-    u_aj1 <- u_aj1[oo]
-    u_nc  <- u_nc[oo]
-    u_ne1 <- u_ne1[oo]
-    u_ne2 <- u_ne2[oo]
-
-    inc_nc  <- c(u_nc[1],  diff(u_nc))
-    inc_ne1 <- c(u_ne1[1], diff(u_ne1))
-    inc_ne2 <- c(u_ne2[1], diff(u_ne2))
-
-    time1 <- c(time1, u_t)
-    aj1   <- c(aj1, u_aj1)
-
-    n.cum.censor <- c(n.cum.censor, u_nc)
-    n.cum.event1 <- c(n.cum.event1, u_ne1)
-    n.cum.event2 <- c(n.cum.event2, u_ne2)
-
-    n.censor <- c(n.censor, inc_nc)
-    n.event1 <- c(n.event1, inc_ne1)
-    n.event2 <- c(n.event2, inc_ne2)
-
-    strata1 <- c(strata1, length(u_t))
+.cifcurve_legacy_aj_se <- function(Y, d, d1, S, increment, error) {
+  aalen <- error == "aalen"
+  quadratic <- linear <- variance <- scale <- 0
+  se <- numeric(length(Y))
+  for (j in seq_along(Y)) {
+    x <- increment[j]
+    divisor <- if (aalen) Y[j] - 1 else Y[j]
+    direct <- if (divisor > 0) x * (S[j] - x) / divisor else 0
+    change <- x * (2 * linear + x * quadratic)
+    variance <- variance + change + direct
+    scale <- scale + abs(change) + direct
+    linear <- linear + x * quadratic
+    remaining <- Y[j] - d[j]
+    if (d[j] > 0 && remaining > 0 && divisor > 0) {
+      quadratic <- quadratic + d[j] / (divisor * remaining)
+      linear <- linear - if (aalen) x * (Y[j] - d1[j]) / (divisor * remaining) else x / Y[j]
+    }
+    se[j] <- if (variance < -64 * .Machine$double.eps * scale) NA_real_ else sqrt(max(0, variance))
   }
+  se
+}
 
-  list(
-    time1        = time1,
-    aj1          = aj1,
-    n.event1     = n.event1,
-    n.event2     = n.event2,
-    n.censor     = n.censor,
-    n.cum.event1 = n.cum.event1,
-    n.cum.event2 = n.cum.event2,
-    n.cum.censor = n.cum.censor,
-    strata1      = strata1,
-    time0        = out_km0$time,
-    km0          = out_km0$surv
-  )
+.cifcurve_normalize_error <- function(x) {
+  z <- tolower(trimws(as.character(x)))
+  if (length(z) != 1L || is.na(z)) stop("'error' must be one method name.", call. = FALSE)
+  if (z %in% c("g", "greenwood")) return("greenwood")
+  if (z %in% c("t", "tsiatis")) return("tsiatis")
+  if (z %in% c("if", "influence function", "influence_function",
+               "influence curve", "ic")) return("if")
+  if (z %in% c("fay", "fg", "fay-graubard")) return("fay")
+  if (z %in% c("a", "aalen")) return("aalen")
+  if (z %in% c("d", "delta")) return("delta")
+  z
 }
 
 curve_check_error <- function(x, outcome.type, weights = NULL, has_weights = NULL) {
@@ -486,19 +408,7 @@ curve_check_error <- function(x, outcome.type, weights = NULL, has_weights = NUL
 
   if (is.null(x)) return(fallback)
 
-  normalize_error <- function(z) {
-    z <- tolower(trimws(as.character(z)))
-
-    if (z %in% c("g", "greenwood")) return("greenwood")
-    if (z %in% c("t", "tsiatis"))   return("tsiatis")
-    if (z %in% c("if", "influence function", "influence_function",
-                 "influence curve", "ic")) return("if")
-    if (z %in% c("fay", "fg", "fay-graubard")) return("fay")
-    if (z %in% c("a", "aalen"))     return("aalen")
-    if (z %in% c("d", "delta"))     return("delta")
-    z
-  }
-  x_norm <- normalize_error(x)
+  x_norm <- .cifcurve_normalize_error(x)
   if (has_weights && !x_norm %in% c("if", "fay")) {
     warning(
       sprintf("%s with weights: error='%s' is not supported; falling back to 'if'.",
@@ -525,7 +435,8 @@ call_calculateAJ_Rcpp <- function(t, epsilon, w = NULL, strata = NULL,
                                   conf.int = 0.95,
                                   report.influence.function = FALSE,
                                   prob.bound = 1e-5,
-                                  n.risk.type = "weighted") {
+                                  n.risk.type = "weighted",
+                                  competing_risk = FALSE) {
   calculateAJ_Rcpp(
     t = t,
     epsilon = epsilon,
@@ -536,7 +447,8 @@ call_calculateAJ_Rcpp <- function(t, epsilon, w = NULL, strata = NULL,
     conf_int = conf.int,
     return_if = isTRUE(report.influence.function),
     prob_bound = prob.bound,
-    n_risk_type = n.risk.type
+    n_risk_type = n.risk.type,
+    competing_risk = competing_risk
   )
 }
 
@@ -545,7 +457,8 @@ harmonize_engine_output <- function(out) {
   n <- length(out$time %||% numeric())
   out$lower               <- out$lower               %||% out$low
   out$upper               <- out$upper               %||% out$high
-  out$`std.err.cif`        <- out$`std.err.cif`        %||% rep(NA_real_, n)
+  if (length(out$std.err.aj)) out$std.err.cif <- out$std.err.aj
+  out$std.err.cif          <- out$std.err.cif        %||% rep(NA_real_, n)
   out$`influence.function` <- out$`influence.function` %||% list()
   out$strata               <- out$strata               %||% integer()
   out$`strata.levels`      <- out$`strata.levels`      %||% integer()
@@ -597,8 +510,9 @@ harmonize_engine_output <- function(out) {
     )
   }
 
-  if (!is.numeric(time.point) || length(time.point) != 1L || is.na(time.point)) {
-    stop("'time.point' must be a single numeric value.", call. = FALSE)
+  if (!is.numeric(time.point) || length(time.point) != 1L ||
+      !is.finite(time.point) || time.point < 0) {
+    stop("'time.point' must be a single finite, non-negative numeric value.", call. = FALSE)
   }
 
   if (!is.numeric(null.hypothesis)) {
@@ -629,20 +543,23 @@ harmonize_engine_output <- function(out) {
   strata <- estimate_at_time$strata
   surv_est <- estimate_at_time$surv
   se_prob <- estimate_at_time$std.err
+  support <- vapply(fit$reporting$curves[strata], `[[`, numeric(1), "support")
+  supported <- time.point <= unname(support)
+  surv_est[!supported] <- se_prob[!supported] <- NA_real_
 
   null_value <- .cifcurve_match_null_hypothesis(
     null.hypothesis = null.hypothesis,
     strata = strata
   )
 
-  if (any(is.na(se_prob))) {
+  if (any(!is.finite(se_prob[supported]))) {
     stop(
       "Standard errors are missing at 'time.point'; one-sided p-values cannot be computed.",
       call. = FALSE
     )
   }
 
-  if (any(se_prob <= 0)) {
+  if (any(se_prob[supported] <= 0)) {
     stop(
       "Standard errors must be positive at 'time.point'; one-sided p-values cannot be computed.",
       call. = FALSE
@@ -724,6 +641,7 @@ harmonize_engine_output <- function(out) {
     std.err.transformed = tr_est$se,
     z = z,
     p.value = p_value,
+    test.status = ifelse(supported, "ok", "outside_observed_followup"),
     stringsAsFactors = FALSE
   )
 

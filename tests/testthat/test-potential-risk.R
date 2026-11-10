@@ -45,6 +45,9 @@ test_that("LM path handles multi-level exposure", {
   risk <- cifmodeling:::getPotentialRisk(alpha_beta, x_a, x_l, offset, estimand, optim.method, prob.bound)
   expect_identical(attr(risk, "solver"), "LM")
   expect_equal(dim(risk), c(n, 3))
+  expect_equal(rowSums(qlogis(risk)), drop(x_l %*% alpha_beta[1:2]), tolerance = 1e-5)
+  expect_equal(log(risk[, -1L] / risk[, 1L]),
+    matrix(rep(alpha_beta[3:4], each = n), nrow = n), tolerance = 1e-5)
   ey <- cifmodeling:::calculateEY1(risk, x_a)
   expect_true(all(is.finite(ey)))
   expect_true(all(ey > 0 & ey < 1))

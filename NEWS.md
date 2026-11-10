@@ -1,3 +1,27 @@
+# cifmodeling 1.2.3
+
+* `tidy.polyreg()` accepts the default arguments forwarded by
+  `modelsummary::msummary()`, so tables can display exponentiated coefficients
+  and confidence intervals at the requested level.
+* `polyreg()` validates the active event codes and requires both event types
+  by the analysis time for fixed-time competing-risk models. IPCW uses the
+  specified censoring code, supports character strata, and accounts for
+  estimating the censoring distribution within each stratum in the
+  fixed-time sandwich variance.
+* Multilevel binomial models use the generalized log odds product to fit
+  separate exposure contrasts against the reference level. Proportional
+  models use the requested level for normal bootstrap intervals and compute
+  BCa intervals separately for the reported coefficients.
+* `cifcurve()` computes delta and Aalen variances using all event times up
+  to each reported time. The legacy engine reports risk sets immediately
+  before each time and accepts unweighted data or positive weights that
+  are constant within each stratum. Confidence limits and one-sided
+  p-values are missing beyond each stratum's positive-weight follow-up.
+* Time-to-event analyses reject unsupported `Surv()` response types.
+  Explicit competing-risk analyses retain their selected outcome type when
+  a cause is absent, subject to the event requirements of each estimator.
+  The joint Gray covariance in `ciftest_mdir()` respects custom event codes.
+
 # cifmodeling 1.2.2
 
 * Added direct optional `gtsummary::tbl_regression()` support for `polyreg`,

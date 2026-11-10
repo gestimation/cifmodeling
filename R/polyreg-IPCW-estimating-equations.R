@@ -49,6 +49,9 @@ estimating_equation_ipcw <- function(
   qa <- ncol(x_a)
   q  <- ql + qa
   iv <- estimand$index.vector
+  if (ql != iv[1L] || q != iv[3L]) {
+    stop("The regression design does not match the fitted coefficient layout.", call. = FALSE)
+  }
 
   if (outcome.type == "survival" || outcome.type == "binomial") {
     y_0 <- ifelse(epsilon == estimand$code.censoring | t > estimand$time.point, 1, 0)
@@ -98,18 +101,14 @@ estimating_equation_ipcw <- function(
     y_0_ <- ifelse(epsilon == estimand$code.censoring, 1, 0)
     y_1_ <- ifelse(epsilon == estimand$code.event1,   1, 0)
 
-    score_beta <- NULL
-    score_alpha1 <- 0
-    i_time <- 0
-
-    alpha_beta_i <- rep(NA, iv[7])
+    layout <- reg_proportional_index(estimand)
+    score <- numeric(length(alpha_beta))
+    i_time <- 0L
 
     for (specific.time in time.point) {
       i_time <- i_time + 1L
-      i_para <- iv[1]*(i_time-1L) + 1L
-
-      alpha_beta_i[seq_len(iv[1])]                  <- alpha_beta[seq.int(i_para, i_para+iv[1]-1)]
-      alpha_beta_i[seq.int(iv[2], iv[3])]           <- alpha_beta[iv[8]/2]
+      index <- c(layout$nuisance[, i_time], layout$exposure)
+      alpha_beta_i <- alpha_beta[index]
 
       y_0 <- ifelse(epsilon == estimand$code.censoring | t > specific.time, 1, 0)
       y_1 <- ifelse(epsilon == estimand$code.event1   & t <= specific.time, 1, 0)
@@ -124,13 +123,9 @@ estimating_equation_ipcw <- function(
       d <- cbind(x_l, x_a)
       residual <- wy_1ey_1
 
-      subscore <- as.vector(t(d) %*% residual / nrow(x_l))
-      tmp1 <- t(subscore[1:iv[1]])
-      score_beta <- cbind(score_beta, tmp1)
-      score_alpha1 <- score_alpha1 + subscore[iv[2]:iv[3]]
+      score[index] <- score[index] + drop(crossprod(d, residual)) / n
     }
 
-    score <- as.vector(cbind(score_beta, score_alpha1))
     return(list(
       ret   = score,
       t     = t,
@@ -157,7 +152,7 @@ estimating_equation_ipcw <- function(
     y_2_ <- ifelse(epsilon == estimand$code.event2, 1, 0)
 
     potential.CIFs <- calculatePotentialCIFs(
-      alpha_beta, x_a, x_l, offset, epsilon, estimand, optim.method, prob.bound, initial.CIFs
+      alpha_beta, x_a, x_l, offset, y_1, y_2, estimand, optim.method, prob.bound, initial.CIFs
     )
     ey <- calculateEY(potential.CIFs, x_a)
     ey_1 <- ey$ey_1
@@ -209,30 +204,22 @@ estimating_equation_ipcw <- function(
   y_1_ <- ifelse(epsilon == estimand$code.event1, 1, 0)
   y_2_ <- ifelse(epsilon == estimand$code.event2, 1, 0)
 
-  one <- rep(1, nrow(x_l))
-  score_beta   <- NULL
-  score_alpha1 <- 0
-  score_alpha2 <- 0
-  i_time <- 0
-
-  alpha_beta_i <- rep(NA, iv[7])
+  layout <- reg_proportional_index(estimand)
+  score <- numeric(length(alpha_beta))
+  i_time <- 0L
 
   for (specific.time in time.point) {
     i_time <- i_time + 1L
-    i_para <- iv[1]*(i_time-1L) + 1L
-
-    alpha_beta_i[seq_len(iv[1])]                    <- alpha_beta[seq.int(i_para, i_para + iv[1] - 1L)]
-    alpha_beta_i[seq.int(iv[2], iv[3])]             <- alpha_beta[iv[8] / 2]
-    alpha_beta_i[seq.int(iv[4], iv[5])]             <- alpha_beta[seq.int((iv[8] / 2 + i_para),
-                                                                          (iv[8] / 2 + i_para + iv[1] - 1L))]
-    alpha_beta_i[seq.int(iv[6], iv[7])]             <- alpha_beta[iv[8]]
+    index <- c(layout$nuisance[, i_time], layout$exposure)
+    index <- c(index, index + layout$block)
+    alpha_beta_i <- alpha_beta[index]
 
     y_0 <- ifelse(epsilon == estimand$code.censoring | t > specific.time, 1, 0)
     y_1 <- ifelse(epsilon == estimand$code.event1 & t <= specific.time, 1, 0)
     y_2 <- ifelse(epsilon == estimand$code.event2 & t <= specific.time, 1, 0)
 
     potential.CIFs <- calculatePotentialCIFs(
-      alpha_beta_i, x_a, x_l, offset, epsilon, estimand, optim.method, prob.bound, initial.CIFs
+      alpha_beta_i, x_a, x_l, offset, y_1_, y_2_, estimand, optim.method, prob.bound, initial.CIFs
     )
     ey <- calculateEY(potential.CIFs, x_a)
     ey_1 <- ey$ey_1
@@ -254,16 +241,9 @@ estimating_equation_ipcw <- function(
     wy_2ey_2 <- w12*(wy_1 - ey_1) + w22*(wy_2 - ey_2)
 
     residual <- c(wy_1ey_1, wy_2ey_2)
-    subscore <- crossprod(d, residual) / nrow(x_l)
-
-    tmp1 <- t(subscore[1:iv[1],])
-    tmp2 <- t(subscore[iv[4]:iv[5],])
-    score_beta   <- cbind(score_beta, tmp1, tmp2)
-    score_alpha1 <- score_alpha1 + subscore[iv[2]:iv[3],]
-    score_alpha2 <- score_alpha2 + subscore[iv[6]:iv[7],]
+    score[index] <- score[index] + drop(crossprod(d, residual)) / n
   }
 
-  score <- as.vector(cbind(score_beta, score_alpha1, score_alpha2))
   return(list(
     ret   = score,
     t     = t,
@@ -300,61 +280,44 @@ calculateEY1 <- function(potential.Risk, x_a) {
   potential.Risk[cbind(seq_len(n), index)]
 }
 
-calculateCov <- function(objget_results, estimand, boot.method, prob.bound)
+polyreg_score_sensitivity <- function(equation, coef) {
+  # Use the fitted estimating equation, including the coupled potential risks.
+  step <- 1e-4 * pmax(1, abs(coef))
+  -vapply(seq_along(coef), function(j) {
+    lower <- upper <- coef
+    lower[j] <- coef[j] - step[j]
+    upper[j] <- coef[j] + step[j]
+    (equation(upper) - equation(lower)) / (2 * step[j])
+  }, numeric(length(coef)))
+}
+
+calculateCov <- function(objget_results, estimand, boot.method, ipcw, sensitivity)
 {
   score <- objget_results$score
-  ey_1 <- objget_results$ey_1
-  ey_2 <- objget_results$ey_2
   w11 <- objget_results$w11
   w12 <- objget_results$w12
   w22 <- objget_results$w22
   t <- objget_results$t
-  y_0_ <- objget_results$y_0_
   y_1 <- objget_results$y_1
   y_2 <- objget_results$y_2
   x_a <- objget_results$x_a
   x_l <- objget_results$x_l
-  potential.CIFs <- objget_results$potential.CIFs
   iv <- estimand$index.vector
   n <- length(t)
 
-  censoring_dna	<- calculateNelsonAalen(t,y_0_)
-  censoring_martingale <- diag(y_0_) - (outer(t, t, ">") * censoring_dna)
-  censoring_km <- calculateKaplanMeier(t, y_0_)
-  censoring_km[censoring_km == 0] <- prob.bound
-  censoring_mkm <- censoring_martingale / censoring_km
-  y_12 <- (y_1 + y_2 > 0)
-  survival_km <- calculateKaplanMeier(t, y_12)
-  wy_1 <- w11 * y_1 + w12 * y_2
-  wy_2 <- w12 * y_1 + w22 * y_2
   x_la <- cbind(x_l, x_a)
   AB1 <- score[1:n, 1:iv[3], drop = FALSE]
   AB2 <- score[(n + 1):(2 * n), iv[4]:iv[7], drop = FALSE]
-  for (i_para in 1:iv[2]) {
-    tmp0 <- x_la[, i_para]
-    use <- (t <= estimand$time.point)
-    tmp1 <- colSums((use * tmp0) * (outer(t, t, ">=") * wy_1))
-    tmp1 <- tmp1 / survival_km / n
-    integrand1 <- tmp1 * censoring_mkm
-    tmp2 <- colSums((use * tmp0) * (outer(t, t, ">=") * wy_2))
-    tmp2 <- tmp2 / survival_km / n
-    integrand2 <- tmp2 * censoring_mkm
-    for (i_score in 1:n) {
-      integral1 <- cumsum(integrand1[i_score, ])
-      AB1[i_score, i_para] <- AB1[i_score, i_para] + integral1[n]
-      integral2 <- cumsum(integrand2[i_score, ])
-      AB2[i_score, i_para] <- AB2[i_score, i_para] + integral2[n]
-    }
-  }
-  out_calculateD <- calculateD(potential.CIFs, x_a, x_l, estimand, prob.bound)
-  hesse_d11 <- crossprod(x_la, w11 * out_calculateD$d_11) / n
-  hesse_d12 <- crossprod(x_la, w12 * out_calculateD$d_12) / n
-  hesse_d22 <- crossprod(x_la, w22 * out_calculateD$d_22) / n
-  hesse_d1 <- cbind(hesse_d11, hesse_d12)
-  hesse_d2 <- cbind(hesse_d12, hesse_d22)
-  hesse <- rbind(hesse_d1, hesse_d2)
-  total_score <- cbind(AB1, AB2)
-  influence.function <- t(solve(hesse, t(total_score)))
+  weight <- drop(ipcw$weights)
+  weighted_score <- cbind(
+    x_la * (weight * (w11 * y_1 + w12 * y_2)),
+    x_la * (weight * (w12 * y_1 + w22 * y_2))
+  )
+  total_score <- cbind(AB1, AB2) + censoring_km_score_correction(
+    ipcw$km, t, ipcw$epsilon, ipcw$strata, pmin(t, estimand$time.point), weighted_score
+  )
+  centered_score <- sweep(total_score, 2L, colMeans(total_score), `-`)
+  influence.function <- t(solve(sensitivity, t(centered_score)))
 
   cov_estimated <- NULL
   cov_bootstrap <- NULL
@@ -376,125 +339,33 @@ calculateCov <- function(objget_results, estimand, boot.method, prob.bound)
   return(list(cov_estimated = cov_estimated, cov_bootstrap = cov_bootstrap, score.function = total_score, influence.function = influence.function))
 }
 
-calculateD <- function(potential.CIFs, x_a, x_l, estimand, prob.bound) {
-  n <- nrow(x_l)
-  K <- estimand$exposure.levels
-  if (ncol(potential.CIFs) != 2 * K) stop("Column dimension of potential.CIFs is not 2 * K.")
-
-  seq_n <- seq_len(n)
-  idx <- max.col(cbind(0, x_a), ties.method = "first")
-
-  CIF1_mat <- clampP(potential.CIFs[, seq_len(K), drop = FALSE], prob.bound)
-  CIF2_mat <- clampP(potential.CIFs[, K + seq_len(K), drop = FALSE], prob.bound)
-  survival_mat <- pmax(1 - CIF1_mat - CIF2_mat, prob.bound)
-
-  CIF1_sel <- CIF1_mat[cbind(seq_n, idx)]
-  CIF2_sel <- CIF2_mat[cbind(seq_n, idx)]
-  survival_sel <- survival_mat[cbind(seq_n, idx)]
-
-  calculateA <- function(effect.measure, CIFs_selected) {
-    CIFs_selected <- clampP(CIFs_selected, prob.bound)
-    if (effect.measure == "RR") {
-      return(1 / CIFs_selected)
-    } else if (effect.measure == "OR") {
-      denom <- clampP(1 - CIFs_selected, prob.bound)
-      return(1 / CIFs_selected + 1 / denom)
-    } else if (effect.measure == "SHR") {
-      denom <- clampP(1 - CIFs_selected, prob.bound)
-      tmp1 <- -1 / denom
-      tmp2 <- log(denom)
-      return(tmp1 / tmp2)
-    } else {
-      stop("Invalid effect_measure. Must be RR, OR or SHR.")
-    }
-  }
-
-  a11 <- calculateA(estimand$effect.measure1, CIF1_sel)
-  a22 <- calculateA(estimand$effect.measure2, CIF2_sel)
-  a12 <- rep(0, length.out = n)
-
-  denom_beta <- a11 * a22 - a12 * a12
-  d_ey_d_beta_11 <- a22 / denom_beta
-  d_ey_d_beta_12 <- -a12 / denom_beta
-  d_ey_d_beta_22 <- a11 / denom_beta
-
-  c12 <- 1 / survival_sel
-  c11 <- a11 + c12
-  c22 <- a22 + c12
-
-  denom_alpha <- c11 * c22 - c12 * c12
-  d_ey_d_alpha_11 <- c22 / denom_alpha
-  d_ey_d_alpha_12 <- -c12 / denom_alpha
-  d_ey_d_alpha_22 <- c11 / denom_alpha
-
-  scale_matrix <- function(mat, vec) {
-    if (is.null(mat) || ncol(mat) == 0) {
-      return(NULL)
-    }
-    sweep(mat, 1, vec, `*`)
-  }
-
-  beta_11 <- scale_matrix(x_a, d_ey_d_beta_11)
-  beta_12 <- scale_matrix(x_a, d_ey_d_beta_12)
-  beta_22 <- scale_matrix(x_a, d_ey_d_beta_22)
-
-  d_11 <- cbind(sweep(x_l, 1, d_ey_d_alpha_11, `*`), beta_11)
-  d_12 <- cbind(sweep(x_l, 1, d_ey_d_alpha_12, `*`), beta_12)
-  d_22 <- cbind(sweep(x_l, 1, d_ey_d_alpha_22, `*`), beta_22)
-  return(list(d_11 = d_11, d_12 = d_12, d_22 = d_22))
-}
-
-calculateCovSurvival <- function(objget_results, estimand, boot.method, prob.bound)
+calculateCovSurvival <- function(objget_results, estimand, boot.method, prob.bound,
+                                 ipcw = NULL, sensitivity = NULL)
 {
   score <- objget_results$score
-  ey_1 <- objget_results$ey_1
   w11 <- objget_results$w11
   t <- objget_results$t
-  y_0_ <- objget_results$y_0_
   y_1 <- objget_results$y_1
   x_a <- objget_results$x_a
   x_l <- objget_results$x_l
   potential.CIFs <- objget_results$potential.CIFs
-  iv <- estimand$index.vector
   n <- length(t)
 
-  censoring_dna <- calculateNelsonAalen(t, y_0_)
-  censoring_martingale <- diag(y_0_) - (outer(t, t, ">") * censoring_dna)
-  censoring_km <- calculateKaplanMeier(t, y_0_)
-  censoring_km[censoring_km == 0] <- prob.bound
-  censoring_mkm <- censoring_martingale / censoring_km
-
-  y_12 <- (y_1 > 0)
-  survival_km <- calculateKaplanMeier(t, y_12)
-  survival_km[survival_km == 0] <- prob.bound
-
-  wy_1 <- w11 * y_1
   x_la <- cbind(x_l, x_a)
-  AB1 <- score[1:n, 1:iv[3], drop = FALSE]
-
-  use <- if (is.null(estimand$time.point)) rep(TRUE, n) else (t <= estimand$time.point)
-
-  for (i_para in seq_len(iv[2])) {
-    tmp0 <- x_la[, i_para]
-
-    kernel  <- sweep(outer(t, t, ">="), 1, wy_1, `*`)
-    kernel2 <- sweep(kernel, 1, use * tmp0, `*`)
-
-    tmp1 <- colSums(kernel2)
-    tmp1 <- tmp1 / survival_km / n
-
-    integrand1 <- sweep(censoring_mkm, 2, tmp1, `*`)
-
-    for (i_score in seq_len(n)) {
-      AB1[i_score, i_para] <- AB1[i_score, i_para] + cumsum(integrand1[i_score, ])[n]
-    }
+  total_score <- score
+  if (!is.null(ipcw)) {
+    weighted_score <- x_la * (drop(ipcw$weights) * w11 * y_1)
+    total_score <- total_score + censoring_km_score_correction(
+      ipcw$km, t, ipcw$epsilon, ipcw$strata, pmin(t, estimand$time.point), weighted_score
+    )
   }
 
-  out_calculateDSurvival <- calculateDSurvival(potential.CIFs, x_a, x_l, estimand, prob.bound)
-  hesse <- crossprod(x_la, w11 * out_calculateDSurvival) / n
-
-  total_score <- AB1
-  influence.function <- t(solve(hesse, t(total_score)))
+  if (is.null(sensitivity)) {
+    derivative <- calculateDSurvival(potential.CIFs, x_a, x_l, estimand, prob.bound)
+    sensitivity <- crossprod(x_la, w11 * derivative) / n
+  }
+  centered_score <- sweep(total_score, 2L, colMeans(total_score), `-`)
+  influence.function <- t(solve(sensitivity, t(centered_score)))
 
   cov_estimated <- NULL
   cov_bootstrap <- NULL
@@ -571,16 +442,13 @@ solveEstimatingEquation <- function(
     outcome.type,
     estimand,
     optim.method,
-    out_normalizeCovariate,
     prob.bound,
     alpha_beta_0
 ) {
-  if (outcome.type == "competing-risk" | outcome.type == "survival") {
-    ip.weight.matrix <- calculateIPCW(nuisance.model, normalized_data, estimand$code.censoring, strata, estimand$time.point)
-  } else if (outcome.type == "binomial") {
+  if (outcome.type == "binomial") {
     ip.weight.matrix <- matrix(1,nrow(normalized_data),1)
-  } else if (outcome.type == "proportional-survival" | outcome.type == "proportional-competing-risk") {
-    ip.weight.matrix <- calculateIPCWMatrix(nuisance.model, normalized_data, estimand$code.censoring, strata, estimand, out_normalizeCovariate)
+  } else {
+    ip.weight.matrix <- calculateIPCW(nuisance.model, normalized_data, estimand$code.censoring, strata, estimand$time.point)
   }
 
   makeObjectiveFunction <- function() {
@@ -596,7 +464,7 @@ solveEstimatingEquation <- function(
       estimating_equation_ipcw,
       formula = nuisance.model, data = normalized_data, exposure = exposure, outcome.type=outcome.type,
       ip.weight.matrix = ip.weight.matrix, alpha_beta = p, estimand = estimand,
-      optim.method = NULL, prob.bound = prob.bound,
+      optim.method = optim.method, prob.bound = prob.bound,
       initial.CIFs = initial.CIFs
     )
 
@@ -672,8 +540,13 @@ solveEstimatingEquation <- function(
       optim.method$optim.parameter1, optim.method$optim.parameter2, optim.method$optim.parameter3
     )
     current_params <- new_params
+    current_obj_value <- ac$obj_value
     max.absolute.difference <- ac$max.absolute.difference
     if (ac$converged) break
+  }
+  if (!length(current_obj_value) || !is.finite(current_obj_value) ||
+      current_obj_value > optim.method$optim.parameter2) {
+    return(rep(NA_real_, length(current_params)))
   }
   return(current_params)
 }
