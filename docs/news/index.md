@@ -1,5 +1,90 @@
 # Changelog
 
+## cifmodeling 1.2.3
+
+- [`tidy.polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg-methods.md)
+  accepts the default arguments forwarded by
+  [`modelsummary::msummary()`](https://modelsummary.com/man/msummary.html),
+  so tables can display exponentiated coefficients and confidence
+  intervals at the requested level.
+- [`polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg.md)
+  validates the active event codes and requires both event types by the
+  analysis time for fixed-time competing-risk models. IPCW uses the
+  specified censoring code, supports character strata, and accounts for
+  estimating the censoring distribution within each stratum in the
+  fixed-time sandwich variance.
+- Multilevel binomial models use the generalized log odds product to fit
+  separate exposure contrasts against the reference level. Proportional
+  models use the requested level for normal bootstrap intervals and
+  compute BCa intervals separately for the reported coefficients.
+- [`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md)
+  computes delta and Aalen variances using all event times up to each
+  reported time. The legacy engine reports risk sets immediately before
+  each time and accepts unweighted data or positive weights that are
+  constant within each stratum. Confidence limits and one-sided p-values
+  are missing beyond each stratum’s positive-weight follow-up.
+- Time-to-event analyses reject unsupported `Surv()` response types.
+  Explicit competing-risk analyses retain their selected outcome type
+  when a cause is absent, subject to the event requirements of each
+  estimator. The joint Gray covariance in
+  [`ciftest_mdir()`](https://gestimation.github.io/cifmodeling/reference/ciftest_mdir.md)
+  respects custom event codes.
+
+## cifmodeling 1.2.2
+
+- Added direct optional
+  [`gtsummary::tbl_regression()`](https://www.danieldsjoberg.com/gtsummary/reference/tbl_regression.html)
+  support for `polyreg`, including event selection, reference rows and
+  event-specific RR/OR/SHR headings.
+  [`tidy.polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg-methods.md)
+  supports `exponentiate` and the standard logical `conf.int`/numeric
+  `conf.level` interface while retaining legacy numeric `conf.int`.
+  Stored intervals are retained when inference settings are unchanged.
+
+- Corrected survival-summary SE scaling and unstratified curve
+  compatibility.
+  [`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md)
+  now returns a subclass of `survfit`; its summary and
+  stratum-subsetting methods keep saved inference aligned and prevent
+  interval extrapolation past positive-weight follow-up. Reporting
+  adapters preserve the fitted statistical results.
+
+- Added reporting articles for CIF curves/tests and event-specific
+  regression, with gtsummary formatting and Word/HTML export examples.
+
+- Fixed unweighted
+  [`cifplot()`](https://gestimation.github.io/cifmodeling/reference/cifplot.md)
+  calls being treated as weighted when NULL weights were forwarded
+  internally. Unweighted plots now honor `error = "aalen"` and
+  `"delta"`, and retain the unweighted default variance choice. Actual
+  supplied weights retain the existing weighted-inference rules.
+
+- Added pointwise IF-t, FG-normal and FG-t intervals to
+  [`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md)
+  for independent observations with no weights or known fixed weights.
+  Select `conf.dist = "t"` for Student critical values, or
+  `error = "fay"` for the FG sandwich correction. Existing default
+  method choices are retained.
+
+- IF-t supports `df.method = "deletion"` (FG-type allocation, default)
+  or `"equal"` (equal-allocation working Satterthwaite degrees of
+  freedom). FG-t uses deletion allocation. Results record time-specific
+  degrees of freedom, critical values and interval availability reasons.
+  These are approximations, not exact t distributions or uniform
+  coverage guarantees.
+
+- Supplied weights, including externally estimated IPTW, are treated as
+  fixed. Propensity-score estimation and its full IF contribution remain
+  outside this API. IF/FG limits beyond positive-weight follow-up, or
+  with invalid interior variance/df, are missing rather than silently
+  replaced by a normal interval; valid boundary singletons are retained.
+
+- Corrected the C++ IF recursion to differentiate the actual KM/AJ
+  product limit, including tied jumps. IF standard errors can
+  consequently differ from earlier versions. FG contributions share that
+  recursion. Also fixed zero cause-1 CIFs when only competing events are
+  observed.
+
 ## cifmodeling 1.2.0
 
 - Added
@@ -203,7 +288,7 @@ changes; only internal cleanup for CRAN compliance.
 ## cifmodeling 0.9.2
 
 - Fourth CRAN submission.
-- Invalid file URLs  
+- Invalid file URLs\
   (articles/gallery.html, articles/polyreg.html, articles/formulas.html)
   were replaced by URLs in the web and verified using
   urlchecker::url_check(). Rebuilt and resubmitted.

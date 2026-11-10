@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,6 +40,8 @@
     <li><a class="dropdown-item" href="../articles/v5_gallery.html">Gallery</a></li>
     <li><a class="dropdown-item" href="../articles/v6_information.html">Additional information</a></li>
     <li><a class="dropdown-item" href="../articles/v7_arguments.html">Full lists of arguments</a></li>
+    <li><a class="dropdown-item" href="../articles/v8_reporting_cif.html">Reporting cumulative incidence</a></li>
+    <li><a class="dropdown-item" href="../articles/v9_reporting_polyreg.html">Reporting CIF regression</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -154,6 +156,11 @@ the variance formula proposed by Xie and Liu (2005).</p>
 \textrm{Var}\!\left\{\hat{S}(t)\right \}
 = \hat{S}(t)^2\sum_{t_j \le t} \frac{d_j^w}{M_j Y_j^w}
 </annotation></semantics></math></p>
+<p>These weighted Greenwood/Tsiatis expressions provide background. In
+the current <code><a href="../reference/cifcurve.html">cifcurve()</a></code> API, supplied weights select IF
+inference by default, and the supported weighted variance choices are
+<code>"if"</code> and <code>"fay"</code>. Requesting another weighted
+variance method produces a warning and falls back to IF.</p>
 </div>
 <div class="section level2">
 <h2 id="formulas-for-the-aalen-johansen-estimator">Formulas for the Aalen-Johansen estimator<a class="anchor" aria-label="anchor" href="#formulas-for-the-aalen-johansen-estimator"></a>
@@ -250,7 +257,8 @@ are the martingales for the total event count and the
 cause-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
 event count of observation
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>,
-respectively, the influence function may be written as
+respectively, and the cumulative hazards are continuous, the influence
+function may be written as
 <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mi>I</mi><msub><mi>F</mi><mrow><mi>i</mi><mi>k</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><msubsup><mo>∫</mo><mn>0</mn><mi>t</mi></msubsup><mi>S</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>u</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mfrac><mrow><mi>d</mi><msub><mi>M</mi><mrow><mi>i</mi><mi>k</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>u</mi><mo stretchy="false" form="postfix">)</mo></mrow><mrow><mi>y</mi><mo stretchy="false" form="prefix">(</mo><mi>u</mi><mo stretchy="false" form="postfix">)</mo></mrow></mfrac></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mspace width="1.0em"></mspace><mo>−</mo><msubsup><mo>∫</mo><mn>0</mn><mi>t</mi></msubsup><mi>S</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>u</mi><mo>−</mo></msup><mo stretchy="false" form="postfix">)</mo><mrow><mo stretchy="true" form="prefix">{</mo><msubsup><mo>∫</mo><mn>0</mn><msup><mi>u</mi><mo>−</mo></msup></msubsup><mfrac><mrow><mi>d</mi><msub><mi>M</mi><mi>i</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>v</mi><mo stretchy="false" form="postfix">)</mo></mrow><mrow><mi>y</mi><mo stretchy="false" form="prefix">(</mo><mi>v</mi><mo stretchy="false" form="postfix">)</mo></mrow></mfrac><mo stretchy="true" form="postfix">}</mo></mrow><mi>d</mi><msub><mi mathvariant="normal">Λ</mi><mi>k</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>u</mi><mo stretchy="false" form="postfix">)</mo><mi>.</mi></mtd></mtr></mtable><annotation encoding="application/x-tex">
 \begin{aligned}
   IF_{ik}(t)
@@ -284,42 +292,362 @@ itself is estimated by
   \widehat{\textrm{Var}}\!\left\{\hat F_k(t)\right\}
   = \frac{1}{n^2}\sum_{i=1}^n \{\widehat{IF}_{ik}(t)\}^2.
 </annotation></semantics></math></p>
-<p>For weighted data, <code><a href="../reference/cifcurve.html">cifcurve()</a></code> uses the corresponding
-weighted empirical recursion: the risk set
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Y</mi><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">Y(t)</annotation></semantics></math>
-and event increments are replaced by their weighted counterparts, and
-the individual martingale residuals are multiplied by the observation
-weights. Internally, the C++ routine stores the empirical contribution
+<p>For weighted data, <code><a href="../reference/cifcurve.html">cifcurve()</a></code> differentiates the
+weighted empirical product limit, including tied event times, as
+described below. Internally, the C++ routine stores the empirical
+contribution
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mrow><mi>I</mi><mi>F</mi></mrow><mo accent="true">̂</mo></mover><mrow><mi>i</mi><mi>k</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mi>n</mi></mrow><annotation encoding="application/x-tex">\widehat{IF}_{ik}(t)/n</annotation></semantics></math>;
 consequently, its probability-scale standard error is calculated as the
 square root of the sum of squared empirical contributions. The Zhang and
-Fine (2008) result above directly justifies the unweighted formula; the
-weighted calculation is its implemented analogue.</p>
+Fine (2008) result above directly concerns the unweighted estimator.
+Supplied weights are held fixed in the implemented weighted calculation,
+including weights estimated externally from a propensity-score model;
+uncertainty from estimating those weights is not included.</p>
+</div>
+<div class="section level2">
+<h2 id="fixed-weight-if-and-faygraubard-type-variances">Fixed-weight IF and Fay–Graubard-type variances<a class="anchor" aria-label="anchor" href="#fixed-weight-if-and-faygraubard-type-variances"></a>
+</h2>
+<p>The following calculations are performed separately within each
+stratum. Only observations with positive weights enter the variance and
+degrees-of-freedom system; write their number as
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>m</mi><annotation encoding="application/x-tex">m</annotation></semantics></math>.
+With no supplied weights, set
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>w</mi><mi>i</mi></msub><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">w_i=1</annotation></semantics></math>.
+Define
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>Y</mi><mi>j</mi><mi>w</mi></msubsup><mo>=</mo><munder><mo>∑</mo><mi>i</mi></munder><msub><mi>w</mi><mi>i</mi></msub><msub><mi>Y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>,</mo><mspace width="2.0em"></mspace><msub><mover><mi>h</mi><mo accent="true">̂</mo></mover><mrow><mi>j</mi><mi>k</mi></mrow></msub><mo>=</mo><mfrac><mrow><munder><mo>∑</mo><mi>i</mi></munder><msub><mi>w</mi><mi>i</mi></msub><mi mathvariant="normal">Δ</mi><msub><mi>N</mi><mrow><mi>i</mi><mi>j</mi><mi>k</mi></mrow></msub></mrow><msubsup><mi>Y</mi><mi>j</mi><mi>w</mi></msubsup></mfrac><mo>,</mo><mspace width="2.0em"></mspace><msub><mover><mi>h</mi><mo accent="true">̂</mo></mover><mi>j</mi></msub><mo>=</mo><munder><mo>∑</mo><mi>k</mi></munder><msub><mover><mi>h</mi><mo accent="true">̂</mo></mover><mrow><mi>j</mi><mi>k</mi></mrow></msub><mo>,</mo></mrow><annotation encoding="application/x-tex">
+Y_j^w=\sum_i w_iY_{ij},\qquad
+\hat h_{jk}=\frac{\sum_i w_i\Delta N_{ijk}}{Y_j^w},\qquad
+\hat h_j=\sum_k\hat h_{jk},
+</annotation></semantics></math> where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><mn>1</mn><mo stretchy="false" form="prefix">(</mo><msub><mi>T</mi><mi>i</mi></msub><mo>≥</mo><msub><mi>t</mi><mi>j</mi></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">Y_{ij}=1(T_i\ge t_j)</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Δ</mi><msub><mi>N</mi><mrow><mi>i</mi><mi>j</mi><mi>k</mi></mrow></msub><mo>=</mo><mn>1</mn><mo stretchy="false" form="prefix">(</mo><msub><mi>T</mi><mi>i</mi></msub><mo>=</mo><msub><mi>t</mi><mi>j</mi></msub><mo>,</mo><msub><mi>ϵ</mi><mi>i</mi></msub><mo>=</mo><mi>k</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\Delta N_{ijk}=1(T_i=t_j,\epsilon_i=k)</annotation></semantics></math>.
+For survival data there is one event cause. Set
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>r</mi><mrow><mi>i</mi><mi>j</mi><mi>k</mi></mrow></msub><mo>=</mo><msub><mi>w</mi><mi>i</mi></msub><mo stretchy="false" form="prefix">(</mo><mi mathvariant="normal">Δ</mi><msub><mi>N</mi><mrow><mi>i</mi><mi>j</mi><mi>k</mi></mrow></msub><mo>−</mo><msub><mi>Y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><msub><mover><mi>h</mi><mo accent="true">̂</mo></mover><mrow><mi>j</mi><mi>k</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>r</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><munder><mo>∑</mo><mi>k</mi></munder><msub><mi>r</mi><mrow><mi>i</mi><mi>j</mi><mi>k</mi></mrow></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+r_{ijk}=w_i(\Delta N_{ijk}-Y_{ij}\hat h_{jk}),\qquad
+r_{ij}=\sum_k r_{ijk}.
+</annotation></semantics></math> Starting from
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>a</mi><mrow><mi>i</mi><mn>0</mn></mrow><mi>S</mi></msubsup><mo>=</mo><msubsup><mi>a</mi><mrow><mi>i</mi><mi>k</mi><mn>0</mn></mrow><mi>F</mi></msubsup><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">a^S_{i0}=a^F_{ik0}=0</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>S</mi><mo accent="true">̂</mo></mover><mn>0</mn></msub><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\hat S_0=1</annotation></semantics></math>,
+the uncorrected empirical IF contributions obey
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><msubsup><mi>a</mi><mrow><mi>i</mi><mi>k</mi><mi>j</mi></mrow><mi>F</mi></msubsup></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><msubsup><mi>a</mi><mrow><mi>i</mi><mi>k</mi><mo>,</mo><mi>j</mi><mo>−</mo><mn>1</mn></mrow><mi>F</mi></msubsup><mo>+</mo><msub><mover><mi>h</mi><mo accent="true">̂</mo></mover><mrow><mi>j</mi><mi>k</mi></mrow></msub><msubsup><mi>a</mi><mrow><mi>i</mi><mo>,</mo><mi>j</mi><mo>−</mo><mn>1</mn></mrow><mi>S</mi></msubsup><mo>+</mo><msub><mover><mi>S</mi><mo accent="true">̂</mo></mover><mrow><mi>j</mi><mo>−</mo><mn>1</mn></mrow></msub><msub><mi>r</mi><mrow><mi>i</mi><mi>j</mi><mi>k</mi></mrow></msub><mi>/</mi><msubsup><mi>Y</mi><mi>j</mi><mi>w</mi></msubsup><mo>,</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><msubsup><mi>a</mi><mrow><mi>i</mi><mi>j</mi></mrow><mi>S</mi></msubsup></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mover><mi>h</mi><mo accent="true">̂</mo></mover><mi>j</mi></msub><mo stretchy="false" form="postfix">)</mo><msubsup><mi>a</mi><mrow><mi>i</mi><mo>,</mo><mi>j</mi><mo>−</mo><mn>1</mn></mrow><mi>S</mi></msubsup><mo>−</mo><msub><mover><mi>S</mi><mo accent="true">̂</mo></mover><mrow><mi>j</mi><mo>−</mo><mn>1</mn></mrow></msub><msub><mi>r</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mi>/</mi><msubsup><mi>Y</mi><mi>j</mi><mi>w</mi></msubsup><mi>.</mi></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+a^F_{ikj}&amp;=a^F_{ik,j-1}+\hat h_{jk}a^S_{i,j-1}
+                  +\hat S_{j-1}r_{ijk}/Y_j^w,\\
+a^S_{ij}&amp;=(1-\hat h_j)a^S_{i,j-1}
+                  -\hat S_{j-1}r_{ij}/Y_j^w.
+\end{aligned}
+</annotation></semantics></math> Thus the IF variance
+(<code>error = "if"</code>) is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mo>∑</mo><mi>i</mi></msub><mo stretchy="false" form="prefix">(</mo><msubsup><mi>a</mi><mrow><mi>i</mi><mi>j</mi></mrow><mi>S</mi></msubsup><msup><mo stretchy="false" form="postfix">)</mo><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">\sum_i(a^S_{ij})^2</annotation></semantics></math>
+for KM survival or
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mo>∑</mo><mi>i</mi></msub><mo stretchy="false" form="prefix">(</mo><msubsup><mi>a</mi><mrow><mi>i</mi><mi>k</mi><mi>j</mi></mrow><mi>F</mi></msubsup><msup><mo stretchy="false" form="postfix">)</mo><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">\sum_i(a^F_{ikj})^2</annotation></semantics></math>
+for the
+cause-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
+CIF. These are contributions on the estimator scale, already divided by
+the sample size in the usual IF convention. The recursion differentiates
+the actual product limit rather than a continuous-hazard
+approximation.</p>
+<p>For <code>error = "fay"</code>, replace each residual
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>r</mi><mrow><mi>i</mi><mi>j</mi><mi>k</mi></mrow></msub><annotation encoding="application/x-tex">r_{ijk}</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>r</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><annotation encoding="application/x-tex">r_{ij}</annotation></semantics></math>
+in this recursion by
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>H</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><msub><mi>r</mi><mrow><mi>i</mi><mi>j</mi><mi>k</mi></mrow></msub></mrow><annotation encoding="application/x-tex">H_{ij}r_{ijk}</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>H</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><msub><mi>r</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">H_{ij}r_{ij}</annotation></semantics></math>,
+respectively, where
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ℓ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><mfrac><mrow><msub><mi>w</mi><mi>i</mi></msub><msub><mi>Y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><msubsup><mi>Y</mi><mi>j</mi><mi>w</mi></msubsup></mfrac><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>H</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><mo stretchy="false" form="prefix">{</mo><mn>1</mn><mo>−</mo><mrow><mi mathvariant="normal">min</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mn>0.75</mn><mo>,</mo><msub><mi>ℓ</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><msup><mo stretchy="false" form="postfix">}</mo><mrow><mi>−</mi><mn>1</mn><mi>/</mi><mn>2</mn></mrow></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\ell_{ij}=\frac{w_iY_{ij}}{Y_j^w},\qquad
+H_{ij}=\{1-\min(0.75,\ell_{ij})\}^{-1/2}.
+</annotation></semantics></math> The FG variance is the sum of squares
+of these corrected contributions. The estimate itself is unchanged. The
+leverage cap is fixed at 0.75: the returned <code>fay.bound</code>
+records this value and is not a user-supplied argument.
+<code>"fg"</code> and <code>"fay-graubard"</code> are aliases for
+<code>"fay"</code>.</p>
+<p>The returned influence-function matrices, when requested with
+<code>report.influence.function = TRUE</code>, always contain the
+<strong>uncorrected</strong> contributions for the event probability
+<code>1 - fit$surv</code>, even when the reported SE uses the FG
+correction. Zero-weight observations have zero contributions.</p>
+</div>
+<div class="section level2">
+<h2 id="degrees-of-freedom-for-if-t-and-fg-t">Degrees of freedom for IF-t and FG-t<a class="anchor" aria-label="anchor" href="#degrees-of-freedom-for-if-t-and-fg-t"></a>
+</h2>
+<p>Both Student constructions use a trace ratio, with a choice of
+covariance allocation for IF-t. To specify the calculation at time
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>,
+stack the individual weighted hazard scores
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>U</mi><mrow><msub><mi>h</mi><mi>j</mi></msub><mi>i</mi></mrow></msub><mo>=</mo><msub><mi>w</mi><mi>i</mi></msub><mo stretchy="false" form="prefix">{</mo><mi mathvariant="normal">Δ</mi><msub><mi mathvariant="bold-italic">𝑵</mi><mi>i</mi></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>t</mi><mi>j</mi></msub><mo stretchy="false" form="postfix">)</mo><mo>−</mo><msub><mi>Y</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><msub><mi mathvariant="bold-italic">𝒉</mi><mi>j</mi></msub><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">U_{h_j i}=w_i\{\Delta\mathbf N_i(t_j)-Y_{ij}\mathbf h_j\}</annotation></semantics></math>
+over event times
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mi>j</mi></msub><mo>≤</mo><mi>t</mi></mrow><annotation encoding="application/x-tex">t_j\le t</annotation></semantics></math>,
+using hazard logits with the no-event category as baseline. There are no
+additional time- or cause-specific equation multipliers. Only
+positive-probability coordinates are retained; at complete exit a
+positive event cause is used as baseline instead. At the fitted
+parameter
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>ϑ</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat\vartheta</annotation></semantics></math>,
+define
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi mathvariant="normal">Ω</mi><mi>i</mi></msub><mo>=</mo><mi>−</mi><mfrac><mrow><mi>∂</mi><msub><mi>U</mi><mi>i</mi></msub></mrow><mrow><mi>∂</mi><msup><mi>ϑ</mi><mi>⊤</mi></msup></mrow></mfrac><mo>,</mo><mspace width="2.0em"></mspace><mi>B</mi><mo>=</mo><munder><mo>∑</mo><mi>i</mi></munder><msub><mi mathvariant="normal">Ω</mi><mi>i</mi></msub><mo>,</mo><mspace width="2.0em"></mspace><mi>c</mi><mo>=</mo><msub><mi>∇</mi><mi>ϑ</mi></msub><mover><mi>θ</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>,</mo></mrow><annotation encoding="application/x-tex">
+\Omega_i=-\frac{\partial U_i}{\partial\vartheta^\top},\qquad
+B=\sum_i\Omega_i,\qquad c=\nabla_\vartheta\hat\theta(t),
+</annotation></semantics></math> where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>θ</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\hat\theta(t)</annotation></semantics></math>
+is the KM survival estimate or the AJ CIF. This production calculation
+contains hazard scores only, with no propensity-score estimating
+equations.</p>
+<p><strong>Deletion allocation (FDF).</strong> The default
+<code>df.method = "deletion"</code> uses
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mi>i</mi></msub><mo>=</mo><msup><mi>c</mi><mi>⊤</mi></msup><mo stretchy="false" form="prefix">{</mo><mo stretchy="false" form="prefix">(</mo><mi>B</mi><mo>−</mo><msub><mi mathvariant="normal">Ω</mi><mi>i</mi></msub><msup><mo stretchy="false" form="postfix">)</mo><mrow><mi>−</mi><mn>1</mn></mrow></msup><mo>−</mo><msup><mi>B</mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><mo stretchy="false" form="postfix">}</mo><mi>c</mi><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>α</mi><mi>i</mi></msub><mo>=</mo><msub><mi>ρ</mi><mi>i</mi></msub><mi>/</mi><munder><mo>∑</mo><mi>j</mi></munder><msub><mi>ρ</mi><mi>j</mi></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\rho_i=c^\top\{(B-\Omega_i)^{-1}-B^{-1}\}c,\qquad
+\alpha_i=\rho_i/\sum_j\rho_j.
+</annotation></semantics></math> These are derivative-based deletions at
+the original fit, not delete-one refits. They require invertible
+relevant deleted blocks and a nonnegative, nonzero allocation. The
+allocation can depend on the normalization of the estimating equations,
+so the score convention above is part of the method definition.</p>
+<p><strong>Equal allocation (EDF).</strong> With
+<code>error = "if"</code>, <code>df.method = "equal"</code> instead sets
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>α</mi><mi>i</mi></msub><mo>=</mo><mn>1</mn><mi>/</mi><mi>m</mi></mrow><annotation encoding="application/x-tex">\alpha_i=1/m</annotation></semantics></math>.
+For this uncorrected IF construction, the resulting degrees of freedom
+are invariant to fixed invertible transformations of the same score
+system, with the corresponding transformation of derivatives. This
+statement holds for a fixed active set and does not cover arbitrary
+parameter-dependent changes of estimating equations. EDF is generally
+not
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">m-1</annotation></semantics></math>,
+and its finite-sample coverage need not equal FDF coverage. Equal
+allocation is not available for FG-t.</p>
+<p>For either allocation, let
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>H</mi><mi>i</mi></msub><mo>=</mo><mi>I</mi></mrow><annotation encoding="application/x-tex">H_i=I</annotation></semantics></math>
+for IF-t, and use the diagonal matrix containing the factors
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>H</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><annotation encoding="application/x-tex">H_{ij}</annotation></semantics></math>
+above for FG-t. Form
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><msubsup><mi>T</mi><mi>i</mi><mi>H</mi></msubsup></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><msub><mi>H</mi><mi>i</mi></msub><msub><mi>U</mi><mi>i</mi></msub><mo>,</mo></mtd><mtd columnalign="right" style="text-align: right; padding-right: 0"><msub><mi>M</mi><mi>H</mi></msub></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><munder><mo>∑</mo><mi>i</mi></munder><msubsup><mi>T</mi><mi>i</mi><mi>H</mi></msubsup><mo stretchy="false" form="prefix">(</mo><msubsup><mi>T</mi><mi>i</mi><mi>H</mi></msubsup><msup><mo stretchy="false" form="postfix">)</mo><mi>⊤</mi></msup><mo>,</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><msubsup><mi>L</mi><mrow><mi>i</mi><mi>j</mi></mrow><mi>H</mi></msubsup></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><msup><mi>c</mi><mi>⊤</mi></msup><msup><mi>B</mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><msub><mi>H</mi><mi>i</mi></msub><mo stretchy="false" form="prefix">{</mo><mn>1</mn><mo stretchy="false" form="prefix">(</mo><mi>i</mi><mo>=</mo><mi>j</mi><mo stretchy="false" form="postfix">)</mo><mi>I</mi><mo>−</mo><msub><mi mathvariant="normal">Ω</mi><mi>i</mi></msub><msup><mi>B</mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><mo stretchy="false" form="postfix">}</mo><mo>,</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><msub><mi>Q</mi><mi>H</mi></msub></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><msup><mi>L</mi><mi>H</mi></msup><mrow><mi mathvariant="normal">blockdiag</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>α</mi><mn>1</mn></msub><msub><mi>M</mi><mi>H</mi></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>α</mi><mi>m</mi></msub><msub><mi>M</mi><mi>H</mi></msub><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="prefix">(</mo><msup><mi>L</mi><mi>H</mi></msup><msup><mo stretchy="false" form="postfix">)</mo><mi>⊤</mi></msup><mo>,</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><msub><mover><mi>ν</mi><mo accent="true">̂</mo></mover><mi>H</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mrow><mo stretchy="false" form="prefix">{</mo><mrow><mi mathvariant="normal">tr</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>Q</mi><mi>H</mi></msub><mo stretchy="false" form="postfix">)</mo><msup><mo stretchy="false" form="postfix">}</mo><mn>2</mn></msup></mrow><mrow><mrow><mi mathvariant="normal">tr</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msubsup><mi>Q</mi><mi>H</mi><mn>2</mn></msubsup><mo stretchy="false" form="postfix">)</mo></mrow></mfrac><mi>.</mi></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+T_i^H&amp;=H_iU_i,&amp; M_H&amp;=\sum_iT_i^H(T_i^H)^\top,\\
+L^H_{ij}&amp;=c^\top B^{-1}H_i\{1(i=j)I-\Omega_iB^{-1}\},\\
+Q_H&amp;=L^H\operatorname{blockdiag}(\alpha_1M_H,\ldots,\alpha_mM_H)(L^H)^\top,\\
+\hat\nu_H(t)&amp;=\frac{\{\operatorname{tr}(Q_H)\}^2}{\operatorname{tr}(Q_H^2)}.
+\end{aligned}
+</annotation></semantics></math> Here
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>L</mi><mi>H</mi></msup><annotation encoding="application/x-tex">L^H</annotation></semantics></math>
+is the block matrix with blocks
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>L</mi><mrow><mi>i</mi><mi>j</mi></mrow><mi>H</mi></msubsup><annotation encoding="application/x-tex">L^H_{ij}</annotation></semantics></math>.
+FG-t uses the original, uncorrected derivatives
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>B</mi><mo>,</mo><msub><mi mathvariant="normal">Ω</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">B,\Omega_i</annotation></semantics></math>
+and deletion allocation;
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>H</mi><mi>i</mi></msub><annotation encoding="application/x-tex">H_i</annotation></semantics></math>
+is not differentiated. Both
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>M</mi><mi>H</mi></msub><annotation encoding="application/x-tex">M_H</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>L</mi><mi>H</mi></msup><annotation encoding="application/x-tex">L^H</annotation></semantics></math>
+include the correction at the displayed positions. Consequently, IF-t
+(deletion) and FG-t generally have different degrees of freedom as well
+as different variances.</p>
+<p>The trace ratio is a Satterthwaite moment match for a specified
+Gaussian working quadratic form. It does <strong>not</strong> equate the
+actual sampling moments of the estimated variance or establish an exact
+Student distribution. FDF denotes the FG-type deletion allocation; EDF
+denotes the equal-allocation alternative. Neither name implies a uniform
+improvement in small-sample coverage.</p>
 </div>
 <div class="section level2">
 <h2 id="confidence-interval-options">Confidence interval options<a class="anchor" aria-label="anchor" href="#confidence-interval-options"></a>
 </h2>
-<p><strong>Standard errors</strong> The default in
-<code><a href="../reference/cifcurve.html">cifcurve()</a></code> with <code>weights=NULL</code> is the Greenwood
-SE when <code>outcome.type="survival"</code> and the delta SE when
-<code>outcome.type="competing-risk"</code>. The default in
-<code><a href="../reference/cifcurve.html">cifcurve()</a></code> with weights is the SE based on influence
-functions. By default <code><a href="../reference/cifcurve.html">cifcurve()</a></code> rescales the
-Greenwood/Tsiatis quantities so that <code>std.err</code> is reported on
-the probability scale; set <code>report.survfit.std.err = TRUE</code> to
-return the conventional log-survival SEs from
-<code><a href="https://rdrr.io/pkg/survival/man/survfit.html" class="external-link">survival::survfit()</a></code>.</p>
-<p><strong>Confidence intervals</strong> <code><a href="../reference/cifcurve.html">cifcurve()</a></code>
-constructs intervals on the probability scale using the requested
-transformation:
-<code>"arcsine-square root"</code>/<code>"arcsin"</code>/<code>"a"</code>
-(default), <code>"plain"</code>, <code>"log"</code>,
-<code>"log-log"</code>, or <code>"logit"</code>. Passing
-<code>"none"</code>/<code>"n"</code> skips interval computation
-entirely. The function exponentiates back to the probability scale,
-clips bounds to [0, 1], and replaces undefined values with
-<code>NA</code> so that interval endpoints remain well behaved in plots
-and summaries.</p>
+<p><strong>Defaults and method selection.</strong> With
+<code>weights = NULL</code> and <code>conf.dist = "normal"</code>, the
+default is Greenwood for KM and delta for AJ. With supplied weights, the
+default is IF. Specifying <code>conf.dist = "t"</code> without
+<code>error</code> selects IF. The variance, reference distribution, and
+transformation are separate choices:</p>
+<table class="table">
+<thead><tr class="header">
+<th align="left">Construction</th>
+<th align="left"><code>error</code></th>
+<th align="left"><code>conf.dist</code></th>
+<th align="left"><code>df.method</code></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">IF-normal</td>
+<td align="left"><code>"if"</code></td>
+<td align="left"><code>"normal"</code></td>
+<td align="left">Not used</td>
+</tr>
+<tr class="even">
+<td align="left">IF-t (FDF)</td>
+<td align="left"><code>"if"</code></td>
+<td align="left"><code>"t"</code></td>
+<td align="left">
+<code>"deletion"</code> (default)</td>
+</tr>
+<tr class="odd">
+<td align="left">IF-t (EDF)</td>
+<td align="left"><code>"if"</code></td>
+<td align="left"><code>"t"</code></td>
+<td align="left"><code>"equal"</code></td>
+</tr>
+<tr class="even">
+<td align="left">FG-normal</td>
+<td align="left"><code>"fay"</code></td>
+<td align="left"><code>"normal"</code></td>
+<td align="left">Not used</td>
+</tr>
+<tr class="odd">
+<td align="left">FG-t</td>
+<td align="left"><code>"fay"</code></td>
+<td align="left"><code>"t"</code></td>
+<td align="left"><code>"deletion"</code></td>
+</tr>
+</tbody>
+</table>
+<p>Student intervals require <code>error = "if"</code> or
+<code>"fay"</code>. Student and FG calculations require
+<code>engine = "calculateAJ_Rcpp"</code> (the default) or
+<code>"auto"</code>; they are unavailable with
+<code>engine = "calculateKM"</code>. Degrees of freedom are calculated
+separately for each time and stratum; this calculation can be expensive
+for large risk sets.</p>
+<p><strong>Transformations and probability scale.</strong> Let
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>=</mo><mover><mi>S</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">p=\hat S(t)</annotation></semantics></math>
+for KM and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>=</mo><mn>1</mn><mo>−</mo><msub><mover><mi>F</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">p=1-\hat F_1(t)</annotation></semantics></math>
+for AJ, matching the returned <code>fit$surv</code>. At an interior
+estimate with positive variance, the transformed interval is obtained
+from
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mo stretchy="false" form="prefix">(</mo><mi>p</mi><mo stretchy="false" form="postfix">)</mo><mspace width="0.222em"></mspace><mo>±</mo><mspace width="0.222em"></mspace><mi>q</mi><mspace width="0.167em"></mspace><mo stretchy="false" form="prefix">|</mo><msup><mi>g</mi><mo>′</mo></msup><mo stretchy="false" form="prefix">(</mo><mi>p</mi><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="prefix">|</mo><mspace width="0.167em"></mspace><mover><mi mathvariant="normal">SE</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>p</mi><mo stretchy="false" form="postfix">)</mo><mo>,</mo><mspace width="2.0em"></mspace><mi>q</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><msub><mi>z</mi><mrow><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>+</mo><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">f</mi><mi mathvariant="normal">.</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">t</mi></mrow><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mn>2</mn></mrow></msub><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="normal">normal</mtext><mo>,</mo></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><msub><mi>t</mi><mrow><mover><mi>ν</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>,</mo><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>+</mo><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">f</mi><mi mathvariant="normal">.</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">t</mi></mrow><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mn>2</mn></mrow></msub><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="normal">Student</mtext><mi>.</mi></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">
+g(p)\ \pm\ q\,|g'(p)|\,\widehat{\operatorname{SE}}(p),\qquad
+q=\begin{cases}
+z_{(1+\mathrm{conf.int})/2},&amp;\text{normal},\\
+t_{\hat\nu(t),(1+\mathrm{conf.int})/2},&amp;\text{Student}.
+\end{cases}
+</annotation></semantics></math> The endpoints are mapped back using
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>g</mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><annotation encoding="application/x-tex">g^{-1}</annotation></semantics></math>
+and ordered on the probability scale. Bounds are restricted to the
+transformation range before inversion where necessary, and to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[0,1]</annotation></semantics></math>.
+The supported transformations are:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th align="left"><code>conf.type</code></th>
+<th align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mo stretchy="false" form="prefix">(</mo><mi>p</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">g(p)</annotation></semantics></math></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code>"plain"</code></td>
+<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>p</mi><annotation encoding="application/x-tex">p</annotation></semantics></math></td>
+</tr>
+<tr class="even">
+<td align="left"><code>"log"</code></td>
+<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mi>p</mi></mrow><annotation encoding="application/x-tex">\log p</annotation></semantics></math></td>
+</tr>
+<tr class="odd">
+<td align="left"><code>"log-log"</code></td>
+<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>−</mi><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mi>p</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\log(-\log p)</annotation></semantics></math></td>
+</tr>
+<tr class="even">
+<td align="left"><code>"logit"</code></td>
+<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">{</mo><mi>p</mi><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>p</mi><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">\log\{p/(1-p)\}</annotation></semantics></math></td>
+</tr>
+<tr class="odd">
+<td align="left">
+<code>"arcsin"</code> (default; aliases
+<code>"arcsine-square root"</code>, <code>"a"</code>)</td>
+<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">arcsin</mi><mo>⁡</mo></mrow><msqrt><mi>p</mi></msqrt></mrow><annotation encoding="application/x-tex">\arcsin\sqrt p</annotation></semantics></math></td>
+</tr>
+</tbody>
+</table>
+<p>For AJ, <code>fit$lower</code> and <code>fit$upper</code> bound
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>−</mo><msub><mover><mi>F</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">1-\hat F_1(t)</annotation></semantics></math>;
+the CIF limits are <code>1 - fit$upper</code> and
+<code>1 - fit$lower</code>. Thus <code>"log-log"</code> uses
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">[</mo><mi>−</mi><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">{</mo><mn>1</mn><mo>−</mo><msub><mover><mi>F</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">}</mo><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">\log[-\log\{1-\hat F_1(t)\}]</annotation></semantics></math>
+for AJ, not
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">[</mo><mi>−</mi><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><msub><mover><mi>F</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">\log[-\log\hat F_1(t)]</annotation></semantics></math>.
+<code><a href="../reference/cifplot.html">cifplot()</a></code> displays the CIF limits when plotting risk.
+Passing <code>conf.type = "none"</code> (or <code>"n"</code>) skips
+intervals. By default, <code>std.err</code> is on the probability scale;
+<code>report.survfit.std.err = TRUE</code> requests the log scale of the
+stored <code>surv</code> component instead.</p>
+<p><strong>Boundary and failure rules.</strong> On the C++ IF/FG path, a
+valid estimate at 0 or 1 gives the corresponding singleton interval.
+This is an endpoint convention, not a guarantee of boundary coverage.
+Interior estimates with zero or invalid variance, unavailable Student
+degrees of freedom, or evaluation times beyond the positive-weight
+follow-up support have missing limits. Failed Student intervals are not
+replaced by normal intervals. The fit records time- and stratum-specific
+<code>df</code>, <code>df.reason</code>, <code>critical.value</code>,
+and <code>conf.status</code>;
+<code>summary(fit, times = ..., extend = TRUE)</code> extracts the saved
+inference results and preserves missing intervals outside support.</p>
+<p>These are pointwise confidence intervals, not simultaneous confidence
+bands. The optional one-sided test requested through
+<code>time.point</code> and <code>null.hypothesis</code> retains its
+normal reference distribution even when <code>conf.dist = "t"</code> is
+used for confidence intervals.</p>
+</div>
+<div class="section level2">
+<h2 id="examples">Examples<a class="anchor" aria-label="anchor" href="#examples"></a>
+</h2>
+<p>The following small dataset is illustrative, not clinical data. The
+same inference options apply to KM and AJ, with or without fixed
+weights.</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gestimation.github.io/cifmodeling/">cifmodeling</a></span><span class="op">)</span></span>
+<span><span class="va">example_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  time <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>,</span>
+<span>  status <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">2</span>, <span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span>,</span>
+<span>  weight <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1.5</span>, <span class="fl">0.8</span>, <span class="fl">1.2</span>, <span class="fl">1</span>, <span class="fl">0.7</span>, <span class="fl">1.3</span>, <span class="fl">1</span>, <span class="fl">0.9</span>, <span class="fl">1.1</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># AJ with IF-t and equal-allocation degrees of freedom.</span></span>
+<span><span class="va">fit_edf</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cifcurve.html">cifcurve</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/Event.html">Event</a></span><span class="op">(</span><span class="va">time</span>, <span class="va">status</span><span class="op">)</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">example_data</span>, weights <span class="op">=</span> <span class="st">"weight"</span>,</span>
+<span>  outcome.type <span class="op">=</span> <span class="st">"competing-risk"</span>, error <span class="op">=</span> <span class="st">"if"</span>,</span>
+<span>  conf.dist <span class="op">=</span> <span class="st">"t"</span>, df.method <span class="op">=</span> <span class="st">"equal"</span>, conf.type <span class="op">=</span> <span class="st">"log-log"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">at_five</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_edf</span>, times <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  time <span class="op">=</span> <span class="va">at_five</span><span class="op">$</span><span class="va">time</span>, CIF <span class="op">=</span> <span class="fl">1</span> <span class="op">-</span> <span class="va">at_five</span><span class="op">$</span><span class="va">surv</span>,</span>
+<span>  SE <span class="op">=</span> <span class="va">at_five</span><span class="op">$</span><span class="va">std.err</span>, lower <span class="op">=</span> <span class="fl">1</span> <span class="op">-</span> <span class="va">at_five</span><span class="op">$</span><span class="va">upper</span>,</span>
+<span>  upper <span class="op">=</span> <span class="fl">1</span> <span class="op">-</span> <span class="va">at_five</span><span class="op">$</span><span class="va">lower</span>, df <span class="op">=</span> <span class="va">at_five</span><span class="op">$</span><span class="va">df</span>,</span>
+<span>  status <span class="op">=</span> <span class="va">at_five</span><span class="op">$</span><span class="va">conf.status</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##   time    CIF        SE      lower     upper       df status</span></span>
+<span><span class="co">## 1    5 0.1904 0.1220426 0.04291352 0.6383596 10.94327     ok</span></span></code></pre>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># KM for the composite of either event, with FG-t.</span></span>
+<span><span class="va">fit_fg</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cifcurve.html">cifcurve</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/Event.html">Event</a></span><span class="op">(</span><span class="va">time</span>, <span class="va">status</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">example_data</span>,</span>
+<span>  outcome.type <span class="op">=</span> <span class="st">"survival"</span>, error <span class="op">=</span> <span class="st">"fay"</span>,</span>
+<span>  conf.dist <span class="op">=</span> <span class="st">"t"</span>, conf.type <span class="op">=</span> <span class="st">"arcsin"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>For plotting Student intervals, calculate them first and pass the
+fitted object to <code><a href="../reference/cifplot.html">cifplot()</a></code>. Its formula interface does not
+forward <code>conf.dist</code> or <code>df.method</code> to
+<code><a href="../reference/cifcurve.html">cifcurve()</a></code>.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/cifplot.html">cifplot</a></span><span class="op">(</span><span class="va">fit_edf</span>, outcome.type <span class="op">=</span> <span class="st">"competing-risk"</span>, add.risktable <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<p>See <a href="v7_arguments.html">Full lists of arguments</a> for the
+API options and <a href="v8_reporting_cif.html">Reporting cumulative
+incidence</a> for extracting estimates and constructing tables.</p>
+</div>
+<div class="section level2">
+<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
+<ul>
+<li>Xie J, Liu C. Adjusted Kaplan–Meier estimator and log-rank test with
+inverse probability of treatment weighting for survival data.
+<em>Statistics in Medicine</em>. 2005, 24(20), 3089–3110. <a href="https://doi.org/10.1002/sim.2174" class="external-link">doi:10.1002/sim.2174</a>
+</li>
+</ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

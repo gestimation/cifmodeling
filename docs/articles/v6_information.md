@@ -80,12 +80,13 @@ polyreg(Event(AVAL, CNSR) ~ ARM, data = adtte,
 - `output` controls the destination of the table (e.g., `"markdown"`,
   `"latex"`, `"html"`, or a file path such as
   `'results/cif_table.docx'`).
-- `coef_map` or `coef_rename` renames model terms for interpretability.
-- `statistic` specifies which uncertainty summaries to display.
-  Examples: `statistic = "p.value"` for p-values,
-  `statistic = "conf.int"` for Wald CIs, `statistic = "t"` for t
-  statistics, `and statistic = "z"` for z statistics, instead of SEs
-  (default).
+- `coef_map` renames model terms for interpretability.
+- `statistic = "conf.int"` displays confidence intervals. Set
+  `conf_level = 0.95` for 95% intervals and `exponentiate = TRUE` to
+  display estimates and limits on the ratio scale.
+- Use `statistic = "p.value"` to display p-values or
+  `statistic = "statistic"` to display z statistics. The default
+  displays standard errors.
 
 You can also supply multiple model summaries as a named list to compare
 estimates across specifications in a single table. See

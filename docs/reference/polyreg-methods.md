@@ -12,7 +12,12 @@ by
 coef(object, ...)
 
 # S3 method for class 'polyreg'
-vcov(object, type = c("default", "sandwich", "bootstrap"), ...)
+vcov(
+  object,
+  type = c("default", "sandwich", "bootstrap"),
+  variance = NULL,
+  ...
+)
 
 # S3 method for class 'polyreg'
 nobs(object, ...)
@@ -40,13 +45,26 @@ effect_label.polyreg(
 )
 
 # S3 method for class 'polyreg'
-tidy(x, event = c("event1", "event2", "both"), ...)
+tidy(
+  x,
+  event = c("event1", "event2", "both"),
+  conf.int = x$conf.int,
+  variance = NULL,
+  exponentiate = FALSE,
+  conf.level = NULL,
+  ...,
+  vcov = NULL,
+  coef_rename = FALSE
+)
 
 # S3 method for class 'polyreg'
-glance(x, event = c("event1", "event2"), ...)
+glance(x, event = c("event1", "event2"), ..., gof_map = NULL)
 
 # S3 method for class 'polyreg'
 augment(x, ...)
+
+# S3 method for class 'polyreg'
+tbl_regression(x, ..., event = c("event1", "event2"))
 ```
 
 ## Arguments
@@ -68,6 +86,11 @@ augment(x, ...)
   [`polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg.md)
   settings, using `outcome.type`, `report.sandwich.conf`, and
   `report.boot.conf`. (Used only by `vcov.polyreg()`.)
+
+- variance:
+
+  Explicit covariance choice, `"if"` or `"bootstrap"`. `NULL` preserves
+  legacy selection. Explicit choices fail if unavailable.
 
 - x:
 
@@ -134,6 +157,39 @@ augment(x, ...)
 
   Numeric threshold used by `effect_label.polyreg()` to decide between
   printing `p < p_cut` and an exact p-value.
+
+- conf.int:
+
+  Numeric interval level for `tidy.polyreg()`, defaulting to the level
+  stored in the fit. A changed level uses normal Wald intervals; stored
+  BCa intervals require refitting to change their level. A logical value
+  is also accepted: `TRUE` includes confidence limits and `FALSE` omits
+  them. Use `conf.level` to select the level in this form.
+
+- exponentiate:
+
+  Logical; exponentiate effect estimates and confidence limits for
+  reporting. Standard errors and statistics stay on the log scale.
+
+- conf.level:
+
+  Optional confidence level for the broom-compatible logical `conf.int`
+  interface. Defaults to the fitted level.
+
+- vcov:
+
+  Compatibility argument for `modelsummary`. Only `NULL` is supported by
+  `tidy.polyreg()`. Use `variance` to choose the covariance estimator.
+
+- coef_rename:
+
+  Compatibility argument for `modelsummary`. Only `FALSE` is supported
+  by `tidy.polyreg()`.
+
+- gof_map:
+
+  Table formatting argument forwarded by `modelsummary` and ignored by
+  `glance.polyreg()`.
 
 ## Value
 

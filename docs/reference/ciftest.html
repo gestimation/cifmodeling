@@ -31,7 +31,7 @@ direction, preserving the zeroth-step identity in the observed sample.'></head><
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,6 +49,8 @@ direction, preserving the zeroth-step identity in the observed sample.'></head><
     <li><a class="dropdown-item" href="../articles/v5_gallery.html">Gallery</a></li>
     <li><a class="dropdown-item" href="../articles/v6_information.html">Additional information</a></li>
     <li><a class="dropdown-item" href="../articles/v7_arguments.html">Full lists of arguments</a></li>
+    <li><a class="dropdown-item" href="../articles/v8_reporting_cif.html">Reporting cumulative incidence</a></li>
+    <li><a class="dropdown-item" href="../articles/v9_reporting_polyreg.html">Reporting CIF regression</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -116,7 +118,8 @@ direction, preserving the zeroth-step identity in the observed sample.</p>
 
 <dl><dt id="arg-formula">formula<a class="anchor" aria-label="anchor" href="#arg-formula"></a></dt>
 <dd><p>A two-sided formula with an <code><a href="Event.html">Event()</a></code> or <code>Surv()</code> response
-and one grouping variable on the right-hand side.</p></dd>
+and one grouping variable on the right-hand side.
+<code>Surv()</code> responses must be right-censored.</p></dd>
 
 
 <dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>

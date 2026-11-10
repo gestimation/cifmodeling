@@ -152,9 +152,10 @@ cifpanel(
   `NULL` (default), the function automatically infers the outcome type
   from the data: if the event variable has more than two unique levels,
   `"competing-risk"` is assumed; otherwise, `"survival"` is used. You
-  can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous
-  inputs (e.g., `c("S", "C")`) trigger automatic detection based on the
-  event coding.
+  can also use abbreviations such as `"S"` or `"C"`. An explicit
+  `"competing-risk"` remains in effect when a cause is absent in the
+  analysis data. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger
+  automatic detection based on the event coding.
 
 - code.event1:
 
@@ -185,10 +186,12 @@ cifpanel(
 
   Character string specifying the method for SEs and CIs used
   internally. For `"survival"` without weights, choose one of
-  `"greenwood"` (default), `"tsiatis"`, or `"if"`. For
+  `"greenwood"` (default), `"tsiatis"`, `"if"`, or `"fay"`. For
   `"competing-risk"` without weights, choose one of `"delta"` (default),
-  `"aalen"`, or `"if"`. SEs and CIs based on influence functions
-  (`"if"`) is recommended for weighted analysis.
+  `"aalen"`, `"if"`, or `"fay"`. Weighted analysis defaults to
+  influence-function SEs (`"if"`). The C++ curve engine also supports
+  `"fay"`, a Fay–Graubard-type correction. Supplied weights are held
+  fixed; uncertainty from estimating a propensity score is not included.
 
 - conf.type:
 

@@ -2,7 +2,8 @@
 
 ## Nonparametric estimation and visualization
 
-- [`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md)
+- [`summary(`*`<cifcurve>`*`)`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md)
+  [`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md)
   : Calculate the Kaplan-Meier estimator and the Aalen-Johansen
   estimator
 - [`cifplot()`](https://gestimation.github.io/cifmodeling/reference/cifplot.md)
@@ -28,6 +29,7 @@
   [`tidy(`*`<polyreg>`*`)`](https://gestimation.github.io/cifmodeling/reference/polyreg-methods.md)
   [`glance(`*`<polyreg>`*`)`](https://gestimation.github.io/cifmodeling/reference/polyreg-methods.md)
   [`augment(`*`<polyreg>`*`)`](https://gestimation.github.io/cifmodeling/reference/polyreg-methods.md)
+  [`tbl_regression(`*`<polyreg>`*`)`](https://gestimation.github.io/cifmodeling/reference/polyreg-methods.md)
   : Methods for polyreg objects
 
 ## Hypothesis testing
@@ -50,3 +52,9 @@
   : Extract per-stratum event times from a formula and data
 - [`Event()`](https://gestimation.github.io/cifmodeling/reference/Event.md)
   : Create a survival or competing-risks response
+- [`as_ggplot()`](https://gestimation.github.io/cifmodeling/reference/as_ggplot.md)
+  : Extract a ggplot for customization or export
+- [`as_modelsummary()`](https://gestimation.github.io/cifmodeling/reference/as_modelsummary.md)
+  : Convert regression results to modelsummary input
+- [`as_prediction_data()`](https://gestimation.github.io/cifmodeling/reference/as_prediction_data.md)
+  : Extract prediction data in the common long format

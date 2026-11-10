@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,6 +40,8 @@
     <li><a class="dropdown-item" href="../articles/v5_gallery.html">Gallery</a></li>
     <li><a class="dropdown-item" href="../articles/v6_information.html">Additional information</a></li>
     <li><a class="dropdown-item" href="../articles/v7_arguments.html">Full lists of arguments</a></li>
+    <li><a class="dropdown-item" href="../articles/v8_reporting_cif.html">Reporting cumulative incidence</a></li>
+    <li><a class="dropdown-item" href="../articles/v9_reporting_polyreg.html">Reporting CIF regression</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -86,6 +88,10 @@ risk plots – with just a few lines of R.</p>
 <p>It provides a unified, high-level interface for survival and
 competing risks analysis, combining nonparametric estimation, regression
 modeling, visualization, and lightweight flowchart summaries.</p>
+<p>The first example uses <code>diabetes.complications</code>, an
+anonymized dataset from the Japan Diabetes Complications Study. Tanaka
+et al. (2013) examined fruit intake and incident diabetic retinopathy in
+this cohort.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gestimation.github.io/cifmodeling/">cifmodeling</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">diabetes.complications</span><span class="op">)</span></span>
@@ -238,13 +244,13 @@ via a single, unified interface.</p>
 extends <code>survfit()</code> in a few targeted ways. For unweighted
 survival data, it reproduces the standard Kaplan-Meier estimator with
 <strong>Greenwood and Tsiatis SEs</strong> and a unified set of CI
-transformations. For competing risks data, it computes Aalen-Johansen
-CIFs with both <strong>Aalen-type and delta-method SEs</strong>. For
-weighted survival or competing risks data (e.g. inverse probability
-weighting), it implements <strong>influence-function based SEs</strong>
-(Deng and Wang 2025) as well as <strong>modified Greenwood- and
-Tsiatis-type SEs</strong> (Xie and Liu 2005), which are valid under
-general positive weights.</p>
+transformations. For unweighted competing risks data, it computes
+Aalen-Johansen CIFs with both <strong>Aalen-type and delta-method
+SEs</strong>. The default inference for weighted curves uses
+<strong>influence-function based SEs</strong> (Deng and Wang 2025). The
+<a href="v3_formulas.html">formulas vignette</a> also describes the
+weighted Kaplan–Meier estimator and the adjusted Greenwood variance of
+Xie and Liu (2005).</p>
 <p>If you need very fine-grained plot customization, you can compute the
 estimator and keep a survfit-compatible object with
 <code><a href="../reference/cifcurve.html">cifcurve()</a></code> (or supply your own survfit object) and then
@@ -402,6 +408,22 @@ are routinely compared against related functions in
 <strong>mets</strong> packages to ensure consistency. The package is
 continuously tested on GitHub Actions (Windows, macOS, Linux) to
 maintain reproducibility and CRAN-level compliance.</p>
+</div>
+<div class="section level2">
+<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
+<ul>
+<li>Tanaka S, Yoshimura Y, Kawasaki R, Kamada C, Tanaka S, Horikawa C,
+Ohashi Y, Araki A, Ito H, Akanuma Y, Yamada N, Yamashita H, Sone H, for
+the Japan Diabetes Complications Study Group. Fruit intake and incident
+diabetic retinopathy with type 2 diabetes. <em>Epidemiology</em>. 2013,
+24(2), 204–211. <a href="https://doi.org/10.1097/EDE.0b013e318281725e" class="external-link">doi:10.1097/EDE.0b013e318281725e</a>
+</li>
+<li>Xie J, Liu C. Adjusted Kaplan–Meier estimator and log-rank test with
+inverse probability of treatment weighting for survival data.
+<em>Statistics in Medicine</em>. 2005, 24(20), 3089–3110. <a href="https://doi.org/10.1002/sim.2174" class="external-link">doi:10.1002/sim.2174</a>
+</li>
+</ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

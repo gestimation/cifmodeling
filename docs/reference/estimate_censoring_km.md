@@ -1,8 +1,9 @@
 # Estimate a stratified censoring Kaplan-Meier distribution
 
-Uses the package Kaplan-Meier engine with censoring as the event. Both
-left and right limits are retained because Fine-Gray weights must be
-predictable at tied event/censoring times.
+Uses the package Kaplan-Meier counts, retaining both left and right
+limits. The default keeps the existing censoring-first convention for
+ciftest. With tie.order="event_first", actual failures leave before the
+censoring jump, consistently with observation of failures when T \<= C.
 
 ## Usage
 
@@ -15,6 +16,7 @@ estimate_censoring_km(
   weights = rep.int(1, length(t)),
   prob.bound = 1e-07,
   prob.truncation = NULL,
-  censoring.event = epsilon == code.censoring
+  censoring.event = epsilon == code.censoring,
+  tie.order = c("censoring_first", "event_first")
 )
 ```

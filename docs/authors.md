@@ -12,17 +12,20 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/gestimation/cifmodeling/blob/HEAD/DESCRIPTION)
+[`inst/CITATION`](https://github.com/gestimation/cifmodeling/blob/HEAD/inst/CITATION)
 
-Tanaka S (2026). *cifmodeling: Visualization and Polytomous Modeling of
-Survival and Competing Risks*. R package version 1.2.1,
-https://github.com/gestimation/cifmodeling,
-<https://gestimation.github.io/cifmodeling/>.
+Tanaka S, Scheike TH (2026). “Estimating effects on cumulative incidence
+probabilities by direct polytomous regression and polytomous log-odds
+product.” *Biometrics*, **82**(3), ujag160.
+[doi:10.1093/biomtc/ujag160](https://doi.org/10.1093/biomtc/ujag160).
 
-    @Manual{,
-      title = {cifmodeling: Visualization and Polytomous Modeling of Survival and Competing Risks},
-      author = {Shiro Tanaka},
+    @Article{TanakaScheike2026,
+      title = {Estimating effects on cumulative incidence probabilities by direct polytomous regression and polytomous log-odds product},
+      author = {Shiro Tanaka and Thomas H. Scheike},
+      journal = {Biometrics},
       year = {2026},
-      note = {R package version 1.2.1, https://github.com/gestimation/cifmodeling},
-      url = {https://gestimation.github.io/cifmodeling/},
+      volume = {82},
+      number = {3},
+      pages = {ujag160},
+      doi = {10.1093/biomtc/ujag160},
     }

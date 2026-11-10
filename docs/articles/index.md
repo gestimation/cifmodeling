@@ -31,3 +31,13 @@
 
 - [Full lists of
   arguments](https://gestimation.github.io/cifmodeling/articles/v7_arguments.md):
+
+### Reporting cumulative incidence
+
+- [Reporting Cumulative Incidence with
+  gtsummary](https://gestimation.github.io/cifmodeling/articles/v8_reporting_cif.md):
+
+### Reporting CIF regression
+
+- [Reporting CIF Regression with
+  gtsummary](https://gestimation.github.io/cifmodeling/articles/v9_reporting_polyreg.md):

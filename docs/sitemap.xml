@@ -1,15 +1,6 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://gestimation.github.io/cifmodeling/404.html</loc></url>
-<url><loc>https://gestimation.github.io/cifmodeling/articles/arguments.html</loc></url>
-<url><loc>https://gestimation.github.io/cifmodeling/articles/examples.html</loc></url>
-<url><loc>https://gestimation.github.io/cifmodeling/articles/formula.html</loc></url>
-<url><loc>https://gestimation.github.io/cifmodeling/articles/formulas.html</loc></url>
-<url><loc>https://gestimation.github.io/cifmodeling/articles/functions.html</loc></url>
-<url><loc>https://gestimation.github.io/cifmodeling/articles/gallery.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/articles/index.html</loc></url>
-<url><loc>https://gestimation.github.io/cifmodeling/articles/information.html</loc></url>
-<url><loc>https://gestimation.github.io/cifmodeling/articles/overview.html</loc></url>
-<url><loc>https://gestimation.github.io/cifmodeling/articles/polyreg.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/articles/v1_overview.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/articles/v2_polyreg.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/articles/v3_formulas.html</loc></url>
@@ -17,11 +8,17 @@
 <url><loc>https://gestimation.github.io/cifmodeling/articles/v5_gallery.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/articles/v6_information.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/articles/v7_arguments.html</loc></url>
+<url><loc>https://gestimation.github.io/cifmodeling/articles/v8_reporting_cif.html</loc></url>
+<url><loc>https://gestimation.github.io/cifmodeling/articles/v9_reporting_polyreg.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/authors.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/index.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/LICENSE-text.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/LICENSE.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/news/index.html</loc></url>
+<url><loc>https://gestimation.github.io/cifmodeling/PAGES.html</loc></url>
+<url><loc>https://gestimation.github.io/cifmodeling/reference/as_ggplot.html</loc></url>
+<url><loc>https://gestimation.github.io/cifmodeling/reference/as_modelsummary.html</loc></url>
+<url><loc>https://gestimation.github.io/cifmodeling/reference/as_prediction_data.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/binregRatioLOP.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/build_closed_form_augmentation.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/build_fg_score_iid.html</loc></url>
@@ -30,6 +27,7 @@
 <url><loc>https://gestimation.github.io/cifmodeling/reference/calculatePercentageLOP.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/calculate_A12_logrank_weightit.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/calculate_gray.html</loc></url>
+<url><loc>https://gestimation.github.io/cifmodeling/reference/censoring_km_score_correction.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/cif-stat-arguments.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/cif-visual-arguments.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/cifcurve.html</loc></url>

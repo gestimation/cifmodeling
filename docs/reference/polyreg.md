@@ -73,7 +73,8 @@ polyreg(
 
   A `formula` describing the outcome and nuisance covariates, excluding
   the exposure of interest. The LHS must be `Event(time, status)` or
-  `survival::Surv(time, status)`.
+  `survival::Surv(time, status)`. `Surv()` responses must be
+  right-censored.
 
 - exposure:
 
@@ -106,11 +107,13 @@ polyreg(
 
 - code.event2:
 
-  Integer code of the competing event (default `2`).
+  Integer code of the competing event (default `2`). Used for
+  competing-risk models and when inferring the outcome type.
 
 - code.censoring:
 
-  Integer code of censoring (default `0`).
+  Integer code of censoring (default `0`). The event codes used by the
+  model must be distinct non-negative integers.
 
 - code.exposure.ref:
 
@@ -138,12 +141,14 @@ polyreg(
   Character string selecting the outcome type. Valid values are
   `"competing-risk"`, `"survival"`, `"binomial"`,
   `"proportional-survival"`, and `"proportional-competing-risk"`. The
-  default is `"competing-risk"`. If explicitly set to `NULL`,
-  `polyreg()` attempts to infer the outcome type from the data: if the
-  event variable has more than two distinct levels, `"competing-risk"`
-  is assumed; otherwise, `"survival"` is assumed. Abbreviations such as
-  `"S"` or `"C"` are accepted; mixed or ambiguous inputs trigger
-  automatic detection from the event coding in `data`.
+  default is `"competing-risk"`. Fitting either competing-risk model
+  requires observations of both event types. For `"competing-risk"`,
+  both types must be observed by `time.point`. If explicitly set to
+  `NULL`, `polyreg()` attempts to infer the outcome type from the data:
+  if the event variable has more than two distinct levels,
+  `"competing-risk"` is assumed; otherwise, `"survival"` is assumed.
+  Abbreviations such as `"S"` or `"C"` are accepted; mixed or ambiguous
+  inputs trigger automatic detection from the event coding in `data`.
 
 - conf.int:
 
@@ -164,7 +169,10 @@ polyreg(
   Logical or `NULL`. When `TRUE`, CIs based on sandwich variance are
   computed. When `FALSE`, they are omitted (default `TRUE`). This CI is
   default for time-point models (`"outcome.type=competing-risk"`,
-  `"survival"` or `"binomial"`) and is not available otherwise.
+  `"survival"` or `"binomial"`) and is not available otherwise. For
+  time-point survival and competing-risk models, the variance accounts
+  for estimation of the censoring distribution within each supplied
+  stratum.
 
 - report.boot.conf:
 
@@ -178,7 +186,10 @@ polyreg(
 
   Logical indicating the bootstrap CI method. Use `TRUE` for
   bias-corrected and accelerated intervals or `FALSE` for the normal
-  approximation (default `FALSE`).
+  approximation (default `FALSE`). For proportional models, normal
+  intervals are centered on the mean bootstrap coefficient and use the
+  requested `conf.int`. BCa limits are computed separately for each
+  reported coefficient.
 
 - boot.multiplier:
 
@@ -322,10 +333,12 @@ ratios**, **odds ratios**, or **subdistribution hazard ratios**, while
 ensuring that the probabilities across competing events sum to one. This
 is achieved through **reparameterization using polytomous log odds
 products**, which fits so-called effect-measure models and nuisance
-models on multiple competing events simultaneously. Additionally,
-`polyreg()` supports direct binomial regression for survival outcomes
-and the Richardson model for binomial outcomes, both of which use log
-odds products.
+models on multiple competing events simultaneously (Tanaka and Scheike
+2026). Additionally, `polyreg()` supports direct binomial regression for
+survival outcomes and the Richardson model for binomial outcomes, both
+of which use log odds products. With more than two exposure levels, the
+single-outcome model uses the generalized log odds product, the sum of
+log odds across exposure levels.
 
 ### Key arguments
 
@@ -482,6 +495,13 @@ further formatting, if desired.
 
 **\[experimental\]**
 
+## References
+
+Tanaka S, Scheike TH. Estimating effects on cumulative incidence
+probabilities by direct polytomous regression and polytomous log-odds
+product. *Biometrics*. 2026, 82(3), ujag160.
+[doi:10.1093/biomtc/ujag160](https://doi.org/10.1093/biomtc/ujag160)
+
 ## See also
 
 [`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md)
@@ -513,11 +533,11 @@ output <- polyreg(
 coef(output)
 #> [1] -1.38313159  0.30043899 -3.99147265  0.07582589
 vcov(output)
-#>              [,1]         [,2]         [,3]         [,4]
-#> [1,]  0.007132823 -0.004524224  0.002772872 -0.002210804
-#> [2,] -0.004524224  0.009639840 -0.001178880  0.004588230
-#> [3,]  0.002772872 -0.001178880  0.018638168 -0.016918563
-#> [4,] -0.002210804  0.004588230 -0.016918563  0.054838178
+#>              [,1]          [,2]         [,3]          [,4]
+#> [1,] 2.539857e-02  5.688786e-03 9.114685e-03  3.927105e-05
+#> [2,] 5.688786e-03  1.104372e-02 2.138178e-05 -5.263603e-03
+#> [3,] 9.114685e-03  2.138178e-05 7.213912e-02  2.795468e-02
+#> [4,] 3.927105e-05 -5.263603e-03 2.795468e-02  5.773891e-02
 nobs(output)
 #> [1] 978
 summary(output)
@@ -526,8 +546,8 @@ summary(output)
 #> ---------------------------------------------- 
 #> fruitq1, 1 vs 0      
 #>                       1.350         1.079       
-#>                       [1.114, 1.637]  [0.682, 1.707]
-#>                       (p=0.002)     (p=0.746)   
+#>                       [1.099, 1.659]  [0.674, 1.728]
+#>                       (p=0.004)     (p=0.752)   
 #> 
 #> ---------------------------------------------- 
 #> 
@@ -539,4 +559,10 @@ summary(output)
 #> converged.by          Converged in objective function  -           
 #> nleqslv.message       Function criterion near zero  -           
 #> 
+
+if (requireNamespace("gtsummary", quietly = TRUE) &&
+    utils::packageVersion("gtsummary") >= "2.6.1") {
+  gtsummary::tbl_regression(output, exponentiate = TRUE)
+  gtsummary::tbl_regression(output, exponentiate = TRUE, event = "event2")
+}
 ```

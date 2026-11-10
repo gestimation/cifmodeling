@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -25,6 +25,8 @@
     <li><a class="dropdown-item" href="../articles/v5_gallery.html">Gallery</a></li>
     <li><a class="dropdown-item" href="../articles/v6_information.html">Additional information</a></li>
     <li><a class="dropdown-item" href="../articles/v7_arguments.html">Full lists of arguments</a></li>
+    <li><a class="dropdown-item" href="../articles/v8_reporting_cif.html">Reporting cumulative incidence</a></li>
+    <li><a class="dropdown-item" href="../articles/v9_reporting_polyreg.html">Reporting CIF regression</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -42,6 +44,28 @@
       <small>Source: <a href="https://github.com/gestimation/cifmodeling/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.2.3" id="cifmodeling-123">cifmodeling 1.2.3<a class="anchor" aria-label="anchor" href="#cifmodeling-123"></a></h2>
+<ul><li>
+<code><a href="../reference/polyreg-methods.html">tidy.polyreg()</a></code> accepts the default arguments forwarded by <code><a href="https://modelsummary.com/man/msummary.html" class="external-link">modelsummary::msummary()</a></code>, so tables can display exponentiated coefficients and confidence intervals at the requested level.</li>
+<li>
+<code><a href="../reference/polyreg.html">polyreg()</a></code> validates the active event codes and requires both event types by the analysis time for fixed-time competing-risk models. IPCW uses the specified censoring code, supports character strata, and accounts for estimating the censoring distribution within each stratum in the fixed-time sandwich variance.</li>
+<li>Multilevel binomial models use the generalized log odds product to fit separate exposure contrasts against the reference level. Proportional models use the requested level for normal bootstrap intervals and compute BCa intervals separately for the reported coefficients.</li>
+<li>
+<code><a href="../reference/cifcurve.html">cifcurve()</a></code> computes delta and Aalen variances using all event times up to each reported time. The legacy engine reports risk sets immediately before each time and accepts unweighted data or positive weights that are constant within each stratum. Confidence limits and one-sided p-values are missing beyond each stratum’s positive-weight follow-up.</li>
+<li>Time-to-event analyses reject unsupported <code>Surv()</code> response types. Explicit competing-risk analyses retain their selected outcome type when a cause is absent, subject to the event requirements of each estimator. The joint Gray covariance in <code><a href="../reference/ciftest_mdir.html">ciftest_mdir()</a></code> respects custom event codes.</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.2.2" id="cifmodeling-122">cifmodeling 1.2.2<a class="anchor" aria-label="anchor" href="#cifmodeling-122"></a></h2>
+<ul><li><p>Added direct optional <code><a href="https://www.danieldsjoberg.com/gtsummary/reference/tbl_regression.html" class="external-link">gtsummary::tbl_regression()</a></code> support for <code>polyreg</code>, including event selection, reference rows and event-specific RR/OR/SHR headings. <code><a href="../reference/polyreg-methods.html">tidy.polyreg()</a></code> supports <code>exponentiate</code> and the standard logical <code>conf.int</code>/numeric <code>conf.level</code> interface while retaining legacy numeric <code>conf.int</code>. Stored intervals are retained when inference settings are unchanged.</p></li>
+<li><p>Corrected survival-summary SE scaling and unstratified curve compatibility. <code><a href="../reference/cifcurve.html">cifcurve()</a></code> now returns a subclass of <code>survfit</code>; its summary and stratum-subsetting methods keep saved inference aligned and prevent interval extrapolation past positive-weight follow-up. Reporting adapters preserve the fitted statistical results.</p></li>
+<li><p>Added reporting articles for CIF curves/tests and event-specific regression, with gtsummary formatting and Word/HTML export examples.</p></li>
+<li><p>Fixed unweighted <code><a href="../reference/cifplot.html">cifplot()</a></code> calls being treated as weighted when NULL weights were forwarded internally. Unweighted plots now honor <code>error = "aalen"</code> and <code>"delta"</code>, and retain the unweighted default variance choice. Actual supplied weights retain the existing weighted-inference rules.</p></li>
+<li><p>Added pointwise IF-t, FG-normal and FG-t intervals to <code><a href="../reference/cifcurve.html">cifcurve()</a></code> for independent observations with no weights or known fixed weights. Select <code>conf.dist = "t"</code> for Student critical values, or <code>error = "fay"</code> for the FG sandwich correction. Existing default method choices are retained.</p></li>
+<li><p>IF-t supports <code>df.method = "deletion"</code> (FG-type allocation, default) or <code>"equal"</code> (equal-allocation working Satterthwaite degrees of freedom). FG-t uses deletion allocation. Results record time-specific degrees of freedom, critical values and interval availability reasons. These are approximations, not exact t distributions or uniform coverage guarantees.</p></li>
+<li><p>Supplied weights, including externally estimated IPTW, are treated as fixed. Propensity-score estimation and its full IF contribution remain outside this API. IF/FG limits beyond positive-weight follow-up, or with invalid interior variance/df, are missing rather than silently replaced by a normal interval; valid boundary singletons are retained.</p></li>
+<li><p>Corrected the C++ IF recursion to differentiate the actual KM/AJ product limit, including tied jumps. IF standard errors can consequently differ from earlier versions. FG contributions share that recursion. Also fixed zero cause-1 CIFs when only competing events are observed.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.2.0" id="cifmodeling-120">cifmodeling 1.2.0<a class="anchor" aria-label="anchor" href="#cifmodeling-120"></a></h2>
 <ul><li><p>Added <code><a href="../reference/ciftest.html">ciftest()</a></code> for standard and weighted log-rank/Gray tests and closed-form augmented competing-risk score tests with separately specified censoring and competing-risk nuisance strata.</p></li>

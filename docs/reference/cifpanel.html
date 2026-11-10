@@ -27,7 +27,7 @@ Display a plot with an enlarged y-axis inside a full-scale plot.
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,6 +45,8 @@ Display a plot with an enlarged y-axis inside a full-scale plot.
     <li><a class="dropdown-item" href="../articles/v5_gallery.html">Gallery</a></li>
     <li><a class="dropdown-item" href="../articles/v6_information.html">Additional information</a></li>
     <li><a class="dropdown-item" href="../articles/v7_arguments.html">Full lists of arguments</a></li>
+    <li><a class="dropdown-item" href="../articles/v8_reporting_cif.html">Reporting cumulative incidence</a></li>
+    <li><a class="dropdown-item" href="../articles/v9_reporting_polyreg.html">Reporting CIF regression</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -206,6 +208,7 @@ One of <code>"survival"</code> (Kaplan-Meier) or <code>"competing-risk"</code> (
 If <code>NULL</code> (default), the function automatically infers the outcome type from the data:
 if the event variable has more than two unique levels, <code>"competing-risk"</code> is assumed;
 otherwise, <code>"survival"</code> is used. You can also use abbreviations such as <code>"S"</code> or <code>"C"</code>.
+An explicit <code>"competing-risk"</code> remains in effect when a cause is absent in the analysis data.
 Mixed or ambiguous inputs (e.g., <code>c("S", "C")</code>) trigger automatic detection based on the event coding.</p></dd>
 
 
@@ -233,9 +236,11 @@ For panel displays (e.g. <code>cifpanel()</code> or when <code>panel.per.event =
 
 <dt id="arg-error">error<a class="anchor" aria-label="anchor" href="#arg-error"></a></dt>
 <dd><p>Character string specifying the method for SEs and CIs used internally.
-For <code>"survival"</code> without weights, choose one of <code>"greenwood"</code> (default), <code>"tsiatis"</code>, or <code>"if"</code>.
-For <code>"competing-risk"</code> without weights, choose one of <code>"delta"</code> (default), <code>"aalen"</code>, or <code>"if"</code>.
-SEs and CIs based on influence functions (<code>"if"</code>) is recommended for weighted analysis.</p></dd>
+For <code>"survival"</code> without weights, choose one of <code>"greenwood"</code> (default), <code>"tsiatis"</code>, <code>"if"</code>, or <code>"fay"</code>.
+For <code>"competing-risk"</code> without weights, choose one of <code>"delta"</code> (default), <code>"aalen"</code>, <code>"if"</code>, or <code>"fay"</code>.
+Weighted analysis defaults to influence-function SEs (<code>"if"</code>). The C++ curve
+engine also supports <code>"fay"</code>, a Fay–Graubard-type correction. Supplied weights
+are held fixed; uncertainty from estimating a propensity score is not included.</p></dd>
 
 
 <dt id="arg-conf-type">conf.type<a class="anchor" aria-label="anchor" href="#arg-conf-type"></a></dt>

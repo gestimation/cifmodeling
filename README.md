@@ -241,10 +241,9 @@ CIs, and p-values. Internally, a `"polyreg"` object also supports the
 - `augment()`: observation-level diagnostics (weights for IPCW,
   predicted CIFs, and influence functions).
 
-The working version also provides `as_ggplot()` for single-plot extraction,
-`as_prediction_data()` for explicit prediction-data extraction, and
-`as_modelsummary()` for tables with explicit inference settings. See the
-[shared output API](dev/OUTPUT-API.md), including the development GAM/CIF methods.
+Use `as_ggplot()` to extract a single plot, `as_prediction_data()` to extract
+prediction data, and `as_modelsummary()` to prepare tables with explicit
+inference settings.
 
 ### Risk ratios over time with modelplot()
 

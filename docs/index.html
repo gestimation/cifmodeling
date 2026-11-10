@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,8 @@
     <li><a class="dropdown-item" href="articles/v5_gallery.html">Gallery</a></li>
     <li><a class="dropdown-item" href="articles/v6_information.html">Additional information</a></li>
     <li><a class="dropdown-item" href="articles/v7_arguments.html">Full lists of arguments</a></li>
+    <li><a class="dropdown-item" href="articles/v8_reporting_cif.html">Reporting cumulative incidence</a></li>
+    <li><a class="dropdown-item" href="articles/v9_reporting_polyreg.html">Reporting CIF regression</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -73,7 +75,8 @@
 <li>
 <code><a href="reference/ciftest.html">ciftest()</a></code> compares survival or CIF curves using log-rank, Gray, robust score, augmented score, or multiple-direction tests.</li>
 <li>
-<code><a href="reference/polyreg.html">polyreg()</a></code> fits <strong>coherent regression models</strong> on all cause-specific CIFs simultaneously to estimate RR/OR/SHR, offering a practical complement to Fine-Gray.</li>
+<code><a href="reference/polyreg.html">polyreg()</a></code> fits <strong>coherent regression models</strong> on all cause-specific CIFs simultaneously to estimate RR/OR/SHR using direct polytomous regression. <a href="https://doi.org/10.1093/biomtc/ujag160" class="external-link">Tanaka and Scheike (2026)</a>
+</li>
 </ul>
 <blockquote>
 <p><strong>Explore the main features visually:</strong><br>
@@ -90,6 +93,7 @@ Visit the <em>Coffee and Research – Story and Quiz</em> series for narrative-s
 <div class="section level2">
 <h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
+<p>This example uses <code>diabetes.complications</code>, an anonymized dataset from the Japan Diabetes Complications Study. <a href="https://doi.org/10.1097/EDE.0b013e318281725e" class="external-link">Tanaka et al. (2013)</a></p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gestimation.github.io/cifmodeling/">cifmodeling</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">diabetes.complications</span><span class="op">)</span></span>
@@ -212,6 +216,7 @@ Adjusted cumulative incidence curves with CIs based on influence functions
 <li>
 <code>augment()</code>: observation-level diagnostics (weights for IPCW, predicted CIFs, and influence functions).</li>
 </ul>
+<p>Use <code><a href="reference/as_ggplot.html">as_ggplot()</a></code> to extract a single plot, <code><a href="reference/as_prediction_data.html">as_prediction_data()</a></code> to extract prediction data, and <code><a href="reference/as_modelsummary.html">as_modelsummary()</a></code> to prepare tables with explicit inference settings.</p>
 </div>
 <div class="section level3">
 <h3 id="risk-ratios-over-time-with-modelplot">Risk ratios over time with modelplot()<a class="anchor" aria-label="anchor" href="#risk-ratios-over-time-with-modelplot"></a>
@@ -277,7 +282,7 @@ Visualization of risk ratios at 2, 4, 6 and 8 years using polyreg() and modelplo
 <h2 id="position-in-the-survival-ecosystem">Position in the survival ecosystem<a class="anchor" aria-label="anchor" href="#position-in-the-survival-ecosystem"></a>
 </h2>
 <p>Several excellent R packages exist for survival and competing risks analysis. The <strong>survival</strong> package provides the canonical API for survival data. In combination with the <strong>ggsurvfit</strong> package, <code><a href="https://rdrr.io/pkg/survival/man/survfit.html" class="external-link">survival::survfit()</a></code> can produce publication-ready survival plots. For CIF plots, however, integration in the general ecosystem is less streamlined. <strong>cifmodeling</strong> fills this gap by offering <code><a href="reference/cifplot.html">cifplot()</a></code> for survival/CIF plots and multi-panel figures via a single, unified interface.</p>
-<p>Beyond providing a unified interface, <code><a href="reference/cifcurve.html">cifcurve()</a></code> also extends <code>survfit()</code> in a few targeted ways. For unweighted survival data, it reproduces the standard Kaplan-Meier estimator with <strong>Greenwood and Tsiatis SEs</strong> and a unified set of CI transformations. For competing risks data, it computes Aalen-Johansen CIFs with both <strong>Aalen-type and delta-method SEs</strong>. For weighted survival or competing risks data (e.g. inverse probability weighting), it implements <strong>influence-function based SEs</strong> (Deng and Wang 2025) as well as <strong>modified Greenwood- and Tsiatis-type SEs</strong> (Xie and Liu 2005), which are valid under general positive weights.</p>
+<p>Beyond providing a unified interface, <code><a href="reference/cifcurve.html">cifcurve()</a></code> also extends <code>survfit()</code> in a few targeted ways. For unweighted survival data, it reproduces the standard Kaplan-Meier estimator with <strong>Greenwood and Tsiatis SEs</strong> and a unified set of CI transformations. For unweighted competing risks data, it computes Aalen-Johansen CIFs with both <strong>Aalen-type and delta-method SEs</strong>. The default inference for weighted curves uses <strong>influence-function based SEs</strong> (Deng and Wang 2025). The <a href="https://gestimation.github.io/cifmodeling/articles/v3_formulas.html">formulas vignette</a> also describes the weighted Kaplan–Meier estimator and the adjusted Greenwood variance. <a href="https://doi.org/10.1002/sim.2174" class="external-link">Xie and Liu (2005)</a></p>
 <p>If you need very fine-grained plot customization, you can compute the estimator and keep a survfit-compatible object with <code><a href="reference/cifcurve.html">cifcurve()</a></code> (or supply your own survfit object) and then style it using <code>ggsurvfit/ggplot2</code> layers. In other words:</p>
 <ul>
 <li>use <code><a href="reference/cifcurve.html">cifcurve()</a></code> for estimation,</li>

@@ -6,8 +6,9 @@ an optional stratification variable. In addition to the curves themselves,
 cifplot() can add numbers-at-risk tables, tables of point estimates and
 CIs, censoring marks, competing-risk marks, and intercurrent-event marks.
 For usual single-panel mode, the function returns an object whose plot
-component is a regular ggplot object that can be further modified
-(compatible with + and %+%).
+component is a regular ggplot object that can be further modified.
+Use as_ggplot(result) + ggplot2::labs(...) or result$plot + ...;
+the wrapper itself is not a ggplot.
 For more complex multi-panel displays, cifplot() can internally call
 cifpanel() via several “panel modes” (per event, per variable, or
 censoring-focused)."><meta property="og:description" content="This function generates a survival or CIF curve from a unified formula–data
@@ -17,8 +18,9 @@ an optional stratification variable. In addition to the curves themselves,
 cifplot() can add numbers-at-risk tables, tables of point estimates and
 CIs, censoring marks, competing-risk marks, and intercurrent-event marks.
 For usual single-panel mode, the function returns an object whose plot
-component is a regular ggplot object that can be further modified
-(compatible with + and %+%).
+component is a regular ggplot object that can be further modified.
+Use as_ggplot(result) + ggplot2::labs(...) or result$plot + ...;
+the wrapper itself is not a ggplot.
 For more complex multi-panel displays, cifplot() can internally call
 cifpanel() via several “panel modes” (per event, per variable, or
 censoring-focused)."></head><body>
@@ -29,7 +31,7 @@ censoring-focused)."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,6 +49,8 @@ censoring-focused)."></head><body>
     <li><a class="dropdown-item" href="../articles/v5_gallery.html">Gallery</a></li>
     <li><a class="dropdown-item" href="../articles/v6_information.html">Additional information</a></li>
     <li><a class="dropdown-item" href="../articles/v7_arguments.html">Full lists of arguments</a></li>
+    <li><a class="dropdown-item" href="../articles/v8_reporting_cif.html">Reporting cumulative incidence</a></li>
+    <li><a class="dropdown-item" href="../articles/v9_reporting_polyreg.html">Reporting CIF regression</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -73,8 +77,9 @@ an optional stratification variable. In addition to the curves themselves,
 <code>cifplot()</code> can add numbers-at-risk tables, tables of point estimates and
 CIs, censoring marks, competing-risk marks, and intercurrent-event marks.</p>
 <p>For usual single-panel mode, the function returns an object whose <code>plot</code>
-component is a regular ggplot object that can be further modified
-(compatible with <code>+</code> and <code>%+%</code>).
+component is a regular ggplot object that can be further modified.
+Use <code>as_ggplot(result) + ggplot2::labs(...)</code> or <code>result$plot + ...</code>;
+the wrapper itself is not a ggplot.
 For more complex multi-panel displays, <code>cifplot()</code> can internally call
 <code><a href="cifpanel.html">cifpanel()</a></code> via several “panel modes” (per event, per variable, or
 censoring-focused).</p>
@@ -188,6 +193,7 @@ One of <code>"survival"</code> (Kaplan-Meier) or <code>"competing-risk"</code> (
 If <code>NULL</code> (default), the function automatically infers the outcome type from the data:
 if the event variable has more than two unique levels, <code>"competing-risk"</code> is assumed;
 otherwise, <code>"survival"</code> is used. You can also use abbreviations such as <code>"S"</code> or <code>"C"</code>.
+An explicit <code>"competing-risk"</code> remains in effect when a cause is absent in the analysis data.
 Mixed or ambiguous inputs (e.g., <code>c("S", "C")</code>) trigger automatic detection based on the event coding.</p></dd>
 
 
@@ -215,9 +221,11 @@ For panel displays (e.g. <code><a href="cifpanel.html">cifpanel()</a></code> or 
 
 <dt id="arg-error">error<a class="anchor" aria-label="anchor" href="#arg-error"></a></dt>
 <dd><p>Character string specifying the method for SEs and CIs used internally.
-For <code>"survival"</code> without weights, choose one of <code>"greenwood"</code> (default), <code>"tsiatis"</code>, or <code>"if"</code>.
-For <code>"competing-risk"</code> without weights, choose one of <code>"delta"</code> (default), <code>"aalen"</code>, or <code>"if"</code>.
-SEs and CIs based on influence functions (<code>"if"</code>) is recommended for weighted analysis.</p></dd>
+For <code>"survival"</code> without weights, choose one of <code>"greenwood"</code> (default), <code>"tsiatis"</code>, <code>"if"</code>, or <code>"fay"</code>.
+For <code>"competing-risk"</code> without weights, choose one of <code>"delta"</code> (default), <code>"aalen"</code>, <code>"if"</code>, or <code>"fay"</code>.
+Weighted analysis defaults to influence-function SEs (<code>"if"</code>). The C++ curve
+engine also supports <code>"fay"</code>, a Fay–Graubard-type correction. Supplied weights
+are held fixed; uncertainty from estimating a propensity score is not included.</p></dd>
 
 
 <dt id="arg-conf-type">conf.type<a class="anchor" aria-label="anchor" href="#arg-conf-type"></a></dt>

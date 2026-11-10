@@ -11,7 +11,7 @@ from objects returned by polyreg()."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -29,6 +29,8 @@ from objects returned by polyreg()."></head><body>
     <li><a class="dropdown-item" href="../articles/v5_gallery.html">Gallery</a></li>
     <li><a class="dropdown-item" href="../articles/v6_information.html">Additional information</a></li>
     <li><a class="dropdown-item" href="../articles/v7_arguments.html">Full lists of arguments</a></li>
+    <li><a class="dropdown-item" href="../articles/v8_reporting_cif.html">Reporting cumulative incidence</a></li>
+    <li><a class="dropdown-item" href="../articles/v9_reporting_polyreg.html">Reporting CIF regression</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -43,7 +45,7 @@ from objects returned by polyreg()."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Methods for polyreg objects</h1>
-      <small class="dont-index">Source: <a href="https://github.com/gestimation/cifmodeling/blob/HEAD/R/polyreg-methods.R" class="external-link"><code>R/polyreg-methods.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/gestimation/cifmodeling/blob/HEAD/R/polyreg-methods.R" class="external-link"><code>R/polyreg-methods.R</code></a>, <a href="https://github.com/gestimation/cifmodeling/blob/HEAD/R/polyreg-reporting.R" class="external-link"><code>R/polyreg-reporting.R</code></a></small>
       <div class="d-none name"><code>polyreg-methods.Rd</code></div>
     </div>
 
@@ -59,7 +61,12 @@ from objects returned by <code><a href="polyreg.html">polyreg()</a></code>.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'polyreg'</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="va">object</span>, type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"default"</span>, <span class="st">"sandwich"</span>, <span class="st">"bootstrap"</span><span class="op">)</span>, <span class="va">...</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span></span>
+<span>  <span class="va">object</span>,</span>
+<span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"default"</span>, <span class="st">"sandwich"</span>, <span class="st">"bootstrap"</span><span class="op">)</span>,</span>
+<span>  variance <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'polyreg'</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/nobs.html" class="external-link">nobs</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span><span class="op">)</span></span>
@@ -87,13 +94,26 @@ from objects returned by <code><a href="polyreg.html">polyreg()</a></code>.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'polyreg'</span></span>
-<span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">x</span>, event <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"event1"</span>, <span class="st">"event2"</span>, <span class="st">"both"</span><span class="op">)</span>, <span class="va">...</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  event <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"event1"</span>, <span class="st">"event2"</span>, <span class="st">"both"</span><span class="op">)</span>,</span>
+<span>  conf.int <span class="op">=</span> <span class="va">x</span><span class="op">$</span><span class="va">conf.int</span>,</span>
+<span>  variance <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  exponentiate <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  conf.level <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  <span class="va">...</span>,</span>
+<span>  vcov <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  coef_rename <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'polyreg'</span></span>
-<span><span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">x</span>, event <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"event1"</span>, <span class="st">"event2"</span><span class="op">)</span>, <span class="va">...</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">x</span>, event <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"event1"</span>, <span class="st">"event2"</span><span class="op">)</span>, <span class="va">...</span>, gof_map <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'polyreg'</span></span>
-<span><span class="fu">augment</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">augment</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'polyreg'</span></span>
+<span><span class="fu">tbl_regression</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, event <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"event1"</span>, <span class="st">"event2"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -114,6 +134,11 @@ or <code>"bootstrap"</code>. When <code>"default"</code>, the function chooses b
 sandwich and bootstrap variance based on the original <code><a href="polyreg.html">polyreg()</a></code>
 settings, using <code>outcome.type</code>, <code>report.sandwich.conf</code>, and
 <code>report.boot.conf</code>. (Used only by <code>vcov.polyreg()</code>.)</p></dd>
+
+
+<dt id="arg-variance">variance<a class="anchor" aria-label="anchor" href="#arg-variance"></a></dt>
+<dd><p>Explicit covariance choice, <code>"if"</code> or <code>"bootstrap"</code>.
+<code>NULL</code> preserves legacy selection. Explicit choices fail if unavailable.</p></dd>
 
 
 <dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
@@ -181,6 +206,39 @@ in <code>effect_label.polyreg()</code>.</p></dd>
 <dt id="arg-p-cut">p_cut<a class="anchor" aria-label="anchor" href="#arg-p-cut"></a></dt>
 <dd><p>Numeric threshold used by <code>effect_label.polyreg()</code>
 to decide between printing <code>p &lt; p_cut</code> and an exact p-value.</p></dd>
+
+
+<dt id="arg-conf-int">conf.int<a class="anchor" aria-label="anchor" href="#arg-conf-int"></a></dt>
+<dd><p>Numeric interval level for <code>tidy.polyreg()</code>, defaulting to
+the level stored in the fit. A changed level uses normal Wald intervals;
+stored BCa intervals require refitting to change their level.
+A logical value is also accepted: <code>TRUE</code> includes confidence limits and
+<code>FALSE</code> omits them. Use <code>conf.level</code> to select the level in this form.</p></dd>
+
+
+<dt id="arg-exponentiate">exponentiate<a class="anchor" aria-label="anchor" href="#arg-exponentiate"></a></dt>
+<dd><p>Logical; exponentiate effect estimates and confidence
+limits for reporting. Standard errors and statistics stay on the log scale.</p></dd>
+
+
+<dt id="arg-conf-level">conf.level<a class="anchor" aria-label="anchor" href="#arg-conf-level"></a></dt>
+<dd><p>Optional confidence level for the broom-compatible
+logical <code>conf.int</code> interface. Defaults to the fitted level.</p></dd>
+
+
+<dt id="arg-vcov">vcov<a class="anchor" aria-label="anchor" href="#arg-vcov"></a></dt>
+<dd><p>Compatibility argument for <code>modelsummary</code>. Only <code>NULL</code> is
+supported by <code>tidy.polyreg()</code>. Use <code>variance</code> to choose the covariance estimator.</p></dd>
+
+
+<dt id="arg-coef-rename">coef_rename<a class="anchor" aria-label="anchor" href="#arg-coef-rename"></a></dt>
+<dd><p>Compatibility argument for <code>modelsummary</code>. Only <code>FALSE</code>
+is supported by <code>tidy.polyreg()</code>.</p></dd>
+
+
+<dt id="arg-gof-map">gof_map<a class="anchor" aria-label="anchor" href="#arg-gof-map"></a></dt>
+<dd><p>Table formatting argument forwarded by <code>modelsummary</code> and
+ignored by <code>glance.polyreg()</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

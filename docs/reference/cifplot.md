@@ -11,8 +11,9 @@ tables of point estimates and CIs, censoring marks, competing-risk
 marks, and intercurrent-event marks.
 
 For usual single-panel mode, the function returns an object whose `plot`
-component is a regular ggplot object that can be further modified
-(compatible with `+` and `%+%`). For more complex multi-panel displays,
+component is a regular ggplot object that can be further modified. Use
+`as_ggplot(result) + ggplot2::labs(...)` or `result$plot + ...`; the
+wrapper itself is not a ggplot. For more complex multi-panel displays,
 `cifplot()` can internally call
 [`cifpanel()`](https://gestimation.github.io/cifmodeling/reference/cifpanel.md)
 via several “panel modes” (per event, per variable, or
@@ -129,9 +130,10 @@ cifplot(
   `NULL` (default), the function automatically infers the outcome type
   from the data: if the event variable has more than two unique levels,
   `"competing-risk"` is assumed; otherwise, `"survival"` is used. You
-  can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous
-  inputs (e.g., `c("S", "C")`) trigger automatic detection based on the
-  event coding.
+  can also use abbreviations such as `"S"` or `"C"`. An explicit
+  `"competing-risk"` remains in effect when a cause is absent in the
+  analysis data. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger
+  automatic detection based on the event coding.
 
 - code.event1:
 
@@ -164,10 +166,12 @@ cifplot(
 
   Character string specifying the method for SEs and CIs used
   internally. For `"survival"` without weights, choose one of
-  `"greenwood"` (default), `"tsiatis"`, or `"if"`. For
+  `"greenwood"` (default), `"tsiatis"`, `"if"`, or `"fay"`. For
   `"competing-risk"` without weights, choose one of `"delta"` (default),
-  `"aalen"`, or `"if"`. SEs and CIs based on influence functions
-  (`"if"`) is recommended for weighted analysis.
+  `"aalen"`, `"if"`, or `"fay"`. Weighted analysis defaults to
+  influence-function SEs (`"if"`). The C++ curve engine also supports
+  `"fay"`, a Fay–Graubard-type correction. Supplied weights are held
+  fixed; uncertainty from estimating a propensity score is not included.
 
 - conf.type:
 

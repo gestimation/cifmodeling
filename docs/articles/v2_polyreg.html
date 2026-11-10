@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,6 +40,8 @@
     <li><a class="dropdown-item" href="../articles/v5_gallery.html">Gallery</a></li>
     <li><a class="dropdown-item" href="../articles/v6_information.html">Additional information</a></li>
     <li><a class="dropdown-item" href="../articles/v7_arguments.html">Full lists of arguments</a></li>
+    <li><a class="dropdown-item" href="../articles/v8_reporting_cif.html">Reporting cumulative incidence</a></li>
+    <li><a class="dropdown-item" href="../articles/v9_reporting_polyreg.html">Reporting CIF regression</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -84,15 +86,16 @@ hazards</strong>, whose regression coefficients are only indirectly
 related to the observed differences between CIF curves for the event of
 interest. This makes it difficult to interpret the model on the
 probability scale and to quantify effects on all competing events.</p>
-<p>Direct polytomous regression was motivated by this gap. It models
-<strong>all cause-specific CIFs jointly</strong>, parameterizing the
-nuisance structure (i.e. a model of confounders) with polytomous log
-odds products. It also targets <strong>effect measures on the CIF scale
-itself</strong>: at user-specified time points it estimates ratios of
-CIFs (risk ratios, odds ratios, subdistribution hazard ratios), and in
-proportional-effect settings it compares CIFs in terms of a constant
-ratio over time. As a result, the regression parameters are much more
-directly aligned with what is visible in CIF curves.</p>
+<p>Tanaka and Scheike (2026) developed direct polytomous regression to
+address this gap. It models <strong>all cause-specific CIFs
+jointly</strong>, parameterizing the nuisance structure (i.e. a model of
+confounders) with polytomous log odds products. It also targets
+<strong>effect measures on the CIF scale itself</strong>: at
+user-specified time points it estimates ratios of CIFs (risk ratios,
+odds ratios, subdistribution hazard ratios), and in proportional-effect
+settings it compares CIFs in terms of a constant ratio over time. As a
+result, the regression parameters are much more directly aligned with
+what is visible in CIF curves.</p>
 </div>
 <div class="section level2">
 <h2 id="coherent-modeling-of-cifs-using-polytomous-log-odds-products">Coherent modeling of CIFs using polytomous log odds products<a class="anchor" aria-label="anchor" href="#coherent-modeling-of-cifs-using-polytomous-log-odds-products"></a>
@@ -104,14 +107,14 @@ they can be <strong>incoherent</strong> in the sense that the implied
 cause-specific CIFs do not necessarily sum to at most one. Direct
 polytomous regression addresses these challenges by
 <strong>log-odds-product modeling of all cause-specific CIFs</strong>
-(Richardson, Robins and Wang 2017). It introduces a nuisance model
-specified as <strong>polytomous log odds products</strong> in addition
-to the model for effect measures (e.g., risk ratios for the exposure),
-so that the sum restriction on CIFs is enforced naturally. This model
-specification is equivalent to the Richardson model in the case of
-uncensored binary outcome (Richardson, Robins and Wang 2017). The same
-framework applies both to models with common multiplicative effects over
-time and to models targeting effects at specific time points.</p>
+(Tanaka and Scheike 2026). It introduces a nuisance model specified as
+<strong>polytomous log odds products</strong> in addition to the model
+for effect measures (e.g., risk ratios for the exposure), so that the
+sum restriction on CIFs is enforced naturally. For an uncensored binary
+outcome, this specification reduces to the log odds product model of
+Richardson, Robins and Wang (2017). The same framework applies both to
+models with common multiplicative effects over time and to models
+targeting effects at specific time points.</p>
 <p>The models in <code>polyreg</code> are specified by three main
 components:</p>
 <ul>
@@ -241,6 +244,16 @@ component can be passed to external tools such as
 <code>modelsummary</code> or <code>broom</code> for additional
 formatting if desired, but no external packages are required to inspect
 the model fit.</p>
+</div>
+<div class="section level2">
+<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
+<ul>
+<li>Tanaka S, Scheike TH. Estimating effects on cumulative incidence
+probabilities by direct polytomous regression and polytomous log-odds
+product. <em>Biometrics</em>. 2026, 82(3), ujag160. <a href="https://doi.org/10.1093/biomtc/ujag160" class="external-link">doi:10.1093/biomtc/ujag160</a>
+</li>
+</ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

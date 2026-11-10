@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,6 +40,8 @@
     <li><a class="dropdown-item" href="../articles/v5_gallery.html">Gallery</a></li>
     <li><a class="dropdown-item" href="../articles/v6_information.html">Additional information</a></li>
     <li><a class="dropdown-item" href="../articles/v7_arguments.html">Full lists of arguments</a></li>
+    <li><a class="dropdown-item" href="../articles/v8_reporting_cif.html">Reporting cumulative incidence</a></li>
+    <li><a class="dropdown-item" href="../articles/v9_reporting_polyreg.html">Reporting CIF regression</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -153,15 +155,15 @@ polyreg() results<a class="anchor" aria-label="anchor" href="#key-arguments-of-m
 <code>"markdown"</code>, <code>"latex"</code>, <code>"html"</code>, or a
 file path such as <code>'results/cif_table.docx'</code>).</li>
 <li>
-<code>coef_map</code> or <code>coef_rename</code> renames model
-terms for interpretability.</li>
+<code>coef_map</code> renames model terms for interpretability.</li>
 <li>
-<code>statistic</code> specifies which uncertainty summaries to
-display. Examples: <code>statistic = "p.value"</code> for p-values,
-<code>statistic = "conf.int"</code> for Wald CIs,
-<code>statistic = "t"</code> for t statistics,
-<code>and statistic = "z"</code> for z statistics, instead of SEs
-(default).</li>
+<code>statistic = "conf.int"</code> displays confidence intervals.
+Set <code>conf_level = 0.95</code> for 95% intervals and
+<code>exponentiate = TRUE</code> to display estimates and limits on the
+ratio scale.</li>
+<li>Use <code>statistic = "p.value"</code> to display p-values or
+<code>statistic = "statistic"</code> to display z statistics. The
+default displays standard errors.</li>
 </ul>
 <p>You can also supply multiple model summaries as a named list to
 compare estimates across specifications in a single table. See

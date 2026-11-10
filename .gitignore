@@ -12,3 +12,9 @@ vignettes/*.html
 vignettes/*.R
 /simulation/
 /20260816*.png
+
+# Codex-generated outputs and temporary files
+/output/
+/paper/
+/tmp/
+/dev/

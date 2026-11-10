@@ -17,7 +17,7 @@ and will plot it yourself."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -35,6 +35,8 @@ and will plot it yourself."></head><body>
     <li><a class="dropdown-item" href="../articles/v5_gallery.html">Gallery</a></li>
     <li><a class="dropdown-item" href="../articles/v6_information.html">Additional information</a></li>
     <li><a class="dropdown-item" href="../articles/v7_arguments.html">Full lists of arguments</a></li>
+    <li><a class="dropdown-item" href="../articles/v8_reporting_cif.html">Reporting cumulative incidence</a></li>
+    <li><a class="dropdown-item" href="../articles/v9_reporting_polyreg.html">Reporting CIF regression</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -49,7 +51,7 @@ and will plot it yourself."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Calculate the Kaplan-Meier estimator and the Aalen-Johansen estimator</h1>
-      <small class="dont-index">Source: <a href="https://github.com/gestimation/cifmodeling/blob/HEAD/R/cifcurve.R" class="external-link"><code>R/cifcurve.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/gestimation/cifmodeling/blob/HEAD/R/cifcurve-reporting.R" class="external-link"><code>R/cifcurve-reporting.R</code></a>, <a href="https://github.com/gestimation/cifmodeling/blob/HEAD/R/cifcurve.R" class="external-link"><code>R/cifcurve.R</code></a></small>
       <div class="d-none name"><code>cifcurve.Rd</code></div>
     </div>
 
@@ -64,7 +66,10 @@ and will plot it yourself.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">cifcurve</span><span class="op">(</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'cifcurve'</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">cifcurve</span><span class="op">(</span></span>
 <span>  <span class="va">formula</span>,</span>
 <span>  <span class="va">data</span>,</span>
 <span>  weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -83,7 +88,9 @@ and will plot it yourself.</p>
 <span>  report.influence.function <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  report.survfit.std.err <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  engine <span class="op">=</span> <span class="st">"calculateAJ_Rcpp"</span>,</span>
-<span>  prob.bound <span class="op">=</span> <span class="fl">1e-07</span></span>
+<span>  prob.bound <span class="op">=</span> <span class="fl">1e-07</span>,</span>
+<span>  conf.dist <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"normal"</span>, <span class="st">"t"</span><span class="op">)</span>,</span>
+<span>  df.method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"deletion"</span>, <span class="st">"equal"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -91,10 +98,19 @@ and will plot it yourself.</p>
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
-<dl><dt id="arg-formula">formula<a class="anchor" aria-label="anchor" href="#arg-formula"></a></dt>
+<dl><dt id="arg-object">object<a class="anchor" aria-label="anchor" href="#arg-object"></a></dt>
+<dd><p>A fitted <code>cifcurve</code> object to summarize.</p></dd>
+
+
+<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
+<dd><p>Arguments passed to <code>summary.survfit()</code>, including <code>times</code>.</p></dd>
+
+
+<dt id="arg-formula">formula<a class="anchor" aria-label="anchor" href="#arg-formula"></a></dt>
 <dd><p>A model formula specifying the time-to-event outcome on the LHS
 (typically <code>Event(time, status)</code> or <code>survival::Surv(time, status)</code>)
 and, optionally, a stratification variable on the RHS.
+<code>Surv()</code> responses must be right-censored.
 Unlike <code><a href="cifplot.html">cifplot()</a></code>, this function does not accept a fitted survfit object.</p></dd>
 
 
@@ -126,12 +142,14 @@ One of <code>"survival"</code> (Kaplan-Meier) or <code>"competing-risk"</code> (
 If <code>NULL</code> (default), the function automatically infers the outcome type from the data:
 if the event variable has more than two unique levels, <code>"competing-risk"</code> is assumed;
 otherwise, <code>"survival"</code> is used. You can also use abbreviations such as <code>"S"</code> or <code>"C"</code>.
+An explicit <code>"competing-risk"</code> remains in effect when a cause is absent in the analysis data.
 Mixed or ambiguous inputs (e.g., <code>c("S", "C")</code>) trigger automatic detection based on the event coding.</p></dd>
 
 
 <dt id="arg-time-point">time.point<a class="anchor" aria-label="anchor" href="#arg-time-point"></a></dt>
-<dd><p>Optional single time point at which a one-sided normal
-approximation test is performed when <code>null.hypothesis</code> is specified.</p></dd>
+<dd><p>Optional finite, non-negative time for a one-sided normal
+approximation test when <code>null.hypothesis</code> is specified. The test returns
+a missing p-value for strata with no positive-weight follow-up at this time.</p></dd>
 
 
 <dt id="arg-null-hypothesis">null.hypothesis<a class="anchor" aria-label="anchor" href="#arg-null-hypothesis"></a></dt>
@@ -158,9 +176,11 @@ numeric vector can be used to specify stratum-specific null values.</p></dd>
 
 <dt id="arg-error">error<a class="anchor" aria-label="anchor" href="#arg-error"></a></dt>
 <dd><p>Character string specifying the method for SEs and CIs used internally.
-For <code>"survival"</code> without weights, choose one of <code>"greenwood"</code> (default), <code>"tsiatis"</code>, or <code>"if"</code>.
-For <code>"competing-risk"</code> without weights, choose one of <code>"delta"</code> (default), <code>"aalen"</code>, or <code>"if"</code>.
-SEs and CIs based on influence functions (<code>"if"</code>) is recommended for weighted analysis.</p></dd>
+For <code>"survival"</code> without weights, choose one of <code>"greenwood"</code> (default), <code>"tsiatis"</code>, <code>"if"</code>, or <code>"fay"</code>.
+For <code>"competing-risk"</code> without weights, choose one of <code>"delta"</code> (default), <code>"aalen"</code>, <code>"if"</code>, or <code>"fay"</code>.
+Weighted analysis defaults to influence-function SEs (<code>"if"</code>). The C++ curve
+engine also supports <code>"fay"</code>, a Fay–Graubard-type correction. Supplied weights
+are held fixed; uncertainty from estimating a propensity score is not included.</p></dd>
 
 
 <dt id="arg-conf-type">conf.type<a class="anchor" aria-label="anchor" href="#arg-conf-type"></a></dt>
@@ -183,16 +203,32 @@ scale (survfit's convention). Otherwise SE is on the probability scale.</p></dd>
 
 
 <dt id="arg-engine">engine<a class="anchor" aria-label="anchor" href="#arg-engine"></a></dt>
-<dd><p>Character. One of <code>"auto"</code>, <code>"calculateKM"</code>, or <code>"calculateAJ_Rcpp"</code> (default <code>"calculateAJ_Rcpp"</code>).</p></dd>
+<dd><p>Character. One of <code>"auto"</code>, <code>"calculateKM"</code>, or <code>"calculateAJ_Rcpp"</code> (default).
+<code>"calculateAJ"</code> is also accepted as an alias for <code>"calculateAJ_Rcpp"</code>.
+The legacy engine accepts no weights or positive weights constant within
+each stratum, and normal inference with Greenwood/Tsiatis for survival or
+delta/Aalen for competing risks. Its SEs use subject counts.</p></dd>
 
 
 <dt id="arg-prob-bound">prob.bound<a class="anchor" aria-label="anchor" href="#arg-prob-bound"></a></dt>
 <dd><p>Numeric lower bound used to internally truncate probabilities away from 0 and 1 (default <code>1e-7</code>).</p></dd>
 
+
+<dt id="arg-conf-dist">conf.dist<a class="anchor" aria-label="anchor" href="#arg-conf-dist"></a></dt>
+<dd><p>Reference distribution for pointwise CIs: <code>"normal"</code>
+(default) or <code>"t"</code>. Student intervals require <code>error = "if"</code> or <code>"fay"</code>;
+omitting <code>error</code> with <code>conf.dist = "t"</code> selects <code>"if"</code>.</p></dd>
+
+
+<dt id="arg-df-method">df.method<a class="anchor" aria-label="anchor" href="#arg-df-method"></a></dt>
+<dd><p>Allocation used for Student degrees of freedom:
+<code>"deletion"</code> (default, FG-type) or <code>"equal"</code> (IF-t only).</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A <code>"survfit"</code> object. For <code>outcome.type="survival"</code>, <code>$surv</code> is the survival function.
+    <p>An object inheriting from <code>"cifcurve"</code> and <code>"survfit"</code>.
+For <code>outcome.type="survival"</code>, <code>$surv</code> is the survival function.
 For <code>outcome.type="competing-risk"</code>, <code>$surv</code> equals <code>1 - CIF</code> for <code>code.event1</code>.
 SE and CIs are provided per  <code>error</code>, <code>conf.type</code> and <code>conf.int</code>.
 This enables an independent use of standard methods for <code>survfit</code> such as:</p><ul><li><p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>: time-by-time estimates with SEs and CIs</p></li>
@@ -200,10 +236,23 @@ This enables an independent use of standard methods for <code>survfit</code> suc
 <li><p><code><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean()</a></code>: restricted mean survival estimates with CIs</p></li>
 <li><p><code><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile()</a></code>: quantile estimates with CIs</p></li>
 </ul><p>If <code>null.hypothesis</code> is specified, the returned object additionally contains
-a <code>one.sided.p</code> list with the one-sided normal approximation test results.</p>
+a <code>one.sided.p</code> list with the one-sided normal approximation test results.
+Its table marks strata beyond positive-weight follow-up with
+<code>test.status = "outside_observed_followup"</code>.</p>
 <p>Note that <code>$n.risk</code>, <code>$n.event</code>, and <code>$n.censor</code> are rounded up to the nearest integer
 regardless of whether the data is weighted or not.
-Some methods (e.g. <code>residuals.survfit</code>) may not be supported.</p>
+Some methods (e.g. <code>residuals.survfit</code>) may not be supported.
+IF/FG results also record <code>conf.dist</code>, <code>df</code>, <code>df.reason</code>,
+<code>critical.value</code>, and <code>conf.status</code>; Student results record <code>df.method</code>.
+These vectors follow the fitted curve's stratum/time ordering. FG results
+record the fixed leverage cap in <code>fay.bound</code>. Influence matrices have one
+row per original observation within each stratum, including zero-weight rows.
+<code>summary(fit, times = ..., extend = TRUE)</code> extracts the saved intervals,
+probability-scale SEs and time-specific inference diagnostics. Unsupported
+times retain missing limits. Use this summary rather than indexing added
+inference vectors on copies whose time grid was expanded by <code>survfit0()</code>.
+<code>logse</code> records the scale of the stored <code>std.err</code>. The internal <code>reporting</code>
+component preserves the native inference grid for this extraction.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -228,7 +277,31 @@ counts (e.g., for plotting or debugging) and leaves estimates and SEs unchanged.
 
 <div class="section">
 <h3 id="standard-error-and-confidence-intervals">Standard error and confidence intervals<a class="anchor" aria-label="anchor" href="#standard-error-and-confidence-intervals"></a></h3>
-<table class="table table"><tr><td>Argument</td><td>Description</td><td>Default</td></tr><tr><td><code>error</code></td><td>SE for KM: <code>"greenwood"</code>, <code>"tsiatis"</code>, <code>"if"</code>. For CIF: <code>"aalen"</code>, <code>"delta"</code>, <code>"if"</code>.</td><td><code>"greenwood"</code>, <code>"delta"</code> or <code>"if"</code></td></tr><tr><td><code>conf.type</code></td><td>Transformation for CIs: <code>"plain"</code>, <code>"log"</code>, <code>"log-log"</code>, <code>"arcsin"</code>, <code>"logit"</code>, or <code>"none"</code>.</td><td><code>"arcsin"</code></td></tr><tr><td><code>conf.int</code></td><td>Two-sided CI level.</td><td><code>0.95</code></td></tr></table></div>
+<table class="table table"><tr><td>Argument</td><td>Description</td><td>Default</td></tr><tr><td><code>error</code></td><td>SE for KM: <code>"greenwood"</code>, <code>"tsiatis"</code>, <code>"if"</code>, <code>"fay"</code>. For CIF: <code>"aalen"</code>, <code>"delta"</code>, <code>"if"</code>, <code>"fay"</code>.</td><td><code>"greenwood"</code>, <code>"delta"</code> or <code>"if"</code></td></tr><tr><td><code>conf.type</code></td><td>Transformation for CIs: <code>"plain"</code>, <code>"log"</code>, <code>"log-log"</code>, <code>"arcsin"</code>, <code>"logit"</code>, or <code>"none"</code>.</td><td><code>"arcsin"</code></td></tr><tr><td><code>conf.int</code></td><td>Two-sided CI level.</td><td><code>0.95</code></td></tr></table><p>With the C++ engine, <code>error = "fay"</code> applies the Fay–Graubard-type
+sandwich correction with leverage capped at 0.75. Combining <code>error = "if"</code>
+or <code>"fay"</code> with <code>conf.dist = "t"</code> gives IF-t or FG-t, respectively.
+<code>"fg"</code> and <code>"fay-graubard"</code> are accepted aliases for <code>"fay"</code>;
+the returned <code>error</code> is always <code>"fay"</code> for this correction.
+All supplied weights are held fixed, including externally estimated IPTW;
+uncertainty from fitting a propensity-score model is not included.
+Deletion degrees of freedom use unscaled hazard-score equations and
+no-event-baseline hazard logits (a positive cause is the baseline at complete
+exit). Equal allocation is invariant to fixed invertible score transformations
+within this system; its small-sample coverage need not equal deletion allocation.
+These are working quadratic-form approximations, not exact Student laws.</p>
+<p>With the C++ engine, IF and FG intervals use exact boundary singletons; interior zero
+variance, unavailable degrees of freedom, and times beyond positive-weight
+follow-up produce missing limits with reasons in <code>$conf.status</code>. No normal
+fallback is used for a failed Student interval. Degrees of freedom vary by
+stratum and time; calculation can be expensive for large risk sets. The
+optional one-sided test retains its documented normal reference distribution.
+Delta and Aalen variances use all event times up to the reported time.
+If the Aalen formula gives a negative variance with tied events, its SE and
+confidence limits are missing.
+Returned influence functions are uncorrected case-weight derivatives (IF/n)
+of the event probability <code>1 - $surv</code>,
+even when the SE uses FG-adjusted contributions.</p>
+</div>
 
 <div class="section">
 <h3 id="one-sided-normal-approximation-test">One-sided normal approximation test<a class="anchor" aria-label="anchor" href="#one-sided-normal-approximation-test"></a></h3>
@@ -291,20 +364,20 @@ calculated separately within each stratum.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Time point: 8</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Transformation: arcsine-square root</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     strata time.point        estimate.type  estimate null.hypothesis    std.err</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  fruitq=Q1          8 cumulative incidence 0.3531391             0.3 0.03578625</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  fruitq=Q2          8 cumulative incidence 0.2643748             0.3 0.03298645</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  fruitq=Q3          8 cumulative incidence 0.2811656             0.3 0.02943527</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  fruitq=Q4          8 cumulative incidence 0.2408163             0.3 0.03032340</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  fruitq=Q1          8 cumulative incidence 0.3531391             0.3 0.02978112</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  fruitq=Q2          8 cumulative incidence 0.2643748             0.3 0.02903696</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  fruitq=Q3          8 cumulative incidence 0.2811656             0.3 0.02893495</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  fruitq=Q4          8 cumulative incidence 0.2408163             0.3 0.02731702</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      transformation.scale estimate.for.test null.for.test estimate.transformed</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  1 - cumulative incidence         0.6468609           0.7            0.9344572</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  1 - cumulative incidence         0.7356252           0.7            1.0307521</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  1 - cumulative incidence         0.7188344           0.7            1.0119003</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  1 - cumulative incidence         0.7591837           0.7            1.0578685</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  null.transformed std.err.transformed          z    p.value</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         0.9911566          0.03743759 -1.5145047 0.93505106</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         0.9911566          0.03739962  1.0587137 0.14486509</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         0.9911566          0.03273727  0.6336425 0.26315707</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         0.9911566          0.03545942  1.8813595 0.02996152</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  null.transformed std.err.transformed         z   p.value test.status</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         0.9911566          0.03115535 -1.819893 0.9656123          ok</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         0.9911566          0.03292174  1.202716 0.1145432          ok</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         0.9911566          0.03218083  0.644599 0.2595935          ok</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         0.9911566          0.03194383  2.088413 0.0183803          ok</span>
 <span class="r-in"><span><span class="va">output2</span><span class="op">$</span><span class="va">one.sided.p</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $method</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "One-sided normal approximation test"</span>
@@ -328,20 +401,20 @@ calculated separately within each stratum.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3 fruitq=Q3          8 cumulative incidence 0.2811656             0.3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4 fruitq=Q4          8 cumulative incidence 0.2408163             0.3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      std.err     transformation.scale estimate.for.test null.for.test</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.03578625 1 - cumulative incidence         0.6468609           0.7</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 0.03298645 1 - cumulative incidence         0.7356252           0.7</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3 0.02943527 1 - cumulative incidence         0.7188344           0.7</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4 0.03032340 1 - cumulative incidence         0.7591837           0.7</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   estimate.transformed null.transformed std.err.transformed          z</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1            0.9344572        0.9911566          0.03743759 -1.5145047</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2            1.0307521        0.9911566          0.03739962  1.0587137</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3            1.0119003        0.9911566          0.03273727  0.6336425</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4            1.0578685        0.9911566          0.03545942  1.8813595</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      p.value</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.93505106</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 0.14486509</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3 0.26315707</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4 0.02996152</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.02978112 1 - cumulative incidence         0.6468609           0.7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 0.02903696 1 - cumulative incidence         0.7356252           0.7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 0.02893495 1 - cumulative incidence         0.7188344           0.7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4 0.02731702 1 - cumulative incidence         0.7591837           0.7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   estimate.transformed null.transformed std.err.transformed         z   p.value</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1            0.9344572        0.9911566          0.03115535 -1.819893 0.9656123</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2            1.0307521        0.9911566          0.03292174  1.202716 0.1145432</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3            1.0119003        0.9911566          0.03218083  0.644599 0.2595935</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4            1.0578685        0.9911566          0.03194383  2.088413 0.0183803</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   test.status</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1          ok</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2          ok</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3          ok</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4          ok</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

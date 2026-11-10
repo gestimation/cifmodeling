@@ -2,6 +2,12 @@
 
 ## cifcurve()
 
+Version 1.2.2 separates variance estimation (`error`), the CI
+transformation (`conf.type`), and the reference distribution
+(`conf.dist`). For the formulas, method combinations, and a worked
+example, see [Computational formulas in
+cifcurve()](https://gestimation.github.io/cifmodeling/articles/v3_formulas.md).
+
 - `formula` A model formula specifying the time-to-event outcome on the
   left-hand side (typically `Event(time, status)` or
   `survival::Surv(time, status)`) and, optionally, a stratification
@@ -10,7 +16,9 @@
   this function does not accept a fitted `survfit` object.
 - `data` A data frame containing variables in `formula`.
 - `weights` Optional name of the weight variable in `data`. Weights must
-  be nonnegative.
+  be nonnegative. Supplied weights are treated as fixed, including
+  externally estimated IPTW; uncertainty from estimating a
+  propensity-score model is not included.
 - `n.risk.type` Character string; one of `"weighted"`, `"unweighted"`,
   or `"ess"`. Controls which risk set size is returned in `$n.risk`
   without affecting estimates or standard errors (default `"weighted"`).
@@ -29,15 +37,28 @@
 - `code.event1` Integer code of the event of interest (default `1`).
 - `code.event2` Integer code of the competing event (default `2`).
 - `code.censoring` Integer code of censoring (default `0`).
-- `error` Character string specifying the method for SEs and CIs used
-  internally. For `"survival"` without weights, choose one of
-  `"greenwood"` (default), `"tsiatis"`, or `"if"`. For
-  `"competing-risk"` without weights, choose one of `"delta"` (default),
-  `"aalen"`, or `"if"`. SEs and CIs based on influence functions
-  (`"if"`) is recommended for weighted analysis.
-- `conf.type` Character specifying the method of transformation for CIs
-  used internally (default `"arcsine-square root"`).
+- `error` Variance estimator. For unweighted KM, choose `"greenwood"`
+  (default), `"tsiatis"`, `"if"`, or `"fay"`. For unweighted AJ, choose
+  `"delta"` (default), `"aalen"`, `"if"`, or `"fay"`. With supplied
+  weights, use `"if"` (default) or `"fay"`; other choices warn and fall
+  back to `"if"`. `"fay"` applies a Fay–Graubard-type sandwich
+  correction with a fixed leverage cap of 0.75; `"fg"` and
+  `"fay-graubard"` are accepted aliases.
+- `conf.type` CI transformation: `"plain"`, `"log"`, `"log-log"`,
+  `"logit"`, `"arcsin"` (default; aliases `"arcsine-square root"`,
+  `"a"`), or `"none"` to omit CIs. It acts on KM survival or on
+  `1 - CIF` for AJ. In particular, AJ `"log-log"` uses
+  `log(-log(1 - CIF))`.
 - `conf.int` Numeric two-sided level of CIs (default `0.95`).
+- `conf.dist` Reference distribution for pointwise CIs: `"normal"`
+  (default) or `"t"`. Student CIs require `error = "if"` or `"fay"`;
+  omitting `error` with `conf.dist = "t"` selects `"if"`. This argument
+  does not change the optional one-sided test, which uses a normal
+  reference.
+- `df.method` Student degrees-of-freedom allocation: `"deletion"`
+  (default; FDF) or `"equal"` (EDF, available only with `error = "if"`).
+  Ignored for normal CIs. Degrees of freedom vary by time and stratum
+  and are generally not the sample size minus one.
 - `time.point` Optional single time point at which a one-sided normal
   approximation test is performed when `null.hypothesis` is specified.
 - `null.hypothesis` Optional null value for the survival probability or
@@ -55,11 +76,47 @@
   log-survival scale (survfit’s convention). Otherwise SE is on the
   probability scale.
 - `engine` Character. One of `"auto"`, `"calculateKM"`, or
-  `"calculateAJ_Rcpp"` (default `"calculateAJ_Rcpp"`).
+  `"calculateAJ_Rcpp"` (default). Student CIs and `error = "fay"`
+  require `"calculateAJ_Rcpp"` or `"auto"`.
 - `prob.bound` Numeric lower bound used to internally truncate
   probabilities away from 0 and 1 (default `1e-7`).
 
+### Returned inference diagnostics
+
+IF/FG fits record `conf.dist`, `df`, `df.reason`, `critical.value`, and
+`conf.status`; Student fits also record `df.method`. `fay.bound` in an
+FG fit records the fixed cap 0.75 and is not an input argument. Use
+`summary(fit, times = ..., extend = TRUE)` to extract saved estimates,
+CIs, and diagnostics at requested times. For AJ, `$surv` and its limits
+concern `1 - CIF`; reverse and complement the limits to obtain a CIF
+interval.
+
+On the C++ IF/FG path, valid boundary estimates have singleton
+intervals. Interior zero/invalid variance, unavailable Student degrees
+of freedom, and times beyond positive-weight follow-up support give
+missing limits. Student failures do not fall back to normal CIs. These
+are pointwise approximations, not simultaneous bands or exact Student
+intervals.
+
 ## cifplot()
+
+To display IF-t (FDF or EDF) or FG-t intervals, first fit
+[`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md)
+with `conf.dist = "t"` and the desired `df.method`, then pass that
+fitted object as `formula_or_fit`. These two options are not forwarded
+by the plotting formula interface through `...` or `survfit.info`. A
+supplied fit retains its saved intervals; plotting arguments do not
+refit it.
+
+``` r
+
+fit <- cifcurve(
+  Event(t, epsilon) ~ fruitq1, data = diabetes.complications,
+  outcome.type = "competing-risk", error = "if", conf.dist = "t",
+  df.method = "equal", conf.type = "log-log"
+)
+cifplot(fit, outcome.type = "competing-risk", add.risktable = FALSE)
+```
 
 - `formula_or_fit` Either a model formula or a survfit object. When a
   formula is supplied, the LHS must be `Event(time, status)` or
@@ -67,7 +124,9 @@
   variable.
 - `data` A data frame containing variables in `formula`.
 - `weights` Optional name of the weight variable in `data`. Weights must
-  be nonnegative.
+  be nonnegative. Supplied weights are treated as fixed, including
+  externally estimated IPTW; uncertainty from estimating a
+  propensity-score model is not included.
 - `n.risk.type` Character string; one of `"weighted"`, `"unweighted"`,
   or `"ess"`. Controls which risk set size is returned in `$n.risk`
   without affecting estimates or standard errors (default `"weighted"`).
@@ -96,14 +155,18 @@
   estimation. For panel displays (e.g. `cifpanel}()` or when
   `panel.per.event = TRUE` or `panel.censoring = TRUE`), `code.events`
   may also be a list of such numeric vectors, one per panel.
-- `error` Character string specifying the method for SEs and CIs used
-  internally. For `"survival"` without weights, choose one of
-  `"greenwood"` (default), `"tsiatis"`, or `"if"`. For
-  `"competing-risk"` without weights, choose one of `"delta"` (default),
-  `"aalen"`, or `"if"`. SEs and CIs based on influence functions
-  (`"if"`) is recommended for weighted analysis.
-- `conf.type` Character specifying the method of transformation for CIs
-  used internally (default `"arcsine-square root"`).
+- `error` Variance estimator. For unweighted KM, choose `"greenwood"`
+  (default), `"tsiatis"`, `"if"`, or `"fay"`. For unweighted AJ, choose
+  `"delta"` (default), `"aalen"`, `"if"`, or `"fay"`. With supplied
+  weights, use `"if"` (default) or `"fay"`; other choices warn and fall
+  back to `"if"`. `"fay"` applies a Fay–Graubard-type sandwich
+  correction with a fixed leverage cap of 0.75; `"fg"` and
+  `"fay-graubard"` are accepted aliases.
+- `conf.type` CI transformation: `"plain"`, `"log"`, `"log-log"`,
+  `"logit"`, `"arcsin"` (default; aliases `"arcsine-square root"`,
+  `"a"`), or `"none"` to omit CIs. It acts on KM survival or on
+  `1 - CIF` for AJ. In particular, AJ `"log-log"` uses
+  `log(-log(1 - CIF))`.
 - `conf.int` Numeric two-sided level of CIs (default `0.95`).
 - `type.y` Character string specifying the y-scale. For survival/CIF
   curves, `"surv"` implies survival probabilities and `"risk"` implies
@@ -220,9 +283,18 @@
 - `width.ggsave` Numeric specify width of the `ggsurvfit` plot.
 - `height.ggsave` Numeric specify height of the `ggsurvfit` plot.
 - `dpi.ggsave` Numeric specify dpi of the `ggsurvfit` plot.
-- `...` Additional arguments passed to internal helper functions.
+- `...` Additional arguments passed to internal helper functions. This
+  does not provide forwarding of `conf.dist` or `df.method`; use a
+  fitted `cifcurve` object for Student intervals.
 
 ## cifpanel()
+
+For Student intervals, compute each curve with
+[`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md),
+plot each fitted object with
+[`cifplot()`](https://gestimation.github.io/cifmodeling/reference/cifplot.md),
+and supply the resulting plots through `plots`. The formula-based panel
+interface does not forward `conf.dist` or `df.method`.
 
 - `plots` Optional list of existing ggplot objects to be arranged into a
   panel. When plots is supplied, no new models are fitted; the plots are
@@ -241,7 +313,9 @@
 - `data` A data frame containing variables in `formula`.
 
 - `weights` Optional name of the weight variable in `data`. Weights must
-  be nonnegative.
+  be nonnegative. Supplied weights are treated as fixed, including
+  externally estimated IPTW; uncertainty from estimating a
+  propensity-score model is not included.
 
 - `n.risk.type` Character string; one of `"weighted"`, `"unweighted"`,
   or `"ess"`. Controls which risk set size is returned in `$n.risk`
@@ -286,15 +360,19 @@
   [`cifpanel()`](https://gestimation.github.io/cifmodeling/reference/cifpanel.md)
   is called or when `panel.per.event = TRUE`).
 
-- `error` Character string specifying the method for SEs and CIs used
-  internally. For `"survival"` without weights, choose one of
-  `"greenwood"` (default), `"tsiatis"`, or `"if"`. For
-  `"competing-risk"` without weights, choose one of `"delta"` (default),
-  `"aalen"`, or `"if"`. SEs and CIs based on influence functions
-  (`"if"`) is recommended for weighted analysis.
+- `error` Variance estimator. For unweighted KM, choose `"greenwood"`
+  (default), `"tsiatis"`, `"if"`, or `"fay"`. For unweighted AJ, choose
+  `"delta"` (default), `"aalen"`, `"if"`, or `"fay"`. With supplied
+  weights, use `"if"` (default) or `"fay"`; other choices warn and fall
+  back to `"if"`. `"fay"` applies a Fay–Graubard-type sandwich
+  correction with a fixed leverage cap of 0.75; `"fg"` and
+  `"fay-graubard"` are accepted aliases.
 
-- `conf.type` Character specifying the method of transformation for CIs
-  used internally (default `"arcsine-square root"`).
+- `conf.type` CI transformation: `"plain"`, `"log"`, `"log-log"`,
+  `"logit"`, `"arcsin"` (default; aliases `"arcsine-square root"`,
+  `"a"`), or `"none"` to omit CIs. It acts on KM survival or on
+  `1 - CIF` for AJ. In particular, AJ `"log-log"` uses
+  `log(-log(1 - CIF))`.
 
 - `conf.int` Numeric two-sided level of CIs (default `0.95`).
 

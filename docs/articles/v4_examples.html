@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,6 +40,8 @@
     <li><a class="dropdown-item" href="../articles/v5_gallery.html">Gallery</a></li>
     <li><a class="dropdown-item" href="../articles/v6_information.html">Additional information</a></li>
     <li><a class="dropdown-item" href="../articles/v7_arguments.html">Full lists of arguments</a></li>
+    <li><a class="dropdown-item" href="../articles/v8_reporting_cif.html">Reporting cumulative incidence</a></li>
+    <li><a class="dropdown-item" href="../articles/v9_reporting_polyreg.html">Reporting CIF regression</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -76,6 +78,10 @@
 <div class="section level2">
 <h2 id="example-1--unadjusted-competing-risks-analysis">Example 1. Unadjusted competing risks analysis<a class="anchor" aria-label="anchor" href="#example-1--unadjusted-competing-risks-analysis"></a>
 </h2>
+<p>These examples use <code>diabetes.complications</code>, an anonymized
+dataset from the Japan Diabetes Complications Study. The analysis of
+fruit intake and incident diabetic retinopathy in this cohort was
+reported by Tanaka et al. (2013).</p>
 <p>For the initial illustration, unadjusted analysis focusing on
 cumulative incidence of diabetic retinopathy (event 1) and macrovascular
 complications (event 2) at 8 years of follow-up is demonstrated.
@@ -184,24 +190,24 @@ years (<code>time.point=8</code>).</p>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">output3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] -1.38313159 -0.30043899 -3.99147264 -0.07582589</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="va">output3</span><span class="op">)</span></span>
-<span><span class="co">#&gt;              [,1]         [,2]         [,3]         [,4]</span></span>
-<span><span class="co">#&gt; [1,]  0.017018160 -0.012351309  0.009609321 -0.008372500</span></span>
-<span><span class="co">#&gt; [2,] -0.012351309  0.012789187 -0.006012254  0.006540183</span></span>
-<span><span class="co">#&gt; [3,]  0.009609321 -0.006012254  0.048161715 -0.044070501</span></span>
-<span><span class="co">#&gt; [4,] -0.008372500  0.006540183 -0.044070501  0.055992232</span></span>
+<span><span class="co">#&gt;               [,1]          [,2]          [,3]          [,4]</span></span>
+<span><span class="co">#&gt; [1,]  2.539857e-02 -5.688786e-03  9.114685e-03 -3.927105e-05</span></span>
+<span><span class="co">#&gt; [2,] -5.688786e-03  1.104372e-02 -2.138178e-05 -5.263603e-03</span></span>
+<span><span class="co">#&gt; [3,]  9.114685e-03 -2.138178e-05  7.213912e-02 -2.795468e-02</span></span>
+<span><span class="co">#&gt; [4,] -3.927105e-05 -5.263603e-03 -2.795468e-02  5.773891e-02</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">output3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;                       event1        event2      </span></span>
 <span><span class="co">#&gt; ---------------------------------------------- </span></span>
 <span><span class="co">#&gt; Intercept            </span></span>
 <span><span class="co">#&gt;                       0.251         0.018       </span></span>
-<span><span class="co">#&gt;                       [0.194, 0.324]  [0.012, 0.028]</span></span>
+<span><span class="co">#&gt;                       [0.184, 0.343]  [0.011, 0.031]</span></span>
 <span><span class="co">#&gt;                       (p=0.000)     (p=0.000)   </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; fruitq1, Q2 to Q4 vs Q1 </span></span>
 <span><span class="co">#&gt;                       0.740         0.927       </span></span>
-<span><span class="co">#&gt;                       [0.593, 0.924]  [0.583, 1.474]</span></span>
-<span><span class="co">#&gt;                       (p=0.008)     (p=0.749)   </span></span>
+<span><span class="co">#&gt;                       [0.603, 0.910]  [0.579, 1.485]</span></span>
+<span><span class="co">#&gt;                       (p=0.004)     (p=0.752)   </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ---------------------------------------------- </span></span>
 <span><span class="co">#&gt; </span></span>
@@ -270,8 +276,8 @@ specified.</p>
 <span><span class="co">#&gt; ---------------------------------- </span></span>
 <span><span class="co">#&gt; fruitq1, Q2 to Q4 vs Q1 </span></span>
 <span><span class="co">#&gt;                       0.777       </span></span>
-<span><span class="co">#&gt;                       [0.001, 685.697]</span></span>
-<span><span class="co">#&gt;                       (p=0.942)   </span></span>
+<span><span class="co">#&gt;                       [0.654, 0.922]</span></span>
+<span><span class="co">#&gt;                       (p=0.004)   </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ---------------------------------- </span></span>
 <span><span class="co">#&gt; </span></span>
@@ -302,8 +308,8 @@ covariates and censoring strata are specified in
 <span><span class="co">#&gt; ---------------------------------------------- </span></span>
 <span><span class="co">#&gt; fruitq1, Q2 to Q4 vs Q1 </span></span>
 <span><span class="co">#&gt;                       0.644         1.100       </span></span>
-<span><span class="co">#&gt;                       [0.489, 0.848]  [0.596, 2.030]</span></span>
-<span><span class="co">#&gt;                       (p=0.002)     (p=0.761)   </span></span>
+<span><span class="co">#&gt;                       [0.510, 0.814]  [0.588, 2.055]</span></span>
+<span><span class="co">#&gt;                       (p=0.000)     (p=0.766)   </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ---------------------------------------------- </span></span>
 <span><span class="co">#&gt; </span></span>
@@ -378,6 +384,18 @@ panels into a single shared legend, positioned according to
 <code>title.plot</code> control the overall panel title and individual
 subplot titles, ensuring that multi-panel layouts remain consistent and
 publication-ready.</p>
+</div>
+<div class="section level2">
+<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
+<ul>
+<li>Tanaka S, Yoshimura Y, Kawasaki R, Kamada C, Tanaka S, Horikawa C,
+Ohashi Y, Araki A, Ito H, Akanuma Y, Yamada N, Yamashita H, Sone H, for
+the Japan Diabetes Complications Study Group. Fruit intake and incident
+diabetic retinopathy with type 2 diabetes. <em>Epidemiology</em>. 2013,
+24(2), 204–211. <a href="https://doi.org/10.1097/EDE.0b013e318281725e" class="external-link">doi:10.1097/EDE.0b013e318281725e</a>
+</li>
+</ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

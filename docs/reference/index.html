@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -25,6 +25,8 @@
     <li><a class="dropdown-item" href="../articles/v5_gallery.html">Gallery</a></li>
     <li><a class="dropdown-item" href="../articles/v6_information.html">Additional information</a></li>
     <li><a class="dropdown-item" href="../articles/v7_arguments.html">Full lists of arguments</a></li>
+    <li><a class="dropdown-item" href="../articles/v8_reporting_cif.html">Reporting cumulative incidence</a></li>
+    <li><a class="dropdown-item" href="../articles/v9_reporting_polyreg.html">Reporting CIF regression</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -53,7 +55,7 @@
 
       <dl><dt>
 
-          <code><a href="cifcurve.html">cifcurve()</a></code>
+          <code><a href="cifcurve.html">summary(<i>&lt;cifcurve&gt;</i>)</a></code> <code><a href="cifcurve.html">cifcurve()</a></code>
 
         </dt>
         <dd>Calculate the Kaplan-Meier estimator and the Aalen-Johansen estimator</dd>
@@ -97,7 +99,7 @@
 
         <dt>
 
-          <code><a href="polyreg-methods.html">coef(<i>&lt;polyreg&gt;</i>)</a></code> <code><a href="polyreg-methods.html">vcov(<i>&lt;polyreg&gt;</i>)</a></code> <code><a href="polyreg-methods.html">nobs(<i>&lt;polyreg&gt;</i>)</a></code> <code><a href="polyreg-methods.html">summary(<i>&lt;polyreg&gt;</i>)</a></code> <code><a href="polyreg-methods.html">print(<i>&lt;summary.polyreg&gt;</i>)</a></code> <code><a href="polyreg-methods.html">effect_label.polyreg()</a></code> <code><a href="polyreg-methods.html">tidy(<i>&lt;polyreg&gt;</i>)</a></code> <code><a href="polyreg-methods.html">glance(<i>&lt;polyreg&gt;</i>)</a></code> <code><a href="polyreg-methods.html">augment(<i>&lt;polyreg&gt;</i>)</a></code>
+          <code><a href="polyreg-methods.html">coef(<i>&lt;polyreg&gt;</i>)</a></code> <code><a href="polyreg-methods.html">vcov(<i>&lt;polyreg&gt;</i>)</a></code> <code><a href="polyreg-methods.html">nobs(<i>&lt;polyreg&gt;</i>)</a></code> <code><a href="polyreg-methods.html">summary(<i>&lt;polyreg&gt;</i>)</a></code> <code><a href="polyreg-methods.html">print(<i>&lt;summary.polyreg&gt;</i>)</a></code> <code><a href="polyreg-methods.html">effect_label.polyreg()</a></code> <code><a href="polyreg-methods.html">tidy(<i>&lt;polyreg&gt;</i>)</a></code> <code><a href="polyreg-methods.html">glance(<i>&lt;polyreg&gt;</i>)</a></code> <code><a href="polyreg-methods.html">augment(<i>&lt;polyreg&gt;</i>)</a></code> <code><a href="polyreg-methods.html">tbl_regression(<i>&lt;polyreg&gt;</i>)</a></code>
 
         </dt>
         <dd>Methods for polyreg objects</dd>
@@ -170,6 +172,27 @@
 
         </dt>
         <dd>Create a survival or competing-risks response</dd>
+
+        <dt>
+
+          <code><a href="as_ggplot.html">as_ggplot()</a></code>
+
+        </dt>
+        <dd>Extract a ggplot for customization or export</dd>
+
+        <dt>
+
+          <code><a href="as_modelsummary.html">as_modelsummary()</a></code>
+
+        </dt>
+        <dd>Convert regression results to modelsummary input</dd>
+
+        <dt>
+
+          <code><a href="as_prediction_data.html">as_prediction_data()</a></code>
+
+        </dt>
+        <dd>Extract prediction data in the common long format</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

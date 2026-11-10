@@ -51,6 +51,7 @@ ciftest(
   A two-sided formula with an
   [`Event()`](https://gestimation.github.io/cifmodeling/reference/Event.md)
   or `Surv()` response and one grouping variable on the right-hand side.
+  `Surv()` responses must be right-censored.
 
 - data:
 

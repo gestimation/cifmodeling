@@ -2,6 +2,11 @@
 
 ## Example 1. Unadjusted competing risks analysis
 
+These examples use `diabetes.complications`, an anonymized dataset from
+the Japan Diabetes Complications Study. The analysis of fruit intake and
+incident diabetic retinopathy in this cohort was reported by Tanaka et
+al. (2013).
+
 For the initial illustration, unadjusted analysis focusing on cumulative
 incidence of diabetic retinopathy (event 1) and macrovascular
 complications (event 2) at 8 years of follow-up is demonstrated. **To
@@ -126,24 +131,24 @@ output3 <- polyreg(nuisance.model=Event(t,epsilon)~1, exposure="fruitq1",
 coef(output3)
 #> [1] -1.38313159 -0.30043899 -3.99147264 -0.07582589
 vcov(output3)
-#>              [,1]         [,2]         [,3]         [,4]
-#> [1,]  0.017018160 -0.012351309  0.009609321 -0.008372500
-#> [2,] -0.012351309  0.012789187 -0.006012254  0.006540183
-#> [3,]  0.009609321 -0.006012254  0.048161715 -0.044070501
-#> [4,] -0.008372500  0.006540183 -0.044070501  0.055992232
+#>               [,1]          [,2]          [,3]          [,4]
+#> [1,]  2.539857e-02 -5.688786e-03  9.114685e-03 -3.927105e-05
+#> [2,] -5.688786e-03  1.104372e-02 -2.138178e-05 -5.263603e-03
+#> [3,]  9.114685e-03 -2.138178e-05  7.213912e-02 -2.795468e-02
+#> [4,] -3.927105e-05 -5.263603e-03 -2.795468e-02  5.773891e-02
 summary(output3)
 #> 
 #>                       event1        event2      
 #> ---------------------------------------------- 
 #> Intercept            
 #>                       0.251         0.018       
-#>                       [0.194, 0.324]  [0.012, 0.028]
+#>                       [0.184, 0.343]  [0.011, 0.031]
 #>                       (p=0.000)     (p=0.000)   
 #> 
 #> fruitq1, Q2 to Q4 vs Q1 
 #>                       0.740         0.927       
-#>                       [0.593, 0.924]  [0.583, 1.474]
-#>                       (p=0.008)     (p=0.749)   
+#>                       [0.603, 0.910]  [0.579, 1.485]
+#>                       (p=0.004)     (p=0.752)   
 #> 
 #> ---------------------------------------------- 
 #> 
@@ -218,8 +223,8 @@ summary(output4)
 #> ---------------------------------- 
 #> fruitq1, Q2 to Q4 vs Q1 
 #>                       0.777       
-#>                       [0.001, 685.697]
-#>                       (p=0.942)   
+#>                       [0.654, 0.922]
+#>                       (p=0.004)   
 #> 
 #> ---------------------------------- 
 #> 
@@ -252,8 +257,8 @@ summary(output5)
 #> ---------------------------------------------- 
 #> fruitq1, Q2 to Q4 vs Q1 
 #>                       0.644         1.100       
-#>                       [0.489, 0.848]  [0.596, 2.030]
-#>                       (p=0.002)     (p=0.761)   
+#>                       [0.510, 0.814]  [0.588, 2.055]
+#>                       (p=0.000)     (p=0.766)   
 #> 
 #> ---------------------------------------------- 
 #> 
@@ -336,3 +341,12 @@ arguments `title.panel`, `subtitle.panel`, `caption.panel`, and
 `title.plot` control the overall panel title and individual subplot
 titles, ensuring that multi-panel layouts remain consistent and
 publication-ready.
+
+## References
+
+- Tanaka S, Yoshimura Y, Kawasaki R, Kamada C, Tanaka S, Horikawa C,
+  Ohashi Y, Araki A, Ito H, Akanuma Y, Yamada N, Yamashita H, Sone H,
+  for the Japan Diabetes Complications Study Group. Fruit intake and
+  incident diabetic retinopathy with type 2 diabetes. *Epidemiology*.
+  2013, 24(2), 204–211.
+  [doi:10.1097/EDE.0b013e318281725e](https://doi.org/10.1097/EDE.0b013e318281725e)

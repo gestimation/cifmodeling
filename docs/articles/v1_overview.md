@@ -13,6 +13,10 @@ It provides a unified, high-level interface for survival and competing
 risks analysis, combining nonparametric estimation, regression modeling,
 visualization, and lightweight flowchart summaries.
 
+The first example uses `diabetes.complications`, an anonymized dataset
+from the Japan Diabetes Complications Study. Tanaka et al. (2013)
+examined fruit intake and incident diabetic retinopathy in this cohort.
+
 ``` r
 
 library(cifmodeling)
@@ -120,7 +124,7 @@ These functions adopt a formula + data syntax, return practical outputs
 for estimation, visualization, and reporting, and integrate with
 `ggsurvfit`, `DiagrammeR`, and `modelsummary` where appropriate.
 
-> **Explore the main features visually:**  
+> **Explore the main features visually:**\
 > See the
 > [Gallery](https://gestimation.github.io/cifmodeling/articles/v5_gallery.html)
 > for a curated set of examples using
@@ -129,17 +133,17 @@ for estimation, visualization, and reporting, and integrate with
 > [`cifpanel()`](https://gestimation.github.io/cifmodeling/reference/cifpanel.md).
 
 > **Interested in the precise variance formulas and influence functions
-> for the Aalen-Johansen estimator?**  
+> for the Aalen-Johansen estimator?**\
 > Visit [Computational formulas in
 > cifcurve()](https://gestimation.github.io/cifmodeling/articles/v3_formulas.html).
 
 > **Learn the modeling framework with
-> [`polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg.md):**  
+> [`polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg.md):**\
 > See the [Direct polytomous
 > regression](https://gestimation.github.io/cifmodeling/articles/v2_polyreg.html)
 > for coherent, joint modeling of all cause-specific CIFs.
 
-> **Prefer to build intuition before diving into code?**  
+> **Prefer to build intuition before diving into code?**\
 > Visit the *Coffee and Research – Story and Quiz* series for
 > narrative-style introductions to study design, survival and competing
 > risks analysis, and frequentist and causality thinking:
@@ -162,13 +166,14 @@ Beyond providing a unified interface,
 [`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md)
 also extends `survfit()` in a few targeted ways. For unweighted survival
 data, it reproduces the standard Kaplan-Meier estimator with **Greenwood
-and Tsiatis SEs** and a unified set of CI transformations. For competing
-risks data, it computes Aalen-Johansen CIFs with both **Aalen-type and
-delta-method SEs**. For weighted survival or competing risks data
-(e.g. inverse probability weighting), it implements **influence-function
-based SEs** (Deng and Wang 2025) as well as **modified Greenwood- and
-Tsiatis-type SEs** (Xie and Liu 2005), which are valid under general
-positive weights.
+and Tsiatis SEs** and a unified set of CI transformations. For
+unweighted competing risks data, it computes Aalen-Johansen CIFs with
+both **Aalen-type and delta-method SEs**. The default inference for
+weighted curves uses **influence-function based SEs** (Deng and Wang
+2025). The [formulas
+vignette](https://gestimation.github.io/cifmodeling/articles/v3_formulas.md)
+also describes the weighted Kaplan–Meier estimator and the adjusted
+Greenwood variance of Xie and Liu (2005).
 
 If you need very fine-grained plot customization, you can compute the
 estimator and keep a survfit-compatible object with
@@ -258,3 +263,16 @@ The estimators are routinely compared against related functions in
 **survival**, **cmprsk** and **mets** packages to ensure consistency.
 The package is continuously tested on GitHub Actions (Windows, macOS,
 Linux) to maintain reproducibility and CRAN-level compliance.
+
+## References
+
+- Tanaka S, Yoshimura Y, Kawasaki R, Kamada C, Tanaka S, Horikawa C,
+  Ohashi Y, Araki A, Ito H, Akanuma Y, Yamada N, Yamashita H, Sone H,
+  for the Japan Diabetes Complications Study Group. Fruit intake and
+  incident diabetic retinopathy with type 2 diabetes. *Epidemiology*.
+  2013, 24(2), 204–211.
+  [doi:10.1097/EDE.0b013e318281725e](https://doi.org/10.1097/EDE.0b013e318281725e)
+- Xie J, Liu C. Adjusted Kaplan–Meier estimator and log-rank test with
+  inverse probability of treatment weighting for survival data.
+  *Statistics in Medicine*. 2005, 24(20), 3089–3110.
+  [doi:10.1002/sim.2174](https://doi.org/10.1002/sim.2174)

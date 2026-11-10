@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,6 +40,8 @@
     <li><a class="dropdown-item" href="../articles/v5_gallery.html">Gallery</a></li>
     <li><a class="dropdown-item" href="../articles/v6_information.html">Additional information</a></li>
     <li><a class="dropdown-item" href="../articles/v7_arguments.html">Full lists of arguments</a></li>
+    <li><a class="dropdown-item" href="../articles/v8_reporting_cif.html">Reporting cumulative incidence</a></li>
+    <li><a class="dropdown-item" href="../articles/v9_reporting_polyreg.html">Reporting CIF regression</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -76,6 +78,10 @@
 <div class="section level2">
 <h2 id="cifcurve">cifcurve()<a class="anchor" aria-label="anchor" href="#cifcurve"></a>
 </h2>
+<p>Version 1.2.2 separates variance estimation (<code>error</code>), the
+CI transformation (<code>conf.type</code>), and the reference
+distribution (<code>conf.dist</code>). For the formulas, method
+combinations, and a worked example, see <a href="v3_formulas.html">Computational formulas in cifcurve()</a>.</p>
 <ul>
 <li>
 <code>formula</code> A model formula specifying the time-to-event
@@ -90,7 +96,9 @@ stratification variable on the right-hand side. Unlike
 <code>formula</code>.</li>
 <li>
 <code>weights</code> Optional name of the weight variable in
-<code>data</code>. Weights must be nonnegative.</li>
+<code>data</code>. Weights must be nonnegative. Supplied weights are
+treated as fixed, including externally estimated IPTW; uncertainty from
+estimating a propensity-score model is not included.</li>
 <li>
 <code>n.risk.type</code> Character string; one of
 <code>"weighted"</code>, <code>"unweighted"</code>, or
@@ -125,21 +133,39 @@ coding.</li>
 <code>code.censoring</code> Integer code of censoring (default
 <code>0</code>).</li>
 <li>
-<code>error</code> Character string specifying the method for SEs
-and CIs used internally. For <code>"survival"</code> without weights,
-choose one of <code>"greenwood"</code> (default),
-<code>"tsiatis"</code>, or <code>"if"</code>. For
-<code>"competing-risk"</code> without weights, choose one of
-<code>"delta"</code> (default), <code>"aalen"</code>, or
-<code>"if"</code>. SEs and CIs based on influence functions
-(<code>"if"</code>) is recommended for weighted analysis.</li>
+<code>error</code> Variance estimator. For unweighted KM, choose
+<code>"greenwood"</code> (default), <code>"tsiatis"</code>,
+<code>"if"</code>, or <code>"fay"</code>. For unweighted AJ, choose
+<code>"delta"</code> (default), <code>"aalen"</code>, <code>"if"</code>,
+or <code>"fay"</code>. With supplied weights, use <code>"if"</code>
+(default) or <code>"fay"</code>; other choices warn and fall back to
+<code>"if"</code>. <code>"fay"</code> applies a Fay–Graubard-type
+sandwich correction with a fixed leverage cap of 0.75; <code>"fg"</code>
+and <code>"fay-graubard"</code> are accepted aliases.</li>
 <li>
-<code>conf.type</code> Character specifying the method of
-transformation for CIs used internally (default
-<code>"arcsine-square root"</code>).</li>
+<code>conf.type</code> CI transformation: <code>"plain"</code>,
+<code>"log"</code>, <code>"log-log"</code>, <code>"logit"</code>,
+<code>"arcsin"</code> (default; aliases
+<code>"arcsine-square root"</code>, <code>"a"</code>), or
+<code>"none"</code> to omit CIs. It acts on KM survival or on
+<code>1 - CIF</code> for AJ. In particular, AJ <code>"log-log"</code>
+uses <code>log(-log(1 - CIF))</code>.</li>
 <li>
 <code>conf.int</code> Numeric two-sided level of CIs (default
 <code>0.95</code>).</li>
+<li>
+<code>conf.dist</code> Reference distribution for pointwise CIs:
+<code>"normal"</code> (default) or <code>"t"</code>. Student CIs require
+<code>error = "if"</code> or <code>"fay"</code>; omitting
+<code>error</code> with <code>conf.dist = "t"</code> selects
+<code>"if"</code>. This argument does not change the optional one-sided
+test, which uses a normal reference.</li>
+<li>
+<code>df.method</code> Student degrees-of-freedom allocation:
+<code>"deletion"</code> (default; FDF) or <code>"equal"</code> (EDF,
+available only with <code>error = "if"</code>). Ignored for normal CIs.
+Degrees of freedom vary by time and stratum and are generally not the
+sample size minus one.</li>
 <li>
 <code>time.point</code> Optional single time point at which a
 one-sided normal approximation test is performed when
@@ -165,17 +191,51 @@ report SE on the log-survival scale (survfit’s convention). Otherwise SE
 is on the probability scale.</li>
 <li>
 <code>engine</code> Character. One of <code>"auto"</code>,
-<code>"calculateKM"</code>, or <code>"calculateAJ_Rcpp"</code> (default
-<code>"calculateAJ_Rcpp"</code>).</li>
+<code>"calculateKM"</code>, or <code>"calculateAJ_Rcpp"</code>
+(default). Student CIs and <code>error = "fay"</code> require
+<code>"calculateAJ_Rcpp"</code> or <code>"auto"</code>.</li>
 <li>
 <code>prob.bound</code> Numeric lower bound used to internally
 truncate probabilities away from 0 and 1 (default
 <code>1e-7</code>).</li>
 </ul>
+<div class="section level3">
+<h3 id="returned-inference-diagnostics">Returned inference diagnostics<a class="anchor" aria-label="anchor" href="#returned-inference-diagnostics"></a>
+</h3>
+<p>IF/FG fits record <code>conf.dist</code>, <code>df</code>,
+<code>df.reason</code>, <code>critical.value</code>, and
+<code>conf.status</code>; Student fits also record
+<code>df.method</code>. <code>fay.bound</code> in an FG fit records the
+fixed cap 0.75 and is not an input argument. Use
+<code>summary(fit, times = ..., extend = TRUE)</code> to extract saved
+estimates, CIs, and diagnostics at requested times. For AJ,
+<code>$surv</code> and its limits concern <code>1 - CIF</code>; reverse
+and complement the limits to obtain a CIF interval.</p>
+<p>On the C++ IF/FG path, valid boundary estimates have singleton
+intervals. Interior zero/invalid variance, unavailable Student degrees
+of freedom, and times beyond positive-weight follow-up support give
+missing limits. Student failures do not fall back to normal CIs. These
+are pointwise approximations, not simultaneous bands or exact Student
+intervals.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="cifplot">cifplot()<a class="anchor" aria-label="anchor" href="#cifplot"></a>
 </h2>
+<p>To display IF-t (FDF or EDF) or FG-t intervals, first fit
+<code><a href="../reference/cifcurve.html">cifcurve()</a></code> with <code>conf.dist = "t"</code> and the
+desired <code>df.method</code>, then pass that fitted object as
+<code>formula_or_fit</code>. These two options are not forwarded by the
+plotting formula interface through <code>...</code> or
+<code>survfit.info</code>. A supplied fit retains its saved intervals;
+plotting arguments do not refit it.</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cifcurve.html">cifcurve</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">epsilon</span><span class="op">)</span> <span class="op">~</span> <span class="va">fruitq1</span>, data <span class="op">=</span> <span class="va">diabetes.complications</span>,</span>
+<span>  outcome.type <span class="op">=</span> <span class="st">"competing-risk"</span>, error <span class="op">=</span> <span class="st">"if"</span>, conf.dist <span class="op">=</span> <span class="st">"t"</span>,</span>
+<span>  df.method <span class="op">=</span> <span class="st">"equal"</span>, conf.type <span class="op">=</span> <span class="st">"log-log"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/cifplot.html">cifplot</a></span><span class="op">(</span><span class="va">fit</span>, outcome.type <span class="op">=</span> <span class="st">"competing-risk"</span>, add.risktable <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <ul>
 <li>
 <code>formula_or_fit</code> Either a model formula or a survfit
@@ -187,7 +247,9 @@ RHS specifies an optional stratification variable.</li>
 <code>formula</code>.</li>
 <li>
 <code>weights</code> Optional name of the weight variable in
-<code>data</code>. Weights must be nonnegative.</li>
+<code>data</code>. Weights must be nonnegative. Supplied weights are
+treated as fixed, including externally estimated IPTW; uncertainty from
+estimating a propensity-score model is not included.</li>
 <li>
 <code>n.risk.type</code> Character string; one of
 <code>"weighted"</code>, <code>"unweighted"</code>, or
@@ -236,18 +298,23 @@ displays (e.g. <code>cifpanel}()</code> or when
 <code>panel.censoring = TRUE</code>), <code>code.events</code> may also
 be a list of such numeric vectors, one per panel.</li>
 <li>
-<code>error</code> Character string specifying the method for SEs
-and CIs used internally. For <code>"survival"</code> without weights,
-choose one of <code>"greenwood"</code> (default),
-<code>"tsiatis"</code>, or <code>"if"</code>. For
-<code>"competing-risk"</code> without weights, choose one of
-<code>"delta"</code> (default), <code>"aalen"</code>, or
-<code>"if"</code>. SEs and CIs based on influence functions
-(<code>"if"</code>) is recommended for weighted analysis.</li>
+<code>error</code> Variance estimator. For unweighted KM, choose
+<code>"greenwood"</code> (default), <code>"tsiatis"</code>,
+<code>"if"</code>, or <code>"fay"</code>. For unweighted AJ, choose
+<code>"delta"</code> (default), <code>"aalen"</code>, <code>"if"</code>,
+or <code>"fay"</code>. With supplied weights, use <code>"if"</code>
+(default) or <code>"fay"</code>; other choices warn and fall back to
+<code>"if"</code>. <code>"fay"</code> applies a Fay–Graubard-type
+sandwich correction with a fixed leverage cap of 0.75; <code>"fg"</code>
+and <code>"fay-graubard"</code> are accepted aliases.</li>
 <li>
-<code>conf.type</code> Character specifying the method of
-transformation for CIs used internally (default
-<code>"arcsine-square root"</code>).</li>
+<code>conf.type</code> CI transformation: <code>"plain"</code>,
+<code>"log"</code>, <code>"log-log"</code>, <code>"logit"</code>,
+<code>"arcsin"</code> (default; aliases
+<code>"arcsine-square root"</code>, <code>"a"</code>), or
+<code>"none"</code> to omit CIs. It acts on KM survival or on
+<code>1 - CIF</code> for AJ. In particular, AJ <code>"log-log"</code>
+uses <code>log(-log(1 - CIF))</code>.</li>
 <li>
 <code>conf.int</code> Numeric two-sided level of CIs (default
 <code>0.95</code>).</li>
@@ -434,12 +501,19 @@ curve (default <code>\code{</code>FALSE`).</li>
 <code>ggsurvfit</code> plot.</li>
 <li>
 <code>...</code> Additional arguments passed to internal helper
-functions.</li>
+functions. This does not provide forwarding of <code>conf.dist</code> or
+<code>df.method</code>; use a fitted <code>cifcurve</code> object for
+Student intervals.</li>
 </ul>
 </div>
 <div class="section level2">
 <h2 id="cifpanel">cifpanel()<a class="anchor" aria-label="anchor" href="#cifpanel"></a>
 </h2>
+<p>For Student intervals, compute each curve with
+<code><a href="../reference/cifcurve.html">cifcurve()</a></code>, plot each fitted object with
+<code><a href="../reference/cifplot.html">cifplot()</a></code>, and supply the resulting plots through
+<code>plots</code>. The formula-based panel interface does not forward
+<code>conf.dist</code> or <code>df.method</code>.</p>
 <ul>
 <li><p><code>plots</code> Optional list of existing ggplot objects to be
 arranged into a panel. When plots is supplied, no new models are fitted;
@@ -456,7 +530,9 @@ provided, overrides <code>formula</code>.</p></li>
 <li><p><code>data</code> A data frame containing variables in
 <code>formula</code>.</p></li>
 <li><p><code>weights</code> Optional name of the weight variable in
-<code>data</code>. Weights must be nonnegative.</p></li>
+<code>data</code>. Weights must be nonnegative. Supplied weights are
+treated as fixed, including externally estimated IPTW; uncertainty from
+estimating a propensity-score model is not included.</p></li>
 <li><p><code>n.risk.type</code> Character string; one of
 <code>"weighted"</code>, <code>"unweighted"</code>, or
 <code>"ess"</code>. Controls which risk set size is returned in
@@ -501,17 +577,22 @@ be a list of such numeric vectors, one per panel.</p></li>
 <code>code.event1</code>, <code>code.event2</code>, and
 <code>code.censoring</code> (primarily used when <code><a href="../reference/cifpanel.html">cifpanel()</a></code>
 is called or when <code>panel.per.event = TRUE</code>).</p></li>
-<li><p><code>error</code> Character string specifying the method for SEs
-and CIs used internally. For <code>"survival"</code> without weights,
-choose one of <code>"greenwood"</code> (default),
-<code>"tsiatis"</code>, or <code>"if"</code>. For
-<code>"competing-risk"</code> without weights, choose one of
-<code>"delta"</code> (default), <code>"aalen"</code>, or
-<code>"if"</code>. SEs and CIs based on influence functions
-(<code>"if"</code>) is recommended for weighted analysis.</p></li>
-<li><p><code>conf.type</code> Character specifying the method of
-transformation for CIs used internally (default
-<code>"arcsine-square root"</code>).</p></li>
+<li><p><code>error</code> Variance estimator. For unweighted KM, choose
+<code>"greenwood"</code> (default), <code>"tsiatis"</code>,
+<code>"if"</code>, or <code>"fay"</code>. For unweighted AJ, choose
+<code>"delta"</code> (default), <code>"aalen"</code>, <code>"if"</code>,
+or <code>"fay"</code>. With supplied weights, use <code>"if"</code>
+(default) or <code>"fay"</code>; other choices warn and fall back to
+<code>"if"</code>. <code>"fay"</code> applies a Fay–Graubard-type
+sandwich correction with a fixed leverage cap of 0.75; <code>"fg"</code>
+and <code>"fay-graubard"</code> are accepted aliases.</p></li>
+<li><p><code>conf.type</code> CI transformation: <code>"plain"</code>,
+<code>"log"</code>, <code>"log-log"</code>, <code>"logit"</code>,
+<code>"arcsin"</code> (default; aliases
+<code>"arcsine-square root"</code>, <code>"a"</code>), or
+<code>"none"</code> to omit CIs. It acts on KM survival or on
+<code>1 - CIF</code> for AJ. In particular, AJ <code>"log-log"</code>
+uses <code>log(-log(1 - CIF))</code>.</p></li>
 <li><p><code>conf.int</code> Numeric two-sided level of CIs (default
 <code>0.95</code>).</p></li>
 <li><p><code>type.y</code> Character string specifying the y-scale. For
