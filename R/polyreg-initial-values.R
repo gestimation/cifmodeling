@@ -41,13 +41,9 @@ getInitialValues <- function(formula, data, outcome.type, exposure, estimand,
   p_l <- ncol(x_l)
   p_a <- ncol(x_a)
 
+  competing <- outcome.type %in% c("competing-risk", "proportional-competing-risk")
   if (!is.null(data.initial.values)) {
-    expected_len <- if (outcome.type == "survival" ||
-                        all(epsilon %in% c(estimand$code.event1, estimand$code.censoring))) {
-      p_l + p_a
-    } else {
-      2 * (p_l + p_a)
-    }
+    expected_len <- (p_l + p_a) * if (competing) 2L else 1L
     if (length(data.initial.values) != expected_len) {
       stop(sprintf("Invalid initial values length: expected %d, got %d.",
                    expected_len, length(data.initial.values)))
@@ -92,8 +88,7 @@ getInitialValues <- function(formula, data, outcome.type, exposure, estimand,
 
   y1 <- as.integer(epsilon == estimand$code.event1 & t <= specific.time)
 
-  if (outcome.type == "survival" ||
-      all(epsilon %in% c(estimand$code.event1, estimand$code.censoring))) {
+  if (!competing) {
     link1 <- link_from_measure(estimand$effect.measure1)
     est1  <- fit_init(y1, x_l, x_a, link1, offset = offset, pb = prob.bound)
     return(c(est1$alpha, est1$beta))
@@ -109,78 +104,23 @@ getInitialValues <- function(formula, data, outcome.type, exposure, estimand,
   }
 }
 
-getInitialValuesProportional <- function(formula, data, outcome.type, exposure, estimand, data.initial.values, prob.bound, out_normalizeCovariate) {
-  cl <- match.call()
-  mf <- match.call(expand.dots = TRUE)[1:3]
-  special <- c("strata", "cluster", "offset")
-  Terms <- terms(formula, special, data = data)
-  mf$formula <- Terms
-  mf[[1]] <- as.name("model.frame")
-  mf <- eval(mf, parent.frame())
-  Y <- model.extract(mf, "response")
-  if (!inherits(Y, c("Event", "Surv")))
-    stop("Expected a 'Surv' or 'Event'-object")
-  if (ncol(Y) == 2) {
-    t <- Y[, 1]
-    epsilon <- Y[, 2]
-  }
-
-  n_para_1 <- out_normalizeCovariate$n_covariate + 1
-  n_para_2 <- out_normalizeCovariate$n_covariate + 2
-  n_para_3 <- out_normalizeCovariate$n_covariate + 3
-  n_para_4 <- 2*out_normalizeCovariate$n_covariate + 3
-  n_para_5 <- 2*out_normalizeCovariate$n_covariate + 4
-  n_para_6 <- length(estimand$time.point) * (n_para_5 - 2) + 2
-
-  if (outcome.type == "proportional-survival") {
-    alpha_beta_0 <- rep(NA_real_, n_para_6/2)
-  } else {
-    alpha_beta_0 <- rep(NA_real_, n_para_6)
-  }
-
-  sum1 <- 0
-  sum2 <- 0
-  i_time <- 0
-
-  for (specific.time in estimand$time.point) {
-    specific.time <- as.numeric(specific.time)
-    out_getInitialValues <- getInitialValues(
-      formula = formula,
-      data = data,
-      outcome.type = outcome.type,
-      exposure = exposure,
-      estimand = estimand,
-      specific.time = specific.time,
-      data.initial.values = data.initial.values,
-      prob.bound = prob.bound
+getInitialValuesProportional <- function(formula, data, outcome.type, exposure, estimand,
+                                         data.initial.values, prob.bound) {
+  layout <- reg_proportional_index(estimand)
+  iv <- estimand$index.vector
+  n_causes <- if (outcome.type == "proportional-competing-risk") 2L else 1L
+  values <- vapply(estimand$time.point, function(time) {
+    getInitialValues(formula, data, outcome.type, exposure, estimand, time,
+      data.initial.values, prob.bound)
+  }, numeric(n_causes * iv[3L]))
+  initial <- numeric(n_causes * layout$block)
+  for (cause in seq_len(n_causes)) {
+    local_offset <- (cause - 1L) * iv[3L]
+    offset <- (cause - 1L) * layout$block
+    initial[layout$nuisance + offset] <- values[seq_len(iv[1L]) + local_offset, , drop = FALSE]
+    initial[layout$exposure + offset] <- rowMeans(
+      values[seq.int(iv[2L], iv[3L]) + local_offset, , drop = FALSE]
     )
-
-    i_time <- i_time + 1
-    i_para <- n_para_1*(i_time - 1) + 1
-
-    tmp1 <- out_getInitialValues[seq.int(1, length.out = n_para_1)]
-    if (outcome.type == "proportional-survival") {
-      idx1 <- seq.int(i_para, length.out = n_para_1)
-      alpha_beta_0[idx1] <- tmp1
-    } else {
-      idx1 <- seq.int(i_para, length.out = n_para_1)
-      alpha_beta_0[idx1] <- tmp1
-    }
-    sum1 <- sum1 + out_getInitialValues[n_para_2]
-
-    if (outcome.type == "proportional-competing-risk") {
-      tmp2 <- out_getInitialValues[seq.int(n_para_3, n_para_4)]
-      idx2_start <- (n_para_6 %/% 2) + i_para
-      idx2 <- seq.int(idx2_start, length.out = n_para_1)
-      alpha_beta_0[idx2] <- tmp2
-      sum2 <- sum2 + out_getInitialValues[n_para_5]
-    }
   }
-  if (outcome.type == "proportional-survival") {
-    alpha_beta_0[n_para_6 %/% 2] <- sum1 / length(estimand$time.point)
-  } else {
-    alpha_beta_0[n_para_6 %/% 2] <- sum1 / length(estimand$time.point)
-    alpha_beta_0[n_para_6]       <- sum2 / length(estimand$time.point)
-  }
-  return(alpha_beta_0)
+  initial
 }

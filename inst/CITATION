@@ -1,0 +1,15 @@
+bibentry(
+  bibtype = "Article",
+  key = "TanakaScheike2026",
+  title = paste(
+    "Estimating effects on cumulative incidence probabilities by direct",
+    "polytomous regression and polytomous log-odds product"
+  ),
+  author = c(person("Shiro", "Tanaka"), person(c("Thomas", "H."), "Scheike")),
+  journal = "Biometrics",
+  year = "2026",
+  volume = "82",
+  number = "3",
+  pages = "ujag160",
+  doi = "10.1093/biomtc/ujag160"
+)

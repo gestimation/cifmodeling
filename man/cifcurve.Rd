@@ -39,6 +39,7 @@ cifcurve(
 \item{formula}{A model formula specifying the time-to-event outcome on the LHS
 (typically \code{Event(time, status)} or \code{survival::Surv(time, status)})
 and, optionally, a stratification variable on the RHS.
+\code{Surv()} responses must be right-censored.
 Unlike \code{\link[=cifplot]{cifplot()}}, this function does not accept a fitted survfit object.}
 
 \item{data}{A data frame containing variables in the formula.}
@@ -58,10 +59,12 @@ One of \code{"survival"} (Kaplan-Meier) or \code{"competing-risk"} (Aalen-Johans
 If \code{NULL} (default), the function automatically infers the outcome type from the data:
 if the event variable has more than two unique levels, \code{"competing-risk"} is assumed;
 otherwise, \code{"survival"} is used. You can also use abbreviations such as \code{"S"} or \code{"C"}.
+An explicit \code{"competing-risk"} remains in effect when a cause is absent in the analysis data.
 Mixed or ambiguous inputs (e.g., \code{c("S", "C")}) trigger automatic detection based on the event coding.}
 
-\item{time.point}{Optional single time point at which a one-sided normal
-approximation test is performed when \code{null.hypothesis} is specified.}
+\item{time.point}{Optional finite, non-negative time for a one-sided normal
+approximation test when \code{null.hypothesis} is specified. The test returns
+a missing p-value for strata with no positive-weight follow-up at this time.}
 
 \item{null.hypothesis}{Optional null value for the survival probability or
 cumulative incidence at \code{time.point}. For \code{outcome.type = "survival"},
@@ -95,7 +98,11 @@ the influence function is also computed and returned (default \code{FALSE}).}
 \item{report.survfit.std.err}{Logical. If \code{TRUE}, report SE on the log-survival
 scale (survfit's convention). Otherwise SE is on the probability scale.}
 
-\item{engine}{Character. One of \code{"auto"}, \code{"calculateKM"}, or \code{"calculateAJ_Rcpp"} (default \code{"calculateAJ_Rcpp"}).}
+\item{engine}{Character. One of \code{"auto"}, \code{"calculateKM"}, or \code{"calculateAJ_Rcpp"} (default).
+\code{"calculateAJ"} is also accepted as an alias for \code{"calculateAJ_Rcpp"}.
+The legacy engine accepts no weights or positive weights constant within
+each stratum, and normal inference with Greenwood/Tsiatis for survival or
+delta/Aalen for competing risks. Its SEs use subject counts.}
 
 \item{prob.bound}{Numeric lower bound used to internally truncate probabilities away from 0 and 1 (default \code{1e-7}).}
 
@@ -121,6 +128,8 @@ This enables an independent use of standard methods for \code{survfit} such as:
 
 If \code{null.hypothesis} is specified, the returned object additionally contains
 a \code{one.sided.p} list with the one-sided normal approximation test results.
+Its table marks strata beyond positive-weight follow-up with
+\code{test.status = "outside_observed_followup"}.
 
 Note that \verb{$n.risk}, \verb{$n.event}, and \verb{$n.censor} are rounded up to the nearest integer
 regardless of whether the data is weighted or not.
@@ -191,6 +200,9 @@ follow-up produce missing limits with reasons in \verb{$conf.status}. No normal
 fallback is used for a failed Student interval. Degrees of freedom vary by
 stratum and time; calculation can be expensive for large risk sets. The
 optional one-sided test retains its documented normal reference distribution.
+Delta and Aalen variances use all event times up to the reported time.
+If the Aalen formula gives a negative variance with tied events, its SE and
+confidence limits are missing.
 Returned influence functions are uncorrected case-weight derivatives (IF/n)
 of the event probability \verb{1 - $surv},
 even when the SE uses FG-adjusted contributions.

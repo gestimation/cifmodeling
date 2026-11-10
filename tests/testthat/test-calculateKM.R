@@ -4,7 +4,7 @@ test_that("calculateKM() and util_get_surv() produced expected KM for survival d
   testthat::skip_if_not_installed("Rcpp")
   data("diabetes.complications")
   diabetes.complications$d <- as.numeric(diabetes.complications$epsilon==0)
-  resC <- suppressWarnings(mets::phreg(Surv(t, d) ~ 1, data=diabetes.complications))
+  resC <- suppressWarnings(mets::phreg(mets::Surv(t, d) ~ 1, data=diabetes.complications))
   out_predict1 <- suppressWarnings(stats::predict(resC, newdata = diabetes.complications, type = "survival", times = diabetes.complications$t, individual.time = TRUE, se = FALSE, km = TRUE, tminus = TRUE))
   expected <- out_predict1$surv
   expected <- round(expected[1:10,],digit=3)
@@ -18,10 +18,10 @@ test_that("calculateKM() and util_get_surv() produced expected stratified KM for
   skip_on_cran()
   testthat::skip_if_not_installed("mets")
   testthat::skip_if_not_installed("Rcpp")
-  library(mets)
+  strata <- mets::strata
   data("diabetes.complications")
   diabetes.complications$d <- as.numeric(diabetes.complications$epsilon==0)
-  resC <- suppressWarnings(mets::phreg(Surv(t, d) ~ strata(strata), data=diabetes.complications))
+  resC <- suppressWarnings(mets::phreg(mets::Surv(t, d) ~ strata(strata), data=diabetes.complications))
   out_predict1 <- suppressWarnings(stats::predict(resC, newdata = diabetes.complications, type = "survival", times = diabetes.complications$t, individual.time = TRUE, se = FALSE, km = TRUE, tminus = TRUE))
   expected <- out_predict1$surv
   expected <- round(expected[1:10,],digit=3)
@@ -37,7 +37,7 @@ test_that("calculateAJ_Rcpp() and util_get_surv() produced expected KM for survi
   testthat::skip_if_not_installed("Rcpp")
   data("diabetes.complications")
   diabetes.complications$d <- as.numeric(diabetes.complications$epsilon==0)
-  resC <- suppressWarnings(mets::phreg(Surv(t, d) ~ 1, data=diabetes.complications))
+  resC <- suppressWarnings(mets::phreg(mets::Surv(t, d) ~ 1, data=diabetes.complications))
   out_predict1 <- suppressWarnings(stats::predict(resC, newdata = diabetes.complications, type = "survival", times = diabetes.complications$t, individual.time = TRUE, se = FALSE, km = TRUE, tminus = TRUE))
   expected <- out_predict1$surv
   expected <- round(expected[1:10,],digit=3)
@@ -51,10 +51,10 @@ test_that("calculateAJ_Rcpp() and util_get_surv() produced expected stratified K
   skip_on_cran()
   testthat::skip_if_not_installed("mets")
   testthat::skip_if_not_installed("Rcpp")
-  library(mets)
+  strata <- mets::strata
   data("diabetes.complications")
   diabetes.complications$d <- as.numeric(diabetes.complications$epsilon==0)
-  resC <- suppressWarnings(mets::phreg(Surv(t, d) ~ strata(strata), data=diabetes.complications))
+  resC <- suppressWarnings(mets::phreg(mets::Surv(t, d) ~ strata(strata), data=diabetes.complications))
   out_predict1 <- suppressWarnings(stats::predict(resC, newdata = diabetes.complications, type = "survival", times = diabetes.complications$t, individual.time = TRUE, se = FALSE, km = TRUE, tminus = TRUE))
   expected <- out_predict1$surv
   expected <- round(expected[1:10,],digit=3)
@@ -140,6 +140,45 @@ test_that("drop-in replacement: with strata - weights", {
     expect_identical(unname(old$strata),        unname(new$strata))
     expect_identical(unname(old$strata.levels), unname(new$strata.levels))
   }
+})
+
+test_that("the legacy engine preserves tied risk sets and verified weighted curves", {
+  skip_if_not_installed("survival")
+  d <- data.frame(time = c(1, 1, 1, 2, 3, 4, 2, 2, 2, 4, 5, 7),
+    status = rep(c(1, 2, 0, 1, 0, 2), 2), group = rep(c("b", "a"), each = 6),
+    weight = rep(c(.5, 2.25), each = 6))
+  d$state <- factor(d$status, levels = 0:2)
+  ref <- survival::survfit(survival::Surv(time, state) ~ group, d, weights = weight)
+  expected_n <- rep(c(6, 3, 2, 1), 2)
+  for (method in c("delta", "aalen")) {
+    modern <- cifcurve(Event(time, status) ~ group, d, outcome.type = "competing-risk",
+      error = method, conf.type = "plain")
+    for (risk in c("unweighted", "weighted", "ess")) {
+      fit <- cifcurve(Event(time, status) ~ group, d, weights = "weight",
+        outcome.type = "competing-risk", engine = "calculateKM", error = method,
+        n.risk.type = risk, conf.type = "plain")
+      expect_equal(fit$time, ref$time)
+      expect_equal(1 - fit$surv, ref$pstate[, match("1", ref$states)])
+      expect_equal(fit$std.err, modern$std.err)
+      expect_equal(fit$n.risk.weighted, ref$n.risk[, 1])
+      expect_equal(fit$n.risk, if (risk == "weighted") ceiling(ref$n.risk[, 1]) else expected_n)
+      expect_equal(fit$n.event, ceiling(rowSums(ref$n.event)))
+    }
+  }
+  d$failure <- as.integer(d$status != 0)
+  for (method in c("greenwood", "tsiatis")) {
+    modern <- cifcurve(Event(time, failure) ~ group, d, outcome.type = "survival", error = method)
+    legacy <- cifcurve(Event(time, failure) ~ group, d, weights = "weight",
+      outcome.type = "survival", engine = "calculateKM", error = method, n.risk.type = "ess")
+    expect_equal(legacy$std.err, modern$std.err)
+    expect_equal(legacy$n.risk, expected_n)
+  }
+  fit_legacy <- function(w, ...) cifcurve(Event(time, status) ~ group, d,
+    weights = w, outcome.type = "competing-risk", engine = "calculateKM", ...)
+  expect_error(fit_legacy(replace(d$weight, 1, 0)), "positive weights constant")
+  expect_error(fit_legacy(replace(d$weight, 1, 1)), "positive weights constant")
+  expect_error(fit_legacy(d$weight, error = "if"), "requires normal inference")
+  expect_error(fit_legacy(d$weight, report.influence.function = TRUE), "requires normal inference")
 })
 
 test_that("engine routing works and schemas align", {

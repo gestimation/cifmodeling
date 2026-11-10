@@ -1,19 +1,75 @@
-test_that("polyreg() produced expected coefficients and variance covariance matrix for categorical exposure and binary exposure coded other than the default and stratified in IPCW", {
+test_that("polyreg estimates competing-risk effects for categorical and stratified binary exposure", {
   skip_on_cran()
   data(diabetes.complications)
   output <- polyreg(nuisance.model = Event(t,epsilon)~+1, exposure = 'fruitq', data = diabetes.complications, effect.measure1='RR', effect.measure2='RR', code.exposure.ref='Q1', time.point=8, outcome.type='C')
-  tested_coefficient <- round(output$coef,digits=3)
-  tested_cov <- round(output$vcov[1,],digits=3)
-  tested <- as.vector(cbind(tested_coefficient,tested_cov))
-  expected <- c(-1.383, -0.276, -0.067, -0.555, -3.991, -0.104, 0.045, -0.169, 0.017, -0.012, -0.012, -0.013, 0.010, -0.008, -0.008, -0.008)
-  expect_equal(tested, expected)
+  expect_equal(round(unname(coef(output)), 3),
+    c(-1.383, -0.276, -0.067, -0.555, -3.991, -0.104, 0.045, -0.169))
+  expect_true(all(is.finite(vcov(output))))
 
   output <- polyreg(nuisance.model = Event(t,epsilon)~+1, exposure = 'fruitq1', data = diabetes.complications, strata = 'strata', effect.measure1='SHR', effect.measure2='SHR', time.point=8, outcome.type='C')
-  tested_coefficient <- round(output$coef,digits=3)
-  tested_cov <- round(output$vcov[1,],digits=3)
-  tested <- as.vector(cbind(tested_coefficient,tested_cov))
-  expected <- c(-1.383, 0.363, -3.988, 0.081, 0.009, -0.006, 0.003, -0.003)
-  expect_equal(tested, expected)
+  expect_equal(round(unname(coef(output)), 3), c(-1.383, 0.363, -3.988, 0.081))
+})
+
+test_that("fixed-time polyreg covariance matches perturbations of the censoring KM", {
+  d <- data.frame(
+    time = c(1, 1, 2, 3, 4, 4, 5, 5, 6, 1, 2, 2, 3, 3, 4, 4, 5, 6),
+    status = c(0, 1, 0, 2, 1, 0, 2, 1, 0, 0, 2, 1, 0, 1, 2, 0, 1, 0),
+    group = rep(0:1, each = 9)
+  )
+  d$stratum <- factor(d$group)
+  horizon <- 4
+  n <- nrow(d)
+  weight <- rep(1, n)
+
+  # In a saturated fit the risk in each group is the mean of the weighted
+  # event indicators. Perturb the case weights in that mean and in the KM.
+  risk <- function(w, cause, status, stratum) {
+    vapply(0:1, function(group) {
+      events <- which(d$group == group & status == cause & d$time <= horizon)
+      weighted_events <- vapply(events, function(i) {
+        same_stratum <- stratum == stratum[i]
+        censored <- same_stratum & status == 0
+        jumps <- unique(d$time[censored & d$time < d$time[i]])
+        survival <- prod(vapply(jumps, function(u) {
+          1 - sum(w[censored & d$time == u]) / sum(w[same_stratum & d$time >= u])
+        }, numeric(1)))
+        w[i] / survival
+      }, numeric(1))
+      sum(weighted_events) / sum(w[d$group == group])
+    }, numeric(1))
+  }
+  influence <- function(estimand) {
+    vapply(seq_len(n), function(i) {
+      delta <- numeric(n)
+      delta[i] <- 1e-5
+      (estimand(weight + delta) - estimand(weight - delta)) / (2e-5)
+    }, numeric(length(estimand(weight))))
+  }
+
+  d$failure <- as.integer(d$status != 0)
+  log_rr <- function(w) diff(log(risk(w, 1, d$failure, d$stratum)))
+  fit <- polyreg(Event(time, failure) ~ 1, "group", data = d, strata = "stratum",
+    time.point = horizon, outcome.type = "survival")
+  expect_equal(unname(coef(fit)[2]), log_rr(weight), tolerance = 1e-6)
+  expect_equal(unname(vcov(fit)[2, 2]), sum(influence(log_rr)^2), tolerance = 1e-5)
+
+  for (stratified in c(TRUE, FALSE)) {
+    stratum <- if (stratified) d$stratum else rep(1, n)
+    log_effects <- function(w) c(
+      diff(log(risk(w, 1, d$status, stratum))),
+      diff(log(-log1p(-risk(w, 2, d$status, stratum))))
+    )
+    fit <- polyreg(Event(time, status) ~ 1, "group", data = d,
+      strata = if (stratified) "stratum" else NULL, time.point = horizon,
+      effect.measure1 = "RR", effect.measure2 = "SHR")
+    contrasts <- c(2, 4)
+    expect_equal(unname(coef(fit)[contrasts]), log_effects(weight), tolerance = 1e-5)
+    expected_if <- influence(log_effects)
+    expect_equal(unname(vcov(fit)[contrasts, contrasts]), tcrossprod(expected_if),
+      tolerance = 1e-4)
+    expect_equal(unname(fit$diagnostics$influence.function[, contrasts]) / n,
+      t(expected_if), tolerance = 1e-4)
+  }
 })
 
 test_that("polyreg() produced expected coefficients and variance covariance matrix from survival data with missing variables", {

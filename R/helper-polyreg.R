@@ -19,6 +19,18 @@ reg_index_for_parameter <- function(i_parameter,x_l,x_a,length.time.point) {
   return(i_parameter)
 }
 
+reg_proportional_index <- function(estimand) {
+  iv <- estimand$index.vector
+  n_times <- length(estimand$time.point)
+  n_alpha <- iv[1L] * n_times
+  block <- iv[8L] / 2L
+  list(
+    nuisance = matrix(seq_len(n_alpha), nrow = iv[1L], ncol = n_times),
+    exposure = seq.int(n_alpha + 1L, block),
+    block = block
+  )
+}
+
 reg_normalize_covariate <- function(formula, data, normalize.covariate,
                                outcome.type, exposure.levels) {
   mf <- model.frame(formula, data)
@@ -70,7 +82,7 @@ reg_normalize_covariate <- function(formula, data, normalize.covariate,
   scales_in_mm_order <- c()
   if (length(mm_cols) > 1) {
     for (cn in mm_cols[-1]) {
-      scales_in_mm_order <- c(scales_in_mm_order, scales_num[cn] %||% 1)
+      scales_in_mm_order <- c(scales_in_mm_order, if (cn %in% names(scales_num)) scales_num[[cn]] else 1)
     }
   }
 
@@ -177,20 +189,25 @@ reg_check_input <- function(data, formula, exposure, code.event1, code.event2, c
   mf <- eval(mf, parent.frame())
 
   Y <- model.extract(mf, "response")
+  util_check_surv_type(Y)
   if (outcome.type %in% c("competing-risk","survival","proportional-survival","proportional-competing-risk")) {
     if (!inherits(Y, c("Event","Surv"))) .err("surv_expected")
     t <- as.numeric(Y[,1]); epsilon <- as.numeric(Y[,2])
     if (any(t < 0, na.rm = TRUE)) .err("time_nonneg", arg = "time")
-    if (outcome.type == "survival") {
+    if (outcome.type %in% c("survival", "proportional-survival")) {
       ok <- all(epsilon %in% c(code.event1, code.censoring), na.rm = TRUE)
       if (!ok) .err("codes_required_surv",
                     censoring = code.censoring, event1 = code.event1,
                     found = paste(sort(unique(na.omit(epsilon))), collapse = ", "))
-    } else if (outcome.type == "competing-risk") {
+    } else {
       ok <- all(epsilon %in% c(code.event1, code.event2, code.censoring), na.rm = TRUE)
       if (!ok) .err("codes_required_cr",
                     censoring = code.censoring, event1 = code.event1, event2 = code.event2,
                     found = paste(sort(unique(na.omit(epsilon))), collapse = ", "))
+      if (outcome.type == "proportional-competing-risk" &&
+          !all(c(code.event1, code.event2) %in% epsilon)) {
+        stop("Competing-risk polyreg() requires observations of both event types.", call. = FALSE)
+      }
     }
   }
 
@@ -220,7 +237,7 @@ reg_check_input <- function(data, formula, exposure, code.event1, code.event2, c
 
   outer_choices <- c("Newton","Broyden")
   nleqslv.method <- match.arg(nleqslv.method, choices = outer_choices)
-  return(list(normalize.covariate = normalize.covariate.corrected, report.sandwich.conf = report.sandwich.conf.corrected, report.boot.conf = report.boot.conf.corrected, out_readExposureDesign=out_readExposureDesign, x_a=x_a, x_l=x_l))
+  return(list(normalize.covariate = normalize.covariate.corrected, report.sandwich.conf = report.sandwich.conf.corrected, report.boot.conf = report.boot.conf.corrected, out_readExposureDesign=out_readExposureDesign, x_a=x_a, x_l=x_l, response=Y))
 }
 
 reg_read_exposure_design <- function(data, exposure, code.exposure.ref = NULL, prefix = "a") {

@@ -66,7 +66,7 @@
 #' @examples
 #' set.seed(2026)
 #' dat <- cifsimulate(500, effect = "early", shr = 0.65)
-#' head(dat[c("time", "status", "A", "L")])
+#' utils::head(dat[c("time", "status", "A", "L")])
 #'
 #' fit <- ciftest(
 #'   Event(time, status) ~ A,
@@ -226,8 +226,8 @@ cifsimulate <- function(
     seq(0, tau, by = grid.width), tau, analysis.tau, change.time
   )))
   time_grid <- time_grid[time_grid <= tau]
-  interval_start <- head(time_grid, -1L)
-  interval_end <- tail(time_grid, -1L)
+  interval_start <- utils::head(time_grid, -1L)
+  interval_end <- utils::tail(time_grid, -1L)
   baseline_cif_left <- cif10(interval_start)
   effect_value <- switch(
     effect,
@@ -243,7 +243,7 @@ cifsimulate <- function(
   baseline_increment1 <- diff(lambda10(time_grid))
 
   inverse_curve <- function(cumulative, target) {
-    target <- pmax(0, pmin(as.numeric(target), tail(cumulative, 1L)))
+    target <- pmax(0, pmin(as.numeric(target), utils::tail(cumulative, 1L)))
     keep <- !duplicated(cumulative)
     stats::approx(
       x = cumulative[keep], y = time_grid[keep], xout = target,
@@ -272,8 +272,8 @@ cifsimulate <- function(
       rr2 <- exp(beta2[1L] * a + beta2[2L] * ell)
       cumulative2 <- lambda20(time_grid) * rr2
       raw_cif2 <- 1 - exp(-cumulative2)
-      terminal1 <- tail(cif1, 1L)
-      terminal2_raw <- tail(raw_cif2, 1L)
+      terminal1 <- utils::tail(cif1, 1L)
+      terminal2_raw <- utils::tail(raw_cif2, 1L)
       cif2 <- raw_cif2 * (1 - terminal1)
       cif1_array[, a + 1L, ell + 1L] <- cif1
       cif2_array[, a + 1L, ell + 1L] <- cif2
@@ -347,14 +347,14 @@ cifsimulate <- function(
   })
   colnames(marginal_cif1) <- colnames(marginal_cif2) <- c("A0", "A1")
   cif_difference <- marginal_cif1[, "A1"] - marginal_cif1[, "A0"]
-  effect_at_grid <- c(effect_value, tail(effect_value, 1L))
+  effect_at_grid <- c(effect_value, utils::tail(effect_value, 1L))
 
   trapezoid_average <- function(value, lower, upper) {
     knots <- sort(unique(c(
       lower, time_grid[time_grid > lower & time_grid < upper], upper
     )))
     values <- stats::approx(time_grid, value, xout = knots, rule = 2)$y
-    sum(diff(knots) * (head(values, -1L) + tail(values, -1L)) / 2) /
+    sum(diff(knots) * (utils::head(values, -1L) + utils::tail(values, -1L)) / 2) /
       (upper - lower)
   }
   analysis_rows <- which(time_grid <= analysis.tau)

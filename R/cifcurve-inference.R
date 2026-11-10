@@ -182,6 +182,11 @@
        valid = status %in% c("ok", "endpoint_degenerate"))
 }
 
+.cifcurve_followup <- function(time, weight, strata) {
+  groups <- split(seq_along(time), strata)
+  vapply(groups, function(i) max(c(-Inf, time[i[weight[i] > 0]])), numeric(1))
+}
+
 .cifcurve_adjusted_ci <- function(out, time, event, weight, strata,
                                  conf.type, level, conf.dist, df.method) {
   nr <- length(out$time); df <- rep(Inf, nr); df.reason <- rep("normal", nr)
@@ -189,10 +194,10 @@
   supported <- logical(nr)
   counts <- if (length(out$strata)) as.integer(out$strata) else nr
   groups <- sort(unique(strata)); offset <- 0L
+  support <- .cifcurve_followup(time, weight, strata)
   for (g in seq_along(groups)) {
     ii <- which(strata == groups[g]); jj <- offset + seq_len(counts[g]); offset <- offset + counts[g]
-    positive <- ii[weight[ii] > 0]
-    if (length(positive)) supported[jj] <- out$time[jj] <= max(time[positive])
+    supported[jj] <- out$time[jj] <= support[g]
     if (conf.dist == "t") {
       d <- .cifcurve_df_stratum(time[ii], event[ii], weight[ii], out$time[jj], corrected, df.method)
       df[jj] <- d$df; df.reason[jj] <- d$reason

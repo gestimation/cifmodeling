@@ -48,7 +48,7 @@ It provides a unified, high-level interface for survival and competing risks ana
 - `cifplot()` generates a survival or cumulative incidence function (CIF) curve. The visualization is built on top of `ggsurvfit` and `ggplot2`.
 - `cifpanel()` creates multi-panel displays for survival/CIF curves, arranged either **in a grid layout or as an inset overlay**.
 - `ciftest()` compares survival or CIF curves using log-rank, Gray, robust score, augmented score, or multiple-direction tests.
-- `polyreg()` fits **coherent regression models** on all cause-specific CIFs simultaneously to estimate RR/OR/SHR, offering a practical complement to Fine-Gray.
+- `polyreg()` fits **coherent regression models** on all cause-specific CIFs simultaneously to estimate RR/OR/SHR using direct polytomous regression. [Tanaka and Scheike (2026)](https://doi.org/10.1093/biomtc/ujag160)
 
 > **Explore the main features visually:**  
 > See the [Gallery](https://gestimation.github.io/cifmodeling/articles/gallery.html) for a curated set of examples using `cifplot()` and `cifpanel()`.
@@ -61,6 +61,8 @@ It provides a unified, high-level interface for survival and competing risks ana
 > <https://gestimation.github.io/coffee-and-research/en/>
 
 ## Quick start
+
+This example uses `diabetes.complications`, an anonymized dataset from the Japan Diabetes Complications Study. [Tanaka et al. (2013)](https://doi.org/10.1097/EDE.0b013e318281725e)
 
 ```{r example01, fig.cap="Aalen-Johansen cumulative incidence curves from cifplot()", warning=FALSE, message=FALSE}
 library(cifmodeling)
@@ -209,7 +211,7 @@ In clinical and epidemiologic research, analysts often need to handle censoring,
 
 Several excellent R packages exist for survival and competing risks analysis. The **survival** package provides the canonical API for survival data. In combination with the **ggsurvfit** package, `survival::survfit()` can produce publication-ready survival plots. For CIF plots, however, integration in the general ecosystem is less streamlined. **cifmodeling** fills this gap by offering `cifplot()` for survival/CIF plots and multi-panel figures via a single, unified interface.
 
-Beyond providing a unified interface, `cifcurve()` also extends `survfit()` in a few targeted ways. For unweighted survival data, it reproduces the standard Kaplan-Meier estimator with **Greenwood and Tsiatis SEs** and a unified set of CI transformations. For competing risks data, it computes Aalen-Johansen CIFs with both **Aalen-type and delta-method SEs**. For weighted survival or competing risks data (e.g. inverse probability weighting), it implements **influence-function based SEs** (Deng and Wang 2025) as well as **modified Greenwood- and Tsiatis-type SEs** (Xie and Liu 2005), which are valid under general positive weights. 
+Beyond providing a unified interface, `cifcurve()` also extends `survfit()` in a few targeted ways. For unweighted survival data, it reproduces the standard Kaplan-Meier estimator with **Greenwood and Tsiatis SEs** and a unified set of CI transformations. For unweighted competing risks data, it computes Aalen-Johansen CIFs with both **Aalen-type and delta-method SEs**. The default inference for weighted curves uses **influence-function based SEs** (Deng and Wang 2025). The [formulas vignette](https://gestimation.github.io/cifmodeling/articles/v3_formulas.html) also describes the weighted Kaplan–Meier estimator and the adjusted Greenwood variance. [Xie and Liu (2005)](https://doi.org/10.1002/sim.2174)
 
 If you need very fine-grained plot customization, you can compute the estimator and keep a survfit-compatible object with `cifcurve()` (or supply your own survfit object) and then style it using `ggsurvfit/ggplot2` layers. In other words:
 

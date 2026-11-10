@@ -305,3 +305,7 @@ cifplot(fit_edf, outcome.type = "competing-risk", add.risktable = FALSE)
 ```
 
 See [Full lists of arguments](v7_arguments.html) for the API options and [Reporting cumulative incidence](v8_reporting_cif.html) for extracting estimates and constructing tables.
+
+## References
+
+- Xie J, Liu C. Adjusted Kaplan–Meier estimator and log-rank test with inverse probability of treatment weighting for survival data. *Statistics in Medicine*. 2005, 24(20), 3089–3110. [doi:10.1002/sim.2174](https://doi.org/10.1002/sim.2174)

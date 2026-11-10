@@ -11,8 +11,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // calculateAJ_Rcpp
-Rcpp::List calculateAJ_Rcpp(Rcpp::NumericVector t, Rcpp::IntegerVector epsilon, Rcpp::Nullable<Rcpp::NumericVector> w, Rcpp::Nullable<Rcpp::IntegerVector> strata, std::string n_risk_type, std::string error, std::string conf_type, double conf_int, bool return_if, double prob_bound);
-RcppExport SEXP _cifmodeling_calculateAJ_Rcpp(SEXP tSEXP, SEXP epsilonSEXP, SEXP wSEXP, SEXP strataSEXP, SEXP n_risk_typeSEXP, SEXP errorSEXP, SEXP conf_typeSEXP, SEXP conf_intSEXP, SEXP return_ifSEXP, SEXP prob_boundSEXP) {
+Rcpp::List calculateAJ_Rcpp(Rcpp::NumericVector t, Rcpp::IntegerVector epsilon, Rcpp::Nullable<Rcpp::NumericVector> w, Rcpp::Nullable<Rcpp::IntegerVector> strata, std::string n_risk_type, std::string error, std::string conf_type, double conf_int, bool return_if, double prob_bound, bool competing_risk);
+RcppExport SEXP _cifmodeling_calculateAJ_Rcpp(SEXP tSEXP, SEXP epsilonSEXP, SEXP wSEXP, SEXP strataSEXP, SEXP n_risk_typeSEXP, SEXP errorSEXP, SEXP conf_typeSEXP, SEXP conf_intSEXP, SEXP return_ifSEXP, SEXP prob_boundSEXP, SEXP competing_riskSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -26,7 +26,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type conf_int(conf_intSEXP);
     Rcpp::traits::input_parameter< bool >::type return_if(return_ifSEXP);
     Rcpp::traits::input_parameter< double >::type prob_bound(prob_boundSEXP);
-    rcpp_result_gen = Rcpp::wrap(calculateAJ_Rcpp(t, epsilon, w, strata, n_risk_type, error, conf_type, conf_int, return_if, prob_bound));
+    Rcpp::traits::input_parameter< bool >::type competing_risk(competing_riskSEXP);
+    rcpp_result_gen = Rcpp::wrap(calculateAJ_Rcpp(t, epsilon, w, strata, n_risk_type, error, conf_type, conf_int, return_if, prob_bound, competing_risk));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -263,7 +264,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_cifmodeling_calculateAJ_Rcpp", (DL_FUNC) &_cifmodeling_calculateAJ_Rcpp, 10},
+    {"_cifmodeling_calculateAJ_Rcpp", (DL_FUNC) &_cifmodeling_calculateAJ_Rcpp, 11},
     {"_cifmodeling_calculateKM_engine", (DL_FUNC) &_cifmodeling_calculateKM_engine, 5},
     {"_cifmodeling_ciftest_fg_iid_kernel_cpp", (DL_FUNC) &_cifmodeling_ciftest_fg_iid_kernel_cpp, 17},
     {"_cifmodeling_ciftest_fg_iid_multi_kernel_cpp", (DL_FUNC) &_cifmodeling_ciftest_fg_iid_multi_kernel_cpp, 17},

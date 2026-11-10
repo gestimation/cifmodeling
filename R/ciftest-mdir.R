@@ -360,13 +360,15 @@ ciftest_mdir_gray_covariance <- function(input, directions) {
   gid <- as.integer(group)
   stratum <- droplevels(factor(input$strata.event.info$values))
   covariance_base <- matrix(0, m_direction * q, m_direction * q)
+  epsilon <- as.integer(input$epsilon == input$code.event1) +
+    2L * as.integer(input$epsilon == input$code.event2)
 
   for (level in levels(stratum)) {
     use <- which(stratum == level & input$weights > 0)
     if (!length(use)) next
     covariance_base <- covariance_base + ciftest_mdir_gray_stratum_covariance(
       t = input$t[use],
-      epsilon = input$epsilon[use],
+      epsilon = epsilon[use],
       gid = gid[use],
       weights = as.numeric(input$weights[use]),
       K = K,

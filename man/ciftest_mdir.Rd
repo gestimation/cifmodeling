@@ -28,7 +28,8 @@ ciftest_mdir(
 }
 \arguments{
 \item{formula}{A two-sided formula with an \code{Event()} or \code{Surv()} response
-and one grouping variable on the right-hand side.}
+and one grouping variable on the right-hand side.
+\code{Surv()} responses must be right-censored.}
 
 \item{data}{A data frame containing variables in the formula.}
 

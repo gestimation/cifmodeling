@@ -4,7 +4,9 @@
   counts <- if (length(out$strata)) as.integer(out$strata) else length(out$time)
   labels <- if (length(out$strata)) names(out$strata) else "All"
   if (is.null(labels)) labels <- paste0("strata=", seq_along(counts))
-  groups <- sort(unique(as.integer(input$strata)))
+  support <- .cifcurve_followup(input$t, input$w, as.integer(input$strata))
+  no_ci <- is.null(conf.type) || tolower(trimws(conf.type)) %in% c("none", "n")
+  if (no_ci) out$lower <- out$upper <- out$low <- out$high <- NULL
   out$error <- error; out$conf.int <- level; out$conf.dist <- conf.dist
   out$logse <- isTRUE(logse)
   n <- length(out$time)
@@ -16,12 +18,17 @@
   offset <- 0L
   for (g in seq_along(counts)) {
     j <- offset + seq_len(counts[g]); offset <- offset + counts[g]
-    rows <- which(as.integer(input$strata) == groups[g] & input$w > 0)
-    support <- if (length(rows)) max(input$t[rows]) else -Inf
+    supported <- out$time[j] <= support[g]
     status <- if (is.null(out$conf.status)) .cifcurve_ci_validity(
-      out$surv[j], se[j], out$critical.value[j], out$df.reason[j], out$time[j] <= support)$status else out$conf.status[j]
-    if (is.null(conf.type) || tolower(conf.type) %in% c("none", "n")) status[] <- "not_requested"
-    curves[[g]] <- list(time = out$time[j], se = se[j], support = support,
+      out$surv[j], se[j], out$critical.value[j], out$df.reason[j], supported)$status else out$conf.status[j]
+    status[!supported] <- "outside_observed_followup"
+    if (no_ci) status[] <- "not_requested"
+    if (!no_ci) {
+      for (field in c("lower", "upper", "low", "high")) {
+        if (length(out[[field]])) out[[field]][j[!supported]] <- NA_real_
+      }
+    }
+    curves[[g]] <- list(time = out$time[j], se = se[j], support = unname(support[g]),
       lower = if (length(out$lower)) out$lower[j] else rep(NA_real_, length(j)),
       upper = if (length(out$upper)) out$upper[j] else rep(NA_real_, length(j)),
       df = out$df[j], df.reason = out$df.reason[j],
