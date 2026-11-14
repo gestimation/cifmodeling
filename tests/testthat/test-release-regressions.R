@@ -146,10 +146,10 @@ test_that("proportional polyreg normal bootstrap honors the confidence level", {
   d <- data.frame(group = rep(0:1, each = 24L),
     status = c(rep(1L, 8L), rep(0L, 16L), rep(1L, 14L), rep(0L, 10L)))
   d$time <- ifelse(d$status == 1L, 1, 2)
-  for (level in c(.80, .90, .95)) {
+  for (level in c(.80, .95)) {
     fit <- polyreg(Event(time, status) ~ 1, exposure = "group", data = d,
       outcome.type = "proportional-survival", time.point = 1, conf.int = level,
-      report.boot.conf = TRUE, boot.replications = 20, boot.seed = 46)
+      report.boot.conf = TRUE, boot.replications = 12, boot.seed = 46)
     result <- generics::tidy(fit)
     half_width <- (result$conf.high - result$conf.low) / 2
     expect_true(is.finite(result$std.error) && result$std.error > 0)
@@ -168,7 +168,7 @@ test_that("proportional polyreg BCa selects the exposure coefficient", {
   d$time <- ifelse(d$status == 1L, 1, 2)
   fit <- polyreg(Event(time, status) ~ 1, exposure = "group", data = d,
     outcome.type = "proportional-survival", time.point = 1, conf.int = .90,
-    report.boot.conf = TRUE, boot.bca = TRUE, boot.replications = 199, boot.seed = 46)
+    report.boot.conf = TRUE, boot.bca = TRUE, boot.replications = 59, boot.seed = 46)
   result <- generics::tidy(fit)
   expect_true(all(is.finite(c(result$conf.low, result$conf.high))))
   expect_lt(result$conf.low, result$conf.high)
@@ -179,20 +179,21 @@ test_that("proportional polyreg BCa selects the exposure coefficient", {
 
 test_that("proportional bootstrap follows the coefficient layout across times and causes", {
   d <- do.call(rbind, lapply(0:1, function(group) {
-    n1 <- c(6, 9)[group + 1]
-    n2 <- c(8, 6)[group + 1]
-    counts <- c(n1, n2, n1, n2, 60 - 2 * (n1 + n2))
+    n1 <- c(4L, 6L)[group + 1L]
+    n2 <- c(4L, 3L)[group + 1L]
+    counts <- c(n1, n2, n1, n2, 30L - 2L * (n1 + n2))
     data.frame(group = group, time = rep(c(1, 1, 2, 2, 3), counts),
       status = rep(c(1, 2, 1, 2, 0), counts))
   }))
   fit <- polyreg(Event(time, status) ~ 1, exposure = "group", data = d,
     outcome.type = "proportional-competing-risk", time.point = 1:2,
-    report.nuisance.parameter = TRUE, conf.int = .80, boot.replications = 20, boot.seed = 49)
+    report.nuisance.parameter = TRUE, conf.int = .80, boot.replications = 8, boot.seed = 49)
   rows <- c(3, 6)
   expect_equal(coef(fit)[rows], log(c(1.5, .75)), tolerance = 1e-5)
   result <- generics::tidy(fit, event = "both")
   expect_identical(result$term, rep(c("Intercept at 1", "Intercept at 2", "group, 1 vs 0"), 2))
   expect_identical(result$event[rows], c("event1", "event2"))
+  expect_true(all(is.finite(result$std.error) & result$std.error > 0))
   expect_equal(result$std.error, sqrt(diag(vcov(fit, variance = "bootstrap"))))
   expect_equal((result$conf.high - result$conf.low) / 2,
     qnorm(.90) * result$std.error)

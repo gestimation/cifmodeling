@@ -15,7 +15,7 @@ Ubuntu. Pull requests targeting `master` build the site and upload a reviewable
    current site. If it was merged before changing the Pages setting, open
    **Actions > pkgdown > Run workflow**, select `master`, and run it again.
 4. Confirm the **Deploy pkgdown site** job succeeds, then check the public
-   version number, Reference pages and both reporting articles.
+   version number, Reference pages and the Reporting results article.
 
 The checked-in `docs/` directory is the old publication snapshot. The new
 workflow generates its complete site in a fresh runner-temporary directory;
@@ -33,7 +33,7 @@ package version has not changed. Manual runs on other branches build only.
 
 The build installs the local package and its suggested/website dependencies,
 runs the examples and articles, and checks that every vignette has an article
-page and that both gtsummary articles contain rendered tables. Only the deploy
+page and that both gtsummary sections in Reporting results contain rendered tables. Only the deploy
 job has Pages write and OIDC permissions; PRs do not deploy. Production runs
 are serialized, and a failed build leaves the last successful site online.
 

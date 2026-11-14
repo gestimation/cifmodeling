@@ -10,17 +10,17 @@
 #' @param symbol.risk.table Character specifying the symbol used in the risk table to denote
 #'   strata: `"square"`, `"circle"`, or `"triangle"` (default `"square"`).
 #' @param font.size.risk.table Numeric font size for texts in risk / estimate tables (default `3`).
-#' @param label.strata Character vector or named character vector specifying labels for strata.
-#'   Names (if present) must match the (re-ordered) underlying strata levels.
-#'   **Note:** when any of the panel modes is active
-#'   (`panel.per.variable = TRUE`, `panel.per.event = TRUE`, `panel.censoring = TRUE`,
-#'   or `panel.mode = "auto"` and it actually dispatches to a panel),
-#'   strata labels are suppressed to avoid duplicated legends across sub-plots.
+#' @param label.strata Character vector of display labels for strata. Names map
+#'   to the original strata codes. Unnamed labels follow `level.strata` or
+#'   the fitted strata order. Unspecified labels use stored value labels
+#'   from the data and then the original stratum levels.
 #' @param level.strata Optional character vector giving the full set of expected strata levels.
 #'   When provided, both `order.strata` and `label.strata` are validated against it
 #'   before application.
 #' @param order.strata Optional character vector specifying the display order of strata
 #'   in the legend/number-at-risk table. Specify the levels of strata. Levels not listed are dropped.
+#' @param label.legend Optional stratum legend title. Defaults to the
+#'   stratification variable's label or name when available.
 #' @param legend.position Character specifying the legend position:
 #'   `"top"`, `"right"`, `"bottom"`, `"left"`, or `"none"` (default `"top"`).
 #' @param type.y Character string specifying the y-scale. For survival/CIF curves,
@@ -28,7 +28,8 @@
 #'  (1-survival in simple survival settings). Specify `"cumhaz"` to plot cumulative hazard
 #'  or `"cloglog"` to generate a complementary log-log plot.
 #' If `NULL`, a default is chosen from `outcome.type` or the survfit object.
-#' @param label.x Character x-axis label (default `"Time"`).
+#' @param label.x Character x-axis label. Defaults to the time variable's
+#'   label or name for a cifcurve fit, and `"Time"` if unavailable.
 #' @param label.y Character y-axis label (default is chosen automatically from `outcome.type`
 #'   and `type.y`, e.g. "Survival", "Cumulative incidence" or "Cumulative hazard").
 #' @param limits.x Numeric length-2 vector specifying x-axis limits. If `NULL`, it is

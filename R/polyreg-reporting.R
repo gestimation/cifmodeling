@@ -6,7 +6,6 @@
   events <- if (x$outcome.type %in% c("competing-risk", "proportional-competing-risk"))
     c("event1", "event2") else "event1"
   value <- x$diagnostics[[x$exposure]]
-  label <- attr(value, "label")
   parts <- lapply(events, function(event) {
     part <- if (length(events) == 2L) x$summary[[event]] else x$summary[[1L]]
     rows <- utils::tail(seq_len(nrow(part$tidy)), k)
@@ -17,7 +16,8 @@
   })
   names(parts) <- events
   list(exposure = x$exposure, levels = levels,
-       label = if (is.null(label)) x$exposure else as.character(label), events = parts)
+       label = .cif_variable_label(value, x$exposure),
+       level.labels = .cif_display_levels(levels, .cif_value_labels(value)), events = parts)
 }
 
 .polyreg_reporting_info <- function(model) {
@@ -26,7 +26,7 @@
   event <- attr(model, "cifmodeling.reporting.event") %||% "event1"
   part <- meta$events[[event]]
   if (is.null(part)) stop("No competing event in this polyreg model.", call. = FALSE)
-  c(meta[c("exposure", "levels", "label")], part, list(event = event))
+  c(meta[c("exposure", "levels", "label", "level.labels")], part, list(event = event))
 }
 
 #' @rdname polyreg-methods
@@ -107,6 +107,9 @@ model_list_terms_levels.polyreg <- function(model, label_pattern = "{level}",
     reference = seq_along(info$levels) == 1L, reference_level = info$levels[1L],
     var_label = label, var_nlevels = length(info$levels),
     dichotomous = length(info$levels) == 2L, stringsAsFactors = FALSE)
-  out$label <- as.character(glue::glue_data(out, label_pattern))
+  display <- out
+  display$level <- unname(info$level.labels %||% info$levels)
+  display$reference_level <- display$level[1L]
+  out$label <- as.character(glue::glue_data(display, label_pattern))
   out
 }

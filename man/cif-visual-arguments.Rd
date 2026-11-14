@@ -15,12 +15,10 @@ strata: \code{"square"}, \code{"circle"}, or \code{"triangle"} (default \code{"s
 
 \item{font.size.risk.table}{Numeric font size for texts in risk / estimate tables (default \code{3}).}
 
-\item{label.strata}{Character vector or named character vector specifying labels for strata.
-Names (if present) must match the (re-ordered) underlying strata levels.
-\strong{Note:} when any of the panel modes is active
-(\code{panel.per.variable = TRUE}, \code{panel.per.event = TRUE}, \code{panel.censoring = TRUE},
-or \code{panel.mode = "auto"} and it actually dispatches to a panel),
-strata labels are suppressed to avoid duplicated legends across sub-plots.}
+\item{label.strata}{Character vector of display labels for strata. Names map
+to the original strata codes. Unnamed labels follow \code{level.strata} or
+the fitted strata order. Unspecified labels use stored value labels
+from the data and then the original stratum levels.}
 
 \item{level.strata}{Optional character vector giving the full set of expected strata levels.
 When provided, both \code{order.strata} and \code{label.strata} are validated against it
@@ -28,6 +26,9 @@ before application.}
 
 \item{order.strata}{Optional character vector specifying the display order of strata
 in the legend/number-at-risk table. Specify the levels of strata. Levels not listed are dropped.}
+
+\item{label.legend}{Optional stratum legend title. Defaults to the
+stratification variable's label or name when available.}
 
 \item{legend.position}{Character specifying the legend position:
 \code{"top"}, \code{"right"}, \code{"bottom"}, \code{"left"}, or \code{"none"} (default \code{"top"}).}
@@ -38,7 +39,8 @@ in the legend/number-at-risk table. Specify the levels of strata. Levels not lis
 or \code{"cloglog"} to generate a complementary log-log plot.
 If \code{NULL}, a default is chosen from \code{outcome.type} or the survfit object.}
 
-\item{label.x}{Character x-axis label (default \code{"Time"}).}
+\item{label.x}{Character x-axis label. Defaults to the time variable's
+label or name for a cifcurve fit, and \code{"Time"} if unavailable.}
 
 \item{label.y}{Character y-axis label (default is chosen automatically from \code{outcome.type}
 and \code{type.y}, e.g. "Survival", "Cumulative incidence" or "Cumulative hazard").}

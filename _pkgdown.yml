@@ -19,6 +19,9 @@ redirects:
   - ["articles/information.html", "articles/v6_information.html"]
   - ["articles/arguments.html", "articles/v7_arguments.html"]
   - ["articles/functions.html", "articles/v1_overview.html"]
+  - ["articles/v8_reporting_cif.html", "articles/v5_reporting_results.html#reporting-cumulative-incidence"]
+  - ["articles/v9_reporting_polyreg.html", "articles/v5_reporting_results.html#reporting-cif-regression"]
+  - ["articles/v10_cifreport.html", "articles/v5_reporting_results.html#automated-reports"]
 
 home:
   title: cifmodeling
@@ -45,14 +48,12 @@ navbar:
           href: articles/v4_examples.html
         - text: Gallery
           href: articles/v5_gallery.html
+        - text: Reporting results
+          href: articles/v5_reporting_results.html
         - text: Additional information
           href: articles/v6_information.html
         - text: Full lists of arguments
           href: articles/v7_arguments.html
-        - text: Reporting cumulative incidence
-          href: articles/v8_reporting_cif.html
-        - text: Reporting CIF regression
-          href: articles/v9_reporting_polyreg.html
     github:
       icon: fa-github
       aria-label: GitHub repository
@@ -74,18 +75,15 @@ articles:
   - title: Gallery
     contents:
       - v5_gallery
+  - title: Reporting results
+    contents:
+      - v5_reporting_results
   - title: Additional information
     contents:
       - v6_information
   - title: Full lists of arguments
     contents:
       - v7_arguments
-  - title: Reporting cumulative incidence
-    contents:
-      - v8_reporting_cif
-  - title: Reporting CIF regression
-    contents:
-      - v9_reporting_polyreg
 
 reference:
   - title: Nonparametric estimation and visualization
@@ -102,6 +100,9 @@ reference:
     contents:
       - ciftest
       - ciftest_mdir
+  - title: Automated reporting
+    contents:
+      - cifreport
   - title: Data
     contents:
       - diabetes.complications

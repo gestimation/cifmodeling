@@ -1,3 +1,21 @@
+cifplot_test_data <- function() {
+  d <- expand.grid(t = seq_len(10L), fruitq = paste0("Q", 1:4), sex = c("F", "M"))
+  d$fruitq1 <- as.integer(d$fruitq != "Q1")
+  d$epsilon <- ifelse(d$t %in% c(1L, 3L, 6L, 8L), 1L,
+    ifelse(d$t %in% c(2L, 5L), 2L, 0L))
+  d
+}
+
+panel_y_details <- function(plot) {
+  params <- ggplot2::ggplot_build(plot)$layout$panel_params[[1L]]
+  y <- params$y
+  breaks <- y$breaks
+  if (is.null(breaks) && is.function(y$get_breaks)) breaks <- y$get_breaks()
+  if (is.null(breaks) && is.function(y$break_positions)) breaks <- y$break_positions()
+  range <- if (is.null(params$y.range)) y$range$range else params$y.range
+  list(range = range, breaks = breaks)
+}
+
 get_plot_from_cifplot <- function(...) {
   res <- cifplot(...)
   testthat::expect_s3_class(res, "cifplot")
@@ -48,10 +66,10 @@ test_that("label.strata only adjusts labels and suppresses fill legend", {
 })
 
 test_that("label.strata is reflected in color legend NEW", {
-  data(diabetes.complications)
+  d <- cifplot_test_data()
   p <- get_plot_from_cifplot(
     Event(t, epsilon) ~ fruitq1,
-    data = diabetes.complications,
+    data = d,
     outcome.type = "competing-risk",
     code.events  = c(1, 2, 0),
     label.strata = c("Low intake", "High intake"),
@@ -103,11 +121,11 @@ test_that("label.strata overrides palette labels", {
 })
 
 test_that("palette only uses manual color scale", {
-  data(diabetes.complications)
+  d <- cifplot_test_data()
   pal <- c("#FF0000", "#0000FF")
   p <- get_plot_from_cifplot(
     Event(t, epsilon) ~ fruitq1,
-    data = diabetes.complications,
+    data = d,
     outcome.type = "competing-risk",
     code.events  = c(1, 2, 0),
     palette = pal,
@@ -181,10 +199,10 @@ test_that("formula normalization estimates its cutpoint in the analysis subset",
 
 
 test_that("cifplot does not print by default", {
-  data(diabetes.complications)
+  d <- cifplot_test_data()
   expect_no_print(
     cifplot(Event(t, epsilon) ~ fruitq1,
-            data = diabetes.complications,
+            data = d,
             outcome.type = "competing-risk",
             code.events = c(1,2,0))
   )
@@ -208,13 +226,13 @@ test_that("cifplot defaults to competing-risk without an ambiguous match", {
 
 
 test_that("cifpanel returns list.plot and patchwork (no out_patchwork)", {
-  data(diabetes.complications)
+  d <- cifplot_test_data()
   res <- get_panel_from_cifpanel(
     formulas = list(
       Event(t, epsilon) ~ fruitq1,
       Event(t, epsilon) ~ 1
     ),
-    data = diabetes.complications,
+    data = d,
     code.events = list(c(1,2,0), c(1,2,0)),
     rows.columns.panel = c(1,2),
     print.panel = FALSE
@@ -227,9 +245,9 @@ test_that("cifpanel returns list.plot and patchwork (no out_patchwork)", {
 
 
 test_that("survfit.info includes meta fields and data.name", {
-  data(diabetes.complications)
+  d <- cifplot_test_data()
   res <- cifplot(Event(t, epsilon) ~ fruitq1,
-                 data = diabetes.complications,
+                 data = d,
                  outcome.type = "competing-risk",
                  code.events = c(1,2,0))
   s <- res$survfit.info
@@ -676,34 +694,13 @@ testthat::test_that("cifplot: cumhaz/cloglog respect limits.y and breaks.y (robu
   testthat::skip_if_not_installed("ggplot2")
   testthat::skip_if_not_installed("survival")
 
-  data(diabetes.complications, package = "cifmodeling")
-  df <- diabetes.complications
+  df <- cifplot_test_data()
   df$status1 <- ifelse(df$epsilon == 1, 1L, 0L)
 
   old <- getOption("warn")
   options(warn = 2)
   on.exit(options(warn = old), add = TRUE)
 
-  `%||%` <- function(x, y) if (!is.null(x)) x else y
-
-  # panel_params から y.range と breaks を取り出す（ggplot2差分吸収）
-  get_panel_yrange <- function(p) {
-    b <- ggplot2::ggplot_build(p)
-    pp <- b$layout$panel_params[[1]]
-    pp$y.range %||% pp$y$range$range
-  }
-  get_panel_ybreaks <- function(p) {
-    b <- ggplot2::ggplot_build(p)
-    pp <- b$layout$panel_params[[1]]
-    y <- pp$y
-    out <- NULL
-    if (!is.null(y$breaks)) out <- y$breaks
-    if (is.null(out) && is.function(y$get_breaks)) out <- y$get_breaks()
-    if (is.null(out) && is.function(y$break_positions)) out <- y$break_positions()
-    out
-  }
-
-  # cloglog の -Inf を避けるため、最初のイベント以降を x 範囲にする
   first_event_time <- suppressWarnings(min(df$t[df$status1 == 1], na.rm = TRUE))
   if (!is.finite(first_event_time)) testthat::skip("No events found for KM in this dataset.")
   x_start <- first_event_time + 1e-6
@@ -739,13 +736,14 @@ testthat::test_that("cifplot: cumhaz/cloglog respect limits.y and breaks.y (robu
       testthat::expect_s3_class(res$plot, "ggplot")
       p <- res$plot
 
-      yr <- get_panel_yrange(p)
+      axes <- panel_y_details(p)
+      yr <- axes$range
       testthat::expect_true(is.numeric(yr) && length(yr) == 2L)
       testthat::expect_gte(yr[1], cs$limits.y[1] - 1e-6)
       testthat::expect_lte(yr[2], cs$limits.y[2] + 1e-6)
 
       # breaks は「指定した breaks のうち limits 内のものが、実際の breaks に含まれる」ことを確認
-      yb <- get_panel_ybreaks(p)
+      yb <- axes$breaks
       testthat::expect_true(is.numeric(yb) && length(yb) >= 2L)
 
       exp_in <- cs$breaks.y[cs$breaks.y >= cs$limits.y[1] & cs$breaks.y <= cs$limits.y[2]]
@@ -760,31 +758,12 @@ testthat::test_that("cifpanel: per-panel cumhaz/cloglog respect limits.y and bre
   testthat::skip_if_not_installed("patchwork")
   testthat::skip_if_not_installed("survival")
 
-  data(diabetes.complications, package = "cifmodeling")
-  df <- diabetes.complications
+  df <- cifplot_test_data()
   df$status1 <- ifelse(df$epsilon == 1, 1L, 0L)
 
   old <- getOption("warn")
   options(warn = 2)
   on.exit(options(warn = old), add = TRUE)
-
-  `%||%` <- function(x, y) if (!is.null(x)) x else y
-
-  get_panel_yrange <- function(p) {
-    b <- ggplot2::ggplot_build(p)
-    pp <- b$layout$panel_params[[1]]
-    pp$y.range %||% pp$y$range$range
-  }
-  get_panel_ybreaks <- function(p) {
-    b <- ggplot2::ggplot_build(p)
-    pp <- b$layout$panel_params[[1]]
-    y <- pp$y
-    out <- NULL
-    if (!is.null(y$breaks)) out <- y$breaks
-    if (is.null(out) && is.function(y$get_breaks)) out <- y$get_breaks()
-    if (is.null(out) && is.function(y$break_positions)) out <- y$break_positions()
-    out
-  }
 
   first_event_time <- suppressWarnings(min(df$t[df$status1 == 1], na.rm = TRUE))
   if (!is.finite(first_event_time)) testthat::skip("No events found for KM in this dataset.")
@@ -825,11 +804,12 @@ testthat::test_that("cifpanel: per-panel cumhaz/cloglog respect limits.y and bre
       p <- plots[[i]]
       testthat::expect_s3_class(p, "ggplot")
 
-      yr <- get_panel_yrange(p)
+      axes <- panel_y_details(p)
+      yr <- axes$range
       testthat::expect_gte(yr[1], limsy[[i]][1] - 1e-6)
       testthat::expect_lte(yr[2], limsy[[i]][2] + 1e-6)
 
-      yb <- get_panel_ybreaks(p)
+      yb <- axes$breaks
       testthat::expect_true(is.numeric(yb) && length(yb) >= 2L)
 
       exp_in <- brksy[[i]][brksy[[i]] >= limsy[[i]][1] & brksy[[i]] <= limsy[[i]][2]]

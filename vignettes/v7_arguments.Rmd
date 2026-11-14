@@ -206,3 +206,53 @@ For Student intervals, compute each curve with `cifcurve()`, plot each fitted ob
 -   `normalize.covariate` Logical indicating whether covariates should be centered and scaled prior to optimization (default `TRUE`).
 -   `terminate.time.point` Logical indicating whether time points that contribute estimation are terminated by min of max follow-up times of each exposure level (default `TRUE`).
 -   `prob.bound` Numeric lower bound used to internally truncate probabilities away from 0 and 1 (default `1e-7`).
+
+## ciftest()
+
+See [Reporting cumulative incidence](v5_reporting_results.html#reporting-cumulative-incidence) for a worked curve-comparison example.
+
+-   `formula` A two-sided formula with an `Event()` or right-censored `Surv()` response and one grouping variable on the right-hand side.
+-   `data` A data frame containing the variables used by the test.
+-   `weights` Optional numeric case weights or the name of a weight column (default `NULL`). The standard Gray test accepts integer frequency weights.
+-   `subset.condition` Optional character expression selecting rows from `data` (default `NULL`).
+-   `na.action` Function used to handle missing values (default `na.omit`).
+-   `outcome.type` `"auto"` (default), `"survival"`, or `"competing-risk"`. Automatic detection uses competing risks when more than two event codes are observed. `"S"` and `"C"` are accepted aliases.
+-   `test` `"auto"` (default), `"early"`, `"late"`, `"logrank"`, `"gray"`, `"score"`, `"augmented"`, or `"multiple"`. `"auto"` selects log-rank for survival and the augmented score test for competing risks. `"early"` and `"late"` use fixed Fleming–Harrington weights. `"multiple"` uses directions `(2, 0)`, `(0, 2)`, and `(0, 0)` and returns a multiple-direction test. Aliases include `"L"`, `"LR"`, and `"log-rank"` for log-rank, `"G"` for Gray, `"A"`, `"aug"`, and `"augmentation"` for augmented, and `"multi"` and `"m"` for multiple.
+-   `code.event1` Integer code for the event of interest (default `1`).
+-   `code.event2` Integer code for the competing event (default `2`).
+-   `code.censoring` Integer code for censoring (default `0`).
+-   `rho`, `gamma` Non-negative Fleming–Harrington weight parameters. Omitted values resolve to zero for custom single-direction tests. Leave both unset for the fixed `"early"` and `"late"` presets.
+-   `iteration` Number of Scheike fixed-point refinements for the augmented test. The default `0L` uses the closed-form augmented score.
+-   `tolerance` Optional positive convergence tolerance. With `NULL` (default), the augmented test uses the requested number of iterations.
+-   `strata` Optional character vector of analysis-stratum column names. Multiple columns define their observed interaction. The test constructs risk sets and weight processes within each stratum and sums the scores. The grouping variable is excluded from this argument.
+-   `strata.censor` Optional column names defining censoring Kaplan–Meier strata. Include the grouping variable explicitly for group-specific censoring distributions.
+-   `strata.competing.risk` Optional column names defining working Aalen–Johansen strata for the competing-event nuisance distribution. The function crosses these strata with the grouping variable automatically.
+-   `tau` Optional finite, non-negative analysis horizon (default `NULL`).
+-   `prob.bound` Positive numerical bound for required nuisance probabilities (default `1e-7`). Probabilities at or below the bound raise an error.
+-   `prob.truncation` Optional lower truncation strictly above `prob.bound` for positive censoring and working-survival denominators used by score and augmented tests (default `NULL`).
+-   `...` Reserved for future extensions.
+
+## cifreport()
+
+See [Reporting results](v5_reporting_results.html#automated-reports) for a report with survival and competing-risk outcomes.
+
+-   `data` A data frame with one row per subject and unique column names.
+-   `outcomes` Named list of outcome definitions. Each requires `time` and `event` column names. Optional fields are `outcome.type`, `code.event1` (default `1`), `code.event2` (default `2` for competing risks), `code.censoring` (default `0`), `time.point`, and `estimator`. Available estimators are `"KM"` (default) and `"1-KM"` for survival and `"AJ"` (default) and `"1-AJ"` for competing risks. List names become outcome labels.
+-   `exposure` Character vector of grouping column names, or a named list of column names or definitions. Each definition has `variable` and can override `code.exposure.ref`, `label.strata`, `order.strata`, and `level.strata`.
+-   `characteristics` Character vector of columns for the baseline table. The default `character()` gives a participant count by group.
+-   `time.point` Shared finite, non-negative evaluation times in the units of the follow-up column. Each outcome can supply its own times.
+-   `subset.condition` One condition selecting the analysis population. Accepts a logical vector, character expression, one-sided formula, or quoted expression. `NULL` includes all rows, and missing condition values are excluded.
+-   `filename.cifreport` One or more paths ending in `.docx`, `.pdf`, `.html`, or `.htm`. If omitted, saves `yyyymmdd_<data.name>_analysis_report.docx` in the working directory. `NULL` explicitly disables file output. Parent directories must exist. Multiple paths share one analysis, and existing files are overwritten after rendering. Word output requires `xml2` and `zip`. PDF output requires Chrome, Chromium, or Microsoft Edge. Set `CIFREPORT_BROWSER` to the executable path if needed.
+-   `title` Report title. The default is `Statistical Analysis Report of <data.name> on <yyyymmdd>`.
+-   `overall` Whether to add an overall column to the baseline table when there are multiple exposure groups (default `FALSE`).
+-   `conf.int` Confidence level for pointwise curve intervals and risk ratios (default `0.95`).
+-   `table1.args` Named list of options for `gtsummary::tbl_summary()`, such as `label`, `type`, and `digits` (default `list()`). The report controls `data`, `by`, and `include`.
+-   `code.exposure.ref` Reference group code for risk ratios. Supply one code for all exposures or a named vector or list keyed by exposure definition. An exposure-specific reference takes precedence. The default is the first observed factor level.
+-   `data.name` Dataset name used in the default title and filename. Defaults to the name of the supplied object, or `"data"` for an inline expression.
+-   `subgroup` Name of one categorical column. The report includes the overall analysis and each observed level of that column. Missing subgroup values contribute to the overall analysis only.
+-   `label.strata` Exposure display labels shared by tables and figures. Name them by original code or supply them in the order of `level.strata`. Explicit labels take precedence over data value labels, followed by the original levels.
+-   `order.strata` Exposure codes in display order. Omitted codes follow in their default order.
+-   `level.strata` Expected exposure codes, used to match unnamed labels. By default the levels in the data are used. Each strata argument also accepts a named list keyed by exposure definition.
+-   `outcome.type` Shared `"survival"` or `"competing-risk"` setting. Each outcome can override it. `NULL` (default) and `"auto"` use competing risks when more than two event codes are observed in the selected population before splitting into subgroups.
+-   `cifplot.args` Named list of `cifplot()` display options applied to all figures (default `list()`). Examples include `label.x`, `breaks.x`, `legend.position`, `palette`, and `add.risktable`. Set group labels and order through the report's strata arguments. `type.y` changes the figure scale only.
+-   `output.file` Older name for `filename.cifreport`. Supply only one. The returned `output.file` contains the absolute paths in the order requested, or `NULL` when file output is disabled.

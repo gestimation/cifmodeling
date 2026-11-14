@@ -1,3 +1,29 @@
+# cifmodeling 1.2.5
+
+* Added `cifreport()` for survival and competing-risk analyses, including
+  baseline summaries with p-values, outcome definitions, fixed-time estimates
+  and crude risk ratios, curve comparisons, and figures by exposure and subgroup.
+  The default output is Word with editable tables. `filename.cifreport` accepts
+  Word, PDF, and self-contained HTML filenames in one call, or `NULL` to return
+  results without writing files. Table percentages use one decimal place by default.
+* `cifreport()` accepts a shared `outcome.type` with per-outcome overrides and
+  uses the same automatic detection rule as `cifcurve()`. `cifplot.args` applies
+  common figure settings across outcomes and subgroups.
+* Unified variable and value labels across reporting, plotting, and regression
+  summaries. Explicit labels take precedence over data attributes, followed by
+  the original variable names or levels. Saved fits retain label information
+  while analysis codes and `order.strata` behavior are preserved.
+
+# cifmodeling 1.2.4
+
+* Shortened package checks by making the full-cohort adjusted regression
+  example in the Examples vignette runnable on demand and by using a
+  reproducible sample for the cumulative incidence reporting examples.
+* Reduced check time for reporting, bootstrap, and confidence interval tests
+  using smaller fixtures and fewer repeated cases.
+* Included pre-rendered Gallery figures and made the additional effect-measure
+  model comparison runnable on demand in the CIF regression reporting vignette.
+
 # cifmodeling 1.2.3
 
 * `tidy.polyreg()` accepts the default arguments forwarded by

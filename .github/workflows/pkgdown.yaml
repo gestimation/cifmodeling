@@ -54,9 +54,10 @@ jobs:
           redirects <- yaml::read_yaml("_pkgdown.yml")$redirects
           required <- c(required, vapply(redirects, `[[`, character(1), 1L))
           stopifnot(all(file.exists(file.path(destination, required))))
-          for (article in c("v8_reporting_cif.html", "v9_reporting_polyreg.html")) {
-            page <- xml2::read_html(file.path(destination, "articles", article))
-            stopifnot(length(xml2::xml_find_all(page, "//table[contains(@class, 'gt_table')]")) > 0L)
+          page <- xml2::read_html(file.path(destination, "articles", "v5_reporting_results.html"))
+          for (id in c("reporting-cumulative-incidence", "reporting-cif-regression")) {
+            section <- xml2::xml_find_first(page, sprintf("//h2[@id='%s']/parent::div", id))
+            stopifnot(length(xml2::xml_find_all(section, ".//table[contains(@class, 'gt_table')]")) > 0L)
           }
           version <- read.dcf("DESCRIPTION", fields = "Version")[[1L]]
           home <- paste(readLines(file.path(destination, "index.html"), warn = FALSE), collapse = "\n")

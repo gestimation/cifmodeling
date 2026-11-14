@@ -1,0 +1,118 @@
+---
+pagetitle: >-
+  `r gsub("[[:space:]]+", " ", report$specifications$title)`
+output:
+  html_document:
+    self_contained: true
+    mathjax: null
+---
+
+<style>
+.cifreport-table-gap {
+  height: 4.286em;
+  height: 3lh;
+}
+.cifreport-table-gap-after {
+  height: 1.429em;
+  height: 1lh;
+}
+@page { size: A4; margin: 14mm; }
+@media print {
+  .main-container { width: 100%; max-width: none; padding: 0; }
+  h2 { break-after: avoid; }
+  .cifreport-table-gap { height: 1lh; }
+  .cifreport-table-gap-after { break-after: avoid; }
+  div:has(> .gt_table) { overflow: visible !important; }
+  .gt_table { width: 100% !important; font-size: 10.5pt !important; }
+  .gt_table th, .gt_table td { overflow-wrap: anywhere; }
+  .gt_table thead { display: table-header-group; }
+  .gt_table tr { break-inside: avoid; }
+  p:has(> img), .figure { break-inside: avoid; }
+  img { max-width: 100%; height: auto; }
+}
+</style>
+
+```{r cifreport-html-body, echo=FALSE, results='asis', fig.width=8, fig.height=5.5}
+heading <- function(level, label) {
+  cat(sprintf("\n<h%d>%s</h%d>\n\n", level, .cifreport_html(label), level))
+}
+paragraph <- function(sentences, subgroup) {
+  if (!length(sentences)) return(invisible(NULL))
+  if (!is.null(subgroup))
+    sentences[1L] <- paste0(sub("\\.$", "", sentences[1L]), " (subgroup analysis of ", subgroup, ").")
+  cat("<p>", .cifreport_html(paste(sentences, collapse = " ")), "</p>\n\n", sep = "")
+}
+heading(1, report$specifications$title)
+level <- sprintf("%.1f%%", 100 * report$specifications$conf.int)
+table_number <- 0L
+figure_number <- 0L
+table_heading <- function(label, suffix) {
+  table_number <<- table_number + 1L
+  cat('\n<div class="cifreport-table-gap" aria-hidden="true"></div>\n\n')
+  heading(2, paste0("Table ", table_number, ". ", label, suffix))
+  cat('<div class="cifreport-table-gap-after" aria-hidden="true"></div>\n\n')
+}
+for (population in names(report$tables)) {
+  subgroup <- if (population != "All") report$subgroup_titles[[population]]
+  suffix <- if (is.null(subgroup)) "" else paste(" in", subgroup)
+  for (group in names(report$tables[[population]])) {
+    exposure <- report$exposure_titles[[population]][[group]]
+    tables <- report$tables[[population]][[group]]
+    info <- report$narrative[[population]][[group]]
+    table_heading(paste("Description of baseline characteristics according to", exposure), suffix)
+    if (is.null(tables$table1)) {
+      cat("<p>No results available. See the analysis status log.</p>\n")
+    } else {
+      cat(.cifreport_baseline_html(tables$table1), "\n\n")
+    }
+    paragraph(.cifreport_baseline_text(tables$table1, table_number,
+      report$specifications$data.name, info), subgroup)
+    table_heading(paste("Definition of outcomes and", exposure), suffix)
+    .cifreport_print_table(tables$table2, c(outcome_id = "Outcome", time = "Time", event = "Event",
+      group_label = "Exposure", primary = "Primary", code.event1 = "Code", competing = "Competing",
+      code.event2 = "Code", censored = "Censored", code.censoring = "Code"))
+    paragraph(.cifreport_outcome_text(tables$table2, table_number, info$exposure), subgroup)
+    if (nrow(tables$table2) && all(vapply(report$fits[[population]][[group]], is.null, logical(1L)))) {
+      cat("<p>No events were observed in this subgroup. See the analysis status log.</p>\n")
+      next
+    }
+    table_heading(paste("Description of outcomes at specified time-points according to", exposure), suffix)
+    plots <- Filter(Negate(is.null), report$figures[[population]][[group]])
+    figures <- figure_number + seq_along(plots)
+    figure_number <- figure_number + length(plots)
+    .cifreport_print_table(tables$table3, c(outcome_id = "Outcome", timepoint = "Time",
+      group_label = "Exposure", primary = "Primary events", competing = "Competing events",
+      estimate = "Estimate", conf.low = paste(level, "CI lower"),
+      conf.high = paste(level, "CI upper"), estimator = "Estimator"))
+    paragraph(.cifreport_time_text(tables$table3, table_number, level, info$followup, figures), subgroup)
+    table_heading(paste("Crude risk ratios for the primary and competing events and", exposure,
+                        "at specified time-points"), suffix)
+    .cifreport_print_table(tables$table4, c(outcome_id = "Outcome", timepoint = "Time",
+      event_type = "Event", comparison_label = "Comparison", reference_label = "Reference",
+      estimate = "Risk ratio", conf.low = paste(level, "CI lower"), conf.high = paste(level, "CI upper"),
+      p.value = "p-value"))
+    paragraph(.cifreport_ratio_text(tables$table4, table_number, level, info$reference), subgroup)
+    table_heading(paste("Results of tests for the primary event and", exposure), suffix)
+    .cifreport_print_table(tables$table5, c(outcome_id = "Outcome", method = "Test",
+      statistic = "Chi-square", parameter = "Degrees of freedom", p.value = "p-value"))
+    paragraph(.cifreport_test_text(tables$table5, table_number), subgroup)
+    if (!length(plots)) cat("<p>No plots available. See the analysis status log.</p>\n")
+    for (i in seq_along(plots)) {
+      heading(2, paste0("Figure ", figures[i], ". ", names(plots)[i], " according to ", exposure, suffix))
+      print(plots[[i]])
+      cat("\n\n")
+    }
+  }
+}
+heading(2, "Analysis status log")
+if (nrow(report$status)) {
+  .cifreport_print_table(report$status, c(population_id = "Population", group_id = "Grouping",
+    outcome_id = "Outcome", timepoint = "Time", group_level = "Group", analysis = "Analysis",
+    status = "Status", message = "Reason"))
+} else {
+  cat("<p>All requested analyses completed.</p>\n")
+}
+heading(2, "Software versions")
+cat("<p>", .cifreport_html(paste(names(report$versions[!is.na(report$versions)]),
+  report$versions[!is.na(report$versions)], collapse = ", ")), "</p>")
+```

@@ -138,13 +138,20 @@ test_that("tbl_regression selects the event, contrast and effect label automatic
 test_that("fitted reporting retains variable labels and categorical numeric exposure", {
   skip_if_not_installed("gtsummary", "2.6.1")
   skip_if_not_installed("broom.helpers", "1.20.0")
-  data(diabetes.complications)
+  # Each exposure level has both causes and observations at risk at time 1.
+  cohort <- expand.grid(row = seq_len(24L), fruitq = paste0("Q", 1:4))
+  group <- as.integer(cohort$fruitq)
+  cause1 <- 2L + group
+  cause2 <- c(3L, 2L, 4L, 3L)[group]
+  cohort$epsilon <- ifelse(cohort$row <= cause1, 1L,
+    ifelse(cohort$row <= cause1 + cause2, 2L, 0L))
+  cohort$t <- ifelse(cohort$epsilon == 0L, 2, 1)
   for (numeric.codes in c(FALSE, TRUE)) {
-    d <- diabetes.complications
+    d <- cohort
     if (numeric.codes) d$fruitq <- as.integer(d$fruitq)
     attr(d$fruitq, "label") <- "Fruit intake"
-    f <- polyreg(Event(t,epsilon)~age+sex, exposure="fruitq", data=d,
-      code.exposure.ref=if (numeric.codes) 2L else "Q2", time.point=8,
+    f <- polyreg(Event(t,epsilon)~1, exposure="fruitq", data=d,
+      code.exposure.ref=if (numeric.codes) 2L else "Q2", time.point=1,
       effect.measure1="OR", effect.measure2="SHR")
     f <- unserialize(serialize(f,NULL))
     expect_identical(f$reporting$label, "Fruit intake")
@@ -152,6 +159,7 @@ test_that("fitted reporting retains variable labels and categorical numeric expo
       tab <- gtsummary::tbl_regression(f, exponentiate=TRUE, event=event)
       td <- generics::tidy(f, event=event, exponentiate=TRUE)
       rows <- which(!is.na(tab$table_body$reference_row) & !tab$table_body$reference_row)
+      expect_length(rows, 3L)
       expect_true(all(tab$table_body$var_label == "Fruit intake"))
       for (nm in c("estimate", "conf.low", "conf.high", "std.error", "p.value"))
         expect_equal(tab$table_body[[nm]][rows], td[[nm]], tolerance=0)

@@ -33,6 +33,10 @@ Event <- function(time, event, allowed = getOption("cifmodeling.allowed", c(0, 1
   out <- cbind(time = te$time, event = te$event)
   dimnames(out) <- list(NULL, c("time","event"))
   attr(out, "type") <- "right"
+  input_attributes <- lapply(list(time = time, event = event), function(x) {
+    attributes(x)[intersect(c("label", "labels"), names(attributes(x)))]
+  })
+  if (any(lengths(input_attributes))) attr(out, "inputAttributes") <- input_attributes
   class(out) <- c("Event", class(out))
   return(out)
 }

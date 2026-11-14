@@ -145,6 +145,7 @@ times retain missing limits. Use this summary rather than indexing added
 inference vectors on copies whose time grid was expanded by \code{survfit0()}.
 \code{logse} records the scale of the stored \code{std.err}. The internal \code{reporting}
 component preserves the native inference grid for this extraction.
+Time and strata display labels are saved with the fit for \code{\link[=cifplot]{cifplot()}}.
 }
 \description{
 Core estimation routine that computes a survfit-compatible object

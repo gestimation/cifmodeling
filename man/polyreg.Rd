@@ -45,7 +45,9 @@ polyreg(
   data.initial.values = NULL,
   normalize.covariate = TRUE,
   terminate.time.point = TRUE,
-  prob.bound = 1e-07
+  prob.bound = 1e-07,
+  label.exposure = NULL,
+  label.strata = NULL
 )
 }
 \arguments{
@@ -194,6 +196,14 @@ of each exposure level (default \code{TRUE}).}
 
 \item{prob.bound}{Numeric lower bound used to internally truncate probabilities away
 from 0 and 1 (default \code{1e-7}).}
+
+\item{label.exposure}{Optional display label for the exposure variable.
+Defaults to its \code{label} attribute or the column name.}
+
+\item{label.strata}{Optional display labels for exposure levels. A named
+vector maps original exposure codes to labels. Unnamed labels follow
+fitted exposure order (reference first). Unspecified labels use the
+\code{labels} attribute or the original exposure level.}
 }
 \value{
 A list of class \code{"polyreg"} containing the fitted exposure effects and

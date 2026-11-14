@@ -378,6 +378,7 @@ cif_prepare_input <- function(
       d2 = as.integer(epsilon == code.event2),
       strata = formula_strata,
       strata_name = strata_name,
+      display = .cif_curve_display(formula, data_work, Terms, mf, formula_strata),
       w = as.numeric(w)
     ),
     class = "cif_prepared_input"
@@ -441,6 +442,7 @@ util_read_surv <- function(formula, data, weights = NULL,
     d2 = prepared$d2,
     strata = prepared$strata,
     strata_name = prepared$strata_name,
+    display = prepared$display,
     w = prepared$w,
     data_sync = prepared$data,
     outcome.type = prepared$outcome.type,

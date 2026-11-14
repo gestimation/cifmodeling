@@ -139,6 +139,7 @@
 #' inference vectors on copies whose time grid was expanded by `survfit0()`.
 #' `logse` records the scale of the stored `std.err`. The internal `reporting`
 #' component preserves the native inference grid for this extraction.
+#' Time and strata display labels are saved with the fit for [cifplot()].
 #' @param object A fitted `cifcurve` object to summarize.
 #' @param ... Arguments passed to `summary.survfit()`, including `times`.
 #'

@@ -228,7 +228,7 @@ cifplot <- function(
     conf.int                      = 0.95,
     n.risk.type                   = c("weighted", "unweighted", "ess"),
     type.y                        = NULL,
-    label.x                       = "Time",
+    label.x                       = NULL,
     label.y                       = NULL,
     label.strata                  = NULL,
     level.strata                  = NULL,
@@ -281,10 +281,13 @@ cifplot <- function(
     inset.info                    = NULL,
     print.info                    = NULL,
     ggsave.info                   = NULL,
-    ...
+    ...,
+    label.legend                  = NULL
 ) {
   weights.expr <- substitute(weights)
   weights.missing <- missing(weights)
+  if (missing(outcome.type) && inherits(formula_or_fit, "cifcurve"))
+    outcome.type <- formula_or_fit$reporting$outcome.type %||% outcome.type
   dots <- list(...)
   dots$print.panel <- dots$print.panel %||% print.panel
   weights <- util_resolve_weights(
@@ -373,6 +376,7 @@ cifplot <- function(
   style.info$font.family <- style.info$font.family %||% "sans"
   style.info$font.size   <- style.info$font.size   %||% 12
 
+  explicit_labels <- axis.info$label.strata
   level_input <- axis.info$level.strata
   order_input <- axis.info$order.strata
 
@@ -463,10 +467,10 @@ cifplot <- function(
   is_panel <- isTRUE(panel.info$panel.per.variable) ||
     isTRUE(panel.info$panel.per.event) ||
     isTRUE(panel.info$panel.censoring)
+  axis.info$display <- list(labels = explicit_labels, legend = label.legend %||% axis.info$display$legend)
   if (is_panel) {
     style.info$font.size <- style.info$font.size / 2
     style.info$legend.position <- "none"
-    if (!is.null(axis.info$label.strata)) .warn("panel_disables_labelstrata")
     if (isTRUE(visual.info$add.risktable) || isTRUE(visual.info$add.estimate.table)) .warn("panel_disables_tables")
     axis.info$label.strata      <- NULL
     visual.info$add.risktable   <- FALSE
@@ -596,7 +600,7 @@ cifplot <- function(
   out_plot <- apply_strata_to_plots(
     list(out_plot),
     order_data = axis.info$order.strata,
-    label_map  = axis.info$label.strata
+    label_map  = attr(out_plot, "cifmodeling_display_labels") %||% axis.info$label.strata
   )[[1]]
 
   survfit.info$formula_or_fit <- survfit.info$formula_or_fit %||% formula_or_fit
@@ -991,7 +995,7 @@ cifplot_single <- function(
 
   axis.info <- panel_modify_list(list(
     type.y            = NULL,
-    label.x           = "Time",
+    label.x           = NULL,
     label.y           = NULL,
     label.strata      = NULL,
     level.strata      = NULL,
@@ -1104,6 +1108,7 @@ cifplot_single <- function(
   dpi.ggsave      <- ggsave.info$dpi.ggsave
   ggsave.units    <- ggsave.info$units %||% "in"
 
+  explicit_labels <- if (is.null(axis.info$display)) axis.info$label.strata else axis.info$display$labels
   level_input     <- axis.info$level.strata
   order_input     <- axis.info$order.strata
 
@@ -1152,6 +1157,7 @@ cifplot_single <- function(
   }
   survfit.info$n.risk.type <- survfit.info$n.risk.type %||% n.risk.type
 
+  fitted <- formula_or_fit
   if (!inherits(formula_or_fit, "survfit")) {
     if (is.null(data)) stop("When `formula` is a formula, `data` must be provided.")
     norm_inputs <- plot_normalize_formula_data(
@@ -1166,9 +1172,11 @@ cifplot_single <- function(
     formula_or_fit <- cifcurve(formula_or_fit, data = data_working, weights = identity(weights), subset.condition = subset.condition, na.action = na.action,
                                outcome.type = outcome.type, code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
                                error = error, conf.type = conf.type, conf.int = conf.int, n.risk.type = n.risk.type)
+    fitted <- formula_or_fit
     formula_or_fit <- plot_survfit_short_strata_names(formula_or_fit)
   }
 
+  axis.info$display <- list(labels = explicit_labels, legend = axis.info$display$legend)
   eps <- if (!is.null(axis.info$type.y) && axis.info$type.y %in% c("cumhaz", "cloglog")) 1e-12 else 0
   formula_or_fit$surv  <- plot_clamp01(formula_or_fit$surv,  eps = eps)
   formula_or_fit$lower <- plot_clamp01(formula_or_fit$lower, eps = eps)
@@ -1191,7 +1199,7 @@ cifplot_single <- function(
     use.coord.cartesian = use.coord.cartesian
   )
   if (!is.null(filename.ggsave)) ggplot2::ggsave(filename.ggsave, plot = p, width = width.ggsave, height = height.ggsave, dpi = dpi.ggsave, units = ggsave.units)
-  attr(p, "cifmodeling_survfit") <- formula_or_fit
+  attr(p, "cifmodeling_survfit") <- fitted
   return(p)
 }
 
@@ -1255,9 +1263,11 @@ call_ggsurvfit <- function(
   ggsave.info         <- ggsave.info  %||% list()
 
   type.y              <- axis.info$type.y
-  label.x.user        <- axis.info$label.x
+  display <- survfit_object$reporting$display
+  label.x.user        <- axis.info$label.x %||% display$time
   label.y.user        <- axis.info$label.y
-  label.strata        <- axis.info$label.strata
+  explicit_labels <- if (is.null(axis.info$display)) axis.info$label.strata else axis.info$display$labels
+  label.strata        <- .cif_plot_labels(survfit_object, explicit_labels, axis.info$level.strata)
   level.strata        <- axis.info$level.strata
   order.strata        <- axis.info$order.strata
   limits.x            <- axis.info$limits.x
@@ -1293,7 +1303,7 @@ call_ggsurvfit <- function(
   font.size          <- style.info$font.size
   legend.position    <- style.info$legend.position
 
-  if (!identical(legend.position, "none")) {
+  if (!identical(legend.position, "none") || !is.null(label.strata)) {
     label.strata.map <- plot_make_label.strata.map(
       survfit_object = survfit_object,
       label.strata   = label.strata,
@@ -1303,11 +1313,12 @@ call_ggsurvfit <- function(
       survfit_object   = survfit_object,
       label.strata.map = label.strata.map,
       level.strata     = level.strata,
-      order.strata     = order.strata
+      order.strata     = if (!identical(legend.position, "none")) order.strata
     )
     limits_arg          <- res$limits_arg
     strata_levels_final <- res$strata_levels_final
-    strata_labels_final <- res$strata_labels_final
+    strata_labels_final <- if (is.null(label.strata)) res$strata_labels_final else
+      unname(label.strata[limits_arg])
     n_strata_effective  <- length(limits_arg)
   } else {
     limits_arg          <- NULL
@@ -1333,6 +1344,9 @@ call_ggsurvfit <- function(
       x = label.x.user %||% "Time",
       y = label.y.user %||% out_cg$label.y
     )
+  legend <- .cif_variable_label(NULL, display$variable, axis.info$display$legend)
+  if (!is.null(legend) && length(survfit_object$strata))
+    p <- p + ggplot2::labs(colour = legend)
 
   if (!isTRUE(is_cloglog)) {
     if (isTRUE(add.conf)) {
@@ -1426,6 +1440,13 @@ call_ggsurvfit <- function(
     strata_labels_final = strata_labels_final,
     limits_arg          = limits_arg
   )
+  if (!is.null(label.strata)) {
+    # The outer plotter retains its existing limits/order handling.
+    short <- sub("^[^=]*=", "", names(label.strata))
+    attr(p, "cifmodeling_display_labels") <- c(label.strata,
+      stats::setNames(unname(label.strata[!short %in% names(label.strata)]),
+                      short[!short %in% names(label.strata)]))
+  }
 
   p <- apply_axis_limits_breaks(
     p,

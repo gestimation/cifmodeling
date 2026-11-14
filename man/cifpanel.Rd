@@ -84,7 +84,8 @@ cifpanel(
   print.info = NULL,
   ggsave.info = NULL,
   engine = "cifplot",
-  ...
+  ...,
+  label.legend = NULL
 )
 }
 \arguments{
@@ -153,17 +154,16 @@ Controls which risk set size is returned in \verb{$n.risk} without affecting est
 or \code{"cloglog"} to generate a complementary log-log plot.
 If \code{NULL}, a default is chosen from \code{outcome.type} or the survfit object.}
 
-\item{label.x}{Character x-axis label (default \code{"Time"}).}
+\item{label.x}{Character x-axis label. Defaults to the time variable's
+label or name for a cifcurve fit, and \code{"Time"} if unavailable.}
 
 \item{label.y}{Character y-axis label (default is chosen automatically from \code{outcome.type}
 and \code{type.y}, e.g. "Survival", "Cumulative incidence" or "Cumulative hazard").}
 
-\item{label.strata}{Character vector or named character vector specifying labels for strata.
-Names (if present) must match the (re-ordered) underlying strata levels.
-\strong{Note:} when any of the panel modes is active
-(\code{panel.per.variable = TRUE}, \code{panel.per.event = TRUE}, \code{panel.censoring = TRUE},
-or \code{panel.mode = "auto"} and it actually dispatches to a panel),
-strata labels are suppressed to avoid duplicated legends across sub-plots.}
+\item{label.strata}{Character vector of display labels for strata. Names map
+to the original strata codes. Unnamed labels follow \code{level.strata} or
+the fitted strata order. Unspecified labels use stored value labels
+from the data and then the original stratum levels.}
 
 \item{order.strata}{Optional character vector specifying the display order of strata
 in the legend/number-at-risk table. Specify the levels of strata. Levels not listed are dropped.}
@@ -318,6 +318,9 @@ Currently intended for internal use; default is \code{"cifplot"}.}
 \item{...}{Additional arguments forwarded to the internal \code{cifplot_single()}
 calls that build each panel. Use this to pass low-level options such as
 \code{competing.risk.time}, \code{intercurrent.event.time}, or styling overrides.}
+
+\item{label.legend}{Optional stratum legend title. Defaults to the
+stratification variable's label or name when available.}
 }
 \value{
 A \code{"cifpanel"} object (returned invisibly), which is a list

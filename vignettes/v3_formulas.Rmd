@@ -304,7 +304,7 @@ For plotting Student intervals, calculate them first and pass the fitted object 
 cifplot(fit_edf, outcome.type = "competing-risk", add.risktable = FALSE)
 ```
 
-See [Full lists of arguments](v7_arguments.html) for the API options and [Reporting cumulative incidence](v8_reporting_cif.html) for extracting estimates and constructing tables.
+See [Full lists of arguments](v7_arguments.html) for the API options and [Reporting cumulative incidence](v5_reporting_results.html#reporting-cumulative-incidence) for extracting estimates and constructing tables.
 
 ## References
 

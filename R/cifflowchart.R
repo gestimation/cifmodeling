@@ -147,6 +147,7 @@ cifflowchart <- function(formula,
     character(0)
   }
 
+  source <- data
   data <- createAnalysisDataset(
     formula = formula,
     data = data,
@@ -258,7 +259,8 @@ cifflowchart <- function(formula,
     warning("Missing group values are displayed as 'Missing group'.", call. = FALSE)
   }
 
-  group_label <- .flowchart_relabel(group_chr, label.strata)
+  group_values <- if (has_group) .cif_value_labels(source[[rhs_vars]])
+  group_label <- .flowchart_display(group_chr, group_values, label.strata)
 
   outcome <- if (mode == "categorical") {
     out <- data[[all.vars(lhs)[1]]]
@@ -267,8 +269,9 @@ cifflowchart <- function(formula,
 
     lev <- attr(vals, "levels", exact = TRUE)
     attr(vals, "levels") <- unique(c(lev, "Missing outcome"))
+    attr(vals, "display.labels") <- .cif_value_labels(source[[all.vars(lhs)[1L]]])
 
-    .flowchart_relabel(vals, label.events)
+    vals
   } else {
     time <- data[[as.character(lhs[[2]])]]
     status <- data[[as.character(lhs[[3]])]]
@@ -280,11 +283,11 @@ cifflowchart <- function(formula,
       e1 = code.event1,
       e2 = code.event2,
       cens = code.censoring,
-      labels = label.events
+      values = .cif_value_labels(source[[as.character(lhs[[3L]])]])
     )
   }
 
-  .flowchart_count_nodes(
+  result <- .flowchart_count_nodes(
     withdraw = withdraw,
     inelig = inelig,
     pre = pre,
@@ -300,6 +303,14 @@ cifflowchart <- function(formula,
     percent = percent,
     digits = digits
   )
+  result$outcome_counts <- lapply(result$outcome_counts, function(counts) {
+    if (!length(counts)) return(counts)
+    keys <- names(counts)
+    attr(keys, "levels") <- attr(outcome, "levels", exact = TRUE)
+    names(counts) <- as.character(.flowchart_display(keys, attr(outcome, "display.labels"), label.events))
+    counts
+  })
+  result
 }
 
 .flowchart_count_nodes <- function(withdraw,
@@ -624,7 +635,7 @@ cifflowchart <- function(formula,
   )
 }
 
-.flowchart_event_status <- function(time, status, tau, e1, e2, cens, labels) {
+.flowchart_event_status <- function(time, status, tau, e1, e2, cens, values = NULL) {
   out <- rep(NA_character_, length(status))
 
   if (is.null(tau)) {
@@ -657,7 +668,22 @@ cifflowchart <- function(formula,
   out[is.na(out)] <- "Missing outcome"
   attr(out, "levels") <- lev
 
-  .flowchart_relabel(out, labels)
+  codes <- as.character(c(e1, e2, cens))
+  matched <- match(codes, names(values))
+  found <- which(!is.na(matched))
+  event_labels <- unname(values[matched[found]])
+  if (length(found) && !is.null(tau)) event_labels <- paste(event_labels,
+    paste(c("by", "by", "before")[found], tau))
+  attr(out, "display.labels") <- stats::setNames(event_labels, lev[found])
+  out
+}
+
+.flowchart_display <- function(x, values, explicit) {
+  if (!length(values)) values <- NULL
+  if (is.null(explicit)) return(.flowchart_relabel(x, values))
+  if (is.null(names(explicit))) return(.flowchart_relabel(x, explicit))
+  map <- c(values[!names(values) %in% names(explicit)], explicit)
+  .flowchart_relabel(x, map)
 }
 
 .flowchart_levels <- function(x, order = NULL) {

@@ -350,7 +350,9 @@ plot_normalize_formula_data <- function(
       out_data[[var_name]] <- factor(values, levels = c(below, above))
     } else {
       out_data[[var_name]] <- factor(out_data[[var_name]], levels = norm$levels)
+      attr(out_data[[var_name]], "labels") <- attr(data[[var_name]], "labels", exact = TRUE)
     }
+    attr(out_data[[var_name]], "label") <- attr(data[[var_name]], "label", exact = TRUE)
     info[[var_name]] <- norm
   }
   list(data = out_data, info = info)
@@ -413,7 +415,12 @@ plot_make_mark_data_frame <- function(fit, marks, type.y, extend = TRUE) {
       fit[i]
     }
     sm <- summary(fit_st, times = tt, extend = extend)
-    y  <- if (identical(type.y, "risk")) 1 - sm$surv else sm$surv
+    y <- switch(type.y %||% "surv",
+      risk = 1 - sm$surv,
+      cumhaz = -log(sm$surv),
+      cloglog = log(-log(sm$surv)),
+      sm$surv
+    )
     data.frame(strata = st_lab, time = sm$time, y = y, stringsAsFactors = FALSE)
   })
   do.call(rbind, out)
@@ -929,6 +936,16 @@ plot_survfit_short_strata_names <- function(survfit_object) {
   nn <- nm
   nn[idx] <- short
   names(survfit_object$strata) <- nn
+  if (length(survfit_object$reporting$display$levels)) {
+    labels <- survfit_object$reporting$display$levels[nm]
+    names(labels) <- nn
+    survfit_object$reporting$display$levels <- labels
+  }
+  if (length(survfit_object$reporting$display$codes)) {
+    codes <- survfit_object$reporting$display$codes[nm]
+    names(codes) <- nn
+    survfit_object$reporting$display$codes <- codes
+  }
   survfit_object
 }
 

@@ -126,9 +126,9 @@ summary(output4)
 
 ## Example 3. Adjusted competing risks analysis
 
-The code below specifies direct polytomous regression for both of competing events (`outcome.type="competing-risk"`). Here 15 covariates and censoring strata are specified in `nuisance.model=` and `strata=`, respectively.
+The code below fits a covariate-adjusted competing risks model for both events and accounts for censoring within strata. Run this example interactively to see the adjusted risk ratios. The full-cohort fit takes several minutes.
 
-```{r example04-3, fig.cap="Joint estimation of adjusted risk ratios at 8 years using polyreg()", warning=FALSE, message=FALSE}
+```{r example04-3, eval=FALSE, fig.cap="Joint estimation of adjusted risk ratios at 8 years using polyreg()", warning=FALSE, message=FALSE}
 output5 <- polyreg(nuisance.model=Event(t,epsilon)~age+sex+bmi+hba1c
           +diabetes_duration+drug_oha+drug_insulin+sbp+ldl+hdl+tg
           +current_smoker+alcohol_drinker+ltpa, 

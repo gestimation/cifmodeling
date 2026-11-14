@@ -1,0 +1,454 @@
+---
+title: "Reporting results"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Reporting results}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+Use [cifreport()](#automated-reports) to generate a complete report from a dataset.
+For tables from existing fits, see [Reporting cumulative incidence](#reporting-cumulative-incidence)
+or [Reporting CIF regression](#reporting-cif-regression).
+
+```{r setup, include=FALSE}
+curve_ready <- requireNamespace("gtsummary", quietly = TRUE) &&
+  utils::packageVersion("gtsummary") >= "2.6.1"
+report_ready <- curve_ready && requireNamespace("gt", quietly = TRUE) &&
+  requireNamespace("rmarkdown", quietly = TRUE) && rmarkdown::pandoc_available()
+regression_ready <- curve_ready && requireNamespace("broom.helpers", quietly = TRUE) &&
+  utils::packageVersion("broom.helpers") >= "1.20.0"
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+## Automated survival and competing-risk reports {#automated-reports}
+
+```{r setup-automated-reports, include=FALSE, eval=TRUE}
+knitr::opts_chunk$set(eval = report_ready)
+```
+
+```{r dependencies-automated-reports, echo=FALSE, results='asis', eval=!report_ready}
+cat("Install gtsummary, gt, knitr, and rmarkdown, and make Pandoc available to run the automated report example.")
+```
+
+`cifreport()` writes a Word, PDF, or self-contained HTML report and invisibly returns the
+underlying tables, plots, fitted objects, and analysis log. Install
+gtsummary (at least 2.6.1), gt, knitr, and rmarkdown, and make Pandoc
+available to rmarkdown before running the example. Install xml2 and zip for
+Word output.
+
+### Two outcomes in one report
+
+In the diabetes cohort, code 1 identifies diabetic retinopathy, code 2
+identifies a macrovascular complication, and code 0 identifies censoring.
+For the survival endpoint, either complication is an event. Both outcomes
+use the same follow-up column in this example. An endpoint measured from
+a different origin can name its own follow-up column.
+
+Set `outcome.type = "survival"` or `"competing-risk"` for the report as a
+whole, or set it in an individual outcome definition to override that choice.
+With `NULL` or `"auto"`, each outcome is classified from the observed event
+codes in the selected population before subgroup analysis. More than two
+codes indicate competing risks. Specify `"competing-risk"` explicitly if
+an expected event code is absent.
+
+```{r report}
+library(cifmodeling)
+data(diabetes.complications)
+cohort <- transform(diabetes.complications, all_event = epsilon != 0)
+
+report <- cifreport(
+  cohort,
+  exposure = c("Fruit intake" = "fruitq1"),
+  code.exposure.ref = 0,
+  characteristics = c("age", "sex"),
+  outcomes = list(
+    Retinopathy = list(time = "t", event = "epsilon", time.point = c(4, 8)),
+    "Complication-free survival" = list(
+      time = "t", event = "all_event", outcome.type = "survival", time.point = c(3, 8)
+    )
+  ),
+  overall = TRUE,
+  filename.cifreport = tempfile(fileext = ".html")
+)
+
+report$tables$All[["Fruit intake"]]$table3
+```
+
+Omit `filename.cifreport` to write `yyyymmdd_cohort_analysis_report.docx` in the
+current directory. To save to another directory, include that existing directory
+in the filename, for example `filename.cifreport = "reports/cohort.html"`.
+An existing file is overwritten after rendering. Use
+`filename.cifreport = c("cohort.html", "cohort.docx", "cohort.pdf")` to save
+all three formats from one analysis. Word tables are editable and use 9-point
+text. By default, percentages in the tables use one decimal place. PDF output
+requires Chrome, Chromium, or Microsoft Edge. Set `CIFREPORT_BROWSER` to
+the executable path if the browser is not found automatically.
+Set `filename.cifreport = NULL` to return the analysis without saving a file.
+`report$output.file` returns the absolute paths in the order requested.
+Set `data.name = "diabetes.complications"` to use the
+original dataset name in the filename and the default report title.
+Use `subset.condition = "age >= 50"` to restrict the analysis population.
+Use `subgroup = "sex"` to report the selected population as a whole and each
+observed level of `sex` within it. Use `exposure = c("Fruit intake" = "fruitq1", Sex = "sex")`
+to add a grouping. Each population/exposure combination gets one section.
+Factor levels determine group order. The first observed level is the default
+risk-ratio reference. Use a named vector or list such as
+`code.exposure.ref = list("Fruit intake" = 0)` to select references by exposure.
+
+Use `level.strata = c(0, 1)`, `label.strata = c("Other intake", "Low intake")`,
+and `order.strata = c(1, 0)` to display the low-intake group first in the
+tables and curves. The reference is specified with its original code.
+For multiple exposures, supply a named list for each strata argument,
+such as `label.strata = list("Fruit intake" = c("0" = "Other intake", "1" = "Low intake"))`.
+Subgroups use the same labels for their observed exposure levels.
+
+Use `cifplot.args` to apply the same display settings to all figures,
+including subgroup figures. For example, pass
+`cifplot.args = list(label.x = "Years", breaks.x = c(0, 4, 8),
+legend.position = "bottom", add.risktable = FALSE)` to `cifreport()`.
+Use the report's strata arguments for exposure labels and display order,
+which are shared by the tables and figures.
+
+### Reading each section
+
+1. **Patient characteristics.** A gtsummary table describes the subjects
+   in each group. Missing baseline values appear in separate rows by
+   default. Use `table1.args = list(label = list(age ~ "Age (years)"))`
+   to change a label, or `overall = TRUE` to include the whole population.
+   Characteristics with value labels (a named `labels` attribute) are
+   summarized as categorical. Exposure value labels also appear in the table
+   titles and are used as group labels unless overridden by `label.strata`.
+   The p-value column compares the exposure groups using the default
+   tests in `gtsummary::add_p()`. A characteristic needs at least two
+   observed values and nonmissing data in at least two exposure groups to
+   be tested.
+   The text below the table gives group sizes and identifies characteristics
+   with p-values below 0.05.
+2. **Observed events over all follow-up.** The table names the time and event
+   columns and shows primary, competing, and censoring counts alongside their codes.
+   The text below it flags outcomes with fewer than five primary events in
+   at least one exposure group.
+3. **Cumulative counts and estimated probabilities.** Counts use
+   `observed_time <= time.point` and include events tied at the requested
+   time. Kaplan-Meier survival (KM) or primary-event Aalen-Johansen cumulative
+   incidence (AJ) and pointwise confidence intervals use the same right-continuous
+   convention. Enter times in the units of the follow-up column. Observed
+   counts remain available beyond follow-up, where estimates and intervals
+   are omitted for the affected groups. An outcome's `estimator` can request
+   `"1-KM"` for event probability or `"1-AJ"` for the complement of the CIF.
+   The text below the table gives the observed follow-up range across groups
+   in the current analysis population and identifies nonpositive observed times.
+4. **Crude risk ratios.** Each horizon has a separate intercept-only
+   `polyreg()` nuisance model. For survival, the risk is one minus survival
+   at the horizon. For competing risks, both cause-specific cumulative
+   incidence ratios are reported from the joint fit. These are unadjusted
+   associations. A requested horizon must be within the observed follow-up
+   of every group, and a competing-risk fit requires both causes by that time.
+5. **Curve comparison tests.** The log-rank test compares survival curves
+   and Gray's test compares primary-event cumulative incidence curves over
+   follow-up. Each outcome has one test per section.
+
+Each outcome with an available fit gets its own numbered figure. By default
+the figure uses the same estimator scale as Table 3 and shows the group
+labels and risk table. `cifplot.args = list(type.y = "cumhaz")` changes the
+figure scale while Table 3 keeps the selected estimator.
+
+### Supported data and analysis status
+
+The report supports unweighted right-censored follow-up with one row per
+subject, distinct non-negative integer codes, and one competing code per
+competing-risk outcome. Logical events and numeric codes stored as factor
+levels or character strings are supported. Supported comparisons include
+binary and multi-level groups. Left truncation, time-dependent covariates,
+recurrent events, adjustment, and simultaneous confidence bands are
+outside the reporting interface.
+
+Rows where a subset condition evaluates to `NA` are excluded. Within each
+subset, missing group values skip the section. Missing follow-up
+times or event values skip the affected outcome. An empty population
+produces a status entry. With a single observed group, the report keeps
+the descriptive tables and plot. An absent reference level affects risk
+ratios only. The status log records these cases as well as unsupported
+horizons, warnings and estimation failures. A failure in one fit leaves
+unrelated results available.
+
+Subjects with missing subgroup values contribute to the overall analysis.
+For a subgroup level with zero observed events for an outcome, the report
+includes the counts in Table 2 and skips Tables 3–5 and Figure 1 for that
+outcome. In a competing-risk outcome, either a primary event or a competing
+event counts toward this check.
+
+## Reporting cumulative incidence {#reporting-cumulative-incidence}
+
+```{r setup-reporting-cumulative-incidence, include=FALSE, eval=TRUE}
+knitr::opts_chunk$set(eval = curve_ready)
+```
+
+```{r dependencies-reporting-cumulative-incidence, echo=FALSE, results='asis', eval=!curve_ready}
+cat("Install gtsummary version 2.6.1 or later to run these cumulative incidence examples.")
+```
+
+### A cumulative incidence table
+
+The examples use a reproducible sample of 200 records from the anonymized
+`diabetes.complications` cohort. Follow-up is measured in years; event 1 is
+diabetic retinopathy and event 2 is a macrovascular complication. The estimates
+illustrate how to report retinopathy probabilities by fruit-intake group.
+
+```{r first-table}
+library(cifmodeling)
+library(gtsummary)
+data(diabetes.complications)
+set.seed(1)
+report_data <- diabetes.complications[
+  sample.int(nrow(diabetes.complications), 200L), ]
+report_data$fruitq1 <- factor(report_data$fruitq1, levels = c(0, 1),
+                            labels = c("Other intake", "Low intake"))
+
+curve <- cifcurve(Event(t, epsilon) ~ fruitq1, data = report_data,
+                  outcome.type = "competing-risk")
+cif_table <- tbl_survfit(curve, times = c(4, 8), type = "risk",
+                         label_header = "**{time}-year CIF**")
+cif_table
+```
+
+For competing risks, the `survfit`-compatible object stores `surv = 1 - CIF`.
+The `type = "risk"` argument displays the CIF and reverses the saved interval
+limits: the reported limits are `1 - upper` and `1 - lower`. The table does
+not re-fit the curve or construct a different confidence interval.
+
+### Selecting confidence intervals
+
+Choose inference when fitting the curve. Here IF-based standard errors,
+Student critical values and a log-log transformation are requested. For the
+stored `1 - CIF`, this transformation is the complementary log-log
+transformation of the CIF.
+
+```{r student-intervals}
+student_curve <- cifcurve(Event(t, epsilon) ~ fruitq1, data = report_data,
+  outcome.type = "competing-risk", error = "if", conf.dist = "t",
+  conf.type = "log-log")
+student_table <- tbl_survfit(student_curve, times = c(4, 8), type = "risk",
+  label_header = "**{time}-year CIF**") |>
+  modify_footnote_header(columns = all_stat_cols(),
+    footnote = "95% pointwise IF-t intervals; log-log transformation of 1 - CIF; deletion allocation for degrees of freedom.")
+student_table
+```
+
+`error = "fay"` selects the Fay--Graubard-type variance correction, and
+`df.method = "equal"` is an alternative allocation for IF-t. Supplied weights
+are treated as fixed. Details of the inference methods are in `?cifcurve`.
+Degrees of freedom vary by group and time; they are available in a summary
+without adding diagnostic columns to the publication table.
+
+```{r inference-diagnostics}
+s <- summary(student_curve, times = c(4, 8), extend = TRUE)
+data.frame(group = s$strata, time = s$time, df = s$df,
+           interval_status = s$conf.status)
+```
+
+An unavailable interval remains missing. In particular, a valid interval is
+not carried beyond the last positive-weight follow-up. Exact structural
+boundaries retain the fitted singleton interval. These are pointwise
+intervals, not simultaneous confidence bands.
+
+### Comparing curves through a specified horizon
+
+The following tests compare the CIF curves through 8 years. They are not
+separate tests of the probabilities in each column of the preceding table.
+The score tests emphasize earlier or later differences through their
+Fleming--Harrington weights. The method labels are taken from the saved fits.
+
+```{r curve-tests}
+tests <- list(
+  gray = ciftest(Event(t, epsilon) ~ fruitq1, report_data,
+                 test = "gray", tau = 8),
+  early = ciftest(Event(t, epsilon) ~ fruitq1, report_data,
+                  test = "score", rho = 1, gamma = 0, tau = 8),
+  late = ciftest(Event(t, epsilon) ~ fruitq1, report_data,
+                 test = "score", rho = 0, gamma = 1, tau = 8)
+)
+test_results <- do.call(rbind, lapply(tests, function(fit) {
+  x <- generics::tidy(fit)
+  data.frame(method = paste(x$method, x$weight), p.value = x$p.value)
+}))
+test_table <- as_gtsummary(test_results) |>
+  modify_header(method = "**Curve comparison through 8 years**",
+                p.value = "**p-value**") |>
+  modify_fmt_fun(p.value = label_style_pvalue(digits = 3))
+test_table
+```
+
+This recipe reports the selected `ciftest()` results directly. The usual
+`add_p()` default for a survival table is a log-rank test and does not select
+these CIF tests. The ordinary Gray branch supports integer frequency
+weights; it does not treat fractional IPTW as frequency weights.
+
+To include the statistic and degrees of freedom, select `statistic` and
+`parameter` from `generics::tidy(fit)`. The latter is the effective rank of
+the test covariance, distinct from the time-specific Student degrees of
+freedom used for the curve intervals.
+
+### Labels and risk-set counts
+
+Use gtsummary's existing label, header and formatting arguments to customize
+the table. For a weighted fit, distinguish the number of observations,
+the sum of weights and the effective sample size. `n.risk.type` chooses the
+quantity exposed as `n.risk`; the legacy `n.risk`, `n.event` and `n.censor`
+fields are rounded upward, while `n.risk.weighted`, `n.risk.unweighted` and
+`n.risk.ess` retain their respective values on the native grid. An event count
+in this curve object includes both event causes, not only retinopathy.
+
+### Exporting the table
+
+The table can be converted with standard gtsummary methods. The temporary
+paths below can be replaced with the desired output filenames.
+
+```{r export-cif}
+html_file <- tempfile(fileext = ".html")
+gt::gtsave(as_gt(student_table), filename = html_file)
+```
+
+```{r export-cif-word, eval=curve_ready && requireNamespace('flextable', quietly=TRUE)}
+word_file <- tempfile(fileext = ".docx")
+flextable::save_as_docx(as_flex_table(student_table), path = word_file)
+```
+
+## Reporting CIF regression {#reporting-cif-regression}
+
+```{r setup-reporting-cif-regression, include=FALSE, eval=TRUE}
+knitr::opts_chunk$set(eval = regression_ready)
+```
+
+```{r dependencies-reporting-cif-regression, echo=FALSE, results='asis', eval=!regression_ready}
+cat("Install gtsummary version 2.6.1 or later and broom.helpers version 1.20.0 or later to run these regression examples.")
+```
+
+### An event-specific regression table
+
+Fit the direct CIF regression, then pass the result to `tbl_regression()`.
+The example uses the anonymized diabetes cohort from the overview. Effects
+compare low fruit intake with the reference group at 8 years; age and sex
+enter the nuisance model. See the direct regression vignette for model
+assumptions and estimation details.
+
+```{r first-regression-table}
+library(cifmodeling)
+library(gtsummary)
+data(diabetes.complications)
+report_data <- diabetes.complications
+report_data$fruitq1 <- factor(report_data$fruitq1, levels = c(0, 1),
+                            labels = c("Other intake", "Low intake"))
+attr(report_data$fruitq1, "label") <- "Fruit intake"
+fit <- polyreg(Event(t, epsilon) ~ age + sex, exposure = "fruitq1",
+  code.exposure.ref = "Other intake", data = report_data, time.point = 8,
+  effect.measure1 = "RR", effect.measure2 = "RR")
+
+retinopathy_table <- tbl_regression(fit, exponentiate = TRUE)
+retinopathy_table
+```
+
+The default event is event 1, diabetic retinopathy. The table reports
+exponentiated effect estimates and their saved confidence limits. Standard
+errors and test statistics remain on the coefficient's log scale. The
+reference row describes the contrast; it is not an additional estimated
+coefficient. These observational estimates do not by themselves establish
+a causal effect of fruit intake.
+
+### Reporting the competing event
+
+Select event 2 explicitly to report macrovascular complications. The
+numeric results, exposure labels and effect-measure heading all follow
+the selected event.
+
+```{r competing-event}
+macrovascular_table <- tbl_regression(fit, exponentiate = TRUE, event = "event2")
+tbl_merge(list(retinopathy_table, macrovascular_table),
+  tab_spanner = c("**Retinopathy**", "**Macrovascular complications**"))
+```
+
+For a tidy data frame containing both events, use
+`generics::tidy(fit, event = "both")`. Publication regression tables select
+one event at a time and are combined with `tbl_merge()`.
+
+### RR, OR and SHR
+
+Choose the effect measure during estimation, not while formatting the table.
+RR compares cumulative incidence probabilities, OR compares their odds, and
+SHR is the subdistribution hazard ratio parameterization. At a fixed time,
+the latter is the ratio of `-log(1 - CIF)` values; it is not a cause-specific
+hazard ratio. Run the following code interactively to compare the three models
+for the same exposure and 8-year target.
+
+```{r effect-measures, eval=FALSE}
+fit_or <- polyreg(Event(t, epsilon) ~ age + sex, exposure = "fruitq1",
+  code.exposure.ref = "Other intake", data = report_data, time.point = 8,
+  effect.measure1 = "OR", effect.measure2 = "OR")
+fit_shr <- polyreg(Event(t, epsilon) ~ age + sex, exposure = "fruitq1",
+  code.exposure.ref = "Other intake", data = report_data, time.point = 8,
+  effect.measure1 = "SHR", effect.measure2 = "SHR")
+tbl_merge(list(tbl_regression(fit, exponentiate = TRUE),
+               tbl_regression(fit_or, exponentiate = TRUE),
+               tbl_regression(fit_shr, exponentiate = TRUE)),
+  tab_spanner = c("**RR model**", "**OR model**", "**SHR model**"))
+```
+
+The two events can also use different effect measures. Headings are read
+from the fitted `estimand` information; no effect measure is inferred from
+the size of a coefficient.
+
+```{r mixed-effect-measures}
+fit_mixed <- polyreg(Event(t, epsilon) ~ age + sex, exposure = "fruitq1",
+  code.exposure.ref = "Other intake", data = report_data, time.point = 8,
+  effect.measure1 = "RR", effect.measure2 = "SHR")
+tbl_merge(list(tbl_regression(fit_mixed, exponentiate = TRUE),
+               tbl_regression(fit_mixed, exponentiate = TRUE, event = "event2")),
+  tab_spanner = c("**Retinopathy**", "**Macrovascular complications**"))
+```
+
+### Confidence intervals and labels
+
+With unchanged inference settings, the table extracts the fitted intervals.
+This also applies to stored bootstrap intervals: they are not replaced by
+Wald limits during exponentiation. To retain the fitted confidence level
+explicitly, pass `conf.level = fit$conf.int`. A request for a different level
+uses the existing supported reconstruction, or fails if the saved method
+cannot provide that level without refitting, as with BCa limits.
+
+```{r labels}
+tbl_regression(fit, exponentiate = TRUE, conf.level = fit$conf.int,
+               label = list(fruitq1 ~ "Low fruit intake versus other intake"))
+```
+
+For direct extraction, `generics::tidy(fit)` retains log-scale estimates.
+Use `exponentiate = TRUE` for ratios. The broom convention uses logical
+`conf.int` and numeric `conf.level`; the older numeric `conf.int` argument
+remains accepted by `tidy.polyreg()` for compatibility. There is no need to
+modify the saved fit or supply a custom tidier to produce these tables.
+
+### Exporting a regression table
+
+`polyreg()` retains the exposure's variable and value labels for reporting.
+Use `label.exposure` to override the variable label and a named
+`label.strata` vector to override selected exposure levels. The names of
+that vector are the original exposure codes.
+
+`modelsummary::msummary(as_modelsummary(fit, event = "event1"))` uses the
+stored display labels after the fit is saved and restored. `coef(fit)`,
+`tidy(fit)`, and direct `msummary(fit)` keep the original coefficient keys.
+Set `display.labels = FALSE` in `as_modelsummary()` to keep those keys in
+its output for `coef_map` or `coef_omit`.
+
+Use the standard gtsummary conversions. Replace the temporary filenames
+with the intended destination when saving the final report.
+
+```{r export-regression}
+html_file <- tempfile(fileext = ".html")
+gt::gtsave(as_gt(retinopathy_table), filename = html_file)
+```
+
+```{r export-regression-word, eval=regression_ready && requireNamespace('flextable', quietly=TRUE)}
+word_file <- tempfile(fileext = ".docx")
+flextable::save_as_docx(as_flex_table(retinopathy_table), path = word_file)
+```
