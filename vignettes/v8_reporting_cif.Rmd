@@ -19,16 +19,18 @@ cat("Install gtsummary version 2.6.1 or later to run these reporting examples. E
 
 ## A cumulative incidence table
 
-The `diabetes.complications` dataset is the anonymized cohort used in the
-package overview. Follow-up is measured in years; event 1 is diabetic
-retinopathy and event 2 is a macrovascular complication. This example reports
-retinopathy probabilities by fruit-intake group.
+The examples use a reproducible sample of 200 records from the anonymized
+`diabetes.complications` cohort. Follow-up is measured in years; event 1 is
+diabetic retinopathy and event 2 is a macrovascular complication. The estimates
+illustrate how to report retinopathy probabilities by fruit-intake group.
 
 ```{r first-table}
 library(cifmodeling)
 library(gtsummary)
 data(diabetes.complications)
-report_data <- diabetes.complications
+set.seed(1)
+report_data <- diabetes.complications[
+  sample.int(nrow(diabetes.complications), 200L), ]
 report_data$fruitq1 <- factor(report_data$fruitq1, levels = c(0, 1),
                             labels = c("Other intake", "Low intake"))
 

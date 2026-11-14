@@ -326,6 +326,12 @@ effect_label.polyreg <- function(x,
   }
 
   labels <- character(nrow(td_exp))
+  reporting <- x$reporting %||% .polyreg_reporting_metadata(x)
+  event_info <- reporting$events[[paste0("event", ev_id)]]
+  display <- reporting$level.labels
+  contrast_labels <- if (length(display) > 1L && length(event_info$term) == length(display) - 1L) {
+    stats::setNames(paste(unname(display[-1L]), "vs", unname(display[1L])), event_info$term)
+  }
 
   for (i in seq_len(nrow(td_exp))) {
     est <- exp(td_exp$estimate[i])
@@ -336,8 +342,8 @@ effect_label.polyreg <- function(x,
     level_str <- ""
     if (add.exposure.levels) {
       s <- td_exp$term[i]
-      s <- sub(paste0("^", exposure, ",\\s*"), "", s)
-      level_str <- s
+      level_str <- if (s %in% names(contrast_labels)) unname(contrast_labels[s]) else
+        sub(paste0("^", exposure, ",\\s*"), "", s)
     }
 
     eff_part <- eff

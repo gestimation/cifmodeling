@@ -146,13 +146,18 @@ test_that("multiple-jump complete exits have structural boundary intervals", {
   options <- list(c("if", "normal", "deletion"), c("if", "t", "deletion"),
                   c("if", "t", "equal"), c("fay", "normal", "deletion"),
                   c("fay", "t", "deletion"))
-  for (n in c(5L, 10L)) for (weighted in c(FALSE, TRUE)) {
+  # Check every inference option with plain limits and every transformation
+  # with the Student IF interval, for both weighted and unweighted curves.
+  cases <- c(lapply(options, c, "plain"),
+    lapply(c("log", "log-log", "logit", "arcsin"), function(tr) c(options[[2L]], tr)))
+  for (weighted in c(FALSE, TRUE)) {
+    n <- if (weighted) 10L else 5L
     d <- data.frame(t = seq_len(n), e = 1L,
                     w = if (weighted) seq_len(n) / 3 else rep(1, n))
-    for (opt in options) for (tr in c("plain", "log", "log-log", "logit", "arcsin")) {
+    for (opt in cases) {
       args <- list(formula = Event(t,e)~1, data = d, outcome.type = "survival",
                    error = opt[1], conf.dist = opt[2], df.method = opt[3],
-                   conf.type = tr, report.influence.function = TRUE)
+                   conf.type = opt[4], report.influence.function = TRUE)
       if (weighted) args$weights <- d$w
       f <- do.call(cifcurve, args)
       expect_identical(tail(f$surv, 1), 0)

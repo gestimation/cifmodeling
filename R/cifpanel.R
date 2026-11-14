@@ -334,7 +334,8 @@ cifpanel <- function(
     print.info                    = NULL,
     ggsave.info                   = NULL,
     engine                        = "cifplot",
-    ...
+    ...,
+    label.legend                  = NULL
 ){
   weights.expr <- substitute(weights)
   weights.missing <- missing(weights)
@@ -492,6 +493,8 @@ cifpanel <- function(
   nrow <- as.integer(rows.columns.panel[1]); ncol <- as.integer(rows.columns.panel[2])
   n_slots <- nrow * ncol
 
+  display_labels <- (axis.info$display %||% list(labels = axis.info$label.strata))$labels
+  display_legend <- label.legend %||% axis.info$display$legend
   level_input <- axis.info$level.strata
   order_input <- axis.info$order.strata
 
@@ -541,12 +544,29 @@ cifpanel <- function(
       stop("All elements of `plots` must inherit from 'ggplot'.")
     }
 
-    plots <- apply_strata_to_plots(
-      plots,
-      order_data   = axis.info$order.strata,
-      label_map    = axis.info$label.strata,
-      touch_colour = TRUE
-    )
+    plots <- lapply(plots, function(p) {
+      order <- axis.info$order.strata
+      stored <- attr(p, "cifmodeling_display_labels")
+      scale <- p$scales$get_scales("colour")
+      keys <- if (is.character(scale$limits)) scale$limits else
+        unique(c(names(stored), axis.info$level.strata, names(display_labels)))
+      keys <- order %||% keys
+      if (!length(keys) || (is.null(order) && is.null(display_labels))) return(p)
+      short <- sub("^[^=]*=", "", keys)
+      overrides <- .cif_strata_overrides(keys, short, display_labels, axis.info$level.strata)
+      labels <- .cif_display_levels(keys, stored, overrides)
+      if (!is.null(order)) return(apply_strata_to_plots(list(p), order, labels)[[1L]])
+      # The scale labels change independently of existing breaks and limits.
+      label_breaks <- .cif_scale_labeller(labels)
+      p$scales <- p$scales$clone()
+      for (aesthetic in c("colour", "fill", "linetype", "shape")) {
+        current <- p$scales$get_scales(aesthetic)
+        if (inherits(current, "ScaleDiscrete")) current$labels <- label_breaks
+      }
+      p
+    })
+    if (!is.null(display_legend))
+      plots <- lapply(plots, function(p) p + ggplot2::labs(colour = display_legend))
 
     plots_out <- plots
     if (isTRUE(inset.panel)) {
@@ -743,6 +763,7 @@ cifpanel <- function(
     rep(list(x), K)
   }
   labelstrata.list  <- make_panel_list_preserve_vector(label.strata,  K)
+  displaystrata.list <- make_panel_list_preserve_vector(display_labels, K)
   orderstrata.list  <- make_panel_list_preserve_vector(order.strata,  K)
 
   limsx.list <- NULL
@@ -844,6 +865,7 @@ cifpanel <- function(
       }
     }
     pa$axis.info    <- panel_modify_list(axis.info,    pa$axis.info %||% list())
+    pa$axis.info$display <- list(labels = displaystrata.list[[i]], legend = display_legend)
     pa$visual.info  <- panel_modify_list(visual.info,  pa$visual.info %||% list())
     pa$style.info   <- panel_modify_list(style.info,   pa$style.info %||% list())
     pa$survfit.info <- panel_modify_list(survfit.info, pa$survfit.info %||% list())
@@ -896,6 +918,7 @@ cifpanel <- function(
         label.x           = pa$label.x,
         label.y           = pa$label.y,
         label.strata      = pa$label.strata,
+        display           = pa$axis.info$display,
         level.strata      = pa$level.strata,
         order.strata      = pa$order.strata,
         limits.x          = pa$limits.x,
@@ -964,12 +987,10 @@ cifpanel <- function(
 
   has_ggsurvfit <- any(vapply(engine.list, identical, logical(1), y = "ggsurvfit"))
 
-  plots <- apply_strata_to_plots(
-    plots,
-    order_data   = axis.info$order.strata,
-    label_map    = axis.info$label.strata,
-    touch_colour = !has_ggsurvfit
-  )
+  plots <- lapply(plots, function(p) apply_strata_to_plots(list(p),
+    order_data = axis.info$order.strata,
+    label_map = attr(p, "cifmodeling_display_labels") %||% axis.info$label.strata,
+    touch_colour = !has_ggsurvfit)[[1L]])
 
   if (!is.null(title.plot)) {
     for (i in seq_along(plots)) {

@@ -179,6 +179,7 @@ ciftest_mdir <- function(
     score.iid = score_iid,
     components = fits,
     n = length(input$t),
+    display = fits[[1L]]$display,
     diagnostics = list(
       covariance.rank = statistic$rank,
       component.count = nrow(direction_table),

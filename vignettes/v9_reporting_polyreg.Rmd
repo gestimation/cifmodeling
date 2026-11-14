@@ -71,10 +71,10 @@ Choose the effect measure during estimation, not while formatting the table.
 RR compares cumulative incidence probabilities, OR compares their odds, and
 SHR is the subdistribution hazard ratio parameterization. At a fixed time,
 the latter is the ratio of `-log(1 - CIF)` values; it is not a cause-specific
-hazard ratio. The following tables use the same exposure comparison and
-8-year target, with three different effect-measure models.
+hazard ratio. Run the following code interactively to compare the three models
+for the same exposure and 8-year target.
 
-```{r effect-measures}
+```{r effect-measures, eval=FALSE}
 fit_or <- polyreg(Event(t, epsilon) ~ age + sex, exposure = "fruitq1",
   code.exposure.ref = "Other intake", data = report_data, time.point = 8,
   effect.measure1 = "OR", effect.measure2 = "OR")
@@ -121,6 +121,17 @@ remains accepted by `tidy.polyreg()` for compatibility. There is no need to
 modify the saved fit or supply a custom tidier to produce these tables.
 
 ## Exporting a regression table
+
+`polyreg()` retains the exposure's variable and value labels for reporting.
+Use `label.exposure` to override the variable label and a named
+`label.strata` vector to override selected exposure levels. The names of
+that vector are the original exposure codes.
+
+`modelsummary::msummary(as_modelsummary(fit, event = "event1"))` uses the
+stored display labels after the fit is saved and restored. `coef(fit)`,
+`tidy(fit)`, and direct `msummary(fit)` keep the original coefficient keys.
+Set `display.labels = FALSE` in `as_modelsummary()` to keep those keys in
+its output for `coef_map` or `coef_omit`.
 
 Use the standard gtsummary conversions. Replace the temporary filenames
 with the intended destination when saving the final report.

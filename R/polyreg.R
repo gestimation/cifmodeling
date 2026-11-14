@@ -116,6 +116,12 @@
 #'   the optimization (default `NULL`).
 #' @param normalize.covariate Logical indicating whether covariates should
 #'   be centered and scaled prior to optimization (default `TRUE`).
+#' @param label.exposure Optional display label for the exposure variable.
+#'   Defaults to its `label` attribute or the column name.
+#' @param label.strata Optional display labels for exposure levels. A named
+#'   vector maps original exposure codes to labels. Unnamed labels follow
+#'   fitted exposure order (reference first). Unspecified labels use the
+#'   `labels` attribute or the original exposure level.
 #' @param terminate.time.point Logical indicating whether time points
 #'   that contribute estimation are terminated by min of max follow-up times
 #'   of each exposure level (default `TRUE`).
@@ -360,7 +366,9 @@ polyreg <- function(
     data.initial.values = NULL,
     normalize.covariate = TRUE,
     terminate.time.point = TRUE,
-    prob.bound = 1e-7
+    prob.bound = 1e-7,
+    label.exposure = NULL,
+    label.strata = NULL
 ) {
 
   #######################################################################################################
@@ -374,8 +382,8 @@ polyreg <- function(
   } else {
     util_validate_event_codes(code.event1 = code.event1, code.censoring = code.censoring)
   }
-  reporting.label <- if (is.data.frame(data) && is.character(exposure) &&
-    length(exposure) == 1L && exposure %in% names(data)) attr(data[[exposure]], "label") else NULL
+  reporting.exposure <- if (is.data.frame(data) && is.character(exposure) &&
+    length(exposure) == 1L && exposure %in% names(data)) data[[exposure]] else NULL
   data <- createAnalysisDataset(
     formula = nuisance.model,
     data = data,
@@ -725,7 +733,9 @@ polyreg <- function(
   )
   class(out) <- "polyreg"
   out$reporting <- .polyreg_reporting_metadata(out)
-  if (!is.null(reporting.label)) out$reporting$label <- as.character(reporting.label)
+  out$reporting$label <- .cif_variable_label(reporting.exposure, exposure, label.exposure)
+  out$reporting$level.labels <- .cif_display_levels(out$reporting$levels,
+    .cif_value_labels(reporting.exposure), label.strata)
   return(out)
 }
 

@@ -31,7 +31,6 @@
   numeric       = "`{arg}` must be numeric.",
   outcome_type  = "Invalid input for outcome.type. Choose one of: {choices}.",
   panel_disables_tables = "add.risktable/add.estimate.table are ignored in panel mode (panel.per.variable/panel.per.event/cifpanel); set to FALSE internally.",
-  panel_disables_labelstrata = "label.strata is ignored in panel mode (panel.per.variable/panel.per.event/cifpanel).",
   recycle_empty = "Cannot recycle an empty object to nonzero length.",
   req           = "`{arg}` is required.",
   style         = "Invalid input for style. Choose one of: {choices}.",

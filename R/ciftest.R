@@ -999,6 +999,7 @@ ciftest_fit_prepared <- function(
     contraction.ratio = if (is.null(iteration_parts)) NA_real_ else
       iteration_parts$contraction.ratio,
     n = length(input$t),
+    display = .cif_test_display(input),
     n.events = table(factor(input$epsilon,
                             levels = c(input$code.censoring,
                                        input$code.event1,

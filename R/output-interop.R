@@ -159,9 +159,12 @@ output_coefficient_table <- function(beta, covariance, limits) {
 #' @param conf.int Interval level. For polyreg, defaults to its fitted level.
 #' @param variance Covariance estimator: if or bootstrap for polyreg.
 #'   Omitting it preserves the stored inference.
+#' @param display.labels Use stored display labels for the exposure contrasts in
+#'   the modelsummary table. Set to `FALSE` to retain the original term names
+#'   in the adapter output.
 #' @export
 as_modelsummary.polyreg <- function(x, event = c("both", "event1", "event2"),
-                                    conf.int = x$conf.int, variance = NULL, ...) {
+                                    conf.int = x$conf.int, variance = NULL, ..., display.labels = TRUE) {
   output_check_dots(...)
   event <- match.arg(event)
   events <- if (event == "both") {
@@ -172,6 +175,16 @@ as_modelsummary.polyreg <- function(x, event = c("both", "event1", "event2"),
     table <- output_model_tidy(x, event = label, conf.int = conf.int, variance = variance)
     metadata <- output_inference_metadata(table)
     metadata$coefficient.scale <- "log effect"
+    info <- x$reporting %||% .polyreg_reporting_metadata(x)
+    levels <- unname(info$level.labels %||% info$levels)
+    if (isTRUE(display.labels) && length(levels) > 1L &&
+        (!identical(info$label, info$exposure) || !identical(levels, info$levels))) {
+      index <- match(info$events[[label]]$term, table$term)
+      shown <- paste0(info$label, " (", levels[-1L], " vs ", levels[1L], ")")
+      if (anyNA(index) || length(index) != length(shown))
+        stop("Display labels do not match the fitted exposure contrasts.")
+      table$term[index] <- make.unique(shown)
+    }
     output_modelsummary(table, output_model_glance(x, event = label), metadata)
   }), events)
   if (length(models) == 1L) models[[1L]] else models

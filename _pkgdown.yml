@@ -53,6 +53,8 @@ navbar:
           href: articles/v8_reporting_cif.html
         - text: Reporting CIF regression
           href: articles/v9_reporting_polyreg.html
+        - text: Automated survival and competing-risk reports
+          href: articles/v10_cifreport.html
     github:
       icon: fa-github
       aria-label: GitHub repository
@@ -86,6 +88,9 @@ articles:
   - title: Reporting CIF regression
     contents:
       - v9_reporting_polyreg
+  - title: Automated survival and competing-risk reports
+    contents:
+      - v10_cifreport
 
 reference:
   - title: Nonparametric estimation and visualization
@@ -102,6 +107,9 @@ reference:
     contents:
       - ciftest
       - ciftest_mdir
+  - title: Automated reporting
+    contents:
+      - cifreport
   - title: Data
     contents:
       - diabetes.complications

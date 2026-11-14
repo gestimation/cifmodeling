@@ -1,0 +1,138 @@
+---
+title: "Automated survival and competing-risk reports"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Automated survival and competing-risk reports}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+ready <- requireNamespace("gtsummary", quietly = TRUE) &&
+  utils::packageVersion("gtsummary") >= "2.6.1" &&
+  requireNamespace("gt", quietly = TRUE) &&
+  requireNamespace("rmarkdown", quietly = TRUE) &&
+  rmarkdown::pandoc_available()
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = ready)
+```
+
+`cifreport()` writes a self-contained HTML report and invisibly returns the
+underlying tables, plots, fitted objects, and analysis log. Install
+gtsummary (at least 2.6.1), gt, knitr, and rmarkdown, and make Pandoc
+available to rmarkdown before running the example.
+
+## Two outcomes in one report
+
+In the diabetes cohort, code 1 identifies diabetic retinopathy, code 2
+identifies a macrovascular complication, and code 0 identifies censoring.
+For the survival endpoint, either complication is an event. Both outcomes
+use the same follow-up column in this example. An endpoint measured from
+a different origin can name its own follow-up column.
+
+```{r report}
+library(cifmodeling)
+data(diabetes.complications)
+cohort <- transform(diabetes.complications, all_event = epsilon != 0)
+
+report <- cifreport(
+  cohort,
+  exposure = c("Fruit intake" = "fruitq1"),
+  code.exposure.ref = 0,
+  characteristics = c("age", "sex"),
+  outcomes = list(
+    Retinopathy = list(time = "t", event = "epsilon", time.point = c(4, 8)),
+    "Complication-free survival" = list(
+      time = "t", event = "all_event", outcome.type = "survival", time.point = c(3, 8)
+    )
+  ),
+  overall = TRUE,
+  output.file = tempfile(fileext = ".html")
+)
+
+report$tables$All[["Fruit intake"]]$table3
+```
+
+Omit `output.file` to write `yyyymmdd_cohort_analysis_report.html` in the
+current directory. Set `data.name = "diabetes.complications"` to use the
+original dataset name in the filename and the default report title.
+Use `subset.condition = "age >= 50"` to restrict the analysis population.
+Use `subgroup = "sex"` to report the selected population as a whole and each
+observed level of `sex` within it. Use `exposure = c("Fruit intake" = "fruitq1", Sex = "sex")`
+to add a grouping. Each population/exposure combination gets one section.
+Factor levels determine group order. The first observed level is the default
+risk-ratio reference. Use a named vector or list such as
+`code.exposure.ref = list("Fruit intake" = 0)` to select references by exposure.
+
+Use `level.strata = c(0, 1)`, `label.strata = c("Other intake", "Low intake")`,
+and `order.strata = c(1, 0)` to display the low-intake group first in the
+tables and curves. The reference is specified with its original code.
+For multiple exposures, supply a named list for each strata argument,
+such as `label.strata = list("Fruit intake" = c("0" = "Other intake", "1" = "Low intake"))`.
+Subgroups use the same labels for their observed exposure levels.
+
+## Reading each section
+
+1. **Patient characteristics.** A gtsummary table describes the subjects
+   in each group. Missing baseline values appear in separate rows by
+   default. Use `table1.args = list(label = list(age ~ "Age (years)"))`
+   to change a label, or `overall = TRUE` to include the whole population.
+   Characteristics with value labels (a named `labels` attribute) are
+   summarized as categorical. Exposure value labels also appear in the table
+   titles and are used as group labels unless overridden by `label.strata`.
+   The p-value column compares the exposure groups using the default
+   tests in `gtsummary::add_p()`. A characteristic needs at least two
+   observed values and nonmissing data in at least two exposure groups to
+   be tested.
+   The text below the table gives group sizes and identifies characteristics
+   with p-values below 0.05.
+2. **Observed events over all follow-up.** The table names the time and event
+   columns and shows primary, competing, and censoring counts alongside their codes.
+   The text below it flags outcomes with fewer than five primary events in
+   at least one exposure group.
+3. **Cumulative counts and estimated probabilities.** Counts use
+   `observed_time <= time.point` and include events tied at the requested
+   time. Kaplan-Meier survival (KM) or primary-event Aalen-Johansen cumulative
+   incidence (AJ) and pointwise confidence intervals use the same right-continuous
+   convention. Enter times in the units of the follow-up column. Observed
+   counts remain available beyond follow-up, where estimates and intervals
+   are omitted for the affected groups. An outcome's `estimator` can request
+   `"1-KM"` for event probability or `"1-AJ"` for the complement of the CIF.
+   The text below the table gives the observed follow-up range across groups
+   in the current analysis population and identifies nonpositive observed times.
+4. **Crude risk ratios.** Each horizon has a separate intercept-only
+   `polyreg()` nuisance model. For survival, the risk is one minus survival
+   at the horizon. For competing risks, both cause-specific cumulative
+   incidence ratios are reported from the joint fit. These are unadjusted
+   associations. A requested horizon must be within the observed follow-up
+   of every group, and a competing-risk fit requires both causes by that time.
+5. **Curve comparison tests.** The log-rank test compares survival curves
+   and Gray's test compares primary-event cumulative incidence curves over
+   follow-up. Each outcome has one test per section.
+
+**Figure 1** contains one plot per outcome using the fitted curves from
+Table 3. The plots show the outcome scale, group labels and risk tables.
+
+## Supported data and analysis status
+
+The report supports unweighted right-censored follow-up with one row per
+subject, distinct non-negative integer codes, and one competing code per
+competing-risk outcome. Logical events and numeric codes stored as factor
+levels or character strings are supported. Supported comparisons include
+binary and multi-level groups. Left truncation, time-dependent covariates,
+recurrent events, adjustment, and simultaneous confidence bands are
+outside the reporting interface.
+
+Rows where a subset condition evaluates to `NA` are excluded. Within each
+subset, missing group values skip the section. Missing follow-up
+times or event values skip the affected outcome. An empty population
+produces a status entry. With a single observed group, the report keeps
+the descriptive tables and plot. An absent reference level affects risk
+ratios only. The status log records these cases as well as unsupported
+horizons, warnings and estimation failures. A failure in one fit leaves
+unrelated results available.
+
+Subjects with missing subgroup values contribute to the overall analysis.
+For a subgroup level with zero observed events for an outcome, the report
+includes the counts in Table 2 and skips Tables 3–5 and Figure 1 for that
+outcome. In a competing-risk outcome, either a primary event or a competing
+event counts toward this check.

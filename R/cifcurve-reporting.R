@@ -37,7 +37,12 @@
   out$conf.status <- unlist(lapply(curves, `[[`, "conf.status"), use.names = FALSE)
   out$reporting <- list(curves = curves, conf.dist = conf.dist,
     has.ci = length(out$lower) > 0L, outcome.type = input$outcome.type,
-    event.code = input$code.event1)
+    event.code = input$code.event1, display = input$display)
+  if (length(input$display$levels)) {
+    out$reporting$display$levels <- stats::setNames(unname(input$display$levels), labels)
+  }
+  if (length(input$display$codes) == length(labels))
+    out$reporting$display$codes <- stats::setNames(input$display$codes, labels)
   if (!length(out$strata)) {
     # survfit0 drops NULL components, so no other field may partially match strata.
     out$strata <- out$strata.levels <- NULL
@@ -111,6 +116,8 @@ summary.cifcurve <- function(object, ...) {
   if (!missing(i)) selected <- selected[i]
   info <- x$reporting
   info$curves <- info$curves[selected]
+  if (length(info$display$levels)) info$display$levels <- info$display$levels[selected]
+  if (length(info$display$codes)) info$display$codes <- info$display$codes[selected]
   out$reporting <- info
   for (nm in c("error", "conf.int", "conf.dist", "df.method", "fay.bound", "logse"))
     if (!is.null(x[[nm]])) out[[nm]] <- x[[nm]]
