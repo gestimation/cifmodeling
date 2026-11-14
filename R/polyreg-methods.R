@@ -1,6 +1,6 @@
 #' @export
 print.cifplot <- function(x, ...) {
-  p <- x$plot %||% x$patchwork
+  p <- x$patchwork %||% x$plot
   if (!is.null(p)) print(p)
   invisible(x)
 }

@@ -39,6 +39,7 @@ cifcurve(
 \item{formula}{A model formula specifying the time-to-event outcome on the LHS
 (typically \code{Event(time, status)} or \code{survival::Surv(time, status)})
 and, optionally, a stratification variable on the RHS.
+Use \code{\link[=Interval]{Interval()}} for interval-censored observations.
 \code{Surv()} responses must be right-censored.
 Unlike \code{\link[=cifplot]{cifplot()}}, this function does not accept a fitted survfit object.}
 
@@ -231,6 +232,40 @@ one-sided alternative is \eqn{F_1(t) < F_{10}(t)}, equivalently
 calculated separately within each stratum.
 }
 }
+\section{Interval-censored data}{
+
+Use \code{\link[=Interval]{Interval()}} as the formula response. The first event's cause must
+be known for every observed event, and the observation process must be
+ignorable. Left truncation is currently unsupported. The estimator is the
+nonparametric maximum likelihood estimator of Hudgens, Satten and Longini
+(2001, doi:10.1111/j.0006-341X.2001.00074.x), with uniform allocation of mass
+within each finite support interval and point masses at exact event times.
+For interval responses, a competing event code selects the competing-risk
+outcome automatically; use \code{outcome.type = "competing-risk"} to force it
+in data where that code is absent.
+
+Use \code{summary(fit, times = ..., extend = TRUE)} for point estimates at
+requested times, or omit \code{times} to use the observed finite bounds. The
+summary returns the target-event \code{cif} and its complement \code{surv}. If
+positive mass remains in an unbounded support interval, times inside that
+interval return \code{NA} with \code{estimate.status = "unresolved_tail"}. With
+\code{extend = FALSE} times beyond each stratum's last observed bound are
+omitted. The fitted support masses are stored in \verb{reporting$curves}.
+Status is \code{"interpolated"} strictly inside a positive-mass finite support
+interval for the target cause, and \code{"estimated"} elsewhere when a point
+estimate is available.
+
+\code{n.risk.confirmed} counts positive-weight participants whose observed lower
+bound is at least the requested time. It is an unweighted lower bound on
+the number at risk immediately before that time, regardless of \code{n.risk.type}.
+The standard risk and event counts, standard errors, and confidence
+limits are unavailable, as are tests and restricted means.
+Pass the fitted object to \code{\link[=cifplot]{cifplot()}} for a plot of the point estimates.
+The result inherits from \code{survfit}. Use the \code{summary()} generic for
+interval-aware evaluation. External methods that assume a step function
+may give different results between stored time points.
+}
+
 \section{Lifecycle}{
 
 \lifecycle{stable}

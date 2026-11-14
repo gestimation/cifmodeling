@@ -461,6 +461,24 @@ For ADaM-style data, use \code{code.event1 = 0}, \code{code.censoring = 1}.
 
 }
 }
+\section{Interval-censored fits}{
+
+Pass a fit made with \code{cifcurve(Interval(l, r, epsilon) ~ strata, data = d)}
+to \code{cifplot()}. The plot uses the same estimates as \code{summary(fit)}, with
+linear segments within finite support intervals and jumps at exact event
+times. The supported scales are \code{type.y = "risk"} and \code{"surv"}.
+The risk table shows confirmed counts at the x-axis breaks. The optional
+estimate table shows point estimates on the selected scale and flags
+interpolated values with an asterisk. Censoring marks show observed
+right-censoring times. The returned \code{plot} contains
+the curve and \code{patchwork} contains the combined display when tables are
+requested. Printing and \code{filename.ggsave} use the combined display.
+Set \code{breaks.x} and \code{limits.x} in \code{cifplot()} to update the axis and tables
+together. Later modifications to \code{plot} do not rebuild \code{patchwork}.
+Confidence bands, competing and intercurrent event marks, and quantiles
+are unavailable for these plots.
+}
+
 \section{Lifecycle}{
 
 \lifecycle{stable}

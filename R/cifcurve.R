@@ -12,6 +12,7 @@
 #' @param formula A model formula specifying the time-to-event outcome on the LHS
 #'   (typically `Event(time, status)` or `survival::Surv(time, status)`)
 #'   and, optionally, a stratification variable on the RHS.
+#'   Use [Interval()] for interval-censored observations.
 #'   `Surv()` responses must be right-censored.
 #'   Unlike [cifplot()], this function does not accept a fitted survfit object.
 #' @param time.point Optional finite, non-negative time for a one-sided normal
@@ -167,6 +168,38 @@
 #' @importFrom stats formula
 #'
 #' @name cifcurve
+#' @section Interval-censored data:
+#' Use [Interval()] as the formula response. The first event's cause must
+#' be known for every observed event, and the observation process must be
+#' ignorable. Left truncation is currently unsupported. The estimator is the
+#' nonparametric maximum likelihood estimator of Hudgens, Satten and Longini
+#' (2001, doi:10.1111/j.0006-341X.2001.00074.x), with uniform allocation of mass
+#' within each finite support interval and point masses at exact event times.
+#' For interval responses, a competing event code selects the competing-risk
+#' outcome automatically; use `outcome.type = "competing-risk"` to force it
+#' in data where that code is absent.
+#'
+#' Use `summary(fit, times = ..., extend = TRUE)` for point estimates at
+#' requested times, or omit `times` to use the observed finite bounds. The
+#' summary returns the target-event `cif` and its complement `surv`. If
+#' positive mass remains in an unbounded support interval, times inside that
+#' interval return `NA` with `estimate.status = "unresolved_tail"`. With
+#' `extend = FALSE` times beyond each stratum's last observed bound are
+#' omitted. The fitted support masses are stored in `reporting$curves`.
+#' Status is `"interpolated"` strictly inside a positive-mass finite support
+#' interval for the target cause, and `"estimated"` elsewhere when a point
+#' estimate is available.
+#'
+#' `n.risk.confirmed` counts positive-weight participants whose observed lower
+#' bound is at least the requested time. It is an unweighted lower bound on
+#' the number at risk immediately before that time, regardless of `n.risk.type`.
+#' The standard risk and event counts, standard errors, and confidence
+#' limits are unavailable, as are tests and restricted means.
+#' Pass the fitted object to [cifplot()] for a plot of the point estimates.
+#' The result inherits from `survfit`. Use the `summary()` generic for
+#' interval-aware evaluation. External methods that assume a step function
+#' may give different results between stored time points.
+#'
 #' @section Lifecycle:
 #' \lifecycle{stable}
 #'
@@ -211,10 +244,22 @@ cifcurve <- function(
       formula = formula, data = data, weights = arg_weights,
       code.event1 = code.event1, code.event2 = code.event2, code.censoring = code.censoring,
       subset.condition = subset.condition, na.action = na.action,
-      outcome.type = outcome.type
+      outcome.type = outcome.type, allow.interval = TRUE
     ),
     list(arg_weights = substitute_weights)
   ))
+  if (!is.null(out_read_surv$right)) {
+    if (engine == "calculateKM") {
+      stop("Interval() uses the interval-censored NPMLE.", call. = FALSE)
+    }
+    if (!is.null(null.hypothesis) || !is.null(error) || conf.dist == "t" ||
+        isTRUE(report.influence.function) || isTRUE(report.survfit.std.err) ||
+        (!missing(conf.type) && !is.null(conf.type) &&
+         !tolower(conf.type) %in% c("none", "n")) || !missing(conf.int)) {
+      stop("Interval() currently supports point estimation only.", call. = FALSE)
+    }
+    return(.cifcurve_interval_fit(out_read_surv, match.call()))
+  }
   outcome.type <- out_read_surv$outcome.type
   if (conf.dist == "t" && is.null(error)) error <- "if"
   if (engine == "calculateKM") {
@@ -231,76 +276,54 @@ cifcurve <- function(
   }
   shared_ci <- .cifcurve_check_inference(error, conf.dist, df.method, engine, conf.int)
   call <- match.call()
+  strata <- as.factor(out_read_surv$strata)
+  labels <- levels(strata)
+  if (!is.null(out_read_surv$strata_name)) {
+    labels <- paste0(out_read_surv$strata_name, "=", labels)
+  }
+  epsilon <- .cifcurve_event_codes(out_read_surv)
 
-  strata_fac   <- as.factor(out_read_surv$strata)
-  strata_lvls  <- levels(strata_fac)
-  strata_var   <- out_read_surv$strata_name %||% NULL
-  if (!is.null(strata_var)) {
-    strata_fullnames <- paste0(strata_var, "=", strata_lvls)
+  legacy <- engine == "calculateKM"
+  if (legacy) {
+    fit <- .cifcurve_legacy(out_read_surv, error, n.risk.type, labels)
   } else {
-    strata_fullnames <- strata_lvls
-  }
-
-  epsilon_norm <- rep.int(0L, length(out_read_surv$epsilon))
-  epsilon_norm[out_read_surv$epsilon == code.event1]    <- 1L
-  epsilon_norm[out_read_surv$epsilon == code.event2]    <- 2L
-  epsilon_norm[out_read_surv$epsilon == code.censoring] <- 0L
-
-  if (engine == "calculateKM") {
-    fit <- .cifcurve_legacy(out_read_surv, error, n.risk.type, strata_fullnames)
-    fit$call <- call
-    fit <- .cifcurve_adjusted_ci(fit, out_read_surv$t, epsilon_norm, out_read_surv$w,
-      as.integer(out_read_surv$strata), conf.type, conf.int, conf.dist, df.method)
-    fit <- .cifcurve_reporting(harmonize_engine_output(fit), out_read_surv, error,
-      conf.type, conf.int, conf.dist, report.survfit.std.err)
-    return(.cifcurve_add_one_sided_p(fit, time.point, null.hypothesis, outcome.type,
-      conf.type, prob.bound, report.survfit.std.err))
-  }
-
-  out_cpp <- call_calculateAJ_Rcpp(
-    t = out_read_surv$t,
-    epsilon = as.integer(epsilon_norm),
-    w = if (has_weights_user) out_read_surv$w else NULL,
-    strata = as.integer(out_read_surv$strata),
-    error = error,
-    conf.type = if (shared_ci) "none" else conf.type %||% "none",
-    conf.int = conf.int,
-    report.influence.function = report.influence.function,
-    prob.bound = prob.bound,
-    n.risk.type = n.risk.type,
-    competing_risk = outcome.type == "competing-risk"
-  )
-  if (length(strata_fullnames) && length(out_cpp$strata)) {
-    names(out_cpp$strata) <- strata_fullnames
-  }
-  if (length(strata_lvls)) {
-    out_cpp$`strata.levels` <- strata_lvls
-  }
-  out_cpp$call <- call
-  out_cpp <- harmonize_engine_output(out_cpp)
-  if (shared_ci) {
-    out_cpp <- .cifcurve_adjusted_ci(
-      out_cpp, out_read_surv$t, epsilon_norm, out_read_surv$w,
-      as.integer(out_read_surv$strata), conf.type = conf.type, level = conf.int,
-      conf.dist = conf.dist, df.method = df.method
+    fit <- call_calculateAJ_Rcpp(
+      t = out_read_surv$t, epsilon = epsilon,
+      w = if (has_weights_user) out_read_surv$w else NULL,
+      strata = as.integer(strata), error = error,
+      conf.type = if (shared_ci) "none" else conf.type %||% "none",
+      conf.int = conf.int, report.influence.function = report.influence.function,
+      prob.bound = prob.bound, n.risk.type = n.risk.type,
+      competing_risk = outcome.type == "competing-risk"
     )
+    if (length(labels) && length(fit$strata)) names(fit$strata) <- labels
+    if (nlevels(strata)) fit$strata.levels <- levels(strata)
   }
-  out_cpp$n.risk <- ceiling(out_cpp$n.risk)
-  out_cpp$n.censor <- ceiling(out_cpp$n.censor)
-  out_cpp$n.event <- ceiling(out_cpp$n.event)
-  out_cpp$n.risk.type <- n.risk.type
-  out_cpp <- .cifcurve_reporting(out_cpp, out_read_surv, error,
+  fit$call <- call
+  if (!legacy) fit <- harmonize_engine_output(fit)
+  if (legacy || shared_ci) {
+    fit <- .cifcurve_adjusted_ci(fit, out_read_surv$t, epsilon, out_read_surv$w,
+      as.integer(strata), conf.type, conf.int, conf.dist, df.method)
+  }
+  if (legacy) {
+    fit <- harmonize_engine_output(fit)
+  } else {
+    fields <- c("n.risk", "n.censor", "n.event")
+    fit[fields] <- lapply(fit[fields], ceiling)
+    fit$n.risk.type <- n.risk.type
+  }
+  fit <- .cifcurve_reporting(fit, out_read_surv, error,
     conf.type, conf.int, conf.dist, report.survfit.std.err)
-  out_cpp <- .cifcurve_add_one_sided_p(
-    fit = out_cpp,
-    time.point = time.point,
-    null.hypothesis = null.hypothesis,
-    outcome.type = outcome.type,
-    conf.type = conf.type,
-    prob.bound = prob.bound,
-    report.survfit.std.err = report.survfit.std.err
-  )
-  return(out_cpp)
+  .cifcurve_add_one_sided_p(fit, time.point, null.hypothesis, outcome.type,
+    conf.type, prob.bound, report.survfit.std.err)
+}
+
+.cifcurve_event_codes <- function(input) {
+  codes <- input$prepared
+  event <- rep.int(0L, length(input$epsilon))
+  event[input$epsilon == codes$code.event1] <- 1L
+  event[input$epsilon == codes$code.event2] <- 2L
+  event
 }
 
 .cifcurve_legacy <- function(input, error, n.risk.type, labels) {

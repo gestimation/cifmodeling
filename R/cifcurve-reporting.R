@@ -85,6 +85,9 @@
 #' @name cifcurve
 #' @export
 summary.cifcurve <- function(object, ...) {
+  if (inherits(object, "cifcurve_interval")) {
+    return(.cifcurve_interval_summary(object, ...))
+  }
   info <- object$reporting
   args <- list(...)
   # Match the standard method's named and positional scale argument.
@@ -119,6 +122,18 @@ summary.cifcurve <- function(object, ...) {
   if (length(info$display$levels)) info$display$levels <- info$display$levels[selected]
   if (length(info$display$codes)) info$display$codes <- info$display$codes[selected]
   out$reporting <- info
+  if (inherits(x, "cifcurve_interval")) {
+    out$method <- x$method
+    out$aj <- 1 - out$surv
+    out$diagnostics <- x$diagnostics[names(info$curves), , drop = FALSE]
+    rows <- split(seq_along(x$time), rep(seq_along(x$reporting$curves),
+                 x$strata %||% length(x$time)))
+    index <- unlist(rows[unname(selected)], use.names = FALSE)
+    for (field in c("n.risk.confirmed", "estimate.status")) {
+      out[[field]] <- x[[field]][index]
+    }
+    return(out)
+  }
   for (nm in c("error", "conf.int", "conf.dist", "df.method", "fay.bound", "logse"))
     if (!is.null(x[[nm]])) out[[nm]] <- x[[nm]]
   if (!length(out$strata)) out$strata <- out$strata.levels <- NULL

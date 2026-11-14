@@ -208,6 +208,22 @@
 #' @importFrom patchwork wrap_plots
 #'
 #' @name cifplot
+#' @section Interval-censored fits:
+#' Pass a fit made with `cifcurve(Interval(l, r, epsilon) ~ strata, data = d)`
+#' to `cifplot()`. The plot uses the same estimates as `summary(fit)`, with
+#' linear segments within finite support intervals and jumps at exact event
+#' times. The supported scales are `type.y = "risk"` and `"surv"`.
+#' The risk table shows confirmed counts at the x-axis breaks. The optional
+#' estimate table shows point estimates on the selected scale and flags
+#' interpolated values with an asterisk. Censoring marks show observed
+#' right-censoring times. The returned `plot` contains
+#' the curve and `patchwork` contains the combined display when tables are
+#' requested. Printing and `filename.ggsave` use the combined display.
+#' Set `breaks.x` and `limits.x` in `cifplot()` to update the axis and tables
+#' together. Later modifications to `plot` do not rebuild `patchwork`.
+#' Confidence bands, competing and intercurrent event marks, and quantiles
+#' are unavailable for these plots.
+#'
 #' @section Lifecycle:
 #' \lifecycle{stable}
 #' @seealso [polyreg()] for log-odds product modeling of CIFs; [cifcurve()] for KM/AJ estimators; [cifpanel()] for display of multiple CIFs; [ggsurvfit][ggsurvfit], [patchwork][patchwork] and [modelsummary][modelsummary] for display helpers.
@@ -286,6 +302,8 @@ cifplot <- function(
 ) {
   weights.expr <- substitute(weights)
   weights.missing <- missing(weights)
+  interval.fit <- inherits(formula_or_fit, "cifcurve_interval")
+  if (!interval.fit) .cifcurve_check_plot_interval(formula_or_fit)
   if (missing(outcome.type) && inherits(formula_or_fit, "cifcurve"))
     outcome.type <- formula_or_fit$reporting$outcome.type %||% outcome.type
   dots <- list(...)
@@ -365,7 +383,25 @@ cifplot <- function(
 
   survfit.info <- infos$survfit.info
   axis.info    <- infos$axis.info
+  interval.visual <- names(visual.info)
   visual.info  <- infos$visual.info
+  if (interval.fit) {
+    unsupported <- c("add.conf", "add.competing.risk.mark",
+                     "add.intercurrent.event.mark", "add.quantile")
+    requested <- c(!missing(add.conf), !missing(add.competing.risk.mark),
+                   !missing(add.intercurrent.event.mark), !missing(add.quantile)) |
+      unsupported %in% interval.visual
+    requested <- unsupported[requested & vapply(visual.info[unsupported], isTRUE, logical(1))]
+    if (length(requested)) {
+      warning("Options unavailable for Interval() plots: ", paste(requested, collapse = ", "),
+              call. = FALSE)
+    }
+    visual.info[unsupported] <- rep(list(FALSE), length(unsupported))
+    if (!is.null(axis.info$limits.x) || !is.null(axis.info$limits.y)) {
+      axis.info$use.coord.cartesian <- TRUE
+    }
+    add.competing.risk.mark <- FALSE
+  }
   panel.info   <- infos$panel.info
   style.info   <- infos$style.info
   ggsave.info  <- infos$ggsave.info
@@ -570,6 +606,8 @@ cifplot <- function(
   }
 
   dots_clean <- plot_make_dots_clean(dots)
+  single.ggsave <- ggsave.info
+  if (interval.fit) single.ggsave$filename.ggsave <- NULL
   args_single <- c(
     list(
       formula_or_fit   = formula_or_fit,
@@ -588,7 +626,7 @@ cifplot <- function(
       visual.info      = visual.info,
       panel.info       = panel.info,
       style.info       = style.info,
-      ggsave.info      = ggsave.info
+      ggsave.info      = single.ggsave
     ),
     dots_clean
   )
@@ -602,6 +640,15 @@ cifplot <- function(
     order_data = axis.info$order.strata,
     label_map  = attr(out_plot, "cifmodeling_display_labels") %||% axis.info$label.strata
   )[[1]]
+  combined <- NULL
+  if (interval.fit) {
+    combined <- .cifplot_interval_table(out_plot, formula_or_fit, visual.info, style.info)
+    if (!is.null(ggsave.info$filename.ggsave)) {
+      ggplot2::ggsave(ggsave.info$filename.ggsave, plot = combined %||% out_plot,
+                    width = ggsave.info$width.ggsave, height = ggsave.info$height.ggsave,
+                    dpi = ggsave.info$dpi.ggsave, units = ggsave.info$units %||% "in")
+    }
+  }
 
   survfit.info$formula_or_fit <- survfit.info$formula_or_fit %||% formula_or_fit
   survfit.info$outcome.type   <- survfit.info$outcome.type   %||% outcome.type
@@ -627,7 +674,7 @@ cifplot <- function(
 
   ret <- list(
     plot         = out_plot,
-    patchwork    = NULL,
+    patchwork    = combined,
     survfit.info = survfit.info,
     axis.info    = axis.info,
     visual.info  = visual.info,
@@ -642,7 +689,7 @@ cifplot <- function(
   class(ret) <- c("cifplot", class(ret))
 
   if (interactive() && isTRUE(ret$print.info$print.panel)) {
-    print(ret$plot)
+    print(ret)
     invisible(ret)
   } else {
     ret
@@ -1348,7 +1395,7 @@ call_ggsurvfit <- function(
   if (!is.null(legend) && length(survfit_object$strata))
     p <- p + ggplot2::labs(colour = legend)
 
-  if (!isTRUE(is_cloglog)) {
+  if (!isTRUE(is_cloglog) && !inherits(survfit_object, "cifcurve_interval")) {
     if (isTRUE(add.conf)) {
       p <- p + add_confidence_interval()
     }
@@ -1723,6 +1770,11 @@ check_ggsurvfit <- function(
   palette   <- style.info$palette
   linewidth <- style.info$linewidth
   linetype  <- style.info$linetype
+
+  if (inherits(survfit_object, "cifcurve_interval")) {
+    type.y <- util_check_type_y(type.y, survfit_object$reporting$outcome.type)
+    return(.cifplot_interval_curve(survfit_object, type.y, linewidth, linetype, visual.info))
+  }
 
   if (isTRUE(add.censor.mark) && isTRUE(add.intercurrent.event.mark) &&
       identical(shape.censor.mark, shape.intercurrent.event.mark)) {

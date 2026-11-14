@@ -41,6 +41,32 @@ Event <- function(time, event, allowed = getOption("cifmodeling.allowed", c(0, 1
   return(out)
 }
 
+#' Encode an interval-censored event history
+#'
+#' @param l,r Numeric vectors of time bounds. An event occurred in
+#'   `(l, r]`. For events detected at visits, use the last event-free time
+#'   and the first detection time. Set `l = r` only for a known exact event
+#'   time. For right censoring, use the last event-free time and `r = Inf`.
+#' @param epsilon Event code. The defaults in [cifcurve()] are 0 for right
+#'   censoring, 1 for the event of interest, and 2 for the competing event.
+#'   For an observed event, the code identifies which event occurred first.
+#' @return An `Interval` matrix for use as the response in [cifcurve()].
+#' @export
+Interval <- function(l, r, epsilon) {
+  if (!is.numeric(l) || is.complex(l)) {
+    stop("`l` must contain numeric lower bounds.", call. = FALSE)
+  }
+  te <- util_normalize_time_event(l, epsilon, allowed = NULL)
+  if (!is.numeric(r) || is.complex(r) || length(r) != length(l) ||
+      any(r < l, na.rm = TRUE) || any(r < 0, na.rm = TRUE)) {
+    stop("`r` must contain one numeric upper bound per observation with r >= l.",
+         call. = FALSE)
+  }
+  out <- cbind(l = te$time, r = as.numeric(r), epsilon = te$event)
+  class(out) <- c("Interval", class(out))
+  out
+}
+
 util_check_surv_type <- function(response) {
   if (inherits(response, "Surv") &&
       !isTRUE(attr(response, "type", exact = TRUE) %in% c("right", "mright") && ncol(response) == 2L)) {

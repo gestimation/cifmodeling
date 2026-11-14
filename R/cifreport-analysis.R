@@ -70,7 +70,8 @@
       if (is.null(labels)) next
       labels <- labels[names(labels) %in% level]
       group <- factor(group, levels = names(labels))
-      exposure_title <- .cif_variable_label(data[[definition$variable]], definition$variable)
+      exposure_label <- .cif_variable_label(data[[definition$variable]], definition$variable)
+      exposure_title <- exposure_label
       if (length(.cif_value_labels(data[[definition$variable]]))) {
         exposure_title <- paste0(exposure_title, " (", paste(unname(labels), collapse = ", "), ")")
       }
@@ -100,8 +101,7 @@
         if (is.null(outcome)) next
         attr(outcome$data$followup, "label") <-
           .cif_variable_label(data[[outcome$time.variable]], outcome$time.variable)
-        attr(outcome$data$group, "label") <-
-          .cif_variable_label(data[[definition$variable]], definition$variable)
+        attr(outcome$data$group, "label") <- exposure_label
         results[[outcome_id]] <- .cifreport_analyse_outcome(outcome, conf.int, ref, valid_ref, labels,
           subgroup = population_id != "All", cifplot.args = cifplot.args,
           attempt = function(expr, analysis, ...) scope(expr, analysis, outcome_id = outcome_id, ...),
@@ -110,37 +110,10 @@
           })
       }
 
-      combine <- function(name, columns) {
-        rows <- lapply(names(results), function(id) {
-          x <- results[[id]][[name]]
-          if (is.null(x) || !nrow(x)) return(NULL)
-          data.frame(population_id = population_id, group_id = group_id, outcome_id = id, x)
-        })
-        rows <- Filter(Negate(is.null), rows)
-        if (length(rows)) return(do.call(rbind, c(rows, list(make.row.names = FALSE))))
-        data.frame(population_id = character(), group_id = character(), outcome_id = character(),
-                   columns)
-      }
-      interval <- data.frame(estimate = numeric(), conf.low = numeric(), conf.high = numeric())
       units[[population_id]][[group_id]] <- list(
-        narrative = list(exposure = .cif_variable_label(data[[definition$variable]], definition$variable),
-                         counts = counts, followup = followup,
+        narrative = list(exposure = exposure_label, counts = counts, followup = followup,
                          reference = if (valid_ref && length(level) > 1L) unname(labels[ref])),
-        tables = list(table1 = table1,
-          table2 = combine("counts", data.frame(time = character(), event = character(),
-            group_level = character(), group_label = character(), primary = integer(), code.event1 = integer(),
-            competing = integer(), code.event2 = integer(), censored = integer(),
-            code.censoring = integer(), total = integer())),
-          table3 = combine("probabilities", data.frame(timepoint = numeric(), group_level = character(),
-            group_label = character(),
-            primary = integer(), competing = integer(), interval, estimator = character(),
-            status = character())),
-          table4 = combine("ratios", data.frame(timepoint = numeric(), event_type = character(),
-            comparison = character(), reference = character(), comparison_label = character(),
-            reference_label = character(),
-            interval, p.value = numeric(), status = character())),
-          table5 = combine("tests", data.frame(method = character(), statistic = numeric(),
-            parameter = numeric(), p.value = numeric()))),
+        tables = .cifreport_tables(table1, results, population_id, group_id),
         figures = lapply(results, `[[`, "plot"),
         fits = lapply(results, `[[`, "fits"))
     }
@@ -161,6 +134,36 @@
          population_id = character(), group_id = character(), outcome_id = character(),
          timepoint = numeric(), group_level = character(), analysis = character(),
          status = character(), message = character()))
+}
+
+.cifreport_tables <- function(baseline, results, population_id, group_id) {
+  combine <- function(name, columns) {
+    rows <- lapply(names(results), function(id) {
+      x <- results[[id]][[name]]
+      if (is.null(x) || !nrow(x)) return(NULL)
+      data.frame(population_id = population_id, group_id = group_id, outcome_id = id, x)
+    })
+    rows <- Filter(Negate(is.null), rows)
+    if (length(rows)) return(do.call(rbind, c(rows, list(make.row.names = FALSE))))
+    data.frame(population_id = character(), group_id = character(), outcome_id = character(),
+               columns)
+  }
+  interval <- data.frame(estimate = numeric(), conf.low = numeric(), conf.high = numeric())
+  list(
+    table1 = baseline,
+    table2 = combine("counts", data.frame(time = character(), event = character(),
+      group_level = character(), group_label = character(), primary = integer(),
+      code.event1 = integer(), competing = integer(), code.event2 = integer(),
+      censored = integer(), code.censoring = integer(), total = integer())),
+    table3 = combine("probabilities", data.frame(timepoint = numeric(), group_level = character(),
+      group_label = character(), primary = integer(), competing = integer(), interval,
+      estimator = character(), status = character())),
+    table4 = combine("ratios", data.frame(timepoint = numeric(), event_type = character(),
+      comparison = character(), reference = character(), comparison_label = character(),
+      reference_label = character(), interval, p.value = numeric(), status = character())),
+    table5 = combine("tests", data.frame(method = character(), statistic = numeric(),
+      parameter = numeric(), p.value = numeric()))
+  )
 }
 
 .cifreport_labels_at <- function(x, codes) {
@@ -301,48 +304,8 @@
   environment(f) <- list2env(list(report_data = report_data), parent = environment(cifreport))
   curve <- attempt(do.call(cifcurve, c(list(formula = f, conf.int = conf.int), fit_args)), "Curve")
   support <- vapply(groups, function(x) max(x$followup), numeric(1L))
-  probabilities <- do.call(rbind, lapply(groups, function(x) {
-    cumulative <- function(code) {
-      findInterval(times, sort(x$followup[x$status == code]))
-    }
-    data.frame(timepoint = times, group_level = as.character(x$group[1L]),
-      group_label = unname(labels[as.character(x$group[1L])]),
-      primary = cumulative(args$code.event1),
-      competing = if (competing) cumulative(args$code.event2) else NA_integer_,
-      estimate = NA_real_, conf.low = NA_real_, conf.high = NA_real_, estimator = estimator,
-      status = "estimate_unavailable")
-  }))
-  outside <- probabilities$timepoint > support[probabilities$group_level]
-  for (i in which(outside)) {
-    note("Time is beyond the last observed follow-up in this group.", "unsupported", "Table 3",
-         timepoint = probabilities$timepoint[i], group_level = probabilities$group_level[i])
-  }
-  if (!is.null(curve)) {
-    estimates <- attempt(.cifreport_probabilities(curve, times, level, risk_scale),
-                         "Table 3 (tbl_survfit)")
-    if (is.null(estimates)) {
-      estimates <- attempt(.cifreport_curve_summary(curve, times, level, risk_scale), "Table 3")
-    }
-    if (!is.null(estimates)) {
-      probabilities[names(estimates)] <- estimates
-      probabilities[outside, c("estimate", "conf.low", "conf.high")] <- NA_real_
-      probabilities$status <- ifelse(is.finite(probabilities$estimate), "ok", "estimate_unavailable")
-      for (i in which(!outside & probabilities$status == "estimate_unavailable")) {
-        note("The fitted curve did not provide a finite probability.",
-             "estimation_failed", "Table 3", timepoint = probabilities$timepoint[i],
-             group_level = probabilities$group_level[i])
-      }
-      no_ci <- !outside & probabilities$status == "ok" &
-        (!is.finite(probabilities$conf.low) | !is.finite(probabilities$conf.high))
-      for (i in which(no_ci)) {
-        probabilities$status[i] <- "interval_unavailable"
-        note("The fitted curve did not provide a finite confidence interval.",
-             "unsupported", "Table 3", timepoint = probabilities$timepoint[i],
-             group_level = probabilities$group_level[i])
-      }
-    }
-  }
-  probabilities$status[outside] <- "outside_observed_followup"
+  probabilities <- .cifreport_fixed_times(outcome, curve, groups, support,
+                                           labels, risk_scale, attempt, note)
 
   if (isTRUE(cifplot.args$add.competing.risk.mark)) {
     marks <- if (competing) lapply(groups, function(x) sort(unique(x$followup[x$status == args$code.event2])))
@@ -418,6 +381,56 @@
        tests = tests, plot = plot, fits = list(curve = curve, risk.ratios = models, test = test))
 }
 
+.cifreport_fixed_times <- function(outcome, curve, groups, support, labels, risk_scale,
+                                   attempt, note) {
+  times <- outcome$times
+  args <- outcome$arguments
+  competing <- args$outcome.type == "competing-risk"
+  probabilities <- do.call(rbind, lapply(groups, function(x) {
+    cumulative <- function(code) findInterval(times, sort(x$followup[x$status == code]))
+    group_level <- as.character(x$group[1L])
+    data.frame(timepoint = times, group_level = group_level,
+      group_label = unname(labels[group_level]),
+      primary = cumulative(args$code.event1),
+      competing = if (competing) cumulative(args$code.event2) else NA_integer_,
+      estimate = NA_real_, conf.low = NA_real_, conf.high = NA_real_,
+      estimator = outcome$estimator, status = "estimate_unavailable")
+  }))
+  outside <- probabilities$timepoint > support[probabilities$group_level]
+  note_row <- function(i, message, status) {
+    note(message, status, "Table 3", timepoint = probabilities$timepoint[i],
+         group_level = probabilities$group_level[i])
+  }
+  for (i in which(outside)) {
+    note_row(i, "Time is beyond the last observed follow-up in this group.", "unsupported")
+  }
+  probabilities$status[outside] <- "outside_observed_followup"
+  if (is.null(curve)) return(probabilities)
+
+  level <- names(groups)
+  estimates <- attempt(.cifreport_probabilities(curve, times, level, risk_scale),
+                       "Table 3 (tbl_survfit)")
+  if (is.null(estimates)) {
+    estimates <- attempt(.cifreport_curve_summary(curve, times, level, risk_scale), "Table 3")
+  }
+  if (is.null(estimates)) return(probabilities)
+
+  probabilities[names(estimates)] <- estimates
+  probabilities[outside, c("estimate", "conf.low", "conf.high")] <- NA_real_
+  available <- is.finite(probabilities$estimate)
+  probabilities$status[!outside & available] <- "ok"
+  for (i in which(!outside & !available)) {
+    note_row(i, "The fitted curve did not provide a finite probability.", "estimation_failed")
+  }
+  no_ci <- !outside & available &
+    (!is.finite(probabilities$conf.low) | !is.finite(probabilities$conf.high))
+  probabilities$status[no_ci] <- "interval_unavailable"
+  for (i in which(no_ci)) {
+    note_row(i, "The fitted curve did not provide a finite confidence interval.", "unsupported")
+  }
+  probabilities
+}
+
 .cifreport_probabilities <- function(fit, times, levels, risk_scale) {
   table <- gtsummary::tbl_survfit(fit, times = times,
                                  type = if (risk_scale) "risk" else "survival")
@@ -428,10 +441,7 @@
     group <- if (length(levels) == 1L) rep(levels, length(time)) else
       vapply(card$group1_level[rows], as.character, character(1L))
     value <- vapply(card$stat[rows], as.numeric, numeric(1L))
-    index <- (match(group, levels) - 1L) * length(times) + match(time, times)
-    if (length(index) != length(levels) * length(times) || anyNA(index) || anyDuplicated(index))
-      stop("The numeric survival table did not match the requested groups and times.")
-    value[order(index)]
+    value[.cifreport_probability_order(group, time, levels, times, "numeric survival table")]
   }
   data.frame(estimate = get_stat("estimate"), conf.low = get_stat("conf.low"),
              conf.high = get_stat("conf.high"))
@@ -441,13 +451,18 @@
   x <- summary(fit, times = times, extend = TRUE)
   group <- if (length(levels) == 1L) rep(levels, length(x$time)) else
     sub("^group=", "", as.character(x$strata))
-  index <- (match(group, levels) - 1L) * length(times) + match(x$time, times)
-  if (length(index) != length(levels) * length(times) || anyNA(index) || anyDuplicated(index))
-    stop("The curve summary did not match the requested groups and times.")
+  order <- .cifreport_probability_order(group, x$time, levels, times, "curve summary")
   result <- if (risk_scale) data.frame(estimate = 1 - x$surv,
     conf.low = 1 - x$upper, conf.high = 1 - x$lower) else
     data.frame(estimate = x$surv, conf.low = x$lower, conf.high = x$upper)
-  result[order(index), , drop = FALSE]
+  result[order, , drop = FALSE]
+}
+
+.cifreport_probability_order <- function(group, time, levels, times, source) {
+  index <- (match(group, levels) - 1L) * length(times) + match(time, times)
+  if (length(index) != length(levels) * length(times) || anyNA(index) || anyDuplicated(index))
+    stop("The ", source, " did not match the requested groups and times.")
+  order(index)
 }
 
 .cifreport_ratios <- function(model, time) {

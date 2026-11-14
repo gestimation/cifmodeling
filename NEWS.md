@@ -1,3 +1,17 @@
+# cifmodeling 1.2.6
+
+* `cifcurve()` accepts `Interval(l, r, epsilon)` for interval-censored
+  survival and competing-risk outcomes with known event types. The
+  nonparametric maximum likelihood estimator allocates mass uniformly within
+  finite support intervals. `summary()` flags interpolated estimates and
+  reports confirmed numbers at risk. Standard errors and confidence
+  intervals are unavailable for interval-censored fits.
+* `cifplot()` accepts fitted interval-censored curves and draws linear
+  segments and exact event jumps. The risk table shows confirmed counts,
+  and the optional estimate table flags interpolated values.
+* Simplified internal curve preparation and fixed-time reporting, preserving
+  existing function arguments and report formats.
+
 # cifmodeling 1.2.5
 
 * Added `cifreport()` for survival and competing-risk analyses, including

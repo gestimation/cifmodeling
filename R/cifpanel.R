@@ -337,6 +337,10 @@ cifpanel <- function(
     ...,
     label.legend                  = NULL
 ){
+  .cifcurve_check_plot_interval(formula)
+  if (is.list(formulas)) {
+    for (f in formulas) .cifcurve_check_plot_interval(f)
+  }
   weights.expr <- substitute(weights)
   weights.missing <- missing(weights)
   legend.position  <- "none"

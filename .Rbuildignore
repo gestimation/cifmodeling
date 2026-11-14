@@ -19,3 +19,5 @@
 ^output$
 ^paper$
 ^tmp$
+^Rplots\.pdf$
+^tests/testthat/Rplots\.pdf$

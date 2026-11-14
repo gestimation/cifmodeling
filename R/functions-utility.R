@@ -190,7 +190,7 @@ util_validate_event_codes <- function(...) {
 # Evaluate transformations before applying na.action, and retain source rows.
 cif_prepare_event <- function(formula, data, other.variables.analyzed = NULL,
                               subset.condition = NULL, na.action = stats::na.omit,
-                              allowed = NULL) {
+                              allowed = NULL, interval.na.action = NULL) {
   if (!inherits(formula, "formula") || length(formula) != 3L)
     stop("`formula` must be a two-sided formula.", call. = FALSE)
   action <- util_normalize_na_action(na.action)
@@ -206,7 +206,12 @@ cif_prepare_event <- function(formula, data, other.variables.analyzed = NULL,
                         data = prep$data)
   frame <- stats::model.frame(terms, prep$data, na.action = stats::na.pass)
   response <- stats::model.response(frame)
-  if (!inherits(response, c("Event", "Surv"))) .err("surv_expected")
+  interval <- inherits(response, "Interval")
+  if (interval && is.null(interval.na.action)) {
+    stop("Interval() is supported only by cifcurve().", call. = FALSE)
+  }
+  if (interval) action <- interval.na.action
+  if (!interval && !inherits(response, c("Event", "Surv"))) .err("surv_expected")
   util_check_surv_type(response)
   check <- frame
   for (i in seq_along(other.variables.analyzed)) {
@@ -225,7 +230,7 @@ cif_prepare_event <- function(formula, data, other.variables.analyzed = NULL,
   attr(response, "type") <- response_type
   frame <- frame[positions, , drop = FALSE]
   frame[[attr(terms, "response")]] <- response
-  te <- util_normalize_time_event(response[, 1L], response[, 2L], allowed)
+  te <- util_normalize_time_event(response[, 1L], response[, ncol(response)], allowed)
   row.index <- prep$row.index[positions]
   included <- rep.int(FALSE, nrow(data))
   included[row.index] <- TRUE
@@ -233,6 +238,7 @@ cif_prepare_event <- function(formula, data, other.variables.analyzed = NULL,
   reason[prep$subset.index & !included] <- "missing"
   list(formula = formula, terms = terms, frame = frame,
     data = prep$data[positions, , drop = FALSE], t = te$time, epsilon = te$event,
+    right = if (interval) response[, 2L],
     row.index = row.index, included = included, exclusion.reason = reason,
     na.action = attr(selected, "na.action"))
 }
@@ -249,7 +255,8 @@ cif_prepare_input <- function(
     code.event2 = 2,
     code.censoring = 0,
     auto_message = TRUE,
-    validate.observed.codes = TRUE
+    validate.observed.codes = TRUE,
+    allow.interval = FALSE
 ) {
   if (!inherits(formula, "formula")) stop("`formula` must be a formula.", call. = FALSE)
   if (!is.data.frame(data)) stop("`data` must be a data.frame.", call. = FALSE)
@@ -299,6 +306,23 @@ cif_prepare_input <- function(
   on.exit(options(cifmodeling.allowed = old_opt), add = TRUE)
   options(cifmodeling.allowed = allowed)
 
+  event_input <- cif_prepare_event(formula, analysis_data,
+    na.action = stats::na.pass, allowed = allowed,
+    interval.na.action = if (allow.interval) na.action)
+  Terms <- event_input$terms
+  mf <- event_input$frame
+  t <- event_input$t
+  epsilon <- event_input$epsilon
+  right <- event_input$right
+  if (!length(t)) {
+    stop("No observations remain after subsetting and missing-data handling.", call. = FALSE)
+  }
+  if (anyNA(t) || anyNA(epsilon) || anyNA(right)) {
+    stop("Missing time or event values remain after `na.action`.", call. = FALSE)
+  }
+  if (!is.null(right) && is.null(outcome.type)) {
+    outcome.type <- if (code.event2 %in% epsilon) "competing-risk" else "survival"
+  }
   outcome.type <- util_check_outcome_type(
     x = outcome.type,
     formula = formula,
@@ -310,14 +334,12 @@ cif_prepare_input <- function(
     stop("This interface supports only survival and competing-risk outcomes.", call. = FALSE)
   }
 
-  event_input <- cif_prepare_event(formula, analysis_data,
-    na.action = stats::na.pass, allowed = allowed)
-  Terms <- event_input$terms
-  mf <- event_input$frame
-  t <- event_input$t
-  epsilon <- event_input$epsilon
-  if (anyNA(t) || anyNA(epsilon)) {
-    stop("Missing time or event values remain after `na.action`.", call. = FALSE)
+  if (!is.null(right)) {
+    analysis_data <- analysis_data[event_input$row.index, , drop = FALSE]
+    prep$row.index <- prep$row.index[event_input$row.index]
+    included <- seq_len(nrow(data)) %in% prep$row.index
+    prep$exclusion.reason[prep$included & !included] <- "missing"
+    prep$included <- included
   }
 
   allowed_observed <- if (identical(outcome.type, "survival")) {
@@ -371,6 +393,7 @@ cif_prepare_input <- function(
       code.event2 = code.event2,
       code.censoring = code.censoring,
       t = t,
+      right = right,
       epsilon = epsilon,
       d = as.integer(epsilon != code.censoring),
       d0 = as.integer(epsilon == code.censoring),
@@ -390,7 +413,7 @@ util_read_surv <- function(formula, data, weights = NULL,
                            subset.condition = NULL, na.action = stats::na.omit,
                            outcome.type = NULL, auto_message = TRUE,
                            other.variables.analyzed = NULL,
-                           validate.observed.codes = TRUE) {
+                           validate.observed.codes = TRUE, allow.interval = FALSE) {
 
   # --- resolve weights without forcing evaluation ---
   weights_expr <- substitute(weights)
@@ -430,11 +453,13 @@ util_read_surv <- function(formula, data, weights = NULL,
     code.event2 = code.event2,
     code.censoring = code.censoring,
     auto_message = auto_message,
-    validate.observed.codes = validate.observed.codes
+    validate.observed.codes = validate.observed.codes,
+    allow.interval = allow.interval
   )
 
   list(
     t = prepared$t,
+    right = prepared$right,
     epsilon = prepared$epsilon,
     d = prepared$d,
     d0 = prepared$d0,
