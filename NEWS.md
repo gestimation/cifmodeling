@@ -1,3 +1,10 @@
+# cifmodeling (development version)
+
+* Use `ciftest(directions = ...)` for multiple-direction tests. The former
+  `ciftest_mdir()` entry point is now internal. Use `component.test` to choose
+  a component test explicitly, for example `component.test = "gray"`.
+  Existing multiple-direction result objects keep their S3 methods.
+
 # cifmodeling 1.2.6
 
 * `cifcurve()` accepts `Interval(l, r, epsilon)` for interval-censored

@@ -11,7 +11,7 @@ vignette: >
 
 ## cifcurve()
 
-Version 1.2.2 separates variance estimation (`error`), the CI transformation (`conf.type`), and the reference distribution (`conf.dist`). For the formulas, method combinations, and a worked example, see [Computational formulas in cifcurve()](v3_formulas.html).
+Version 1.2.2 separates variance estimation (`error`), the CI transformation (`conf.type`), and the reference distribution (`conf.dist`). For the formulas, method combinations, and a worked example, see [Computational formulas in cifcurve()](v4_formulas.html).
 
 -   `formula` A model formula specifying the time-to-event outcome on the left-hand side (typically `Event(time, status)` or `survival::Surv(time, status)`) and, optionally, a stratification variable on the right-hand side. Unlike `cifplot()`, this function does not accept a fitted `survfit` object. 
 -   `data` A data frame containing variables in `formula`.
@@ -209,7 +209,7 @@ For Student intervals, compute each curve with `cifcurve()`, plot each fitted ob
 
 ## ciftest()
 
-See [Reporting cumulative incidence](v5_reporting_results.html#reporting-cumulative-incidence) for a worked curve-comparison example.
+See [Reporting cumulative incidence](v7_reporting_results.html#reporting-cumulative-incidence) for a worked curve-comparison example.
 
 -   `formula` A two-sided formula with an `Event()` or right-censored `Surv()` response and one grouping variable on the right-hand side.
 -   `data` A data frame containing the variables used by the test.
@@ -221,7 +221,7 @@ See [Reporting cumulative incidence](v5_reporting_results.html#reporting-cumulat
 -   `code.event1` Integer code for the event of interest (default `1`).
 -   `code.event2` Integer code for the competing event (default `2`).
 -   `code.censoring` Integer code for censoring (default `0`).
--   `rho`, `gamma` Non-negative Fleming–Harrington weight parameters. Omitted values resolve to zero for custom single-direction tests. Leave both unset for the fixed `"early"` and `"late"` presets.
+-   `rho`, `gamma` Non-negative Fleming–Harrington weight parameters. Omitted values resolve to zero for custom single-direction tests. Leave both unset for the fixed `"early"` and `"late"` presets and for multiple-direction tests.
 -   `iteration` Number of Scheike fixed-point refinements for the augmented test. The default `0L` uses the closed-form augmented score.
 -   `tolerance` Optional positive convergence tolerance. With `NULL` (default), the augmented test uses the requested number of iterations.
 -   `strata` Optional character vector of analysis-stratum column names. Multiple columns define their observed interaction. The test constructs risk sets and weight processes within each stratum and sums the scores. The grouping variable is excluded from this argument.
@@ -230,11 +230,13 @@ See [Reporting cumulative incidence](v5_reporting_results.html#reporting-cumulat
 -   `tau` Optional finite, non-negative analysis horizon (default `NULL`).
 -   `prob.bound` Positive numerical bound for required nuisance probabilities (default `1e-7`). Probabilities at or below the bound raise an error.
 -   `prob.truncation` Optional lower truncation strictly above `prob.bound` for positive censoring and working-survival denominators used by score and augmented tests (default `NULL`).
+-   `directions` Optional Fleming–Harrington directions supplied as a character vector of `"early"`, `"late"`, and `"unweighted"` presets, a two-column numeric matrix or data frame with `rho` and `gamma`, or a named list of numeric pairs. A non-`NULL` value overrides `test` and selects a multiple-direction test, even with a single direction.
+-   `component.test` Optional test for each direction. With `directions` or `test = "multiple"`, choose `"logrank"`, `"gray"`, `"score"`, or `"augmented"`. The default selects log-rank components for survival and augmented score components for competing risks.
 -   `...` Reserved for future extensions.
 
 ## cifreport()
 
-See [Reporting results](v5_reporting_results.html#automated-reports) for a report with survival and competing-risk outcomes.
+See [Reporting results](v7_reporting_results.html#automated-reports) for a report with survival and competing-risk outcomes.
 
 -   `data` A data frame with one row per subject and unique column names.
 -   `outcomes` Named list of outcome definitions. Each requires `time` and `event` column names. Optional fields are `outcome.type`, `code.event1` (default `1`), `code.event2` (default `2` for competing risks), `code.censoring` (default `0`), `time.point`, and `estimator`. Available estimators are `"KM"` (default) and `"1-KM"` for survival and `"AJ"` (default) and `"1-AJ"` for competing risks. List names become outcome labels.

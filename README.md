@@ -349,7 +349,7 @@ Tsiatis SEs** and a unified set of CI transformations. For unweighted
 competing risks data, it computes Aalen-Johansen CIFs with both
 **Aalen-type and delta-method SEs**. The default inference for weighted
 curves uses **influence-function based SEs** (Deng and Wang 2025). The
-[formulas vignette](https://gestimation.github.io/cifmodeling/articles/v3_formulas.html)
+[formulas vignette](https://gestimation.github.io/cifmodeling/articles/v4_formulas.html)
 also describes the weighted Kaplan–Meier estimator and the adjusted
 Greenwood variance. [Xie and Liu (2005)](https://doi.org/10.1002/sim.2174)
 

@@ -2,6 +2,7 @@
 % Please edit documentation in R/ciftest.R
 \name{ciftest}
 \alias{ciftest}
+\alias{ciftest_mdir}
 \title{Tests for survival and cumulative incidence curves}
 \usage{
 ciftest(
@@ -25,6 +26,8 @@ ciftest(
   tau = NULL,
   prob.bound = 1e-07,
   prob.truncation = NULL,
+  directions = NULL,
+  component.test = NULL,
   ...
 )
 }
@@ -51,10 +54,10 @@ The aliases \code{"C"} and \code{"S"} are accepted.}
 and \code{"log-rank"} select log-rank; \code{"G"} selects Gray; and \code{"A"}, \code{"aug"},
 and \code{"augmentation"} select the augmented score test. The early and late
 choices are outcome-specific single-direction presets. \code{"multiple"}
-(aliases \code{"multi"} and \code{"m"}) returns \code{\link[=ciftest_mdir]{ciftest_mdir()}} using the default
+(aliases \code{"multi"} and \code{"m"}) runs a multiple-direction test using the default
 directions \verb{(rho, gamma) = (2, 0), (0, 2), (0, 0)}. \code{"score"} uses the
 null score-IID variance; for competing-risk outcomes it may use censoring
-Kaplan--Meier strata.}
+Kaplan--Meier strata. Ignored when \code{directions} is supplied.}
 
 \item{code.event1}{Integer code of the event of interest (default \code{1}).}
 
@@ -64,7 +67,8 @@ Kaplan--Meier strata.}
 
 \item{rho, gamma}{Optional non-negative Fleming-Harrington weight
 parameters. Omitted values default to zero. They cannot be combined with
-the fixed \code{"early"} and \code{"late"} presets.}
+the fixed \code{"early"} and \code{"late"} presets, \code{test = "multiple"}, or
+\code{directions}.}
 
 \item{iteration}{Non-negative integer giving the number of Scheike
 fixed-point refinements. \code{0} returns the closed-form augmented score;
@@ -100,6 +104,20 @@ than being silently replaced.}
 \code{prob.bound}. It is applied only to positive censoring and working-survival
 denominators used by score and augmented tests.}
 
+\item{directions}{Optional Fleming--Harrington directions supplied as a
+character vector of \code{"early"}, \code{"late"},
+or \code{"unweighted"} presets (respectively \verb{(2, 0)}, \verb{(0, 2)}, and \verb{(0, 0)}),
+a two-column numeric matrix or data frame with \code{rho} and \code{gamma}, or a
+named list of numeric pairs. A non-\code{NULL} value selects the
+multiple-direction test, even for one direction. The default \code{NULL}
+leaves selection to \code{test}.}
+
+\item{component.test}{Optional test used for each direction when
+\code{directions} is supplied or \code{test = "multiple"}. Accepts \code{"auto"},
+\code{"logrank"}, \code{"gray"}, \code{"score"}, or \code{"augmented"} and their aliases.
+The default \code{NULL} is equivalent to \code{"auto"}, which selects log-rank for
+survival and the augmented score test for competing risks.}
+
 \item{...}{Reserved for future extensions.}
 }
 \value{
@@ -121,6 +139,8 @@ process actually used by the fit is returned in
 \code{diagnostics$fh.weight.process}, including whether it came from the pooled
 or event-stratified AJ left limit or the native Gray subdistribution
 construction.
+Multiple-direction results inherit from \code{"ciftest_mdir"} and store the
+directions in \code{directions} and the individual fits in \code{components}.
 }
 \description{
 Provides a formula-based interface for log-rank, Fleming-Harrington, Gray,
@@ -136,4 +156,16 @@ used. Setting \code{iteration} to a positive integer applies that many Scheike
 fixed-point refinements. Finite iterates are anchored as the closed-form
 score plus the change in the AIPWCC image from the seed to the refined
 direction, preserving the zeroth-step identity in the observed sample.
+}
+\details{
+Multiple-direction tests combine Fleming--Harrington scores in the
+quadratic form of Ditzhaus and Friedrich. Log-rank and Gray components use
+their joint classical covariances. Score and augmented components use the
+cross-product of stacked individual score contributions. The reference
+distribution is chi-square with degrees of freedom given by the numerical
+rank of the joint covariance.
+}
+\references{
+Ditzhaus M, Friedrich S. More powerful logrank permutation
+tests for two-sample survival data. arXiv preprint (2018).
 }

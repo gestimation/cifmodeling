@@ -1,0 +1,232 @@
+---
+title: "Extensions of the Gray test"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Extensions of the Gray test}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+The Gray test compares cumulative incidence functions (CIFs) for a specified event in the presence of competing risks. The `ciftest()` interface also provides weighted and augmented score tests, allowing the analysis to emphasize differences occurring at different stages of follow-up. With several prespecified `directions`, `ciftest()` supplies a joint score vector and covariance matrix that can be used for either its built-in quadratic test or external simultaneous inference.
+
+## Gray test
+
+For competing risks, the event of interest and competing event must be distinguished from censoring. In `Event(t, epsilon)`, the default codes are 1 for the event of interest, 2 for the competing event, and 0 for censoring.
+
+```{r gray-setup}
+library(cifmodeling)
+data(diabetes.complications)
+```
+
+The classical Gray test is requested explicitly with `test = "gray"`:
+
+```{r gray-test}
+fit_gray <- ciftest(
+  Event(t, epsilon) ~ fruitq1,
+  data = diabetes.complications,
+  outcome.type = "competing-risk",
+  test = "gray"
+)
+fit_gray
+```
+
+This tests equality of the cause-1 CIFs across the groups defined by `fruitq1`. It is an unadjusted comparison and should not be interpreted as a causal effect without additional assumptions. The default `test = "auto"` selects the *augmented score test*, rather than the classical Gray test, for competing-risk outcomes. Specify `test = "gray"` when the classical Gray procedure is intended.
+
+## How to specify a direction of alternative hypothesis
+
+Differences between CIFs need not be constant over follow-up. Fleming窶滴arrington (FH) weights allow a test to emphasize earlier or later departures. The weighting family used by `ciftest()` is
+
+\[
+w(t) = \{1-F_1(t-)\}^{\rho} F_1(t-)^{\gamma},
+\]
+
+where \(F_1(t-)\) is the relevant left-limit CIF used to construct the test weight. Larger \(\rho\) emphasizes earlier follow-up; larger \(\gamma\) emphasizes later follow-up. The choices \((\rho,\gamma)=(0,0)\), \((1,0)\), and \((0,1)\) correspond to unweighted, early, and late directions, respectively. These *time directions* concern the shape of a departure, not whether the CIF is higher or lower in a particular group.
+
+The single-direction presets are convenient:
+
+```{r gray-directions}
+fit_early <- ciftest(
+  Event(t, epsilon) ~ fruitq1,
+  data = diabetes.complications,
+  outcome.type = "competing-risk",
+  test = "early"
+)
+fit_late <- ciftest(
+  Event(t, epsilon) ~ fruitq1,
+  data = diabetes.complications,
+  outcome.type = "competing-risk",
+  test = "late"
+)
+fit_early
+fit_late
+```
+
+For an explicitly chosen FH weight, specify `rho` and `gamma` together with the underlying component test. For example:
+
+```{r gray-custom-direction}
+fit_custom <- ciftest(
+  Event(t, epsilon) ~ fruitq1,
+  data = diabetes.complications,
+  outcome.type = "competing-risk",
+  test = "augmented",
+  rho = 2,
+  gamma = 0
+)
+fit_custom
+```
+
+For several directions, specify `directions` in `ciftest()`. The character presets `"early"`, `"late"`, and `"unweighted"` use FH(2,0), FH(0,2), and FH(0,0), respectively. Use `component.test` to choose the test applied to each direction.
+
+```{r gray-multiple-directions}
+fit_mdir <- ciftest(
+  Event(t, epsilon) ~ fruitq1,
+  data = diabetes.complications,
+  outcome.type = "competing-risk",
+  component.test = "augmented",
+  directions = c("unweighted", "early", "late")
+)
+fit_mdir
+```
+
+The built-in multiple-direction procedure combines the scores through a quadratic form and reports a chi-squared reference test. It is an omnibus test: positive and negative score departures both contribute. Choose the directions before examining the observed test statistics; selecting the most favorable direction after looking at the data requires a corresponding multiplicity adjustment.
+
+
+## Connecting with multcomp
+
+When the temporal pattern of a treatment effect is uncertain, combining several weighted score tests can provide greater sensitivity to a range of alternatives. The `ciftest()` function supports a multiple-direction test through `test = "m"`, which combines three Fleming–Harrington directions: early (2, 0), late (0, 2), and unweighted (0, 0).
+
+By default, `ciftest(test = "m")` performs a quadratic-form test. The resulting score vector and its joint covariance matrix can also be passed to the `multcomp` package to perform simultaneous inference, including two-sided and one-sided maximum-type tests.
+
+### Multiple-direction score test
+
+```r
+library(cifmodeling)
+data(diabetes.complications)
+
+fit <- ciftest(
+  Event(t, epsilon) ~ fruitq1,
+  data = diabetes.complications,
+  outcome.type = "competing-risk",
+  test = "m"
+)
+
+fit
+```
+
+The default test uses the quadratic statistic
+
+\[
+Q=U^\top V^+U,
+\]
+
+where \(U\) is the vector of weighted scores, \(V\) is their joint covariance matrix, and \(V^+\) denotes the Moore–Penrose generalized inverse. Its asymptotic reference distribution is chi-squared, with degrees of freedom determined by the rank of \(V\).
+
+The quadratic test is sensitive to departures from the null hypothesis in any linear combination of the specified directions. Because the statistic is unchanged when the signs of all scores are reversed, it does not distinguish between positive and negative alternatives.
+
+### Connecting with multcomp
+
+The `multcomp` package provides a general framework for simultaneous inference using correlated test statistics. The score vector and covariance matrix returned by `ciftest()` can be supplied directly through `multcomp::parm()`.
+
+```r
+library(multcomp)
+
+score_model <- multcomp::parm(
+  coef = fit$score,
+  vcov = fit$vcov.score,
+  df = 0
+)
+
+K <- diag(length(fit$score))
+```
+
+Here, `df = 0` specifies the asymptotic normal reference distribution. The scores are passed as formal coefficients for computation; they should not be interpreted as regression parameter estimates.
+
+### Quadratic-form test
+
+The quadratic test can also be performed using `multcomp::Chisqtest()`.
+
+```r
+g <- multcomp::glht(
+  score_model,
+  linfct = K
+)
+
+summary(
+  g,
+  test = multcomp::Chisqtest()
+)
+```
+
+This test is asymptotically equivalent to the default multiple-direction test in `ciftest()`. Minor numerical differences may arise from the generalized-inverse computation or numerical rank determination.
+
+### Two-sided maximum-type test
+
+An alternative is to use the largest absolute standardized score:
+
+\[
+T_{\max}^{\pm}=\max_j |Z_j|,
+\qquad
+Z_j=\frac{U_j}{\sqrt{V_{jj}}}.
+\]
+
+Unlike the quadratic test, the maximum-type test evaluates only the prespecified directions rather than all their possible linear combinations.
+
+```r
+g_two <- multcomp::glht(
+  score_model,
+  linfct = K,
+  alternative = "two.sided"
+)
+
+result_two <- summary(
+  g_two,
+  test = multcomp::adjusted("single-step")
+)
+
+result_two
+```
+
+The single-step procedure accounts for correlations among the weighted scores. It provides multiplicity-adjusted p-values for the individual directions. The smallest adjusted p-value corresponds to the global two-sided maximum-type test.
+
+### One-sided maximum-type test
+
+When the direction of the treatment effect is specified in advance, a one-sided maximum-type test can be used:
+
+\[
+T_{\max}^{+}=\max_j Z_j.
+\]
+
+```r
+g_one <- multcomp::glht(
+  score_model,
+  linfct = K,
+  alternative = "greater"
+)
+
+result_one <- summary(
+  g_one,
+  test = multcomp::adjusted("single-step")
+)
+
+result_one
+```
+
+The alternative `"less"` can be used to test the opposite direction.
+
+The sign of each score depends on the group coding and the score definition. Before conducting a one-sided test, users should verify that the specified alternative corresponds to the intended direction of the cumulative incidence difference.
+
+### Choosing a test
+
+The quadratic-form test and maximum-type tests address different alternatives.
+
+The quadratic test is an omnibus procedure that detects departures in the space spanned by the selected score directions, regardless of sign.
+
+The two-sided maximum-type test detects departures in either direction among the prespecified temporal patterns.
+
+The one-sided maximum-type test is particularly relevant when the direction of the treatment effect is known in advance but its temporal pattern is uncertain.
+
+No procedure is uniformly most powerful across all alternatives. The choice should reflect the scientific hypothesis and should be specified before examining the treatment comparison.
+
+The `multcomp` package is used only for optional downstream analysis. It is not required to run `ciftest()` or to obtain the default quadratic-form test.
+
+**Reference:** Hothorn T, Bretz F, Westfall P (2008). Simultaneous inference in general parametric models. *Biometrical Journal*, 50, 346–363.

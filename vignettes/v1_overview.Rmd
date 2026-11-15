@@ -90,10 +90,10 @@ The **cifmodeling** package is centered around a small set of connected function
 These functions adopt a formula + data syntax, return practical outputs for estimation, visualization, and reporting, and integrate with `ggsurvfit`, `DiagrammeR`, and `modelsummary` where appropriate.
 
 > **Explore the main features visually:**  
-> See the [Gallery](https://gestimation.github.io/cifmodeling/articles/v5_gallery.html) for a curated set of examples using `cifplot()` and `cifpanel()`.
+> See the [Gallery](https://gestimation.github.io/cifmodeling/articles/v6_gallery.html) for a curated set of examples using `cifplot()` and `cifpanel()`.
 
 > **Interested in the precise variance formulas and influence functions for the Aalen-Johansen estimator?**  
-> Visit [Computational formulas in cifcurve()](https://gestimation.github.io/cifmodeling/articles/v3_formulas.html).
+> Visit [Computational formulas in cifcurve()](https://gestimation.github.io/cifmodeling/articles/v4_formulas.html).
 
 > **Learn the modeling framework with `polyreg()`:**  
 > See the [Direct polytomous regression](https://gestimation.github.io/cifmodeling/articles/v2_polyreg.html) for coherent, joint modeling of all cause-specific CIFs.
@@ -106,7 +106,7 @@ These functions adopt a formula + data syntax, return practical outputs for esti
 
 Several excellent R packages exist for survival and competing risks analysis. The **survival** package provides the canonical API for survival data. In combination with the **ggsurvfit** package, `survival::survfit()` can produce publication-ready survival plots. For CIF plots, however, integration in the general ecosystem is less streamlined. **cifmodeling** fills this gap by offering `cifplot()` for survival/CIF plots and multi-panel figures via a single, unified interface.
 
-Beyond providing a unified interface, `cifcurve()` also extends `survfit()` in a few targeted ways. For unweighted survival data, it reproduces the standard Kaplan-Meier estimator with **Greenwood and Tsiatis SEs** and a unified set of CI transformations. For unweighted competing risks data, it computes Aalen-Johansen CIFs with both **Aalen-type and delta-method SEs**. The default inference for weighted curves uses **influence-function based SEs** (Deng and Wang 2025). The [formulas vignette](v3_formulas.html) also describes the weighted Kaplan–Meier estimator and the adjusted Greenwood variance of Xie and Liu (2005).
+Beyond providing a unified interface, `cifcurve()` also extends `survfit()` in a few targeted ways. For unweighted survival data, it reproduces the standard Kaplan-Meier estimator with **Greenwood and Tsiatis SEs** and a unified set of CI transformations. For unweighted competing risks data, it computes Aalen-Johansen CIFs with both **Aalen-type and delta-method SEs**. The default inference for weighted curves uses **influence-function based SEs** (Deng and Wang 2025). The [formulas vignette](v4_formulas.html) also describes the weighted Kaplan–Meier estimator and the adjusted Greenwood variance of Xie and Liu (2005).
 
 If you need very fine-grained plot customization, you can compute the estimator and keep a survfit-compatible object with `cifcurve()` (or supply your own survfit object) and then style it using `ggsurvfit/ggplot2` layers. In other words:
 

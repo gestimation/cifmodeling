@@ -1,37 +1,6 @@
-#' Multiple-direction quadratic score test
-#'
-#' Combines several Fleming--Harrington score directions in the quadratic
-#' form proposed by Ditzhaus and Friedrich. Each component is fitted with the
-#' same outcome-specific `ciftest()` branch. Classical log-rank components use
-#' the joint, finite-population-corrected hypergeometric covariance, with
-#' cross-direction blocks weighted by `w_r(t) * w_s(t)`. Classical Gray
-#' components analogously use the joint Gray (1988) covariance, including the
-#' target-event, competing-event, and censoring contributions. Score and
-#' augmented components use the cross-product of the stacked individual score
-#' contributions. The default chi-square reference uses the numerical rank of
-#' the joint covariance. This function does not perform the permutation
-#' calibration from the original two-sample survival proposal.
-#'
-#' @inheritParams ciftest
-#' @param test Underlying component test: `"auto"`, `"logrank"`, `"gray"`,
-#'   `"score"`, or `"augmented"`. The corresponding aliases documented for
-#'   [ciftest()] are accepted. Put early and late choices in `directions`.
-#' @param directions Fleming--Harrington directions. A character vector may
-#'   contain `"unweighted"`, `"early"`, and `"late"`. Alternatively supply a
-#'   two-column numeric matrix/data frame with `rho` and `gamma`, or a named
-#'   list of numeric length-two vectors. In this multiple-direction interface,
-#'   the default character presets correspond to `(2, 0)`, `(0, 2)`, and
-#'   `(0, 0)`. The stronger early/late directions keep the
-#'   default set linearly independent.
-#'
-#' @return An object inheriting from `"ciftest_mdir"`, `"ciftest"`, and
-#'   `"htest"`. Component fits are available in `components`; the unmodified
-#'   individual contributions are in `score.iid`, and the covariance actually
-#'   used by the quadratic statistic is in `vcov.score`.
-#' @references Ditzhaus M, Friedrich S. More powerful logrank permutation
-#'   tests for two-sample survival data. arXiv preprint (2018).
-#' @export
+# Fit a multiple-direction test using the weights resolved by ciftest().
 ciftest_mdir <- function(
+    call,
     formula,
     data,
     directions = c("early", "late", "unweighted"),
@@ -52,27 +21,20 @@ ciftest_mdir <- function(
     prob.truncation = NULL,
     na.action = stats::na.omit
 ) {
-  call <- match.call()
   if (!is.character(test) || length(test) != 1L || is.na(test)) {
-    stop("`test` must be one non-missing character value.", call. = FALSE)
+    stop("`component.test` must be one non-missing character value.", call. = FALSE)
   }
-  if (tolower(test) %in% c("early", "late")) {
-    stop("Specify early and late weights in `directions`, not in `test`.",
+  test_key <- gsub("[-_. ]", "", tolower(trimws(test)))
+  if (test_key %in% c("early", "late")) {
+    stop("Specify early and late weights in `directions`.",
          call. = FALSE)
   }
   direction_table <- ciftest_mdir_directions(directions)
 
-  weights.expr <- substitute(weights)
-  weights.resolved <- util_resolve_weights(
-    weights.expr = weights.expr,
-    data = data,
-    envir = parent.frame(),
-    missing = missing(weights)
-  )
   input <- ciftest_prepare(
     formula = formula,
     data = data,
-    weights = weights.resolved,
+    weights = weights,
     subset.condition = subset.condition,
     outcome.type = outcome.type,
     test = test,
@@ -171,6 +133,7 @@ ciftest_mdir <- function(
     call = call,
     outcome.type = input$outcome.type,
     test = input$test,
+    test.requested = "multiple",
     directions = direction_table,
     score = score,
     vcov.score = covariance,

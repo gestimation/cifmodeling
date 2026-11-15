@@ -84,10 +84,10 @@ test_that("joint Gray covariance is invariant to event recoding", {
       2, 0, 1, 2, 1, 0, 1, 0))
   d$reversed <- ifelse(d$status == 2, 2, 1 - d$status)
   directions <- c("unweighted", "early", "late")
-  default <- ciftest_mdir(Event(time, status) ~ group, d,
-    outcome.type = "competing-risk", test = "gray", directions = directions)
-  reversed <- ciftest_mdir(Event(time, reversed) ~ group, d,
-    outcome.type = "competing-risk", test = "gray", directions = directions,
+  default <- ciftest(Event(time, status) ~ group, d,
+    outcome.type = "competing-risk", component.test = "gray", directions = directions)
+  reversed <- ciftest(Event(time, reversed) ~ group, d,
+    outcome.type = "competing-risk", component.test = "gray", directions = directions,
     code.event1 = 0, code.censoring = 1)
 
   reference <- gray_reference_slow(d$time, d$status, d$group)

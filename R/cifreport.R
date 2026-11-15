@@ -110,7 +110,7 @@
 #' The report supports unweighted, right-censored data with one row per
 #' subject, one primary event code and, for competing risks, one competing
 #' event code. File output requires optional reporting packages and Pandoc. See
-#' `vignette("v5_reporting_results")` for examples and supported configurations.
+#' `vignette("v7_reporting_results")` for examples and supported configurations.
 #'
 #' @return Invisibly, a list with `output.file` (absolute paths in the order
 #'   requested, or `NULL` if no file was saved), `specifications`,

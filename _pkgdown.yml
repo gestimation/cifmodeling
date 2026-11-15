@@ -12,16 +12,22 @@ development:
 redirects:
   - ["articles/overview.html", "articles/v1_overview.html"]
   - ["articles/polyreg.html", "articles/v2_polyreg.html"]
-  - ["articles/formula.html", "articles/v3_formulas.html"]
-  - ["articles/formulas.html", "articles/v3_formulas.html"]
-  - ["articles/examples.html", "articles/v4_examples.html"]
-  - ["articles/gallery.html", "articles/v5_gallery.html"]
-  - ["articles/information.html", "articles/v6_information.html"]
-  - ["articles/arguments.html", "articles/v7_arguments.html"]
+  - ["articles/formula.html", "articles/v4_formulas.html"]
+  - ["articles/formulas.html", "articles/v4_formulas.html"]
+  - ["articles/examples.html", "articles/v5_examples.html"]
+  - ["articles/gallery.html", "articles/v6_gallery.html"]
+  - ["articles/information.html", "articles/v8_information.html"]
+  - ["articles/arguments.html", "articles/v9_arguments.html"]
   - ["articles/functions.html", "articles/v1_overview.html"]
-  - ["articles/v8_reporting_cif.html", "articles/v5_reporting_results.html#reporting-cumulative-incidence"]
-  - ["articles/v9_reporting_polyreg.html", "articles/v5_reporting_results.html#reporting-cif-regression"]
-  - ["articles/v10_cifreport.html", "articles/v5_reporting_results.html#automated-reports"]
+  - ["articles/v3_formulas.html", "articles/v4_formulas.html"]
+  - ["articles/v4_examples.html", "articles/v5_examples.html"]
+  - ["articles/v5_gallery.html", "articles/v6_gallery.html"]
+  - ["articles/v5_reporting_results.html", "articles/v7_reporting_results.html"]
+  - ["articles/v6_information.html", "articles/v8_information.html"]
+  - ["articles/v7_arguments.html", "articles/v9_arguments.html"]
+  - ["articles/v8_reporting_cif.html", "articles/v7_reporting_results.html#reporting-cumulative-incidence"]
+  - ["articles/v9_reporting_polyreg.html", "articles/v7_reporting_results.html#reporting-cif-regression"]
+  - ["articles/v10_cifreport.html", "articles/v7_reporting_results.html#automated-reports"]
 
 home:
   title: cifmodeling
@@ -42,18 +48,20 @@ navbar:
           href: articles/v1_overview.html
         - text: Direct polytomous regression
           href: articles/v2_polyreg.html
+        - text: Extensions of the Gray test
+          href: articles/v3_gray_extensions.html
         - text: Computational formulas in cifcurve()
-          href: articles/v3_formulas.html
+          href: articles/v4_formulas.html
         - text: Examples
-          href: articles/v4_examples.html
+          href: articles/v5_examples.html
         - text: Gallery
-          href: articles/v5_gallery.html
+          href: articles/v6_gallery.html
         - text: Reporting results
-          href: articles/v5_reporting_results.html
+          href: articles/v7_reporting_results.html
         - text: Additional information
-          href: articles/v6_information.html
+          href: articles/v8_information.html
         - text: Full lists of arguments
-          href: articles/v7_arguments.html
+          href: articles/v9_arguments.html
     github:
       icon: fa-github
       aria-label: GitHub repository
@@ -66,24 +74,27 @@ articles:
   - title: Direct polytomous regression
     contents:
       - v2_polyreg
+  - title: Extensions of the Gray test
+    contents:
+      - v3_gray_extensions
   - title: Computational formulas in cifcurve()
     contents:
-      - v3_formulas
+      - v4_formulas
   - title: Examples
     contents:
-      - v4_examples
+      - v5_examples
   - title: Gallery
     contents:
-      - v5_gallery
+      - v6_gallery
   - title: Reporting results
     contents:
-      - v5_reporting_results
+      - v7_reporting_results
   - title: Additional information
     contents:
-      - v6_information
+      - v8_information
   - title: Full lists of arguments
     contents:
-      - v7_arguments
+      - v9_arguments
 
 reference:
   - title: Nonparametric estimation and visualization
@@ -99,7 +110,6 @@ reference:
   - title: Hypothesis testing
     contents:
       - ciftest
-      - ciftest_mdir
   - title: Automated reporting
     contents:
       - cifreport

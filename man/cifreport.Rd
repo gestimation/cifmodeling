@@ -169,7 +169,7 @@ log records invalid, skipped, unsupported and failed analyses and warnings.
 The report supports unweighted, right-censored data with one row per
 subject, one primary event code and, for competing risks, one competing
 event code. File output requires optional reporting packages and Pandoc. See
-\code{vignette("v5_reporting_results")} for examples and supported configurations.
+\code{vignette("v7_reporting_results")} for examples and supported configurations.
 }
 \examples{
 if (requireNamespace("gtsummary", quietly = TRUE) &&

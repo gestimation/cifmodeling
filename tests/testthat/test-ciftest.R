@@ -59,6 +59,51 @@ testthat::test_that("the public test resolver follows outcome defaults and prese
   )
 })
 
+testthat::test_that("explicit directions take precedence over test", {
+  d <- data.frame(
+    time = 1:8,
+    status = c(1, 0, 1, 0, 1, 1, 0, 1),
+    group = factor(rep(c("A", "B"), 4)),
+    w = rep(c(1, 2), 4)
+  )
+  formula <- Event(time, status) ~ group
+  formats <- list(
+    "early",
+    rbind(custom = c(rho = 0.5, gamma = 1), unweighted = c(0, 0)),
+    data.frame(rho = c(0.5, 0), gamma = c(1, 0)),
+    list(custom = c(0.5, 1), unweighted = c(0, 0))
+  )
+  for (directions in formats) {
+    fit <- ciftest(formula, d, weights = w, test = "early",
+                   directions = directions)
+    expected <- ciftest_mdir(call = fit$call, formula = formula, data = d,
+                             directions = directions, weights = d$w)
+    testthat::expect_s3_class(fit, "ciftest_mdir")
+    testthat::expect_identical(fit$test, "logrank")
+    testthat::expect_identical(fit$directions, expected$directions)
+    testthat::expect_equal(fit$statistic, expected$statistic)
+    testthat::expect_equal(fit$p.value, expected$p.value)
+  }
+
+  competing <- transform(d, status = c(1, 0, 2, 0, 1, 2, 0, 1))
+  fit <- ciftest(formula, competing, test = "gray",
+                 directions = c("late", "unweighted"))
+  expected <- ciftest_mdir(call = fit$call, formula = formula, data = competing,
+                           directions = c("late", "unweighted"))
+  testthat::expect_identical(fit$test, "augmented")
+  testthat::expect_equal(fit$vcov.score, expected$vcov.score)
+  testthat::expect_equal(fit$p.value, expected$p.value)
+
+  fit <- ciftest(formula, d, test = "early", directions = NULL)
+  testthat::expect_identical(c(fit$rho, fit$gamma), c(1, 0))
+  testthat::expect_error(ciftest(formula, d, directions = "unknown"),
+                         "Character `directions`")
+  testthat::expect_error(ciftest(formula, d, directions = "early", rho = 1),
+                         "without separate")
+  testthat::expect_error(ciftest(formula, d, component.test = "score"),
+                         "requires")
+})
+
 testthat::test_that("survival score uses individual robust score covariance", {
   df <- data.frame(
     time = 1:10,
@@ -138,9 +183,9 @@ testthat::test_that("multiple-direction wrapper preserves one-direction tests", 
   scalar <- ciftest(
     Event(time, status) ~ group, survival_data, test = "logrank"
   )
-  combined <- ciftest_mdir(
+  combined <- ciftest(
     Event(time, status) ~ group, survival_data,
-    directions = "unweighted", test = "logrank"
+    directions = "unweighted", component.test = "logrank"
   )
   testthat::expect_s3_class(combined, "ciftest_mdir")
   testthat::expect_equal(combined$statistic, scalar$statistic,
@@ -148,7 +193,7 @@ testthat::test_that("multiple-direction wrapper preserves one-direction tests", 
   testthat::expect_equal(combined$vcov.score, scalar$vcov.score,
                          ignore_attr = TRUE, tolerance = 1e-10)
 
-  multiple <- ciftest_mdir(
+  multiple <- ciftest(
     Event(time, status) ~ group, survival_data,
     directions = c("early", "late", "unweighted")
   )
@@ -159,6 +204,12 @@ testthat::test_that("multiple-direction wrapper preserves one-direction tests", 
   )
   testthat::expect_true(unname(multiple$parameter) %in% 1:3)
   testthat::expect_true(is.finite(multiple$p.value))
+
+  testthat::expect_equal(generics::tidy(multiple)$p.value, multiple$p.value)
+  testthat::expect_equal(generics::glance(multiple), generics::tidy(multiple))
+  testthat::expect_equal(generics::augment(multiple)$.score_iid,
+                         I(multiple$score.iid))
+  testthat::expect_output(print(multiple), "Component test: logrank")
 })
 
 testthat::test_that("multiple-direction classical covariances preserve FH spans", {
@@ -190,13 +241,13 @@ testthat::test_that("multiple-direction classical covariances preserve FH spans"
       early1 = c(rho = 1, gamma = 0),
       late1 = c(rho = 0, gamma = 1)
     )
-    two <- ciftest_mdir(
+    two <- ciftest(
       Event(time, status) ~ group, data,
-      directions = two_directions, test = test
+      directions = two_directions, component.test = test
     )
-    three <- ciftest_mdir(
+    three <- ciftest(
       Event(time, status) ~ group, data,
-      directions = three_directions, test = test
+      directions = three_directions, component.test = test
     )
     scalar <- ciftest(
       Event(time, status) ~ group, data,

@@ -57,8 +57,9 @@ test_that("explicit Gray tests accept data without observed competing events", {
   reference <- gray_reference_slow(d$time, d$status, d$group)
   scalar <- ciftest(Event(time, status) ~ group, d,
     outcome.type = "competing-risk", test = "gray")
-  joint <- ciftest_mdir(Event(time, status) ~ group, d,
-    outcome.type = "competing-risk", test = "gray", directions = "unweighted")
+  joint <- ciftest(Event(time, status) ~ group, d,
+    outcome.type = "competing-risk", component.test = "gray",
+    directions = "unweighted")
   expect_equal(scalar$p.value, reference$p.value)
   expect_equal(joint$p.value, reference$p.value)
 })

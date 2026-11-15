@@ -15,6 +15,13 @@
 #' score plus the change in the AIPWCC image from the seed to the refined
 #' direction, preserving the zeroth-step identity in the observed sample.
 #'
+#' @details Multiple-direction tests combine Fleming--Harrington scores in the
+#'   quadratic form of Ditzhaus and Friedrich. Log-rank and Gray components use
+#'   their joint classical covariances. Score and augmented components use the
+#'   cross-product of stacked individual score contributions. The reference
+#'   distribution is chi-square with degrees of freedom given by the numerical
+#'   rank of the joint covariance.
+#'
 #' @param formula A two-sided formula with an `Event()` or `Surv()` response
 #'   and one grouping variable on the right-hand side.
 #'   `Surv()` responses must be right-censored.
@@ -36,13 +43,14 @@
 #'   and `"log-rank"` select log-rank; `"G"` selects Gray; and `"A"`, `"aug"`,
 #'   and `"augmentation"` select the augmented score test. The early and late
 #'   choices are outcome-specific single-direction presets. `"multiple"`
-#'   (aliases `"multi"` and `"m"`) returns [ciftest_mdir()] using the default
+#'   (aliases `"multi"` and `"m"`) runs a multiple-direction test using the default
 #'   directions `(rho, gamma) = (2, 0), (0, 2), (0, 0)`. `"score"` uses the
 #'   null score-IID variance; for competing-risk outcomes it may use censoring
-#'   Kaplan--Meier strata.
+#'   Kaplan--Meier strata. Ignored when `directions` is supplied.
 #' @param rho,gamma Optional non-negative Fleming-Harrington weight
 #'   parameters. Omitted values default to zero. They cannot be combined with
-#'   the fixed `"early"` and `"late"` presets.
+#'   the fixed `"early"` and `"late"` presets, `test = "multiple"`, or
+#'   `directions`.
 #' @param iteration Non-negative integer giving the number of Scheike
 #'   fixed-point refinements. `0` returns the closed-form augmented score;
 #'   positive values use the closed-form-anchored AIPWCC difference.
@@ -69,6 +77,18 @@
 #' @param prob.truncation Optional probability lower truncation strictly above
 #'   `prob.bound`. It is applied only to positive censoring and working-survival
 #'   denominators used by score and augmented tests.
+#' @param directions Optional Fleming--Harrington directions supplied as a
+#'   character vector of `"early"`, `"late"`,
+#'   or `"unweighted"` presets (respectively `(2, 0)`, `(0, 2)`, and `(0, 0)`),
+#'   a two-column numeric matrix or data frame with `rho` and `gamma`, or a
+#'   named list of numeric pairs. A non-`NULL` value selects the
+#'   multiple-direction test, even for one direction. The default `NULL`
+#'   leaves selection to `test`.
+#' @param component.test Optional test used for each direction when
+#'   `directions` is supplied or `test = "multiple"`. Accepts `"auto"`,
+#'   `"logrank"`, `"gray"`, `"score"`, or `"augmented"` and their aliases.
+#'   The default `NULL` is equivalent to `"auto"`, which selects log-rank for
+#'   survival and the augmented score test for competing risks.
 #' @param ... Reserved for future extensions.
 #'
 #' @return An object inheriting from `"ciftest"` and `"htest"`, with a
@@ -89,6 +109,11 @@
 #'   `diagnostics$fh.weight.process`, including whether it came from the pooled
 #'   or event-stratified AJ left limit or the native Gray subdistribution
 #'   construction.
+#'   Multiple-direction results inherit from `"ciftest_mdir"` and store the
+#'   directions in `directions` and the individual fits in `components`.
+#' @references Ditzhaus M, Friedrich S. More powerful logrank permutation
+#'   tests for two-sample survival data. arXiv preprint (2018).
+#' @aliases ciftest_mdir
 #' @export
 ciftest <- function(
     formula,
@@ -111,6 +136,8 @@ ciftest <- function(
     tau = NULL,
     prob.bound = 1e-7,
     prob.truncation = NULL,
+    directions = NULL,
+    component.test = NULL,
     ...
 ) {
   call <- match.call()
@@ -150,33 +177,44 @@ ciftest <- function(
     missing = missing(weights)
   )
 
-  test_key <- if (is.character(test) && length(test) == 1L && !is.na(test)) {
+  has_directions <- !is.null(directions)
+  test_key <- if (!has_directions && is.character(test) &&
+                  length(test) == 1L && !is.na(test)) {
     gsub("[-_. ]", "", tolower(trimws(test)))
   } else {
     ""
   }
-  if (test_key %in% c("multiple", "multi", "m")) {
+  if (has_directions || test_key %in% c("multiple", "multi", "m")) {
     if (!is.null(rho) || !is.null(gamma)) {
+      if (has_directions) {
+        stop("Use `directions` without separate `rho` or `gamma` arguments.",
+             call. = FALSE)
+      }
       stop(
         "`test = \"multiple\"` uses the fixed directions (2, 0), (0, 2), ",
-        "and (0, 0); use `ciftest_mdir()` for custom directions.",
+        "and (0, 0); use `directions` for custom directions.",
         call. = FALSE
       )
     }
     if (!is.null(legacy_augmentation)) {
       stop(
-        "Use `test = \"multiple\"` without the removed `augmentation` argument.",
+        "Use the multiple-direction test without the removed `augmentation` argument.",
         call. = FALSE
       )
     }
-    out <- ciftest_mdir(
+    return(ciftest_mdir(
+      call = call,
       formula = formula,
       data = data,
-      directions = c("early", "late", "unweighted"),
+      directions = if (has_directions) {
+        directions
+      } else {
+        c("early", "late", "unweighted")
+      },
       weights = weights.resolved,
       subset.condition = subset.condition,
       outcome.type = outcome.type,
-      test = "auto",
+      test = if (is.null(component.test)) "auto" else component.test,
       code.event1 = code.event1,
       code.event2 = code.event2,
       code.censoring = code.censoring,
@@ -189,10 +227,11 @@ ciftest <- function(
       prob.bound = prob.bound,
       prob.truncation = prob.truncation,
       na.action = na.action
-    )
-    out$call <- call
-    out$test.requested <- "multiple"
-    return(out)
+    ))
+  }
+  if (!is.null(component.test)) {
+    stop("`component.test` requires `directions` or `test = \"multiple\"`.",
+         call. = FALSE)
   }
 
   input <- ciftest_prepare(
