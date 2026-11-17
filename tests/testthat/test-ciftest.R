@@ -21,8 +21,15 @@ testthat::test_that("the public test resolver follows outcome defaults and prese
     Event(time, status) ~ group, competing_data, test = "late"
   )
   multiple_fit <- ciftest(
-    Event(time, status) ~ group, survival_data, test = "m"
+    Event(time, status) ~ group, survival_data, test = "d"
   )
+  ditzhaus_fit <- ciftest(Event(time, status) ~ group, survival_data, test = "ditzhaus")
+  testthat::expect_equal(ditzhaus_fit$p.value, multiple_fit$p.value)
+  testthat::expect_identical(ditzhaus_fit$test.requested, "ditzhaus")
+  for (retired in c("multiple", "multi")) {
+    testthat::expect_error(ciftest(Event(time, status) ~ group, survival_data, test = retired),
+                           'Use `test = "ditzhaus"`')
+  }
 
   testthat::expect_identical(survival_fit$test, "logrank")
   testthat::expect_identical(competing_fit$test, "augmented")

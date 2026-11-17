@@ -28,6 +28,8 @@ ciftest(
   prob.truncation = NULL,
   directions = NULL,
   component.test = NULL,
+  alternative = "two.sided",
+  code.exposure.ref = NULL,
   ...
 )
 }
@@ -50,14 +52,16 @@ The standard Gray branch currently accepts integer frequency weights.}
 The aliases \code{"C"} and \code{"S"} are accepted.}
 
 \item{test}{One of \code{"auto"}, \code{"early"}, \code{"late"}, \code{"logrank"}, \code{"gray"},
-\code{"score"}, \code{"augmented"}, or \code{"multiple"}. The aliases \code{"L"}, \code{"LR"},
+\code{"score"}, \code{"augmented"}, \code{"ditzhaus"}, or \code{"maxcombo"}. The aliases \code{"L"}, \code{"LR"},
 and \code{"log-rank"} select log-rank; \code{"G"} selects Gray; and \code{"A"}, \code{"aug"},
 and \code{"augmentation"} select the augmented score test. The early and late
-choices are outcome-specific single-direction presets. \code{"multiple"}
-(aliases \code{"multi"} and \code{"m"}) runs a multiple-direction test using the default
-directions \verb{(rho, gamma) = (2, 0), (0, 2), (0, 0)}. \code{"score"} uses the
+choices are outcome-specific single-direction presets. \code{"ditzhaus"}
+(alias \code{"d"}) runs the quadratic-form test with default directions
+\verb{(rho, gamma) = (2, 0), (0, 2), (0, 0)}. \code{"maxcombo"} (alias \code{"m"}) uses
+augmented scores with default directions \verb{(0, 0), (2, 0), (0, 1)}.
+\code{"score"} uses the
 null score-IID variance; for competing-risk outcomes it may use censoring
-Kaplan--Meier strata. Ignored when \code{directions} is supplied.}
+Kaplan--Meier strata.}
 
 \item{code.event1}{Integer code of the event of interest (default \code{1}).}
 
@@ -67,7 +71,7 @@ Kaplan--Meier strata. Ignored when \code{directions} is supplied.}
 
 \item{rho, gamma}{Optional non-negative Fleming-Harrington weight
 parameters. Omitted values default to zero. They cannot be combined with
-the fixed \code{"early"} and \code{"late"} presets, \code{test = "multiple"}, or
+the fixed \code{"early"} and \code{"late"} presets, \code{"ditzhaus"}, \code{"maxcombo"}, or
 \code{directions}.}
 
 \item{iteration}{Non-negative integer giving the number of Scheike
@@ -108,15 +112,25 @@ denominators used by score and augmented tests.}
 character vector of \code{"early"}, \code{"late"},
 or \code{"unweighted"} presets (respectively \verb{(2, 0)}, \verb{(0, 2)}, and \verb{(0, 0)}),
 a two-column numeric matrix or data frame with \code{rho} and \code{gamma}, or a
-named list of numeric pairs. A non-\code{NULL} value selects the
-multiple-direction test, even for one direction. The default \code{NULL}
-leaves selection to \code{test}.}
+named list of numeric pairs. A non-\code{NULL} value supplies the directions
+for \code{test = "maxcombo"} or selects the Ditzhaus test for other test
+choices, even with a single direction.}
 
-\item{component.test}{Optional test used for each direction when
-\code{directions} is supplied or \code{test = "multiple"}. Accepts \code{"auto"},
+\item{component.test}{Optional component test for the Ditzhaus test.
+Accepts \code{"auto"},
 \code{"logrank"}, \code{"gray"}, \code{"score"}, or \code{"augmented"} and their aliases.
 The default \code{NULL} is equivalent to \code{"auto"}, which selects log-rank for
 survival and the augmented score test for competing risks.}
+
+\item{alternative}{Alternative for MaxCombo. \code{"two.sided"} is the default.
+\code{"less"} tests for lower cumulative incidence of \code{code.event1} in the
+comparison group relative to the reference along the specified score
+directions. \code{"greater"} tests in the opposite direction.}
+
+\item{code.exposure.ref}{Reference group for MaxCombo. Supply a numeric
+code or a character level present in the analysis data. With \code{NULL}
+(the default), the first factor level among groups present in the analysis
+data is the reference.}
 
 \item{...}{Reserved for future extensions.}
 }
@@ -141,6 +155,8 @@ or event-stratified AJ left limit or the native Gray subdistribution
 construction.
 Multiple-direction results inherit from \code{"ciftest_mdir"} and store the
 directions in \code{directions} and the individual fits in \code{components}.
+MaxCombo results also store the standardized scores in \code{z}, the selected
+\code{alternative}, and the reference and comparison group levels in \code{comparison}.
 }
 \description{
 Provides a formula-based interface for log-rank, Fleming-Harrington, Gray,
@@ -158,14 +174,28 @@ score plus the change in the AIPWCC image from the seed to the refined
 direction, preserving the zeroth-step identity in the observed sample.
 }
 \details{
-Multiple-direction tests combine Fleming--Harrington scores in the
+The Ditzhaus test combines Fleming--Harrington scores in the
 quadratic form of Ditzhaus and Friedrich. Log-rank and Gray components use
 their joint classical covariances. Score and augmented components use the
 cross-product of stacked individual score contributions. The reference
 distribution is chi-square with degrees of freedom given by the numerical
 rank of the joint covariance.
+
+MaxCombo is a two-group test for competing-risk outcomes. It uses the
+largest absolute standardized augmented score for a two-sided test, the
+largest standardized score for \code{"greater"}, and the largest negated
+standardized score for \code{"less"}. The joint normal reference distribution
+uses the correlations estimated from the stacked individual scores.
+Joint normal probabilities are evaluated by one-dimensional quadrature
+for two or three directions and by conditional normal integration for
+larger sets. The numerical error estimate is in
+\code{diagnostics$integration.error}.
 }
 \references{
 Ditzhaus M, Friedrich S. More powerful logrank permutation
 tests for two-sample survival data. arXiv preprint (2018).
+Plackett RL. A reduction formula for normal multivariate integrals.
+Biometrika. 1954;41:351--360. \doi{10.1093/biomet/41.3-4.351}
+Genz A. Numerical computation of multivariate normal probabilities.
+J Comput Graph Stat. 1992;1:141--149. \doi{10.1080/10618600.1992.10477010}
 }

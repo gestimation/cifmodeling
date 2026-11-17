@@ -12,7 +12,7 @@
 #' @param formula A model formula specifying the time-to-event outcome on the LHS
 #'   (typically `Event(time, status)` or `survival::Surv(time, status)`)
 #'   and, optionally, a stratification variable on the RHS.
-#'   Use [Interval()] for interval-censored observations.
+#'   Use \code{\link[=Interval]{Interval()}} for interval-censored observations.
 #'   `Surv()` responses must be right-censored.
 #'   Unlike [cifplot()], this function does not accept a fitted survfit object.
 #' @param time.point Optional finite, non-negative time for a one-sided normal
@@ -169,7 +169,7 @@
 #'
 #' @name cifcurve
 #' @section Interval-censored data:
-#' Use [Interval()] as the formula response. The first event's cause must
+#' Use \code{\link[=Interval]{Interval()}} as the formula response. The first event's cause must
 #' be known for every observed event, and the observation process must be
 #' ignorable. Left truncation is currently unsupported. The estimator is the
 #' nonparametric maximum likelihood estimator of Hudgens, Satten and Longini
