@@ -1,9 +1,16 @@
 # cifmodeling (development version)
 
-* Use `ciftest(directions = ...)` for multiple-direction tests. The former
-  `ciftest_mdir()` entry point is now internal. Use `component.test` to choose
-  a component test explicitly, for example `component.test = "gray"`.
-  Existing multiple-direction result objects keep their S3 methods.
+* `ciftest(test = "maxcombo")` (alias `"m"`) combines augmented scores for two groups with a
+  competing-risk outcome. Its defaults are a two-sided test and Fleming–Harrington
+  directions `(0, 0)`, `(2, 0)`, and `(0, 1)`. Use `alternative` for a one-sided
+  test and `code.exposure.ref` to specify the reference group.
+  MaxCombo computes joint normal probabilities internally.
+* Use `ciftest(test = "ditzhaus")` or `test = "d"` for the quadratic-form test.
+  The selectors `"multiple"` and `"multi"` were removed. Supplying
+  `directions` still selects the quadratic-form test unless `test = "maxcombo"`.
+  Use `component.test` to choose a component for the Ditzhaus test.
+  The former `ciftest_mdir()` entry point is internal, and existing result
+  objects keep their S3 methods.
 
 # cifmodeling 1.2.6
 

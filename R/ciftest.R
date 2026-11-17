@@ -15,12 +15,22 @@
 #' score plus the change in the AIPWCC image from the seed to the refined
 #' direction, preserving the zeroth-step identity in the observed sample.
 #'
-#' @details Multiple-direction tests combine Fleming--Harrington scores in the
+#' @details The Ditzhaus test combines Fleming--Harrington scores in the
 #'   quadratic form of Ditzhaus and Friedrich. Log-rank and Gray components use
 #'   their joint classical covariances. Score and augmented components use the
 #'   cross-product of stacked individual score contributions. The reference
 #'   distribution is chi-square with degrees of freedom given by the numerical
 #'   rank of the joint covariance.
+#'
+#'   MaxCombo is a two-group test for competing-risk outcomes. It uses the
+#'   largest absolute standardized augmented score for a two-sided test, the
+#'   largest standardized score for `"greater"`, and the largest negated
+#'   standardized score for `"less"`. The joint normal reference distribution
+#'   uses the correlations estimated from the stacked individual scores.
+#'   Joint normal probabilities are evaluated by one-dimensional quadrature
+#'   for two or three directions and by conditional normal integration for
+#'   larger sets. The numerical error estimate is in
+#'   `diagnostics$integration.error`.
 #'
 #' @param formula A two-sided formula with an `Event()` or `Surv()` response
 #'   and one grouping variable on the right-hand side.
@@ -39,17 +49,19 @@
 #' @param code.event2 Integer code of the competing risk (default `2`).
 #' @param code.censoring Integer code of censoring (default `0`).
 #' @param test One of `"auto"`, `"early"`, `"late"`, `"logrank"`, `"gray"`,
-#'   `"score"`, `"augmented"`, or `"multiple"`. The aliases `"L"`, `"LR"`,
+#'   `"score"`, `"augmented"`, `"ditzhaus"`, or `"maxcombo"`. The aliases `"L"`, `"LR"`,
 #'   and `"log-rank"` select log-rank; `"G"` selects Gray; and `"A"`, `"aug"`,
 #'   and `"augmentation"` select the augmented score test. The early and late
-#'   choices are outcome-specific single-direction presets. `"multiple"`
-#'   (aliases `"multi"` and `"m"`) runs a multiple-direction test using the default
-#'   directions `(rho, gamma) = (2, 0), (0, 2), (0, 0)`. `"score"` uses the
+#'   choices are outcome-specific single-direction presets. `"ditzhaus"`
+#'   (alias `"d"`) runs the quadratic-form test with default directions
+#'   `(rho, gamma) = (2, 0), (0, 2), (0, 0)`. `"maxcombo"` (alias `"m"`) uses
+#'   augmented scores with default directions `(0, 0), (2, 0), (0, 1)`.
+#'   `"score"` uses the
 #'   null score-IID variance; for competing-risk outcomes it may use censoring
-#'   Kaplan--Meier strata. Ignored when `directions` is supplied.
+#'   Kaplan--Meier strata.
 #' @param rho,gamma Optional non-negative Fleming-Harrington weight
 #'   parameters. Omitted values default to zero. They cannot be combined with
-#'   the fixed `"early"` and `"late"` presets, `test = "multiple"`, or
+#'   the fixed `"early"` and `"late"` presets, `"ditzhaus"`, `"maxcombo"`, or
 #'   `directions`.
 #' @param iteration Non-negative integer giving the number of Scheike
 #'   fixed-point refinements. `0` returns the closed-form augmented score;
@@ -81,14 +93,22 @@
 #'   character vector of `"early"`, `"late"`,
 #'   or `"unweighted"` presets (respectively `(2, 0)`, `(0, 2)`, and `(0, 0)`),
 #'   a two-column numeric matrix or data frame with `rho` and `gamma`, or a
-#'   named list of numeric pairs. A non-`NULL` value selects the
-#'   multiple-direction test, even for one direction. The default `NULL`
-#'   leaves selection to `test`.
-#' @param component.test Optional test used for each direction when
-#'   `directions` is supplied or `test = "multiple"`. Accepts `"auto"`,
+#'   named list of numeric pairs. A non-`NULL` value supplies the directions
+#'   for `test = "maxcombo"` or selects the Ditzhaus test for other test
+#'   choices, even with a single direction.
+#' @param component.test Optional component test for the Ditzhaus test.
+#'   Accepts `"auto"`,
 #'   `"logrank"`, `"gray"`, `"score"`, or `"augmented"` and their aliases.
 #'   The default `NULL` is equivalent to `"auto"`, which selects log-rank for
 #'   survival and the augmented score test for competing risks.
+#' @param alternative Alternative for MaxCombo. `"two.sided"` is the default.
+#'   `"less"` tests for lower cumulative incidence of `code.event1` in the
+#'   comparison group relative to the reference along the specified score
+#'   directions. `"greater"` tests in the opposite direction.
+#' @param code.exposure.ref Reference group for MaxCombo. Supply a numeric
+#'   code or a character level present in the analysis data. With `NULL`
+#'   (the default), the first factor level among groups present in the analysis
+#'   data is the reference.
 #' @param ... Reserved for future extensions.
 #'
 #' @return An object inheriting from `"ciftest"` and `"htest"`, with a
@@ -111,9 +131,16 @@
 #'   construction.
 #'   Multiple-direction results inherit from `"ciftest_mdir"` and store the
 #'   directions in `directions` and the individual fits in `components`.
+#'   MaxCombo results also store the standardized scores in `z`, the selected
+#'   `alternative`, and the reference and comparison group levels in `comparison`.
 #' @references Ditzhaus M, Friedrich S. More powerful logrank permutation
 #'   tests for two-sample survival data. arXiv preprint (2018).
+#'   Plackett RL. A reduction formula for normal multivariate integrals.
+#'   Biometrika. 1954;41:351--360. \doi{10.1093/biomet/41.3-4.351}
+#'   Genz A. Numerical computation of multivariate normal probabilities.
+#'   J Comput Graph Stat. 1992;1:141--149. \doi{10.1080/10618600.1992.10477010}
 #' @aliases ciftest_mdir
+#' @md
 #' @export
 ciftest <- function(
     formula,
@@ -138,6 +165,8 @@ ciftest <- function(
     prob.truncation = NULL,
     directions = NULL,
     component.test = NULL,
+    alternative = "two.sided",
+    code.exposure.ref = NULL,
     ...
 ) {
   call <- match.call()
@@ -178,21 +207,35 @@ ciftest <- function(
   )
 
   has_directions <- !is.null(directions)
-  test_key <- if (!has_directions && is.character(test) &&
-                  length(test) == 1L && !is.na(test)) {
+  test_key <- if (is.character(test) && length(test) == 1L && !is.na(test)) {
     gsub("[-_. ]", "", tolower(trimws(test)))
   } else {
     ""
   }
-  if (has_directions || test_key %in% c("multiple", "multi", "m")) {
+  if (test_key %in% c("multiple", "multi")) {
+    stop("`test = \"multiple\"` and `test = \"multi\"` were removed. Use `test = \"ditzhaus\"` or `test = \"d\"`.",
+         call. = FALSE)
+  }
+  maxcombo <- test_key %in% c("maxcombo", "m")
+  alternative <- match.arg(alternative, c("two.sided", "less", "greater"))
+  if (!maxcombo && alternative != "two.sided") {
+    stop("A one-sided `alternative` requires `test = \"maxcombo\"`.", call. = FALSE)
+  }
+  if (!maxcombo && !is.null(code.exposure.ref)) {
+    stop("`code.exposure.ref` requires `test = \"maxcombo\"`.", call. = FALSE)
+  }
+  if (maxcombo && !is.null(component.test)) {
+    stop("`test = \"maxcombo\"` uses the augmented score test. Omit `component.test`.",
+         call. = FALSE)
+  }
+  if (has_directions || maxcombo || test_key %in% c("ditzhaus", "d")) {
     if (!is.null(rho) || !is.null(gamma)) {
       if (has_directions) {
         stop("Use `directions` without separate `rho` or `gamma` arguments.",
              call. = FALSE)
       }
       stop(
-        "`test = \"multiple\"` uses the fixed directions (2, 0), (0, 2), ",
-        "and (0, 0); use `directions` for custom directions.",
+        "Use `directions` instead of `rho` or `gamma` for a combined test.",
         call. = FALSE
       )
     }
@@ -208,13 +251,15 @@ ciftest <- function(
       data = data,
       directions = if (has_directions) {
         directions
+      } else if (maxcombo) {
+        list(unweighted = c(0, 0), early = c(2, 0), FH01 = c(0, 1))
       } else {
         c("early", "late", "unweighted")
       },
       weights = weights.resolved,
       subset.condition = subset.condition,
       outcome.type = outcome.type,
-      test = if (is.null(component.test)) "auto" else component.test,
+      test = if (maxcombo) "augmented" else if (is.null(component.test)) "auto" else component.test,
       code.event1 = code.event1,
       code.event2 = code.event2,
       code.censoring = code.censoring,
@@ -226,11 +271,14 @@ ciftest <- function(
       tau = tau,
       prob.bound = prob.bound,
       prob.truncation = prob.truncation,
-      na.action = na.action
+      na.action = na.action,
+      combination = if (maxcombo) "maxcombo" else "ditzhaus",
+      alternative = alternative,
+      code.exposure.ref = code.exposure.ref
     ))
   }
   if (!is.null(component.test)) {
-    stop("`component.test` requires `directions` or `test = \"multiple\"`.",
+    stop("`component.test` requires the Ditzhaus test selected by `directions` or `test = \"ditzhaus\"`.",
          call. = FALSE)
   }
 

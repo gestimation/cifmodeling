@@ -48,19 +48,19 @@ navbar:
           href: articles/v1_overview.html
         - text: Direct polytomous regression
           href: articles/v2_polyreg.html
-        - text: Extensions of the Gray test
+        - text: Tests of cumulative incidence functions
           href: articles/v3_gray_extensions.html
         - text: Computational formulas in cifcurve()
           href: articles/v4_formulas.html
-        - text: Examples
+        - text: Worked examples
           href: articles/v5_examples.html
         - text: Gallery
           href: articles/v6_gallery.html
         - text: Reporting results
           href: articles/v7_reporting_results.html
-        - text: Additional information
+        - text: Data conventions and implementation details
           href: articles/v8_information.html
-        - text: Full lists of arguments
+        - text: Function reference
           href: articles/v9_arguments.html
     github:
       icon: fa-github
@@ -74,13 +74,13 @@ articles:
   - title: Direct polytomous regression
     contents:
       - v2_polyreg
-  - title: Extensions of the Gray test
+  - title: Tests of cumulative incidence functions
     contents:
       - v3_gray_extensions
   - title: Computational formulas in cifcurve()
     contents:
       - v4_formulas
-  - title: Examples
+  - title: Worked examples
     contents:
       - v5_examples
   - title: Gallery
@@ -89,10 +89,10 @@ articles:
   - title: Reporting results
     contents:
       - v7_reporting_results
-  - title: Additional information
+  - title: Data conventions and implementation details
     contents:
       - v8_information
-  - title: Full lists of arguments
+  - title: Function reference
     contents:
       - v9_arguments
 
@@ -121,6 +121,7 @@ reference:
     contents:
       - extract_time_to_event
       - Event
+      - Interval
       - as_ggplot
       - as_modelsummary
       - as_prediction_data

@@ -19,7 +19,10 @@ ciftest_mdir <- function(
     tau = NULL,
     prob.bound = 1e-7,
     prob.truncation = NULL,
-    na.action = stats::na.omit
+    na.action = stats::na.omit,
+    combination = "ditzhaus",
+    alternative = "two.sided",
+    code.exposure.ref = NULL
 ) {
   if (!is.character(test) || length(test) != 1L || is.na(test)) {
     stop("`component.test` must be one non-missing character value.", call. = FALSE)
@@ -53,6 +56,24 @@ ciftest_mdir <- function(
     prob.truncation = prob.truncation,
     na.action = na.action
   )
+  maxcombo <- identical(combination, "maxcombo")
+  groups <- if (maxcombo) levels(factor(input$data[[input$exposure]]))
+  if (maxcombo && length(groups) != 2L) {
+    stop("MaxCombo requires exactly two groups in the analysis data.", call. = FALSE)
+  }
+  if (maxcombo && !is.null(code.exposure.ref)) {
+    if (!(is.numeric(code.exposure.ref) || is.character(code.exposure.ref)) ||
+        length(code.exposure.ref) != 1L || is.na(code.exposure.ref)) {
+      stop("`code.exposure.ref` must be one non-missing exposure code or level.", call. = FALSE)
+    }
+    reference <- as.character(code.exposure.ref)
+    if (!reference %in% groups) {
+      stop("`code.exposure.ref` must match a group in the analysis data: ",
+           paste(groups, collapse = ", "), ".", call. = FALSE)
+    }
+    groups <- c(reference, setdiff(groups, reference))
+    input$data[[input$exposure]] <- factor(input$data[[input$exposure]], levels = groups)
+  }
   cache <- new_ciftest_nuisance_cache()
   fits <- lapply(seq_len(nrow(direction_table)), function(index) {
     component_input <- input
@@ -117,15 +138,19 @@ ciftest_mdir <- function(
   calibration <- diag(ncol(covariance))
   dimnames(covariance) <- list(block_names, block_names)
   dimnames(calibration) <- list(block_names, block_names)
-  statistic <- ciftest_quadratic_form(score, covariance)
+  statistic <- if (maxcombo) {
+    ciftest_maxcombo_statistic(score, covariance, alternative)
+  } else {
+    ciftest_quadratic_form(score, covariance)
+  }
 
   out <- list(
-    statistic = stats::setNames(statistic$statistic, "X-squared"),
-    parameter = stats::setNames(statistic$rank, "df"),
-    p.value = stats::pchisq(
+    statistic = stats::setNames(statistic$statistic, if (maxcombo) "Max Z" else "X-squared"),
+    parameter = stats::setNames(if (maxcombo) NA_integer_ else statistic$rank, "df"),
+    p.value = if (maxcombo) statistic$p.value else stats::pchisq(
       statistic$statistic, statistic$rank, lower.tail = FALSE
     ),
-    method = paste0(
+    method = if (maxcombo) "MaxCombo augmented score test (joint normal reference)" else paste0(
       "Multiple-direction ", fits[[1L]]$method,
       " (asymptotic chi-square)"
     ),
@@ -133,7 +158,7 @@ ciftest_mdir <- function(
     call = call,
     outcome.type = input$outcome.type,
     test = input$test,
-    test.requested = "multiple",
+    test.requested = combination,
     directions = direction_table,
     score = score,
     vcov.score = covariance,
@@ -156,8 +181,83 @@ ciftest_mdir <- function(
     ),
     data = input$data.original
   )
+  if (maxcombo) {
+    out$alternative <- alternative
+    out$comparison <- stats::setNames(groups, c("reference", "comparison"))
+    out$z <- statistic$z
+    out$diagnostics$integration.error <- statistic$integration.error
+  }
   class(out) <- c("ciftest_mdir", "ciftest", "htest")
   out
+}
+
+ciftest_maxcombo_statistic <- function(score, covariance, alternative) {
+  variance <- diag(covariance)
+  if (any(!is.finite(score)) || any(!is.finite(covariance)) || any(variance <= 0)) {
+    stop("MaxCombo requires finite scores and positive component variances.", call. = FALSE)
+  }
+  z <- score / sqrt(variance)
+  two_sided <- alternative == "two.sided"
+  statistic <- switch(alternative, two.sided = max(abs(z)),
+                      less = max(-z), greater = max(z))
+  correlation <- stats::cov2cor(covariance)
+  values <- eigen(correlation, symmetric = TRUE, only.values = TRUE)$values
+  if (min(values) < -1e-8) {
+    stop("MaxCombo requires a positive semidefinite score correlation matrix.", call. = FALSE)
+  }
+  upper_tail <- stats::pnorm(statistic, lower.tail = FALSE)
+  marginal <- if (two_sided) 2 * upper_tail else upper_tail
+  integration.error <- 0
+  dimension <- length(z)
+  if (dimension == 1L || marginal %in% c(0, 1)) {
+    p <- marginal
+  } else if (all(correlation[upper.tri(correlation)] == 0)) {
+    p <- -expm1(dimension * log1p(-marginal))
+  } else if (dimension <= 3L) {
+    # Use inclusion-exclusion on the upper tails to retain precision for small p.
+    pair_correlations <- correlation[upper.tri(correlation)]
+    if (two_sided) pair_correlations <- c(pair_correlations, -pair_correlations)
+    pairs <- vapply(pair_correlations, function(r) {
+      unlist(ciftest_normal_intersection(statistic, matrix(c(1, r, r, 1), 2L)))
+    }, numeric(2L))
+    multiplier <- if (two_sided) 2 else 1
+    p <- dimension * marginal - multiplier * sum(pairs[1L, ])
+    integration.error <- multiplier * sum(pairs[2L, ])
+    if (dimension == 3L) {
+      signs <- if (two_sided) {
+        # Central symmetry supplies the other four sign combinations.
+        rbind(c(1, 1, 1), c(1, 1, -1), c(1, -1, 1), c(1, -1, -1))
+      } else {
+        matrix(1, nrow = 1L, ncol = 3L)
+      }
+      triples <- vapply(seq_len(nrow(signs)), function(i) {
+        unlist(ciftest_normal_intersection(statistic, correlation * tcrossprod(signs[i, ])))
+      }, numeric(2L))
+      p <- p + multiplier * sum(triples[1L, ])
+      integration.error <- integration.error + multiplier * sum(triples[2L, ])
+    }
+  } else if (marginal < 1e-6) {
+    tail <- ciftest_normal_rare_tail(statistic, correlation, two_sided, upper_tail)
+    p <- tail$probability
+    integration.error <- tail$error
+  } else {
+    # Linear dependence is valid here. Keep the prespecified directions.
+    rect <- ciftest_normal_box(
+      lower = if (two_sided) -statistic else -Inf,
+      upper = statistic, correlation = correlation
+    )
+    p <- 1 - rect$probability
+    integration.error <- rect$error
+  }
+  if (!is.finite(p) || !is.finite(integration.error)) {
+    stop("MaxCombo joint normal probability could not be evaluated.", call. = FALSE)
+  }
+  if (integration.error > 1e-5) {
+    warning("MaxCombo joint normal integration error exceeds 1e-5.", call. = FALSE)
+  }
+  p <- max(marginal, min(1, length(z) * marginal, p))
+  list(statistic = statistic, p.value = p, z = z, integration.error = integration.error,
+       rank = sum(values > sqrt(.Machine$double.eps) * max(values)))
 }
 
 ciftest_mdir_directions <- function(directions) {
@@ -501,12 +601,22 @@ print.ciftest_mdir <- function(x, ...) {
     ),
     "\n\n", sep = ""
   )
-  cat(
-    "Chi-squared = ", format(unname(x$statistic), digits = 5L),
-    ", df = ", unname(x$parameter),
-    ", p-value = ", format.pval(x$p.value, digits = 4L), "\n",
-    sep = ""
-  )
+  if (identical(x$test.requested, "maxcombo")) {
+    groups <- x$display$levels
+    cat("Comparison: ", groups[2L], " vs ", groups[1L],
+        ", alternative = ", x$alternative, "\n", sep = "")
+    cat("Standardized scores: ",
+        paste0(x$directions$direction, " = ", format(unname(x$z), digits = 5L), collapse = ", "),
+        "\nMax Z = ", format(unname(x$statistic), digits = 5L),
+        ", p-value = ", format.pval(x$p.value, digits = 4L), "\n", sep = "")
+  } else {
+    cat(
+      "Chi-squared = ", format(unname(x$statistic), digits = 5L),
+      ", df = ", unname(x$parameter),
+      ", p-value = ", format.pval(x$p.value, digits = 4L), "\n",
+      sep = ""
+    )
+  }
   invisible(x)
 }
 

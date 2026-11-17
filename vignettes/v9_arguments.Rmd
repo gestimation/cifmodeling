@@ -1,260 +1,548 @@
 ---
-title: "Full lists of arguments"
+title: "Function reference"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Full lists of arguments}
+  %\VignetteIndexEntry{Function reference}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-<!-- badges: start --> <!-- badges: end -->
+This page summarizes the user-facing arguments of the main `cifmodeling` functions,
+including their **declared defaults**. It complements the detailed help available
+through `?function_name`. The defaults below were checked against the GitHub `master`
+source on 16 November 2026. Defaults in an installed release may differ from those in
+the development version.
 
-## cifcurve()
+For introductions and examples, see [direct regression](v2_polyreg.html),
+[tests](v3_gray_extensions.html), [computational formulas](v4_formulas.html),
+[worked examples](v5_examples.html), [the gallery](v6_gallery.html),
+[reporting](v7_reporting_results.html), and
+[data conventions](v8_information.html).
 
-Version 1.2.2 separates variance estimation (`error`), the CI transformation (`conf.type`), and the reference distribution (`conf.dist`). For the formulas, method combinations, and a worked example, see [Computational formulas in cifcurve()](v4_formulas.html).
+**How to read these tables:** “Required” means that the argument has no default.
+A vector such as `c("normal", "t")` shows the default declared in R; when
+`match.arg()` is used, the first choice is selected. Depending on the
+function, `NULL` may mean “select automatically,” “inherit,” or “disable.”
 
--   `formula` A model formula specifying the time-to-event outcome on the left-hand side (typically `Event(time, status)` or `survival::Surv(time, status)`) and, optionally, a stratification variable on the right-hand side. Unlike `cifplot()`, this function does not accept a fitted `survfit` object. 
--   `data` A data frame containing variables in `formula`.
--   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative. Supplied weights are treated as fixed, including externally estimated IPTW; uncertainty from estimating a propensity-score model is not included.
--   `n.risk.type` Character string; one of `"weighted"`, `"unweighted"`, or `"ess"`. Controls which risk set size is returned in `$n.risk` without affecting estimates or standard errors (default `"weighted"`).
--   `subset.condition` Optional character string giving a logical condition to subset `data` (default `NULL`).
--   `na.action` A function specifying the action to take on missing values (default `na.omit`).
--   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"survival"` (Kaplan-Meier) or `"competing-risk"` (Aalen-Johansen). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"competing-risk"` is assumed; otherwise, `"survival"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding.
--   `code.event1` Integer code of the event of interest (default `1`).
--   `code.event2` Integer code of the competing event (default `2`).
--   `code.censoring` Integer code of censoring (default `0`).
--   `error` Variance estimator. For unweighted KM, choose `"greenwood"` (default), `"tsiatis"`, `"if"`, or `"fay"`. For unweighted AJ, choose `"delta"` (default), `"aalen"`, `"if"`, or `"fay"`. With supplied weights, use `"if"` (default) or `"fay"`; other choices warn and fall back to `"if"`. `"fay"` applies a Fay--Graubard-type sandwich correction with a fixed leverage cap of 0.75; `"fg"` and `"fay-graubard"` are accepted aliases.
--   `conf.type` CI transformation: `"plain"`, `"log"`, `"log-log"`, `"logit"`, `"arcsin"` (default; aliases `"arcsine-square root"`, `"a"`), or `"none"` to omit CIs. It acts on KM survival or on `1 - CIF` for AJ. In particular, AJ `"log-log"` uses `log(-log(1 - CIF))`.
--   `conf.int` Numeric two-sided level of CIs (default `0.95`).
--   `conf.dist` Reference distribution for pointwise CIs: `"normal"` (default) or `"t"`. Student CIs require `error = "if"` or `"fay"`; omitting `error` with `conf.dist = "t"` selects `"if"`. This argument does not change the optional one-sided test, which uses a normal reference.
--   `df.method` Student degrees-of-freedom allocation: `"deletion"` (default; FDF) or `"equal"` (EDF, available only with `error = "if"`). Ignored for normal CIs. Degrees of freedom vary by time and stratum and are generally not the sample size minus one.
--   `time.point` Optional single time point at which a one-sided normal approximation test is performed when `null.hypothesis` is specified.
--   `null.hypothesis` Optional null value for the survival probability or cumulative incidence at `time.point`. For `outcome.type = "survival"`, the one-sided alternative is that the observed survival probability is higher than the null value. For `outcome.type = "competing-risk"`, the one-sided alternative is that the observed CIF for `code.event1` is lower than the null value. A scalar value is recycled across strata. A named numeric vector can be used to specify stratum-specific null values.
--   `report.influence.function` Logical. When `TRUE` and `engine = "calculateAJ_Rcpp"`, the influence function is also computed and returned (default `FALSE`).
--   `report.survfit.std.err` Logical. If `TRUE`, report SE on the log-survival scale (survfit's convention). Otherwise SE is on the probability scale.
--   `engine` Character. One of `"auto"`, `"calculateKM"`, or `"calculateAJ_Rcpp"` (default). Student CIs and `error = "fay"` require `"calculateAJ_Rcpp"` or `"auto"`.
--   `prob.bound` Numeric lower bound used to internally truncate probabilities away from 0 and 1 (default `1e-7`).
+## `cifcurve()`
 
+Estimate Kaplan–Meier (KM) survival or Aalen–Johansen (AJ) cumulative incidence. See
+[Computational formulas](v4_formulas.html) for estimators, standard errors, and Student
+intervals.
 
-### Returned inference diagnostics
+Here, **IF** denotes influence function and **FG** denotes Fay–Graubard
+variance correction (not Fine–Gray regression). **FDF** and **EDF** denote
+Fay-type and equal-allocation working degrees of freedom, respectively.
 
-IF/FG fits record `conf.dist`, `df`, `df.reason`, `critical.value`, and `conf.status`; Student fits also record `df.method`. `fay.bound` in an FG fit records the fixed cap 0.75 and is not an input argument. Use `summary(fit, times = ..., extend = TRUE)` to extract saved estimates, CIs, and diagnostics at requested times. For AJ, `$surv` and its limits concern `1 - CIF`; reverse and complement the limits to obtain a CIF interval.
+For competing-risk fits, `fit$surv` stores **`1 - CIF`**; plotting on the risk scale
+displays the CIF. Supplied weights are treated as fixed, so uncertainty from external
+weight estimation is excluded. The optional one-sided test uses a **normal** reference,
+even when `conf.dist = "t"`.
 
-On the C++ IF/FG path, valid boundary estimates have singleton intervals. Interior zero/invalid variance, unavailable Student degrees of freedom, and times beyond positive-weight follow-up support give missing limits. Student failures do not fall back to normal CIs. These are pointwise approximations, not simultaneous bands or exact Student intervals.
+### Data and event definitions
 
-## cifplot()
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `formula` | Required | Time-to-event formula with `Event(time, status)` or right-censored `Surv()`; optional group on the right. |
+| `data` | Required | Data frame used for the analysis. |
+| `weights` | `NULL` | Nonnegative case weights. Supplied weights, including IPTW, are treated as fixed in the variance calculations. |
+| `n.risk.type` | `"weighted"` | Display risk-set counts as weighted, unweighted, or Kish effective sample size (`"ess"`). |
+| `subset.condition` | `NULL` | Optional condition selecting observations for analysis. |
+| `na.action` | `na.omit` | Function used to handle missing values. |
+| `outcome.type` | `NULL` | `"survival"` (KM) or `"competing-risk"` (AJ); `NULL` infers the type from observed event codes. |
+| `code.event1` | `1` | Code for the primary event. |
+| `code.event2` | `2` | Code for the competing event. |
+| `code.censoring` | `0` | Code for censoring. |
 
-To display IF-t (FDF or EDF) or FG-t intervals, first fit `cifcurve()` with `conf.dist = "t"` and the desired `df.method`, then pass that fitted object as `formula_or_fit`. These two options are not forwarded by the plotting formula interface through `...` or `survfit.info`. A supplied fit retains its saved intervals; plotting arguments do not refit it.
+### Variance, intervals, and tests
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `error` | `NULL` | Variance method: KM `"greenwood"`, `"tsiatis"`, `"if"`, `"fay"`; AJ `"delta"`, `"aalen"`, `"if"`, `"fay"`. Weighted fits use IF-based methods. |
+| `conf.type` | `"arcsine-square root"` | CI transformation (`"arcsine-square root"` by default); applied to KM survival or to `1 - CIF` for AJ. |
+| `conf.int` | `0.95` | Two-sided confidence level. |
+| `conf.dist` | `c("normal", "t")` | `"normal"` or `"t"` reference for pointwise CIs. The `"t"` option requires IF or Fay variance. |
+| `df.method` | `c("deletion", "equal")` | Student degrees-of-freedom allocation: `"deletion"` (FDF) or `"equal"` (EDF; IF only). |
+| `time.point` | `NULL` | Evaluation time for the optional one-sided test with `null.hypothesis`. |
+| `null.hypothesis` | `NULL` | Null probability at `time.point`; the one-sided alternative is higher survival or lower primary-event CIF. |
+
+### Engine and diagnostics
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `report.influence.function` | `FALSE` | Return uncorrected case-weight influence contributions when the C++ engine is used. |
+| `report.survfit.std.err` | `FALSE` | Report standard errors on the log-survival scale. |
+| `engine` | `"calculateAJ_Rcpp"` | Estimator engine; C++ is standard. `"calculateKM"` is a restricted legacy option; `"auto"` is accepted. |
+| `prob.bound` | `1e-7` | Lower numerical probability bound. |
+
+The result inherits from `survfit`. Use `summary(fit, times = ..., extend = TRUE)` to
+retrieve estimates and saved interval diagnostics. IF/FG fits also contain `df`,
+`df.reason`, `critical.value`, and `conf.status`. Student references are working
+approximations, not exact finite-sample distributions.
+
+## `cifplot()`
+
+Plot a curve from a formula or display an existing fitted object. For illustrated
+examples, see [Gallery](v6_gallery.html).
+
+To display IF-t or FG-t intervals, first fit `cifcurve(conf.dist = "t", ...)` and pass
+the result as `formula_or_fit`. The formula-based plotting interface does **not**
+forward `conf.dist` or `df.method`.
+
+### Data and inference
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `formula_or_fit` | Required | Formula or fitted survival/CIF object. Passing a fitted `cifcurve` preserves its previously calculated intervals. |
+| `data` | `NULL` | Data frame used for the analysis. |
+| `weights` | `NULL` | Optional nonnegative case weights or a weight-column name; see the function help for restrictions. |
+| `subset.condition` | `NULL` | Optional condition selecting observations for analysis. |
+| `na.action` | `na.omit` | Function used to handle missing values. |
+| `outcome.type` | `"competing-risk"` | Outcome type for formula-based plotting; default is competing risks. With a fitted `cifcurve`, its stored type is used when omitted. |
+| `code.event1` | `1` | Code for the primary event. |
+| `code.event2` | `2` | Code for the competing event. |
+| `code.censoring` | `0` | Code for censoring. |
+| `code.events` | `NULL` | Event/censoring code vector or panel-wise list; e.g. `c(event1, event2, censoring)` for competing risks. |
+| `error` | `NULL` | Variance estimator, such as `"greenwood"`, `"delta"`, `"if"`, or `"fay"`, subject to outcome and weights. |
+| `conf.type` | `"arcsine-square root"` | Pointwise interval transformation; choices include `"plain"`, `"log"`, `"log-log"`, `"logit"`, `"arcsin"`, `"none"`. |
+| `conf.int` | `0.95` | Two-sided confidence level. |
+| `n.risk.type` | `c("weighted", "unweighted", "ess")` | Display risk-set counts as weighted, unweighted, or Kish effective sample size (`"ess"`). |
+
+### Axes, strata, and labels
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `type.y` | `NULL` | Plotting scale (not a CI transformation), e.g., `"surv"`, `"risk"`, `"cumhaz"`, or `"cloglog"`. |
+| `label.x` | `NULL` | X-axis label, optionally specified per panel. |
+| `label.y` | `NULL` | Y-axis label, optionally specified per panel. |
+| `label.legend` | `NULL` | Optional legend title. |
+| `label.strata` | `NULL` | Display labels for groups or strata; may be specified per panel where supported. |
+| `level.strata` | `NULL` | Underlying group levels used to match display labels. |
+| `order.strata` | `NULL` | Order in which strata are displayed; may be panel-specific. |
+| `limits.x` | `NULL` | X-axis display limits. |
+| `limits.y` | `NULL` | Y-axis display limits. |
+| `breaks.x` | `NULL` | X-axis tick locations. |
+| `breaks.y` | `NULL` | Y-axis tick locations. |
+| `use.coord.cartesian` | `FALSE` | Zoom with `coord_cartesian()` rather than restricting the scale. |
+
+### Pointwise confidence intervals, event marks, and tables
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `add.conf` | `TRUE` | Show confidence intervals. |
+| `add.risktable` | `TRUE` | Display numbers at risk beneath the curve. |
+| `add.estimate.table` | `FALSE` | Display a table of estimates and confidence intervals. |
+| `symbol.risk.table` | `"square"` | Group marker in risk/estimate tables (`"square"`, `"circle"`, or `"triangle"`). |
+| `font.size.risk.table` | `3` | Text size in risk/estimate tables. |
+| `add.censor.mark` | `TRUE` | Display censoring marks. |
+| `shape.censor.mark` | `3` | Point shape for censoring marks. |
+| `size.censor.mark` | `2` | Point size for censoring marks. |
+| `add.competing.risk.mark` | `FALSE` | Display marks at competing-event times. |
+| `competing.risk.time` | `list()` | Optional named list of competing-event times, grouped by strata. |
+| `shape.competing.risk.mark` | `16` | Point shape for competing-event marks. |
+| `size.competing.risk.mark` | `2` | Point size for competing-event marks. |
+| `add.intercurrent.event.mark` | `FALSE` | Display marks for user-specified intercurrent events. |
+| `intercurrent.event.time` | `list()` | Named list of intercurrent-event times. |
+| `shape.intercurrent.event.mark` | `1` | Point shape for intercurrent-event marks. |
+| `size.intercurrent.event.mark` | `2` | Point size for intercurrent-event marks. |
+| `add.quantile` | `FALSE` | Mark a selected quantile on the plot. |
+| `level.quantile` | `0.5` | Quantile probability (e.g., `0.5` for the median). |
+
+### Automatic panels
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `panel.per.event` | `FALSE` | Show cause-specific CIF panels for competing risks. |
+| `panel.censoring` | `FALSE` | Show event/censoring panels for a survival outcome. |
+| `panel.per.variable` | `FALSE` | Plot each right-hand-side variable in its own panel. |
+| `panel.mode` | `"auto"` | `"auto"` selects an appropriate event, censoring, or variable layout unless a panel switch is set. |
+| `rows.columns.panel` | `NULL` | Panel grid dimensions: number of rows and columns. |
+
+### Appearance and export
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `style` | `"classic"` | Plot style; defaults to `"classic"`. |
+| `palette` | `NULL` | Optional colour palette. |
+| `linewidth` | `0.8` | Width of plotted curves. |
+| `linetype` | `FALSE` | Distinguish curves by line type. |
+| `font.family` | `"sans"` | Plot font family. |
+| `font.size` | `12` | Base plot font size. |
+| `legend.position` | `"top"` | Legend placement. |
+| `print.panel` | `FALSE` | Print the assembled panel immediately. |
+| `filename.ggsave` | `NULL` | Output path for a saved figure; `NULL` does not request saving. |
+| `width.ggsave` | `6` | Saved-figure width. |
+| `height.ggsave` | `6` | Saved-figure height. |
+| `dpi.ggsave` | `300` | Saved-figure resolution (dots per inch). |
+
+### Advanced configuration
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `survfit.info` | `NULL` | Advanced internal configuration list; not usually set directly. |
+| `axis.info` | `NULL` | Advanced internal axis configuration; not usually set directly. |
+| `visual.info` | `NULL` | Advanced internal graphics configuration; not usually set directly. |
+| `panel.info` | `NULL` | Advanced internal panel configuration; not usually set directly. |
+| `style.info` | `NULL` | Advanced internal theme configuration; not usually set directly. |
+| `inset.info` | `NULL` | Advanced internal inset configuration; not usually set directly. |
+| `print.info` | `NULL` | Advanced internal print configuration; not usually set directly. |
+| `ggsave.info` | `NULL` | Advanced internal save configuration; not usually set directly. |
+| `...` | Variadic | Additional plotting options. `conf.dist` and `df.method` are **not** forwarded to `cifcurve()` here. |
+
+Plotting options change the display, not the inference already stored in a fitted curve.
+
+This example preserves IF-t intervals when plotting an existing fit.
 
 ```{r student-plot-usage, eval=FALSE}
+data(diabetes.complications)
 fit <- cifcurve(
   Event(t, epsilon) ~ fruitq1, data = diabetes.complications,
   outcome.type = "competing-risk", error = "if", conf.dist = "t",
   df.method = "equal", conf.type = "log-log"
 )
-cifplot(fit, outcome.type = "competing-risk", add.risktable = FALSE)
+cifplot(fit, add.risktable = FALSE)
 ```
 
--   `formula_or_fit` Either a model formula or a survfit object. When a formula is supplied, the LHS must be `Event(time, status)` or `Surv(time, status)`. The RHS specifies an optional stratification variable.
--   `data` A data frame containing variables in `formula`.
--   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative. Supplied weights are treated as fixed, including externally estimated IPTW; uncertainty from estimating a propensity-score model is not included.
--   `n.risk.type` Character string; one of `"weighted"`, `"unweighted"`, or `"ess"`. Controls which risk set size is returned in `$n.risk` without affecting estimates or standard errors (default `"weighted"`).
--   `subset.condition` Optional character string giving a logical condition to subset `data` (default `NULL`).
--   `na.action` A function specifying the action to take on missing values (default `na.omit`).
--   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"survival"` (Kaplan-Meier) or `"competing-risk"` (Aalen-Johansen). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"competing-risk"` is assumed; otherwise, `"survival"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding.
--   `code.event1` Integer code of the event of interest (default `1`).
--   `code.event2` Integer code of the competing event (default `2`).
--   `code.censoring` Integer code of censoring (default `0`).
--   `code.events` code.events Optional specification of event/censoring codes. For single-panel calls, supply a numeric vector. For competing-risk outcomes, use `c(event1, event2, censoring)`. For survival outcomes, a length-2 or length-3 vector is allowed: `c(event, censoring)` or `c(event, *, censoring)`, where any middle element is ignored. When supplied, this argument overrides `code.event1`, `code.event2`, and `code.censoring` for the purpose of estimation. For panel displays (e.g. `cifpanel}()` or when `panel.per.event = TRUE` or `panel.censoring = TRUE`), `code.events` may also be a list of such numeric vectors, one per panel.
--   `error` Variance estimator. For unweighted KM, choose `"greenwood"` (default), `"tsiatis"`, `"if"`, or `"fay"`. For unweighted AJ, choose `"delta"` (default), `"aalen"`, `"if"`, or `"fay"`. With supplied weights, use `"if"` (default) or `"fay"`; other choices warn and fall back to `"if"`. `"fay"` applies a Fay--Graubard-type sandwich correction with a fixed leverage cap of 0.75; `"fg"` and `"fay-graubard"` are accepted aliases.
--   `conf.type` CI transformation: `"plain"`, `"log"`, `"log-log"`, `"logit"`, `"arcsin"` (default; aliases `"arcsine-square root"`, `"a"`), or `"none"` to omit CIs. It acts on KM survival or on `1 - CIF` for AJ. In particular, AJ `"log-log"` uses `log(-log(1 - CIF))`.
--   `conf.int` Numeric two-sided level of CIs (default `0.95`).
--   `type.y` Character string specifying the y-scale. For survival/CIF curves, `"surv"` implies survival probabilities and `"risk"` implies CIF (1-survival in simple survival settings). Specify `"cumhaz"` to plot cumulative hazard or `"cloglog"` to generate a complementary log-log plot. If `NULL`, a default is chosen from `outcome.type` or the survfit object.
--   `label.x` Character x-axis labels (default `"Time"`).
--   `label.y` Character y-axis label (default is chosen automatically from `outcome.type` and `type.y`, e.g. "Survival", "Cumulative incidence" or "Cumulative hazard").
--   `label.strata` Character vector of labels for strata.
--   `order.strata` Optional ordering of strata levels. When `panel.per.variable = TRUE`, supply a named list `list(var = c("L1","L2",...))` for each RHS variable; unmatched levels are dropped. When `panel.per.variable = FALSE`, supply a character vector `c("L1","L2",...)` that specifies the display order (legend/risktable) of the single stratification factor. Levels not listed are dropped. If `label.strata` is a named vector, its names must match the (re-ordered) levels.
--   `limits.x` Numeric length-2 vectors for axis limits. If `NULL` it is internally set to `c(0,max(out_read_surv$t))`.
--   `limits.y` Numeric length-2 vectors for axis limits. If `NULL` it is internally set to `c(0,1)`.
--   `breaks.x` Numeric vectors for axis breaks (default `NULL`).
--   `breaks.y` Numeric vectors for axis breaks (default `NULL`).
--   `use.coord.cartesian` Logical; if `TRUE`, uses `ggplot2::coord_cartesian()` for zooming instead of changing the scale limits (default `FALSE`).
--   `add.conf` Logical add `add_confidence_interval()` to plot. It calls `geom_ribbon()` (default `TRUE`).
--   `add.risktable` Logical add `add_risktable(risktable_stats="n.risk")` to plot (default `TRUE`).
--   `add.estimate.table` Logical add `add_risktable(risktable_stats="estimate (conf.low, conf.high)")` to plot (default `FALSE`).
--   `symbol.risk.table` Character specifying the symbol used in the risk table to denote strata: `"square"`, `"circle"`, or `"triangle"` (default `"square"`).
--   `font.size.risk.table` Numeric font size for texts in risk / estimate tables (default `3`).
--   `add.censor.mark` Logical add `add_censor_mark()` to plot. It calls `geom_point()` (default `TRUE`).
--   `shape.censor.mark` Integer point shape for censor marks (default `3`).
--   `size.censor.mark` Numeric point size for censor marks (default `2`).
--   `add.competing.risk.mark` Logical add time marks to describe event2 specified by `Event()`, usually the competing events. It calls `geom_point()` (default `TRUE`).
--   `competing.risk.time` Named list of numeric vectors (names must be mapped to strata labels).
--   `shape.competing.risk.mark` Integer point shape for competing-risk marks (default `16`).
--   `size.competing.risk.mark` Numeric point size for competing-risk marks (default `2`).
--   `add.intercurrent.event.mark` Logical overlay user-specified time marks per strata calls `geom_point()` (default `TRUE`).
--   `intercurrent.event.time` Named list of numeric vectors (names must be mapped to strata labels).
--   `shape.intercurrent.event.mark` Integer point shape for intercurrent-event marks (default `1`).
--   `size.intercurrent.event.mark` Numeric point size for intercurrent-event marks (default `2`).
--   `add.quantile` Logical add `add_quantile()` to plot. It calls `geom_segment()` (default `TRUE`).
--   `level.quantile` Numeric quantile level for `add_quantile()` (default `0.5`).
--   `panel.per.event` Logical. Explicit panel mode. If `TRUE` and `outcome.type == "competing-risk"`, `cifplot()` internally calls `cifpanel()` to display two event-specific CIFs side-by-side (event 1 and event 2) using reversed `code.events`. Ignored for non-competing-risk outcomes.
--   `panel.censoring` Logical. Explicit panel mode. If `TRUE` and `outcome.type == "survival"`, `cifplot()` internally calls `cifpanel()` to display KM-type curves for (event, censor) and (censor, event) so that censoring patterns can be inspected.
--   `panel.per.variable` Logical. Explicit panel mode. If `TRUE` and the right-hand side of the formula has multiple covariates (e.g. `~ a + b + c`), the function produces a panel where each variable in RHS is used once as the stratification factor.
--   `panel.mode` Character specifying Automatic panel mode. If `"auto"` and none of `panel.per.variable`, `panel.per.event`, `panel.censoring` has been set to `TRUE`, the function chooses a suitable panel mode automatically: (i) if the formula RHS has 2+ variables, it behaves like `panel.per.variable = TRUE`; (ii) otherwise, if `outcome.type == "competing-risk"`, it behaves like `panel.per.event = TRUE`; (iii) otherwise, if `outcome.type == "survival"`, it behaves like `panel.censoring = TRUE`. If a panel mode is explicitly specified, `panel.mode` is ignored.
--   `rows.columns.panel` Optional integer vector `c(nrow, ncol)` controlling the panel layout. If `NULL`, an automatic layout is used.
--   `style` Character plot theme controls (default `"classsic"`).
--   `palette` Optional character vector specify color palette, e.g. `palette=c("blue", "cyan", "navy", "green")` (default `NULL`).
--   `linewidth` Optional numeric specifying the line width of curve (default `0.8`).
--   `linetype` Optional logical using different line types of curve (default `\code{`FALSE`).
--   `font.family` Character plot theme controls (e.g. `"sans"`, `"serif"`, and `"mono"`. default `"sans"`).
--   `font.size` Integer plot theme controls (default `12`).
--   `legend.position` Character specify position of legend: `"top"`, `"right"`, `"bottom"`, `"left"`, or `"none"` (default `"top"`).
--   `filename.ggsave` Character save the `ggsurvfit` plot with the path and name specified.
--   `width.ggsave` Numeric specify width of the `ggsurvfit` plot.
--   `height.ggsave` Numeric specify height of the `ggsurvfit` plot.
--   `dpi.ggsave` Numeric specify dpi of the `ggsurvfit` plot.
--   `...` Additional arguments passed to internal helper functions. This does not provide forwarding of `conf.dist` or `df.method`; use a fitted `cifcurve` object for Student intervals.
+## `cifpanel()`
 
-## cifpanel()
+Arrange plots in a grid or display one plot as an inset. Supply existing plots through
+`plots`, or use formulas to build individual panels.
 
-For Student intervals, compute each curve with `cifcurve()`, plot each fitted object with `cifplot()`, and supply the resulting plots through `plots`. The formula-based panel interface does not forward `conf.dist` or `df.method`.
+For Student intervals, first construct the curve and its plot, then assemble them with
+`plots`. The formula-based panel interface does **not** forward `conf.dist` or
+`df.method`.
 
--   `plots` Optional list of existing ggplot objects to be arranged into a panel. When plots is supplied, no new models are fitted; the plots are used as-is.
--   `formula` A model formula specifying the time-to-event outcome on the left-hand side (typically `Event(time, status)` or `survival::Surv(time, status)`) and, optionally, a stratification variable on the right-hand side. Unlike `cifplot()`, this function does not accept a fitted `survfit` object. 
--   `formulas` A list of formulas (one per panel). If provided, overrides `formula`.
--   `data` A data frame containing variables in `formula`.
--   `weights` Optional name of the weight variable in `data`. Weights must be nonnegative. Supplied weights are treated as fixed, including externally estimated IPTW; uncertainty from estimating a propensity-score model is not included.
--   `n.risk.type` Character string; one of `"weighted"`, `"unweighted"`, or `"ess"`. Controls which risk set size is returned in `$n.risk` without affecting estimates or standard errors (default `"weighted"`).
--   `subset.condition` Optional character string giving a logical condition to subset `data` (default `NULL`).
--   `na.action` A function specifying the action to take on missing values (default `na.omit`).
--   `outcome.type` Character string specifying the type of time-to-event outcome. One of `"survival"` (Kaplan-Meier) or `"competing-risk"` (Aalen-Johansen). If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels, `"competing-risk"` is assumed; otherwise, `"survival"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding.
--   `code.event1` Integer code of the event of interest (default `1`).
--   `code.event2` Integer code of the competing event (default `2`).
--   `code.censoring` Integer code of censoring (default `0`).
--   `code.events` code.events Optional specification of event/censoring codes. For single-panel calls, supply a numeric vector. For competing-risk outcomes, use `c(event1, event2, censoring)`. For survival outcomes, a length-2 or length-3 vector is allowed: `c(event, censoring)` or `c(event, *, censoring)`, where any middle element is ignored. When supplied, this argument overrides `code.event1`, `code.event2`, and `code.censoring` for the purpose of estimation. For panel displays (e.g. `cifpanel}()` or when `panel.per.event = TRUE` or `panel.censoring = TRUE`), `code.events` may also be a list of such numeric vectors, one per panel.
--   `code.events` Optional numeric length-3 vector `c(event1, event2, censoring)`. When supplied, it overrides `code.event1`, `code.event2`, and `code.censoring` (primarily used when `cifpanel()` is called or when `panel.per.event = TRUE`).
--   `error` Variance estimator. For unweighted KM, choose `"greenwood"` (default), `"tsiatis"`, `"if"`, or `"fay"`. For unweighted AJ, choose `"delta"` (default), `"aalen"`, `"if"`, or `"fay"`. With supplied weights, use `"if"` (default) or `"fay"`; other choices warn and fall back to `"if"`. `"fay"` applies a Fay--Graubard-type sandwich correction with a fixed leverage cap of 0.75; `"fg"` and `"fay-graubard"` are accepted aliases.
--   `conf.type` CI transformation: `"plain"`, `"log"`, `"log-log"`, `"logit"`, `"arcsin"` (default; aliases `"arcsine-square root"`, `"a"`), or `"none"` to omit CIs. It acts on KM survival or on `1 - CIF` for AJ. In particular, AJ `"log-log"` uses `log(-log(1 - CIF))`.
--   `conf.int` Numeric two-sided level of CIs (default `0.95`).
--   `type.y` Character string specifying the y-scale. For survival/CIF curves, `"surv"` implies survival probabilities and `"risk"` implies CIF (1-survival in simple survival settings). Specify `"cumhaz"` to plot cumulative hazard or `"cloglog"` to generate a complementary log-log plot. If `NULL`, a default is chosen from `outcome.type` or the survfit object.
--   `label.x`, `label.y` Optional vectors/lists of axis labels per panel.
--   `label.strata` Optional list of character vectors for legend labels per panel (passed to `cifplot()`).
--   `order.strata` Optional list of character vectors for ordering labels per panel (passed to `cifplot()`).
--   `limits.x`, `limits.y` Optional vectors/lists of numeric length-2 axis limits per panel.
--   `breaks.x`, `breaks.y` Optional vectors/lists of axis breaks per panel (forwarded to `breaks.x` / `breaks.y` in `cifplot()`).
--   `add.conf`, `add.censor.mark`, `add.competing.risk.mark`, `add.intercurrent.event.mark`, `add.quantile` Optional logical vectors/lists per panel to toggle features in `cifplot()`. If `NULL`, sensible defaults are used (CI/Censor on; others off).
--   `rows.columns.panel` Integer vector `c(nrow, ncol)` specifying the grid size.
--   `title.panel`, `subtitle.panel`, `caption.panel` Optional strings for panel annotation.
--   `tag.panel` Passed to `patchwork::plot_annotation(tag_levels = ...)`.
--   `title.plot` Optional length-2 character vector, titles for base/inset plots when `inset.panel = TRUE`.
--   `legend.position` Position of legends: `"top"`, `"right"`, `"bottom"`, `"left"`, or `"none"`.
--   `legend.collect` If `TRUE` (grid mode), collect legends across subplots.
--   `inset.panel` If `TRUE`, place the second plot as an inset over the first.
--   `inset.left`, `inset.bottom`, `inset.right`, `inset.top` Numeric positions (0–1) of the inset box.
--   `inset.align.to` One of `"panel"`, `"plot"`, or `"full"`.
--   `inset.legend.position` Legend position for the inset plot (e.g., `"none"`).
--   `filename.ggsave` Character save the composed panel with the path and name specified.
--   `width.ggsave` Numeric specify width of the composed panel.
--   `height.ggsave` Numeric specify height of the composed panel.
--   `dpi.ggsave` Numeric specify dpi of the composed panel.
--   `print.panel` Logical. If `TRUE`, the composed patchwork object is printed immediately (for interactive use). If `FALSE`, the object is returned invisibly so that it can be assigned, modified, or saved. Kept for backward compatibility.
--   `engine` Character scalar selecting the internal plotting engine. Currently only `"cifplot"` is supported and used to construct each panel `cifplot_single()`. This argument is reserved for future extensions.
+### Panel input and inference
 
--   `...` Additional arguments forwarded to `cifplot` (e.g., `style`, `font.family`, `font.size`, etc.). Panel-wise overrides provided via explicit arguments take precedence over `...`.
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `plots` | `NULL` | Existing plots displayed without refitting models. |
+| `formula` | `NULL` | Time-to-event formula used to create plots. |
+| `formulas` | `NULL` | Separate formulas for individual panels; takes precedence over `formula`. |
+| `data` | `NULL` | Data frame used for the analysis. |
+| `weights` | `NULL` | Optional nonnegative case weights or a weight-column name; see the function help for restrictions. |
+| `subset.condition` | `NULL` | Optional condition selecting observations for analysis. |
+| `na.action` | `na.omit` | Function used to handle missing values. |
+| `outcome.type` | `NULL` | Survival or competing-risk outcome; inferred when `NULL`. |
+| `code.event1` | `1` | Code for the primary event. |
+| `code.event2` | `2` | Code for the competing event. |
+| `code.censoring` | `0` | Code for censoring. |
+| `code.events` | `NULL` | Event/censoring code vector or one vector per panel. |
+| `error` | `NULL` | Optional variance method for the curves constructed in this call. |
+| `conf.type` | `NULL` | Optional CI transformation for curves constructed in this call. |
+| `conf.int` | `NULL` | Optional confidence level for curves constructed in this call. |
+| `n.risk.type` | `c("weighted", "unweighted", "ess")` | Display risk-set counts as weighted, unweighted, or Kish effective sample size (`"ess"`). |
 
+### Axes, strata, and labels
 
-## polyreg()
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `type.y` | `NULL` | Plotting scale (not a CI transformation), e.g., `"surv"`, `"risk"`, `"cumhaz"`, or `"cloglog"`. |
+| `label.x` | `NULL` | X-axis label, optionally specified per panel. |
+| `label.y` | `NULL` | Y-axis label, optionally specified per panel. |
+| `label.legend` | `NULL` | Optional legend title. |
+| `label.strata` | `NULL` | Display labels for groups or strata; may be specified per panel where supported. |
+| `level.strata` | `NULL` | Underlying group levels used to match display labels. |
+| `order.strata` | `NULL` | Order in which strata are displayed; may be panel-specific. |
+| `limits.x` | `NULL` | X-axis display limits. |
+| `limits.y` | `NULL` | Y-axis display limits. |
+| `breaks.x` | `NULL` | X-axis tick locations. |
+| `breaks.y` | `NULL` | Y-axis tick locations. |
 
--   `nuisance.model` A `formula` describing the outcome and nuisance covariates, excluding the exposure of interest. The left-hand side must be `Event(time, status)` or `survival::Surv(time, status)`.
--   `exposure` A character string giving the name of the categorical exposure variable in `data`.
--   `strata` Optional character string with the name of the stratification variable used to adjust for dependent censoring (default `NULL`).
--   `data` A data frame containing the outcome, exposure and nuisance covariates referenced by `nuisance.model`.
--   `subset.condition` Optional character string giving a logical condition to subset `data` (default `NULL`).
--   `na.action` A function specifying the action to take on missing values (default `na.omit`).
--   `code.event1` Integer code of the event of interest (default `1`).
--   `code.event2` Integer code of the competing event (default `2`).
--   `code.censoring` Integer code of censoring (default `0`).
--   `code.exposure.ref` Integer code identifying the reference exposure category (default `0`).
--   `effect.measure1` Character string specifying the effect measure for the primary event. Supported values are `"RR"`, `"OR"` and `"SHR"`.
--   `effect.measure2` Character string specifying the effect measure for the competing event. Supported values are `"RR"`, `"OR"` and `"SHR"`.
--   `time.point` Numeric time point at which the exposure effect is evaluated. Required for survival and competing risk analyses.
--   `outcome.type` Character string selecting the outcome type. Valid values are `"competing-risk"`, `"survival"`, `"binomial"`, `"proportional-survival"` and `"proportional-competing-risk"`. Defaults to `"competing-risk"`. If `NULL` (default), the function automatically infers the outcome type from the data: if the event variable has more than two unique levels,
-`"competing-risk"` is assumed; otherwise, `"survival"` is used. You can also use abbreviations such as `"S"` or `"C"`. Mixed or ambiguous inputs (e.g., `c("S", "C")`) trigger automatic detection based on the event coding in `data`.
--   `conf.int` Numeric two-sided level of CIs (default `0.95`).
--   `report.nuisance.parameter` Logical if `TRUE`, the returned object includes estimates of the nuisance model parameters (default `FALSE`).
--   `report.optim.convergence` Logical if `TRUE`, optimization convergence summaries are returned (default `FALSE`).
--   `report.sandwich.conf` Logical or `NULL`. When `TRUE`, CIs based on sandwich variance are computed. When `FALSE`, they are omitted (default `TRUE`). This CI is default for time-point models (`"outcome.type=COMPETING-RISK"`, `"survival"` or `"binomial"`) and is not available otherwise. 
--   `report.boot.conf` Logical or `NULL`. When `TRUE`, bootstrap CIs are computed. When `FALSE`, they are omitted. If `NULL`, the function chooses based on `outcome.type` (default `NULL`). This CI is default for proportional models (`outcome.type="proportional-competing-risk"` or `"proportional-survival"`).
--   `boot.bca` Logical indicating the bootstrap CI method. Use `TRUE` for bias-corrected and accelerated intervals or `FALSE` for the normal approximation (default to `FALSE`).
--   `boot.replications` Integer giving the number of bootstrap replications (default to `200`).
--   `boot.seed` Numeric seed used for resampling of bootstrap.
--   `nleqslv.method` Character string specifying the solver used in `nleqslv()`. Available choices are `"Broyden"` and `"Newton"`.
--   `optim.parameter1` Numeric tolerance for convergence of the outer loop (default `1e-6`).
--   `optim.parameter2` Numeric tolerance for convergence of the inner loop (default `1e-6`).
--   `optim.parameter3` Numeric constraint on the absolute value of parameters (default `100`).
--   `optim.parameter4` Integer maximum number of outer loop iterations (default `50`).
--   `optim.parameter5` Integer maximum number of `nleqslv()` iterations per outer iteration (default `50`).
--   `optim.parameter6` Integer maximum number of iterations for the Levenberg-Marquardt routine (default `50`).
--   `optim.parameter7` Numeric convergence tolerance for the Levenberg-Marquardt routine (default `1e-10`).
--   `optim.parameter8` Numeric tolerance for updating the Hessian in the Levenberg-Marquardt routine (default `1e-6`).
--   `optim.parameter9` Numeric starting value for the Levenberg-Marquardt damping parameter lambda (default `1e-6`).
--   `optim.parameter10` Numeric upper bound for lambda in the Levenberg-Marquardt routine (default `40`).
--   `optim.parameter11` Numeric lower bound for lambda in the Levenberg-Marquardt routine (default `0.025`).
--   `optim.parameter12` Numeric multiplicative increment applied to lambda when the Levenberg-Marquardt step is successful (default to `2`).
--   `optim.parameter13` Numeric multiplicative decrement applied to lambda when the Levenberg-Marquardt step is unsuccessful (default `0.5`).
--   `data.initial.values` Optional data frame providing starting values for the optimization (default `NULL`).
--   `normalize.covariate` Logical indicating whether covariates should be centered and scaled prior to optimization (default `TRUE`).
--   `terminate.time.point` Logical indicating whether time points that contribute estimation are terminated by min of max follow-up times of each exposure level (default `TRUE`).
--   `prob.bound` Numeric lower bound used to internally truncate probabilities away from 0 and 1 (default `1e-7`).
+### Panels, annotations, and insets
 
-## ciftest()
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `rows.columns.panel` | `c(1, 1)` | Grid layout specified as `c(rows, columns)`. |
+| `inset.panel` | `FALSE` | Place a second plot inside the first instead of using a grid. |
+| `title.panel` | `NULL` | Title for the assembled figure. |
+| `subtitle.panel` | `NULL` | Subtitle for the assembled figure. |
+| `caption.panel` | `NULL` | Caption for the assembled figure. |
+| `tag.panel` | `NULL` | Automatic panel-tag style passed to patchwork. |
+| `title.plot` | `NULL` | Titles for individual plots, in panel order. |
+| `legend.collect` | `TRUE` | Combine legends across grid panels. |
+| `inset.left` | `0.60` | Left edge of the inset region (0–1). |
+| `inset.bottom` | `0.05` | Bottom edge of the inset region (0–1). |
+| `inset.right` | `0.98` | Right edge of the inset region (0–1). |
+| `inset.top` | `0.45` | Top edge of the inset region (0–1). |
+| `inset.align.to` | `c("panel", "plot", "full")` | Align inset to `"panel"`, `"plot"`, or `"full"`. |
+| `inset.legend.position` | `NULL` | Legend position within the inset. |
 
-See [Reporting cumulative incidence](v7_reporting_results.html#reporting-cumulative-incidence) for a worked curve-comparison example.
+### Pointwise confidence intervals, event marks, and tables
 
--   `formula` A two-sided formula with an `Event()` or right-censored `Surv()` response and one grouping variable on the right-hand side.
--   `data` A data frame containing the variables used by the test.
--   `weights` Optional numeric case weights or the name of a weight column (default `NULL`). The standard Gray test accepts integer frequency weights.
--   `subset.condition` Optional character expression selecting rows from `data` (default `NULL`).
--   `na.action` Function used to handle missing values (default `na.omit`).
--   `outcome.type` `"auto"` (default), `"survival"`, or `"competing-risk"`. Automatic detection uses competing risks when more than two event codes are observed. `"S"` and `"C"` are accepted aliases.
--   `test` `"auto"` (default), `"early"`, `"late"`, `"logrank"`, `"gray"`, `"score"`, `"augmented"`, or `"multiple"`. `"auto"` selects log-rank for survival and the augmented score test for competing risks. `"early"` and `"late"` use fixed Fleming–Harrington weights. `"multiple"` uses directions `(2, 0)`, `(0, 2)`, and `(0, 0)` and returns a multiple-direction test. Aliases include `"L"`, `"LR"`, and `"log-rank"` for log-rank, `"G"` for Gray, `"A"`, `"aug"`, and `"augmentation"` for augmented, and `"multi"` and `"m"` for multiple.
--   `code.event1` Integer code for the event of interest (default `1`).
--   `code.event2` Integer code for the competing event (default `2`).
--   `code.censoring` Integer code for censoring (default `0`).
--   `rho`, `gamma` Non-negative Fleming–Harrington weight parameters. Omitted values resolve to zero for custom single-direction tests. Leave both unset for the fixed `"early"` and `"late"` presets and for multiple-direction tests.
--   `iteration` Number of Scheike fixed-point refinements for the augmented test. The default `0L` uses the closed-form augmented score.
--   `tolerance` Optional positive convergence tolerance. With `NULL` (default), the augmented test uses the requested number of iterations.
--   `strata` Optional character vector of analysis-stratum column names. Multiple columns define their observed interaction. The test constructs risk sets and weight processes within each stratum and sums the scores. The grouping variable is excluded from this argument.
--   `strata.censor` Optional column names defining censoring Kaplan–Meier strata. Include the grouping variable explicitly for group-specific censoring distributions.
--   `strata.competing.risk` Optional column names defining working Aalen–Johansen strata for the competing-event nuisance distribution. The function crosses these strata with the grouping variable automatically.
--   `tau` Optional finite, non-negative analysis horizon (default `NULL`).
--   `prob.bound` Positive numerical bound for required nuisance probabilities (default `1e-7`). Probabilities at or below the bound raise an error.
--   `prob.truncation` Optional lower truncation strictly above `prob.bound` for positive censoring and working-survival denominators used by score and augmented tests (default `NULL`).
--   `directions` Optional Fleming–Harrington directions supplied as a character vector of `"early"`, `"late"`, and `"unweighted"` presets, a two-column numeric matrix or data frame with `rho` and `gamma`, or a named list of numeric pairs. A non-`NULL` value overrides `test` and selects a multiple-direction test, even with a single direction.
--   `component.test` Optional test for each direction. With `directions` or `test = "multiple"`, choose `"logrank"`, `"gray"`, `"score"`, or `"augmented"`. The default selects log-rank components for survival and augmented score components for competing risks.
--   `...` Reserved for future extensions.
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `add.conf` | `NULL` | Show confidence intervals. |
+| `add.risktable` | `NULL` | Display numbers at risk beneath the curve. |
+| `add.estimate.table` | `NULL` | Display a table of estimates and confidence intervals. |
+| `symbol.risk.table` | `NULL` | Group marker in the risk table (`"square"`, `"circle"`, or `"triangle"`). |
+| `font.size.risk.table` | `NULL` | Text size in risk/estimate tables. |
+| `add.censor.mark` | `NULL` | Display censoring marks. |
+| `shape.censor.mark` | `NULL` | Point shape for censoring marks. |
+| `size.censor.mark` | `NULL` | Point size for censoring marks. |
+| `add.competing.risk.mark` | `NULL` | Display marks at competing-event times. |
+| `competing.risk.time` | `NULL` | Optional named list of competing-event times, grouped by strata. |
+| `shape.competing.risk.mark` | `NULL` | Point shape for competing-event marks. |
+| `size.competing.risk.mark` | `NULL` | Point size for competing-event marks. |
+| `add.intercurrent.event.mark` | `NULL` | Display marks for user-specified intercurrent events. |
+| `intercurrent.event.time` | `NULL` | Named list of intercurrent-event times. |
+| `shape.intercurrent.event.mark` | `NULL` | Point shape for intercurrent-event marks. |
+| `size.intercurrent.event.mark` | `NULL` | Point size for intercurrent-event marks. |
+| `add.quantile` | `NULL` | Mark a selected quantile on the plot. |
+| `level.quantile` | `NULL` | Quantile probability (e.g., `0.5` for the median). |
 
-## cifreport()
+### Appearance and export
 
-See [Reporting results](v7_reporting_results.html#automated-reports) for a report with survival and competing-risk outcomes.
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `style` | `"classic"` | Plot style; defaults to `"classic"`. |
+| `palette` | `NULL` | Optional colour palette. |
+| `linewidth` | `0.8` | Width of plotted curves. |
+| `linetype` | `FALSE` | Distinguish curves by line type. |
+| `font.family` | `"sans"` | Plot font family. |
+| `font.size` | `8` | Base plot font size. |
+| `legend.position` | `"top"` | Legend placement. |
+| `print.panel` | `FALSE` | Print the assembled panel immediately. |
+| `filename.ggsave` | `NULL` | Output path for a saved figure; `NULL` does not request saving. |
+| `width.ggsave` | `NULL` | Saved-figure width. |
+| `height.ggsave` | `NULL` | Saved-figure height. |
+| `dpi.ggsave` | `300` | Saved-figure resolution (dots per inch). |
 
--   `data` A data frame with one row per subject and unique column names.
--   `outcomes` Named list of outcome definitions. Each requires `time` and `event` column names. Optional fields are `outcome.type`, `code.event1` (default `1`), `code.event2` (default `2` for competing risks), `code.censoring` (default `0`), `time.point`, and `estimator`. Available estimators are `"KM"` (default) and `"1-KM"` for survival and `"AJ"` (default) and `"1-AJ"` for competing risks. List names become outcome labels.
--   `exposure` Character vector of grouping column names, or a named list of column names or definitions. Each definition has `variable` and can override `code.exposure.ref`, `label.strata`, `order.strata`, and `level.strata`.
--   `characteristics` Character vector of columns for the baseline table. The default `character()` gives a participant count by group.
--   `time.point` Shared finite, non-negative evaluation times in the units of the follow-up column. Each outcome can supply its own times.
--   `subset.condition` One condition selecting the analysis population. Accepts a logical vector, character expression, one-sided formula, or quoted expression. `NULL` includes all rows, and missing condition values are excluded.
--   `filename.cifreport` One or more paths ending in `.docx`, `.pdf`, `.html`, or `.htm`. If omitted, saves `yyyymmdd_<data.name>_analysis_report.docx` in the working directory. `NULL` explicitly disables file output. Parent directories must exist. Multiple paths share one analysis, and existing files are overwritten after rendering. Word output requires `xml2` and `zip`. PDF output requires Chrome, Chromium, or Microsoft Edge. Set `CIFREPORT_BROWSER` to the executable path if needed.
--   `title` Report title. The default is `Statistical Analysis Report of <data.name> on <yyyymmdd>`.
--   `overall` Whether to add an overall column to the baseline table when there are multiple exposure groups (default `FALSE`).
--   `conf.int` Confidence level for pointwise curve intervals and risk ratios (default `0.95`).
--   `table1.args` Named list of options for `gtsummary::tbl_summary()`, such as `label`, `type`, and `digits` (default `list()`). The report controls `data`, `by`, and `include`.
--   `code.exposure.ref` Reference group code for risk ratios. Supply one code for all exposures or a named vector or list keyed by exposure definition. An exposure-specific reference takes precedence. The default is the first observed factor level.
--   `data.name` Dataset name used in the default title and filename. Defaults to the name of the supplied object, or `"data"` for an inline expression.
--   `subgroup` Name of one categorical column. The report includes the overall analysis and each observed level of that column. Missing subgroup values contribute to the overall analysis only.
--   `label.strata` Exposure display labels shared by tables and figures. Name them by original code or supply them in the order of `level.strata`. Explicit labels take precedence over data value labels, followed by the original levels.
--   `order.strata` Exposure codes in display order. Omitted codes follow in their default order.
--   `level.strata` Expected exposure codes, used to match unnamed labels. By default the levels in the data are used. Each strata argument also accepts a named list keyed by exposure definition.
--   `outcome.type` Shared `"survival"` or `"competing-risk"` setting. Each outcome can override it. `NULL` (default) and `"auto"` use competing risks when more than two event codes are observed in the selected population before splitting into subgroups.
--   `cifplot.args` Named list of `cifplot()` display options applied to all figures (default `list()`). Examples include `label.x`, `breaks.x`, `legend.position`, `palette`, and `add.risktable`. Set group labels and order through the report's strata arguments. `type.y` changes the figure scale only.
--   `output.file` Older name for `filename.cifreport`. Supply only one. The returned `output.file` contains the absolute paths in the order requested, or `NULL` when file output is disabled.
+### Advanced configuration
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `survfit.info` | `NULL` | Advanced internal configuration list; not usually set directly. |
+| `axis.info` | `NULL` | Advanced internal axis configuration; not usually set directly. |
+| `visual.info` | `NULL` | Advanced internal graphics configuration; not usually set directly. |
+| `panel.info` | `NULL` | Advanced internal panel configuration; not usually set directly. |
+| `style.info` | `NULL` | Advanced internal theme configuration; not usually set directly. |
+| `inset.info` | `NULL` | Advanced internal inset configuration; not usually set directly. |
+| `print.info` | `NULL` | Advanced internal print configuration; not usually set directly. |
+| `ggsave.info` | `NULL` | Advanced internal save configuration; not usually set directly. |
+| `engine` | `"cifplot"` | Internal plotting engine; currently `"cifplot"`. |
+| `...` | Variadic | Plotting options passed on to the individual panels; these do not set `conf.dist` or `df.method`. |
+
+Most display settings accept either a shared value or panel-specific values. A `NULL`
+default often inherits the settings of the underlying plot.
+
+## `polyreg()`
+
+Fit direct polytomous regression models for survival and competing-risk outcomes. See
+[Direct polytomous regression](v2_polyreg.html) for the model formulation.
+
+Specify the exposure separately from `nuisance.model`. Fixed-time models use sandwich
+intervals by default, whereas models with time-constant effect parameters
+use bootstrap intervals by default. The default outcome type is
+**`"competing-risk"`**, not `NULL`.
+
+### Model and estimand
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `nuisance.model` | Required | Formula for the outcome and nuisance covariates, **excluding** the exposure of interest. |
+| `exposure` | Required | Categorical exposure column, specified separately from `nuisance.model`. |
+| `strata` | `NULL` | Optional variable defining strata for IPCW estimation of the censoring distribution. |
+| `data` | Required | Data frame used for the analysis. |
+| `subset.condition` | `NULL` | Optional condition selecting observations for analysis. |
+| `na.action` | `na.omit` | Function used to handle missing values. |
+| `outcome.type` | `"competing-risk"` | `"competing-risk"`, `"survival"`, `"binomial"`, or their `"proportional-"` variants. `NULL` triggers inference. |
+| `code.event1` | `1` | Code for the primary event. |
+| `code.event2` | `2` | Code for the competing event. |
+| `code.censoring` | `0` | Code for censoring. |
+| `code.exposure.ref` | `0` | Reference exposure code. If it is absent, the first observed level is used with a warning. |
+| `effect.measure1` | `"RR"` | Event-1 effect measure: `"RR"`, `"OR"`, or `"SHR"`. |
+| `effect.measure2` | `"RR"` | Event-2 effect measure: `"RR"`, `"OR"`, or `"SHR"`. |
+| `time.point` | `NULL` | Time for fixed-time survival/competing-risk effects; can be omitted for models with time-constant effect parameters. |
+
+### Intervals and output
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `conf.int` | `0.95` | Two-sided confidence level. |
+| `report.nuisance.parameter` | `FALSE` | Include fitted nuisance parameters in the result. |
+| `report.optim.convergence` | `FALSE` | Include numerical convergence details. |
+| `report.sandwich.conf` | `TRUE` | Request sandwich confidence intervals (the default for fixed-time models). |
+| `report.boot.conf` | `NULL` | Request bootstrap intervals; `NULL` selects according to outcome type (the default for models with time-constant effect parameters). |
+| `boot.bca` | `FALSE` | Use BCa rather than normal-approximation bootstrap limits when supported. |
+| `boot.multiplier` | `"rademacher"` | Multiplier weights for the IF bootstrap: `"rademacher"`, `"mammen"`, or `"gaussian"`. |
+| `boot.replications` | `200` | Number of bootstrap replicates. |
+| `boot.seed` | `46` | Seed for reproducible bootstrap calculations. |
+| `label.exposure` | `NULL` | Display label for the exposure. |
+| `label.strata` | `NULL` | Display labels for exposure levels. |
+
+### Numerical settings
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `nleqslv.method` | `"Newton"` | Root-solving algorithm: `"Newton"` or `"Broyden"`. |
+| `optim.parameter1` | `1e-6` | Outer-loop convergence tolerance. |
+| `optim.parameter2` | `1e-6` | Inner-loop convergence tolerance. |
+| `optim.parameter3` | `100` | Absolute bound on numerical parameters. |
+| `optim.parameter4` | `50` | Maximum outer-loop iterations. |
+| `optim.parameter5` | `50` | Maximum root-solver iterations per outer step. |
+| `optim.parameter6` | `50` | Maximum Levenberg–Marquardt iterations. |
+| `optim.parameter7` | `1e-10` | Levenberg–Marquardt convergence tolerance. |
+| `optim.parameter8` | `1e-6` | Hessian-update tolerance for Levenberg–Marquardt. |
+| `optim.parameter9` | `1e-3` | Initial Levenberg–Marquardt damping value. |
+| `optim.parameter10` | `40` | Upper bound for the damping value. |
+| `optim.parameter11` | `1e-6` | Lower bound for the damping value. |
+| `optim.parameter12` | `2` | Damping multiplier for an unsuccessful step. |
+| `optim.parameter13` | `0.5` | Damping multiplier for a successful step. |
+| `data.initial.values` | `NULL` | Optional data frame of starting values for model fitting. |
+| `normalize.covariate` | `TRUE` | Center and scale nuisance covariates to improve numerical stability. |
+| `terminate.time.point` | `TRUE` | Restrict contributing time points to shared observed follow-up support. |
+| `prob.bound` | `1e-7` | Lower numerical bound used inside probability computations. |
+
+The fitted object supports `coef()`, `vcov()`, `summary()`, and event-specific
+`gtsummary::tbl_regression()`. See [Reporting results](v7_reporting_results.html) for
+examples.
+
+## `ciftest()`
+
+Compare curves with log-rank, Gray, score, augmented score, or multiple-direction
+tests. See [Tests of cumulative incidence functions](v3_gray_extensions.html).
+
+For competing risks, `test = "auto"` selects an augmented score test. The
+single-direction `"early"` and `"late"` presets use FH `(1,0)` and `(0,1)`.
+The Ditzhaus test uses `(2,0)`, `(0,2)`, and `(0,0)` by default. MaxCombo
+uses `(0,0)`, `(2,0)`, and `(0,1)` by default.
+
+### Outcome, grouping, and test choice
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `formula` | Required | Time-to-event formula with exactly one grouping variable on the right. |
+| `data` | Required | Data frame used for the analysis. |
+| `weights` | `NULL` | Optional case weights. Classical Gray supports integer frequency weights. |
+| `subset.condition` | `NULL` | Optional condition selecting observations for analysis. |
+| `na.action` | `na.omit` | Function used to handle missing values. |
+| `outcome.type` | `"auto"` | `"auto"` chooses the outcome type; or specify `"survival"` or `"competing-risk"`. |
+| `test` | `"auto"` | `"auto"` chooses log-rank (survival) or augmented score (competing risks). `"ditzhaus"` (or `"d"`) selects the quadratic-form test. `"maxcombo"` (or `"m"`) selects MaxCombo with augmented scores for two groups with competing risks. |
+| `code.event1` | `1` | Code for the primary event. |
+| `code.event2` | `2` | Code for the competing event. |
+| `code.censoring` | `0` | Code for censoring. |
+| `rho` | `NULL` | Nonnegative FH weight exponent (early emphasis); `NULL` resolves to zero for custom single-direction tests. |
+| `gamma` | `NULL` | Nonnegative FH weight exponent (late emphasis); `NULL` resolves to zero for custom single-direction tests. |
+| `directions` | `NULL` | FH presets, a two-column `(rho, gamma)` matrix or data frame, or a named list of pairs. Supplies custom weights to MaxCombo or selects the Ditzhaus test for other test choices. |
+| `component.test` | `NULL` | Component for the Ditzhaus test. Choose `"logrank"`, `"gray"`, `"score"`, `"augmented"`, or `"auto"`. |
+| `alternative` | `"two.sided"` | MaxCombo alternative. `"less"` tests for a lower CIF in the comparison group relative to the reference along the selected score directions. `"greater"` tests in the opposite direction. |
+| `code.exposure.ref` | `NULL` | Numeric exposure code or character factor level for the MaxCombo reference group. The first factor level present in the analysis data is used by default. |
+
+### Strata and numerical controls
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `iteration` | `0L` | Number of augmented-score fixed-point refinements; zero uses the closed-form score. |
+| `tolerance` | `NULL` | Optional convergence tolerance for fixed-point refinement. |
+| `strata` | `NULL` | Analysis strata; risk sets and scores are constructed separately and summed. |
+| `strata.censor` | `NULL` | Strata for estimating the censoring Kaplan–Meier distribution; may include the comparison group. |
+| `strata.competing.risk` | `NULL` | Columns defining working-AJ strata; the comparison group is crossed automatically. |
+| `tau` | `NULL` | Optional end of the testing interval. |
+| `prob.bound` | `1e-7` | Strict numerical bound on required nuisance probabilities. |
+| `prob.truncation` | `NULL` | Optional lower truncation above `prob.bound` for positive nuisance denominators. |
+| `...` | Variadic | Reserved for future use. |
+
+Multiple-direction fits store the joint score vector in `$score` and its covariance
+matrix in `$vcov.score`. The Ditzhaus statistic uses an asymptotic chi-square
+reference with degrees of freedom equal to the covariance rank. MaxCombo uses
+the joint normal distribution of the standardized scores.
+
+## `cifreport()`
+
+Generate baseline, event, curve, and risk-ratio tables, together with plots and a
+report. See [Reporting results](v7_reporting_results.html).
+
+**Omitting** `filename.cifreport` creates a dated Word report; **explicitly setting it
+to `NULL`** returns results without saving a file.
+
+### Population and outcomes
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `data` | Required | Data frame used for the analysis. |
+| `outcomes` | Required | Named list of outcome definitions: `time`, `event`, and optional codes, estimator, outcome type, and times. |
+| `exposure` | Required | Grouping column names or named exposure specifications. |
+| `characteristics` | `character()` | Baseline variables included in Table 1. |
+| `time.point` | `NULL` | Shared evaluation times; individual outcomes can override them. |
+| `subset.condition` | `NULL` | Condition defining the overall analysis population. |
+| `outcome.type` | `NULL` | Shared survival or competing-risk outcome; an outcome definition may override it. |
+| `subgroup` | `NULL` | One categorical variable for population-specific sections. |
+| `code.exposure.ref` | `NULL` | Reference group code for unadjusted risk ratios. |
+
+### Tables and plots
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `overall` | `FALSE` | Add an overall column to Table 1 when there are multiple groups. |
+| `conf.int` | `0.95` | Two-sided confidence level. |
+| `table1.args` | `list()` | Named arguments for `gtsummary::tbl_summary()`; `data`, `by`, and `include` are controlled internally. |
+| `label.strata` | `NULL` | Display labels for exposure groups in tables and plots. |
+| `order.strata` | `NULL` | Exposure group display order. |
+| `level.strata` | `NULL` | Explicit exposure levels, used to align unnamed labels. |
+| `cifplot.args` | `list()` | Named `cifplot()` display options for the generated figures. |
+
+### Output files and labels
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `filename.cifreport` | `NULL` | Omitted: dated Word report. Explicit `NULL`: no file. Otherwise, one or more `.docx`, `.pdf`, or `.html` paths. |
+| `title` | `NULL` | Report title; if omitted, includes data name and current date. |
+| `data.name` | `NULL` | Dataset name used in the default output filename and title. |
+| `output.file` | `NULL` | Legacy name for `filename.cifreport`; do not pass both. |
+
+The report supports unweighted, right-censored data with one row per subject. File
+export requires optional reporting packages and Pandoc; PDF export also requires
+Chrome, Chromium, or Edge.
+
+## `cifflowchart()`
+
+Draw a participant and event flowchart from a grouping or event-history formula.
+
+Unlike most other functions, `cifflowchart()` defaults to `na.action = na.pass`,
+allowing missing categories to appear rather than being silently excluded.
+
+### Input and exclusions
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `formula` | Required | `response ~ group`, `response ~ 1`, or `Event(time, status) ~ group`. |
+| `data` | Required | Data frame with the variables needed to count subjects and events. |
+| `time.point` | `NULL` | Optional event-history cutoff for an `Event()` formula. |
+| `withdraw.consent` | `NULL` | Exclusion indicator or reason for withdrawn consent. |
+| `ineligible` | `NULL` | Exclusion indicator or reason for ineligibility. |
+| `pre.exclude` | `NULL` | Other exclusion indicator or reason before analysis allocation. |
+| `post.exclude` | `NULL` | Exclusion indicator or reason after allocation. |
+| `subset.condition` | `NULL` | Condition applied to the input data before counting. |
+| `na.action` | `na.pass` | Missingness handling; `na.pass` retains missing outcomes and groups in the flowchart. |
+| `outcome.type` | `NULL` | Optional survival or competing-risk outcome type. |
+| `code.event1` | `1` | Primary event code when `Event()` is supplied. |
+| `code.event2` | `2` | Competing-event code when `Event()` is supplied. |
+| `code.censoring` | `0` | Censoring code when `Event()` is supplied. |
+
+### Display
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `label.strata` | `NULL` | Optional group labels. |
+| `order.strata` | `NULL` | Optional group order. |
+| `label.events` | `NULL` | Optional labels for event categories. |
+| `title` | `NULL` | Optional title displayed above the flowchart. |
+| `percent` | `TRUE` | Include percentages in the flowchart nodes. |
+| `digits` | `1` | Number of decimal places for percentages. |
+| `...` | Variadic | Reserved for future use. |
+
+The function returns a `DiagrammeR::grViz()` HTML widget; the `DiagrammeR` package is
+required to display it.
+
+## Related output helpers
+
+`as_modelsummary(fit, event = "event1")` prepares a `polyreg` fit for
+`modelsummary`. `generics::tidy()` returns tidy results for `polyreg` and
+`ciftest`, while `gtsummary::tbl_regression()` and `tbl_survfit()` create
+publication-style tables. See [Reporting results](v7_reporting_results.html)
+for examples.
+
+For details specific to your installed version, consult `?cifcurve`,
+`?cifplot`, `?cifpanel`, `?polyreg`, `?ciftest`, `?cifreport`, or
+`?cifflowchart`.

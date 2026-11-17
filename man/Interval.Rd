@@ -8,9 +8,9 @@ Interval(l, r, epsilon)
 }
 \arguments{
 \item{l, r}{Numeric vectors of time bounds. An event occurred in
-\code{(l, r]}. For events detected at visits, use the last event-free time
+\verb{(l, r]}. For events detected at visits, use the last event-free time
 and the first detection time. Set \code{l = r} only for a known exact event
-time. For right censoring, use the last event-free time and \code{r = Inf}.}
+time. For right censoring, use the last event-free time and set \code{r} to \code{Inf}.}
 
 \item{epsilon}{Event code. The defaults in \code{\link[=cifcurve]{cifcurve()}} are 0 for right
 censoring, 1 for the event of interest, and 2 for the competing event.
