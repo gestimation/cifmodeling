@@ -24,6 +24,9 @@ jobs:
           needs: check
 
       - name: Check
+        env:
+          # Risk tables use Unicode symbols that the base PDF device cannot encode.
+          R_DEFAULT_DEVICE: cairo_pdf
         shell: Rscript {0}
         run: |
           rcmdcheck::rcmdcheck(
