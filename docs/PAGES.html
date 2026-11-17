@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,13 +20,13 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="articles/v1_overview.html">Overview</a></li>
     <li><a class="dropdown-item" href="articles/v2_polyreg.html">Direct polytomous regression</a></li>
-    <li><a class="dropdown-item" href="articles/v3_formulas.html">Computational formulas in cifcurve()</a></li>
-    <li><a class="dropdown-item" href="articles/v4_examples.html">Examples</a></li>
-    <li><a class="dropdown-item" href="articles/v5_gallery.html">Gallery</a></li>
-    <li><a class="dropdown-item" href="articles/v6_information.html">Additional information</a></li>
-    <li><a class="dropdown-item" href="articles/v7_arguments.html">Full lists of arguments</a></li>
-    <li><a class="dropdown-item" href="articles/v8_reporting_cif.html">Reporting cumulative incidence</a></li>
-    <li><a class="dropdown-item" href="articles/v9_reporting_polyreg.html">Reporting CIF regression</a></li>
+    <li><a class="dropdown-item" href="articles/v3_gray_extensions.html">Tests of cumulative incidence functions</a></li>
+    <li><a class="dropdown-item" href="articles/v4_formulas.html">Computational formulas in cifcurve()</a></li>
+    <li><a class="dropdown-item" href="articles/v5_examples.html">Worked examples</a></li>
+    <li><a class="dropdown-item" href="articles/v6_gallery.html">Gallery</a></li>
+    <li><a class="dropdown-item" href="articles/v7_reporting_results.html">Reporting results</a></li>
+    <li><a class="dropdown-item" href="articles/v8_information.html">Data conventions and implementation details</a></li>
+    <li><a class="dropdown-item" href="articles/v9_arguments.html">Function reference</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -52,13 +52,13 @@
 <ol style="list-style-type: decimal"><li>Confirm that the workflow’s <strong>Build pkgdown site</strong> check passes on the PR.</li>
 <li>In <strong>Settings &gt; Pages &gt; Build and deployment &gt; Source</strong>, select <strong>GitHub Actions</strong> instead of <strong>Deploy from a branch</strong>. Keep the existing site URL and domain settings.</li>
 <li>Merge the workflow PR into <code>master</code>. Its push run builds and deploys the current site. If it was merged before changing the Pages setting, open <strong>Actions &gt; pkgdown &gt; Run workflow</strong>, select <code>master</code>, and run it again.</li>
-<li>Confirm the <strong>Deploy pkgdown site</strong> job succeeds, then check the public version number, Reference pages and both reporting articles.</li>
+<li>Confirm the <strong>Deploy pkgdown site</strong> job succeeds, then check the public version number, Reference pages and the Reporting results article.</li>
 </ol><p>The checked-in <code>docs/</code> directory is the old publication snapshot. The new workflow generates its complete site in a fresh runner-temporary directory; it neither publishes the snapshot nor commits generated files. Leave <code>docs/</code> in place during this migration; removing historical generated files can be a separate cleanup after successful publication. Historical article URLs are retained through redirects in <code>_pkgdown.yml</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="routine-updates">Routine updates<a class="anchor" aria-label="anchor" href="#routine-updates"></a></h2>
 <p>Update R documentation, <code>vignettes/</code>, NEWS, or <code>_pkgdown.yml</code> in a normal PR. Merge into <code>master</code> after review; no local site build or HTML commit is needed. The root site follows <code>master</code> (release display mode), including when the package version has not changed. Manual runs on other branches build only.</p>
-<p>The build installs the local package and its suggested/website dependencies, runs the examples and articles, and checks that every vignette has an article page and that both gtsummary articles contain rendered tables. Only the deploy job has Pages write and OIDC permissions; PRs do not deploy. Production runs are serialized, and a failed build leaves the last successful site online.</p>
+<p>The build installs the local package and its suggested/website dependencies, runs the examples and articles, and checks that every vignette has an article page and that both gtsummary sections in Reporting results contain rendered tables. Only the deploy job has Pages write and OIDC permissions; PRs do not deploy. Production runs are serialized, and a failed build leaves the last successful site online.</p>
 <p>For a failed build, inspect the pkgdown job log and fix the source in a PR. For a failed deployment, first check the Pages source above and the <code>github-pages</code> environment’s deployment restrictions. The workflow uses the standard <code>GITHUB_TOKEN</code>; no personal access token or deploy key is needed.</p>
 <p>References: <a href="https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages" class="external-link">GitHub Pages custom workflows</a>, <a href="https://github.com/r-lib/actions/blob/v2/examples/pkgdown.yaml" class="external-link">r-lib pkgdown workflow</a>.</p>
 </div>

@@ -18,7 +18,8 @@ after the build succeeds.
     setting, open **Actions \> pkgdown \> Run workflow**, select
     `master`, and run it again.
 4.  Confirm the **Deploy pkgdown site** job succeeds, then check the
-    public version number, Reference pages and both reporting articles.
+    public version number, Reference pages and the Reporting results
+    article.
 
 The checked-in `docs/` directory is the old publication snapshot. The
 new workflow generates its complete site in a fresh runner-temporary
@@ -38,10 +39,10 @@ branches build only.
 
 The build installs the local package and its suggested/website
 dependencies, runs the examples and articles, and checks that every
-vignette has an article page and that both gtsummary articles contain
-rendered tables. Only the deploy job has Pages write and OIDC
-permissions; PRs do not deploy. Production runs are serialized, and a
-failed build leaves the last successful site online.
+vignette has an article page and that both gtsummary sections in
+Reporting results contain rendered tables. Only the deploy job has Pages
+write and OIDC permissions; PRs do not deploy. Production runs are
+serialized, and a failed build leaves the last successful site online.
 
 For a failed build, inspect the pkgdown job log and fix the source in a
 PR. For a failed deployment, first check the Pages source above and the

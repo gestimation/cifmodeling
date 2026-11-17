@@ -4,14 +4,14 @@ pkgdown_sha: ~
 articles:
   v1_overview: v1_overview.html
   v2_polyreg: v2_polyreg.html
-  v3_formulas: v3_formulas.html
-  v4_examples: v4_examples.html
-  v5_gallery: v5_gallery.html
-  v6_information: v6_information.html
-  v7_arguments: v7_arguments.html
-  v8_reporting_cif: v8_reporting_cif.html
-  v9_reporting_polyreg: v9_reporting_polyreg.html
-last_built: 2026-11-10T09:51Z
+  v3_gray_extensions: v3_gray_extensions.html
+  v4_formulas: v4_formulas.html
+  v5_examples: v5_examples.html
+  v6_gallery: v6_gallery.html
+  v7_reporting_results: v7_reporting_results.html
+  v8_information: v8_information.html
+  v9_arguments: v9_arguments.html
+last_built: 2026-11-17T04:37Z
 urls:
   reference: https://gestimation.github.io/cifmodeling/reference
   article: https://gestimation.github.io/cifmodeling/articles

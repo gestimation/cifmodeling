@@ -54,8 +54,10 @@ cifcurve(
 
   A model formula specifying the time-to-event outcome on the LHS
   (typically `Event(time, status)` or `survival::Surv(time, status)`)
-  and, optionally, a stratification variable on the RHS. `Surv()`
-  responses must be right-censored. Unlike
+  and, optionally, a stratification variable on the RHS. Use
+  [`Interval()`](https://gestimation.github.io/cifmodeling/reference/Interval.md)
+  for interval-censored observations. `Surv()` responses must be
+  right-censored. Unlike
   [`cifplot()`](https://gestimation.github.io/cifmodeling/reference/cifplot.md),
   this function does not accept a fitted survfit object.
 
@@ -221,7 +223,9 @@ Unsupported times retain missing limits. Use this summary rather than
 indexing added inference vectors on copies whose time grid was expanded
 by `survfit0()`. `logse` records the scale of the stored `std.err`. The
 internal `reporting` component preserves the native inference grid for
-this extraction.
+this extraction. Time and strata display labels are saved with the fit
+for
+[`cifplot()`](https://gestimation.github.io/cifmodeling/reference/cifplot.md).
 
 ## Details
 
@@ -300,6 +304,44 @@ competing-risk outcomes. The default one-sided alternative is \\F_1(t)
 \< F\_{10}(t)\\, equivalently \\1 - F_1(t) \> 1 - F\_{10}(t)\\. When
 strata are present, the test is calculated separately within each
 stratum.
+
+## Interval-censored data
+
+Use
+[`Interval()`](https://gestimation.github.io/cifmodeling/reference/Interval.md)
+as the formula response. The first event's cause must be known for every
+observed event, and the observation process must be ignorable. Left
+truncation is currently unsupported. The estimator is the nonparametric
+maximum likelihood estimator of Hudgens, Satten and Longini (2001,
+doi:10.1111/j.0006-341X.2001.00074.x), with uniform allocation of mass
+within each finite support interval and point masses at exact event
+times. For interval responses, a competing event code selects the
+competing-risk outcome automatically; use
+`outcome.type = "competing-risk"` to force it in data where that code is
+absent.
+
+Use `summary(fit, times = ..., extend = TRUE)` for point estimates at
+requested times, or omit `times` to use the observed finite bounds. The
+summary returns the target-event `cif` and its complement `surv`. If
+positive mass remains in an unbounded support interval, times inside
+that interval return `NA` with `estimate.status = "unresolved_tail"`.
+With `extend = FALSE` times beyond each stratum's last observed bound
+are omitted. The fitted support masses are stored in `reporting$curves`.
+Status is `"interpolated"` strictly inside a positive-mass finite
+support interval for the target cause, and `"estimated"` elsewhere when
+a point estimate is available.
+
+`n.risk.confirmed` counts positive-weight participants whose observed
+lower bound is at least the requested time. It is an unweighted lower
+bound on the number at risk immediately before that time, regardless of
+`n.risk.type`. The standard risk and event counts, standard errors, and
+confidence limits are unavailable, as are tests and restricted means.
+Pass the fitted object to
+[`cifplot()`](https://gestimation.github.io/cifmodeling/reference/cifplot.md)
+for a plot of the point estimates. The result inherits from `survfit`.
+Use the [`summary()`](https://rdrr.io/r/base/summary.html) generic for
+interval-aware evaluation. External methods that assume a step function
+may give different results between stored time points.
 
 ## Lifecycle
 

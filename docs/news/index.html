@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,13 +20,13 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/v1_overview.html">Overview</a></li>
     <li><a class="dropdown-item" href="../articles/v2_polyreg.html">Direct polytomous regression</a></li>
-    <li><a class="dropdown-item" href="../articles/v3_formulas.html">Computational formulas in cifcurve()</a></li>
-    <li><a class="dropdown-item" href="../articles/v4_examples.html">Examples</a></li>
-    <li><a class="dropdown-item" href="../articles/v5_gallery.html">Gallery</a></li>
-    <li><a class="dropdown-item" href="../articles/v6_information.html">Additional information</a></li>
-    <li><a class="dropdown-item" href="../articles/v7_arguments.html">Full lists of arguments</a></li>
-    <li><a class="dropdown-item" href="../articles/v8_reporting_cif.html">Reporting cumulative incidence</a></li>
-    <li><a class="dropdown-item" href="../articles/v9_reporting_polyreg.html">Reporting CIF regression</a></li>
+    <li><a class="dropdown-item" href="../articles/v3_gray_extensions.html">Tests of cumulative incidence functions</a></li>
+    <li><a class="dropdown-item" href="../articles/v4_formulas.html">Computational formulas in cifcurve()</a></li>
+    <li><a class="dropdown-item" href="../articles/v5_examples.html">Worked examples</a></li>
+    <li><a class="dropdown-item" href="../articles/v6_gallery.html">Gallery</a></li>
+    <li><a class="dropdown-item" href="../articles/v7_reporting_results.html">Reporting results</a></li>
+    <li><a class="dropdown-item" href="../articles/v8_information.html">Data conventions and implementation details</a></li>
+    <li><a class="dropdown-item" href="../articles/v9_arguments.html">Function reference</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -45,7 +45,34 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="1.2.3" id="cifmodeling-123">cifmodeling 1.2.3<a class="anchor" aria-label="anchor" href="#cifmodeling-123"></a></h2>
+<h2 class="pkg-version" data-toc-text="development version" id="cifmodeling-development-version">cifmodeling (development version)<a class="anchor" aria-label="anchor" href="#cifmodeling-development-version"></a></h2>
+<ul><li>
+<code>ciftest(test = "maxcombo")</code> (alias <code>"m"</code>) combines augmented scores for two groups with a competing-risk outcome. Its defaults are a two-sided test and Fleming–Harrington directions <code>(0, 0)</code>, <code>(2, 0)</code>, and <code>(0, 1)</code>. Use <code>alternative</code> for a one-sided test and <code>code.exposure.ref</code> to specify the reference group. MaxCombo computes joint normal probabilities internally.</li>
+<li>Use <code>ciftest(test = "ditzhaus")</code> or <code>test = "d"</code> for the quadratic-form test. The selectors <code>"multiple"</code> and <code>"multi"</code> were removed. Supplying <code>directions</code> still selects the quadratic-form test unless <code>test = "maxcombo"</code>. Use <code>component.test</code> to choose a component for the Ditzhaus test. The former <code><a href="../reference/ciftest.html">ciftest_mdir()</a></code> entry point is internal, and existing result objects keep their S3 methods.</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.2.6" id="cifmodeling-126">cifmodeling 1.2.6<a class="anchor" aria-label="anchor" href="#cifmodeling-126"></a></h2>
+<ul><li>
+<code><a href="../reference/cifcurve.html">cifcurve()</a></code> accepts <code>Interval(l, r, epsilon)</code> for interval-censored survival and competing-risk outcomes with known event types. The nonparametric maximum likelihood estimator allocates mass uniformly within finite support intervals. <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> flags interpolated estimates and reports confirmed numbers at risk. Standard errors and confidence intervals are unavailable for interval-censored fits.</li>
+<li>
+<code><a href="../reference/cifplot.html">cifplot()</a></code> accepts fitted interval-censored curves and draws linear segments and exact event jumps. The risk table shows confirmed counts, and the optional estimate table flags interpolated values.</li>
+<li>Simplified internal curve preparation and fixed-time reporting, preserving existing function arguments and report formats.</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.2.5" id="cifmodeling-125">cifmodeling 1.2.5<a class="anchor" aria-label="anchor" href="#cifmodeling-125"></a></h2>
+<ul><li>Added <code><a href="../reference/cifreport.html">cifreport()</a></code> for survival and competing-risk analyses, including baseline summaries with p-values, outcome definitions, fixed-time estimates and crude risk ratios, curve comparisons, and figures by exposure and subgroup. The default output is Word with editable tables. <code>filename.cifreport</code> accepts Word, PDF, and self-contained HTML filenames in one call, or <code>NULL</code> to return results without writing files. Table percentages use one decimal place by default.</li>
+<li>
+<code><a href="../reference/cifreport.html">cifreport()</a></code> accepts a shared <code>outcome.type</code> with per-outcome overrides and uses the same automatic detection rule as <code><a href="../reference/cifcurve.html">cifcurve()</a></code>. <code>cifplot.args</code> applies common figure settings across outcomes and subgroups.</li>
+<li>Unified variable and value labels across reporting, plotting, and regression summaries. Explicit labels take precedence over data attributes, followed by the original variable names or levels. Saved fits retain label information while analysis codes and <code>order.strata</code> behavior are preserved.</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.2.4" id="cifmodeling-124">cifmodeling 1.2.4<a class="anchor" aria-label="anchor" href="#cifmodeling-124"></a></h2><p class="text-muted">CRAN release: 2026-11-12</p>
+<ul><li>Shortened package checks by making the full-cohort adjusted regression example in the Examples vignette runnable on demand and by using a reproducible sample for the cumulative incidence reporting examples.</li>
+<li>Reduced check time for reporting, bootstrap, and confidence interval tests using smaller fixtures and fewer repeated cases.</li>
+<li>Included pre-rendered Gallery figures and made the additional effect-measure model comparison runnable on demand in the CIF regression reporting vignette.</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.2.3" id="cifmodeling-123">cifmodeling 1.2.3<a class="anchor" aria-label="anchor" href="#cifmodeling-123"></a></h2><p class="text-muted">CRAN release: 2026-11-11</p>
 <ul><li>
 <code><a href="../reference/polyreg-methods.html">tidy.polyreg()</a></code> accepts the default arguments forwarded by <code><a href="https://modelsummary.com/man/msummary.html" class="external-link">modelsummary::msummary()</a></code>, so tables can display exponentiated coefficients and confidence intervals at the requested level.</li>
 <li>
@@ -53,7 +80,7 @@
 <li>Multilevel binomial models use the generalized log odds product to fit separate exposure contrasts against the reference level. Proportional models use the requested level for normal bootstrap intervals and compute BCa intervals separately for the reported coefficients.</li>
 <li>
 <code><a href="../reference/cifcurve.html">cifcurve()</a></code> computes delta and Aalen variances using all event times up to each reported time. The legacy engine reports risk sets immediately before each time and accepts unweighted data or positive weights that are constant within each stratum. Confidence limits and one-sided p-values are missing beyond each stratum’s positive-weight follow-up.</li>
-<li>Time-to-event analyses reject unsupported <code>Surv()</code> response types. Explicit competing-risk analyses retain their selected outcome type when a cause is absent, subject to the event requirements of each estimator. The joint Gray covariance in <code><a href="../reference/ciftest_mdir.html">ciftest_mdir()</a></code> respects custom event codes.</li>
+<li>Time-to-event analyses reject unsupported <code>Surv()</code> response types. Explicit competing-risk analyses retain their selected outcome type when a cause is absent, subject to the event requirements of each estimator. The joint Gray covariance in <code><a href="../reference/ciftest.html">ciftest_mdir()</a></code> respects custom event codes.</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.2.2" id="cifmodeling-122">cifmodeling 1.2.2<a class="anchor" aria-label="anchor" href="#cifmodeling-122"></a></h2>
@@ -72,7 +99,7 @@
 <li><p>Redesigned the public <code><a href="../reference/ciftest.html">ciftest()</a></code> selector around <code>test = "auto"</code>, <code>"logrank"</code>, <code>"gray"</code>, <code>"score"</code>, or <code>"augmented"</code>; <code>"early"</code> and <code>"late"</code> select outcome-specific Fleming–Harrington presets. Survival outcomes now default to log-rank and competing-risk outcomes to the augmented score. Added <code>"L"</code>, <code>"LR"</code>, and <code>"log-rank"</code> aliases for log-rank, <code>"G"</code> for Gray, and <code>"A"</code>, <code>"aug"</code>, and <code>"augmentation"</code> for the augmented score test. Added a null robust score option, individual score-contribution matrices, two-sided multigroup omnibus tests, and <code>survdiff</code> compatibility for the ordinary unweighted log-rank result.</p></li>
 <li><p>Renamed the public analysis-stratification argument from <code>strata.event</code> to <code>strata</code>. <code>strata.censor</code> is formally available for the competing-risk null score, while <code>strata.competing.risk</code> remains specific to augmentation.</p></li>
 <li><p>Added <code>prob.truncation</code> for derivative-aware probability lower truncation of censoring KM and working AJ survival denominators. Raw probabilities continue to determine structural positivity failures; raw and used minima and truncation counts are returned in diagnostics.</p></li>
-<li><p>Added <code><a href="../reference/ciftest_mdir.html">ciftest_mdir()</a></code> to combine user-selected unweighted, early, late, or custom Fleming–Harrington directions in a Ditzhaus–Friedrich quadratic score test with rank-adaptive asymptotic chi-square calibration. Classical log-rank directions use a joint finite-population-corrected hypergeometric covariance, while classical Gray directions use the bilinear extension of Gray’s event, competing-event, and censoring covariance. Consequently, linearly dependent FH directions do not change the quadratic test. <code>ciftest(test = "multiple")</code> and its <code>"multi"</code> and <code>"m"</code> aliases use the linearly independent default directions <code>(2, 0)</code>, <code>(0, 2)</code>, and <code>(0, 0)</code>; the single-direction early and late presets remain <code>(1, 0)</code> and <code>(0, 1)</code>.</p></li>
+<li><p>Added <code><a href="../reference/ciftest.html">ciftest_mdir()</a></code> to combine user-selected unweighted, early, late, or custom Fleming–Harrington directions in a Ditzhaus–Friedrich quadratic score test with rank-adaptive asymptotic chi-square calibration. Classical log-rank directions use a joint finite-population-corrected hypergeometric covariance, while classical Gray directions use the bilinear extension of Gray’s event, competing-event, and censoring covariance. Consequently, linearly dependent FH directions do not change the quadratic test. <code>ciftest(test = "multiple")</code> and its <code>"multi"</code> and <code>"m"</code> aliases use the linearly independent default directions <code>(2, 0)</code>, <code>(0, 2)</code>, and <code>(0, 0)</code>; the single-direction early and late presets remain <code>(1, 0)</code> and <code>(0, 1)</code>.</p></li>
 <li><p>Added analysis stratification to <code><a href="../reference/ciftest.html">ciftest()</a></code> independently of <code>strata.censor</code> and <code>strata.competing.risk</code>. Log-rank and Gray scores/covariances, Fine–Gray risk sets, and FH weight processes are constructed within event strata and then summed. Closed-form augmentation uses event-by-exposure-by-competing-risk-by-censoring computational cells; positive fixed-point iterations remain restricted to pooled models. All three strata arguments accept one or more column names; multiple columns define their observed interaction and share one complete-case filter.</p></li>
 <li><p>Added finite Scheike fixed-point refinement to <code><a href="../reference/ciftest.html">ciftest()</a></code>. The single <code>iteration</code> argument selects the closed-form augmented score at zero and a fixed number of iterated time-weighted Fine–Gray updates at positive integers, with subject-level scores and residual diagnostics returned. Appendix-E iteration now evaluates the working competing-risk ratio with the coherent Aalen–Johansen survival and enforces positivity only where a future cause-1 score contribution is active; censoring times beyond the last cause-1 event are excluded from the correction map and reported in <code>diagnostics$iteration.support</code>.</p></li>
 <li><p>Anchored positive finite iterations and the internal direct fixed-point reference at the closed-form augmented score using <code>closed-form + AIPWCC(value) - AIPWCC(seed)</code>. This preserves the zeroth-step identity in each observed sample while retaining the raw <code>AIPWCC(seed)</code> as a batch-only diagnostic. Anchoring discrepancies are returned under <code>diagnostics$iteration.anchor</code>.</p></li>

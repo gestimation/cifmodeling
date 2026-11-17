@@ -1,6 +1,78 @@
 # Changelog
 
+## cifmodeling (development version)
+
+- `ciftest(test = "maxcombo")` (alias `"m"`) combines augmented scores
+  for two groups with a competing-risk outcome. Its defaults are a
+  two-sided test and Fleming–Harrington directions `(0, 0)`, `(2, 0)`,
+  and `(0, 1)`. Use `alternative` for a one-sided test and
+  `code.exposure.ref` to specify the reference group. MaxCombo computes
+  joint normal probabilities internally.
+- Use `ciftest(test = "ditzhaus")` or `test = "d"` for the
+  quadratic-form test. The selectors `"multiple"` and `"multi"` were
+  removed. Supplying `directions` still selects the quadratic-form test
+  unless `test = "maxcombo"`. Use `component.test` to choose a component
+  for the Ditzhaus test. The former
+  [`ciftest_mdir()`](https://gestimation.github.io/cifmodeling/reference/ciftest.md)
+  entry point is internal, and existing result objects keep their S3
+  methods.
+
+## cifmodeling 1.2.6
+
+- [`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md)
+  accepts `Interval(l, r, epsilon)` for interval-censored survival and
+  competing-risk outcomes with known event types. The nonparametric
+  maximum likelihood estimator allocates mass uniformly within finite
+  support intervals. [`summary()`](https://rdrr.io/r/base/summary.html)
+  flags interpolated estimates and reports confirmed numbers at risk.
+  Standard errors and confidence intervals are unavailable for
+  interval-censored fits.
+- [`cifplot()`](https://gestimation.github.io/cifmodeling/reference/cifplot.md)
+  accepts fitted interval-censored curves and draws linear segments and
+  exact event jumps. The risk table shows confirmed counts, and the
+  optional estimate table flags interpolated values.
+- Simplified internal curve preparation and fixed-time reporting,
+  preserving existing function arguments and report formats.
+
+## cifmodeling 1.2.5
+
+- Added
+  [`cifreport()`](https://gestimation.github.io/cifmodeling/reference/cifreport.md)
+  for survival and competing-risk analyses, including baseline summaries
+  with p-values, outcome definitions, fixed-time estimates and crude
+  risk ratios, curve comparisons, and figures by exposure and subgroup.
+  The default output is Word with editable tables. `filename.cifreport`
+  accepts Word, PDF, and self-contained HTML filenames in one call, or
+  `NULL` to return results without writing files. Table percentages use
+  one decimal place by default.
+- [`cifreport()`](https://gestimation.github.io/cifmodeling/reference/cifreport.md)
+  accepts a shared `outcome.type` with per-outcome overrides and uses
+  the same automatic detection rule as
+  [`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md).
+  `cifplot.args` applies common figure settings across outcomes and
+  subgroups.
+- Unified variable and value labels across reporting, plotting, and
+  regression summaries. Explicit labels take precedence over data
+  attributes, followed by the original variable names or levels. Saved
+  fits retain label information while analysis codes and `order.strata`
+  behavior are preserved.
+
+## cifmodeling 1.2.4
+
+CRAN release: 2026-11-12
+
+- Shortened package checks by making the full-cohort adjusted regression
+  example in the Examples vignette runnable on demand and by using a
+  reproducible sample for the cumulative incidence reporting examples.
+- Reduced check time for reporting, bootstrap, and confidence interval
+  tests using smaller fixtures and fewer repeated cases.
+- Included pre-rendered Gallery figures and made the additional
+  effect-measure model comparison runnable on demand in the CIF
+  regression reporting vignette.
+
 ## cifmodeling 1.2.3
+
+CRAN release: 2026-11-11
 
 - [`tidy.polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg-methods.md)
   accepts the default arguments forwarded by
@@ -27,7 +99,7 @@
   Explicit competing-risk analyses retain their selected outcome type
   when a cause is absent, subject to the event requirements of each
   estimator. The joint Gray covariance in
-  [`ciftest_mdir()`](https://gestimation.github.io/cifmodeling/reference/ciftest_mdir.md)
+  [`ciftest_mdir()`](https://gestimation.github.io/cifmodeling/reference/ciftest.md)
   respects custom event codes.
 
 ## cifmodeling 1.2.2
@@ -116,7 +188,7 @@
   raw and used minima and truncation counts are returned in diagnostics.
 
 - Added
-  [`ciftest_mdir()`](https://gestimation.github.io/cifmodeling/reference/ciftest_mdir.md)
+  [`ciftest_mdir()`](https://gestimation.github.io/cifmodeling/reference/ciftest.md)
   to combine user-selected unweighted, early, late, or custom
   Fleming–Harrington directions in a Ditzhaus–Friedrich quadratic score
   test with rank-adaptive asymptotic chi-square calibration. Classical

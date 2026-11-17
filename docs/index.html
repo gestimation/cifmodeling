@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,13 +37,13 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="articles/v1_overview.html">Overview</a></li>
     <li><a class="dropdown-item" href="articles/v2_polyreg.html">Direct polytomous regression</a></li>
-    <li><a class="dropdown-item" href="articles/v3_formulas.html">Computational formulas in cifcurve()</a></li>
-    <li><a class="dropdown-item" href="articles/v4_examples.html">Examples</a></li>
-    <li><a class="dropdown-item" href="articles/v5_gallery.html">Gallery</a></li>
-    <li><a class="dropdown-item" href="articles/v6_information.html">Additional information</a></li>
-    <li><a class="dropdown-item" href="articles/v7_arguments.html">Full lists of arguments</a></li>
-    <li><a class="dropdown-item" href="articles/v8_reporting_cif.html">Reporting cumulative incidence</a></li>
-    <li><a class="dropdown-item" href="articles/v9_reporting_polyreg.html">Reporting CIF regression</a></li>
+    <li><a class="dropdown-item" href="articles/v3_gray_extensions.html">Tests of cumulative incidence functions</a></li>
+    <li><a class="dropdown-item" href="articles/v4_formulas.html">Computational formulas in cifcurve()</a></li>
+    <li><a class="dropdown-item" href="articles/v5_examples.html">Worked examples</a></li>
+    <li><a class="dropdown-item" href="articles/v6_gallery.html">Gallery</a></li>
+    <li><a class="dropdown-item" href="articles/v7_reporting_results.html">Reporting results</a></li>
+    <li><a class="dropdown-item" href="articles/v8_information.html">Data conventions and implementation details</a></li>
+    <li><a class="dropdown-item" href="articles/v9_arguments.html">Function reference</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -73,10 +73,9 @@
 <li>
 <code><a href="reference/cifpanel.html">cifpanel()</a></code> creates multi-panel displays for survival/CIF curves, arranged either <strong>in a grid layout or as an inset overlay</strong>.</li>
 <li>
-<code><a href="reference/ciftest.html">ciftest()</a></code> compares survival or CIF curves using log-rank, Gray, robust score, augmented score, or multiple-direction tests.</li>
+<code><a href="reference/ciftest.html">ciftest()</a></code> compares survival or CIF curves using log-rank, Gray, augmented score, or time-directed tests.</li>
 <li>
-<code><a href="reference/polyreg.html">polyreg()</a></code> fits <strong>coherent regression models</strong> on all cause-specific CIFs simultaneously to estimate RR/OR/SHR using direct polytomous regression. <a href="https://doi.org/10.1093/biomtc/ujag160" class="external-link">Tanaka and Scheike (2026)</a>
-</li>
+<code><a href="reference/polyreg.html">polyreg()</a></code> fits <strong>coherent regression models</strong> on all cause-specific CIFs simultaneously to estimate RR/OR/SHR using direct polytomous regression (Tanaka and Scheike 2026).</li>
 </ul>
 <blockquote>
 <p><strong>Explore the main features visually:</strong><br>
@@ -93,7 +92,7 @@ Visit the <em>Coffee and Research – Story and Quiz</em> series for narrative-s
 <div class="section level2">
 <h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
-<p>This example uses <code>diabetes.complications</code>, an anonymized dataset from the Japan Diabetes Complications Study. <a href="https://doi.org/10.1097/EDE.0b013e318281725e" class="external-link">Tanaka et al. (2013)</a></p>
+<p>This example uses <code>diabetes.complications</code>, an anonymized dataset from the Japan Diabetes Complications Study (Tanaka et al. 2013).</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gestimation.github.io/cifmodeling/">cifmodeling</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">diabetes.complications</span><span class="op">)</span></span>
@@ -108,7 +107,7 @@ Aalen-Johansen cumulative incidence curves from cifplot()
 <div class="section level3">
 <h3 id="tests-of-survival-and-cumulative-incidence-curves">Tests of survival and cumulative incidence curves<a class="anchor" aria-label="anchor" href="#tests-of-survival-and-cumulative-incidence-curves"></a>
 </h3>
-<p><code><a href="reference/ciftest.html">ciftest()</a></code> uses the same formula interface. Its default is log-rank for a survival outcome and the augmented score test for a competing-risk outcome. Short aliases are available for interactive use: <code>"L"</code>/<code>"LR"</code>/<code>"log-rank"</code>, <code>"G"</code>, and <code>"A"</code>/<code>"aug"</code>/<code>"augmentation"</code>. The <code>"early"</code> and <code>"late"</code> presets choose the outcome-specific test with Fleming–Harrington weights, while <code>"multiple"</code> (or <code>"multi"</code>/<code>"m"</code>) combines the default directions <code>(2, 0)</code>, <code>(0, 2)</code>, and <code>(0, 0)</code>. Optional lower truncation of nuisance probabilities is controlled by <code>prob.truncation</code>.</p>
+<p><code><a href="reference/ciftest.html">ciftest()</a></code> uses the same formula interface. Its default is log-rank for a survival outcome and the augmented score test for a competing-risk outcome. Short aliases are available for interactive use: <code>"L"</code>/<code>"LR"</code>/<code>"log-rank"</code>, <code>"G"</code>, and <code>"A"</code>/<code>"aug"</code>/<code>"augmentation"</code>. The <code>"early"</code> and <code>"late"</code> presets choose the outcome-specific test with Fleming–Harrington weights. <code>test = "ditzhaus"</code> (or <code>"d"</code>) combines the default directions <code>(2, 0)</code>, <code>(0, 2)</code>, and <code>(0, 0)</code> in a quadratic form. For two groups with competing risks, <code>test = "maxcombo"</code> (or <code>"m"</code>) uses augmented scores with directions <code>(0, 0)</code>, <code>(2, 0)</code>, and <code>(0, 1)</code> by default. Use <code>alternative</code> to select a one-sided MaxCombo test and <code>code.exposure.ref</code> to specify its reference group. Optional lower truncation of nuisance probabilities is controlled by <code>prob.truncation</code>.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/ciftest.html">ciftest</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">epsilon</span><span class="op">)</span> <span class="op">~</span> <span class="va">fruitq1</span>,</span>
@@ -271,7 +270,7 @@ Visualization of risk ratios at 2, 4, 6 and 8 years using polyreg() and modelplo
 <li>
 <strong>Coherent, joint modeling of all competing events</strong>: <code><a href="reference/polyreg.html">polyreg()</a></code> models all cause-specific CIFs together, parameterizing the nuisance structure with polytomous log odds products and enforcing that their CIFs sum to at most one.</li>
 <li>
-<strong>Curve-comparison tests</strong>: <code><a href="reference/ciftest.html">ciftest()</a></code> provides log-rank, Gray, robust score, augmented score, and rank-adaptive multiple-direction tests through the same formula syntax.</li>
+<strong>Tests for survival and CIF curves</strong>: <code><a href="reference/ciftest.html">ciftest()</a></code> provides log-rank, Gray, augmented score, and time-directed tests through the same formula syntax.</li>
 <li>
 <strong>Tidy summaries and reporting</strong>: support for <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">generics::tidy()</a></code>, <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code>, and <code>augment()</code>, which integrate <code><a href="reference/polyreg.html">polyreg()</a></code> smoothly with <code>modelsummary</code> and other broom-style tools.</li>
 <li>
@@ -282,7 +281,7 @@ Visualization of risk ratios at 2, 4, 6 and 8 years using polyreg() and modelplo
 <h2 id="position-in-the-survival-ecosystem">Position in the survival ecosystem<a class="anchor" aria-label="anchor" href="#position-in-the-survival-ecosystem"></a>
 </h2>
 <p>Several excellent R packages exist for survival and competing risks analysis. The <strong>survival</strong> package provides the canonical API for survival data. In combination with the <strong>ggsurvfit</strong> package, <code><a href="https://rdrr.io/pkg/survival/man/survfit.html" class="external-link">survival::survfit()</a></code> can produce publication-ready survival plots. For CIF plots, however, integration in the general ecosystem is less streamlined. <strong>cifmodeling</strong> fills this gap by offering <code><a href="reference/cifplot.html">cifplot()</a></code> for survival/CIF plots and multi-panel figures via a single, unified interface.</p>
-<p>Beyond providing a unified interface, <code><a href="reference/cifcurve.html">cifcurve()</a></code> also extends <code>survfit()</code> in a few targeted ways. For unweighted survival data, it reproduces the standard Kaplan-Meier estimator with <strong>Greenwood and Tsiatis SEs</strong> and a unified set of CI transformations. For unweighted competing risks data, it computes Aalen-Johansen CIFs with both <strong>Aalen-type and delta-method SEs</strong>. The default inference for weighted curves uses <strong>influence-function based SEs</strong> (Deng and Wang 2025). The <a href="https://gestimation.github.io/cifmodeling/articles/v3_formulas.html">formulas vignette</a> also describes the weighted Kaplan–Meier estimator and the adjusted Greenwood variance. <a href="https://doi.org/10.1002/sim.2174" class="external-link">Xie and Liu (2005)</a></p>
+<p>Beyond providing a unified interface, <code><a href="reference/cifcurve.html">cifcurve()</a></code> also extends <code>survfit()</code> in a few targeted ways. For unweighted survival data, it reproduces the standard Kaplan-Meier estimator with Greenwood and Tsiatis SEs and a unified set of CI transformations. For weighted survival and competing risks data, influence-function based SEs are also implemented (Deng and Wang 2025). The formulas vignette also describes other SEs and CIs based on <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>-distribution (Fay and Graubard 2001).</p>
 <p>If you need very fine-grained plot customization, you can compute the estimator and keep a survfit-compatible object with <code><a href="reference/cifcurve.html">cifcurve()</a></code> (or supply your own survfit object) and then style it using <code>ggsurvfit/ggplot2</code> layers. In other words:</p>
 <ul>
 <li>use <code><a href="reference/cifcurve.html">cifcurve()</a></code> for estimation,</li>
@@ -413,6 +412,22 @@ Visit <a href="https://gestimation.github.io/cifmodeling/articles/formulas.html"
 <h2 id="quality-control">Quality control<a class="anchor" aria-label="anchor" href="#quality-control"></a>
 </h2>
 <p><strong>cifmodeling</strong> includes an extensive test suite built with <strong>testthat</strong>, which checks the numerical accuracy and graphical consistency of the core estimation, testing, modeling, and plotting functions, including <code><a href="reference/ciftest.html">ciftest()</a></code>. Numerical results are compared against related functions in <strong>survival</strong>, <strong>cmprsk</strong>, and <strong>mets</strong> where independent reference implementations are available.</p>
+</div>
+<div class="section level2">
+<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
+<ul>
+<li>Deng Y, Wang R. Adjusted Nelson–Aalen estimators by inverse treatment probability weighting with an estimated propensity score. <em>Statistics in Medicine</em>. 2025;44(10–12):e70085. <a href="https://onlinelibrary.wiley.com/doi/full/10.1002/sim.70085" class="external-link">doi:10.1002/sim.70085</a>
+</li>
+<li>Fay MP, Graubard BI. Small-sample adjustments for Wald-type tests using sandwich estimators. <em>Biometrics</em>. 2001;57(4):1198–1206. <a href="https://onlinelibrary.wiley.com/doi/10.1111/j.0006-341X.2001.01198.x" class="external-link">doi:10.1111/j.0006-341X.2001.01198.x</a>
+</li>
+<li>Scheike TH, Zhang M-J, Gerds TA. Predicting cumulative incidence probability by direct binomial regression. <em>Biometrika</em>. 2008;95(1):205–220. <a href="https://doi.org/10.1093/biomet/asm096" class="external-link">doi:10.1093/biomet/asm096</a>
+</li>
+<li>Tanaka S, Scheike TH. Estimating effects on cumulative incidence probabilities by direct polytomous regression and polytomous log-odds product. <em>Biometrics</em>. 2026;82(3):ujag160. <a href="https://doi.org/10.1093/biomtc/ujag160" class="external-link">doi:10.1093/biomtc/ujag160</a>
+</li>
+<li>Tanaka S, Yoshimura Y, Kawasaki R, Kamada C, Tanaka S, Horikawa C, Ohashi Y, Araki A, Ito H, Akanuma Y, Yamada N, Yamashita H, Sone H, for the Japan Diabetes Complications Study Group. Fruit intake and incident diabetic retinopathy with type 2 diabetes. <em>Epidemiology</em>. 2013;24(2):204–211. <a href="https://doi.org/10.1097/EDE.0b013e318281725e" class="external-link">doi:10.1097/EDE.0b013e318281725e</a>
+</li>
+</ul>
 </div>
 </div>
 

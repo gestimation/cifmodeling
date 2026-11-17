@@ -63,7 +63,9 @@ polyreg(
   data.initial.values = NULL,
   normalize.covariate = TRUE,
   terminate.time.point = TRUE,
-  prob.bound = 1e-07
+  prob.bound = 1e-07,
+  label.exposure = NULL,
+  label.strata = NULL
 )
 ```
 
@@ -292,6 +294,18 @@ polyreg(
 
   Numeric lower bound used to internally truncate probabilities away
   from 0 and 1 (default `1e-7`).
+
+- label.exposure:
+
+  Optional display label for the exposure variable. Defaults to its
+  `label` attribute or the column name.
+
+- label.strata:
+
+  Optional display labels for exposure levels. A named vector maps
+  original exposure codes to labels. Unnamed labels follow fitted
+  exposure order (reference first). Unspecified labels use the `labels`
+  attribute or the original exposure level.
 
 ## Value
 
@@ -565,4 +579,9 @@ if (requireNamespace("gtsummary", quietly = TRUE) &&
   gtsummary::tbl_regression(output, exponentiate = TRUE)
   gtsummary::tbl_regression(output, exponentiate = TRUE, event = "event2")
 }
+
+
+  
+
+Characteristic
 ```

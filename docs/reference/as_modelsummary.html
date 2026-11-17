@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,13 +20,13 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/v1_overview.html">Overview</a></li>
     <li><a class="dropdown-item" href="../articles/v2_polyreg.html">Direct polytomous regression</a></li>
-    <li><a class="dropdown-item" href="../articles/v3_formulas.html">Computational formulas in cifcurve()</a></li>
-    <li><a class="dropdown-item" href="../articles/v4_examples.html">Examples</a></li>
-    <li><a class="dropdown-item" href="../articles/v5_gallery.html">Gallery</a></li>
-    <li><a class="dropdown-item" href="../articles/v6_information.html">Additional information</a></li>
-    <li><a class="dropdown-item" href="../articles/v7_arguments.html">Full lists of arguments</a></li>
-    <li><a class="dropdown-item" href="../articles/v8_reporting_cif.html">Reporting cumulative incidence</a></li>
-    <li><a class="dropdown-item" href="../articles/v9_reporting_polyreg.html">Reporting CIF regression</a></li>
+    <li><a class="dropdown-item" href="../articles/v3_gray_extensions.html">Tests of cumulative incidence functions</a></li>
+    <li><a class="dropdown-item" href="../articles/v4_formulas.html">Computational formulas in cifcurve()</a></li>
+    <li><a class="dropdown-item" href="../articles/v5_examples.html">Worked examples</a></li>
+    <li><a class="dropdown-item" href="../articles/v6_gallery.html">Gallery</a></li>
+    <li><a class="dropdown-item" href="../articles/v7_reporting_results.html">Reporting results</a></li>
+    <li><a class="dropdown-item" href="../articles/v8_information.html">Data conventions and implementation details</a></li>
+    <li><a class="dropdown-item" href="../articles/v9_arguments.html">Function reference</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -59,7 +59,8 @@
 <span>  event <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"both"</span>, <span class="st">"event1"</span>, <span class="st">"event2"</span><span class="op">)</span>,</span>
 <span>  conf.int <span class="op">=</span> <span class="va">x</span><span class="op">$</span><span class="va">conf.int</span>,</span>
 <span>  variance <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  <span class="va">...</span></span>
+<span>  <span class="va">...</span>,</span>
+<span>  display.labels <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -86,6 +87,12 @@
 <dt id="arg-variance">variance<a class="anchor" aria-label="anchor" href="#arg-variance"></a></dt>
 <dd><p>Covariance estimator: if or bootstrap for polyreg.
 Omitting it preserves the stored inference.</p></dd>
+
+
+<dt id="arg-display-labels">display.labels<a class="anchor" aria-label="anchor" href="#arg-display-labels"></a></dt>
+<dd><p>Use stored display labels for the exposure contrasts in
+the modelsummary table. Set to <code>FALSE</code> to retain the original term names
+in the adapter output.</p></dd>
 
 </dl></div>
     <div class="section level2">

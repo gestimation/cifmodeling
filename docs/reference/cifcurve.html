@@ -17,7 +17,7 @@ and will plot it yourself."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -30,13 +30,13 @@ and will plot it yourself."></head><body>
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/v1_overview.html">Overview</a></li>
     <li><a class="dropdown-item" href="../articles/v2_polyreg.html">Direct polytomous regression</a></li>
-    <li><a class="dropdown-item" href="../articles/v3_formulas.html">Computational formulas in cifcurve()</a></li>
-    <li><a class="dropdown-item" href="../articles/v4_examples.html">Examples</a></li>
-    <li><a class="dropdown-item" href="../articles/v5_gallery.html">Gallery</a></li>
-    <li><a class="dropdown-item" href="../articles/v6_information.html">Additional information</a></li>
-    <li><a class="dropdown-item" href="../articles/v7_arguments.html">Full lists of arguments</a></li>
-    <li><a class="dropdown-item" href="../articles/v8_reporting_cif.html">Reporting cumulative incidence</a></li>
-    <li><a class="dropdown-item" href="../articles/v9_reporting_polyreg.html">Reporting CIF regression</a></li>
+    <li><a class="dropdown-item" href="../articles/v3_gray_extensions.html">Tests of cumulative incidence functions</a></li>
+    <li><a class="dropdown-item" href="../articles/v4_formulas.html">Computational formulas in cifcurve()</a></li>
+    <li><a class="dropdown-item" href="../articles/v5_examples.html">Worked examples</a></li>
+    <li><a class="dropdown-item" href="../articles/v6_gallery.html">Gallery</a></li>
+    <li><a class="dropdown-item" href="../articles/v7_reporting_results.html">Reporting results</a></li>
+    <li><a class="dropdown-item" href="../articles/v8_information.html">Data conventions and implementation details</a></li>
+    <li><a class="dropdown-item" href="../articles/v9_arguments.html">Function reference</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -110,6 +110,7 @@ and will plot it yourself.</p>
 <dd><p>A model formula specifying the time-to-event outcome on the LHS
 (typically <code>Event(time, status)</code> or <code>survival::Surv(time, status)</code>)
 and, optionally, a stratification variable on the RHS.
+Use <code><a href="Interval.html">Interval()</a></code> for interval-censored observations.
 <code>Surv()</code> responses must be right-censored.
 Unlike <code><a href="cifplot.html">cifplot()</a></code>, this function does not accept a fitted survfit object.</p></dd>
 
@@ -252,7 +253,8 @@ probability-scale SEs and time-specific inference diagnostics. Unsupported
 times retain missing limits. Use this summary rather than indexing added
 inference vectors on copies whose time grid was expanded by <code>survfit0()</code>.
 <code>logse</code> records the scale of the stored <code>std.err</code>. The internal <code>reporting</code>
-component preserves the native inference grid for this extraction.</p>
+component preserves the native inference grid for this extraction.
+Time and strata display labels are saved with the fit for <code><a href="cifplot.html">cifplot()</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -327,6 +329,39 @@ one-sided alternative is \(F_1(t) &lt; F_{10}(t)\), equivalently
 calculated separately within each stratum.</p>
 </div>
 
+    </div>
+    <div class="section level2">
+    <h2 id="interval-censored-data">Interval-censored data<a class="anchor" aria-label="anchor" href="#interval-censored-data"></a></h2>
+
+
+<p>Use <code><a href="Interval.html">Interval()</a></code> as the formula response. The first event's cause must
+be known for every observed event, and the observation process must be
+ignorable. Left truncation is currently unsupported. The estimator is the
+nonparametric maximum likelihood estimator of Hudgens, Satten and Longini
+(2001, doi:10.1111/j.0006-341X.2001.00074.x), with uniform allocation of mass
+within each finite support interval and point masses at exact event times.
+For interval responses, a competing event code selects the competing-risk
+outcome automatically; use <code>outcome.type = "competing-risk"</code> to force it
+in data where that code is absent.</p>
+<p>Use <code>summary(fit, times = ..., extend = TRUE)</code> for point estimates at
+requested times, or omit <code>times</code> to use the observed finite bounds. The
+summary returns the target-event <code>cif</code> and its complement <code>surv</code>. If
+positive mass remains in an unbounded support interval, times inside that
+interval return <code>NA</code> with <code>estimate.status = "unresolved_tail"</code>. With
+<code>extend = FALSE</code> times beyond each stratum's last observed bound are
+omitted. The fitted support masses are stored in <code>reporting$curves</code>.
+Status is <code>"interpolated"</code> strictly inside a positive-mass finite support
+interval for the target cause, and <code>"estimated"</code> elsewhere when a point
+estimate is available.</p>
+<p><code>n.risk.confirmed</code> counts positive-weight participants whose observed lower
+bound is at least the requested time. It is an unweighted lower bound on
+the number at risk immediately before that time, regardless of <code>n.risk.type</code>.
+The standard risk and event counts, standard errors, and confidence
+limits are unavailable, as are tests and restricted means.
+Pass the fitted object to <code><a href="cifplot.html">cifplot()</a></code> for a plot of the point estimates.
+The result inherits from <code>survfit</code>. Use the <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> generic for
+interval-aware evaluation. External methods that assume a step function
+may give different results between stored time points.</p>
     </div>
     <div class="section level2">
     <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>

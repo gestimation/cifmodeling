@@ -31,7 +31,7 @@ censoring-focused)."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,13 +44,13 @@ censoring-focused)."></head><body>
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/v1_overview.html">Overview</a></li>
     <li><a class="dropdown-item" href="../articles/v2_polyreg.html">Direct polytomous regression</a></li>
-    <li><a class="dropdown-item" href="../articles/v3_formulas.html">Computational formulas in cifcurve()</a></li>
-    <li><a class="dropdown-item" href="../articles/v4_examples.html">Examples</a></li>
-    <li><a class="dropdown-item" href="../articles/v5_gallery.html">Gallery</a></li>
-    <li><a class="dropdown-item" href="../articles/v6_information.html">Additional information</a></li>
-    <li><a class="dropdown-item" href="../articles/v7_arguments.html">Full lists of arguments</a></li>
-    <li><a class="dropdown-item" href="../articles/v8_reporting_cif.html">Reporting cumulative incidence</a></li>
-    <li><a class="dropdown-item" href="../articles/v9_reporting_polyreg.html">Reporting CIF regression</a></li>
+    <li><a class="dropdown-item" href="../articles/v3_gray_extensions.html">Tests of cumulative incidence functions</a></li>
+    <li><a class="dropdown-item" href="../articles/v4_formulas.html">Computational formulas in cifcurve()</a></li>
+    <li><a class="dropdown-item" href="../articles/v5_examples.html">Worked examples</a></li>
+    <li><a class="dropdown-item" href="../articles/v6_gallery.html">Gallery</a></li>
+    <li><a class="dropdown-item" href="../articles/v7_reporting_results.html">Reporting results</a></li>
+    <li><a class="dropdown-item" href="../articles/v8_information.html">Data conventions and implementation details</a></li>
+    <li><a class="dropdown-item" href="../articles/v9_arguments.html">Function reference</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -103,7 +103,7 @@ censoring-focused).</p>
 <span>  conf.int <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  n.risk.type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"weighted"</span>, <span class="st">"unweighted"</span>, <span class="st">"ess"</span><span class="op">)</span>,</span>
 <span>  type.y <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  label.x <span class="op">=</span> <span class="st">"Time"</span>,</span>
+<span>  label.x <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  label.y <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  label.strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  level.strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -156,7 +156,8 @@ censoring-focused).</p>
 <span>  inset.info <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  print.info <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ggsave.info <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  <span class="va">...</span></span>
+<span>  <span class="va">...</span>,</span>
+<span>  label.legend <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -251,7 +252,8 @@ If <code>NULL</code>, a default is chosen from <code>outcome.type</code> or the 
 
 
 <dt id="arg-label-x">label.x<a class="anchor" aria-label="anchor" href="#arg-label-x"></a></dt>
-<dd><p>Character x-axis label (default <code>"Time"</code>).</p></dd>
+<dd><p>Character x-axis label. Defaults to the time variable's
+label or name for a cifcurve fit, and <code>"Time"</code> if unavailable.</p></dd>
 
 
 <dt id="arg-label-y">label.y<a class="anchor" aria-label="anchor" href="#arg-label-y"></a></dt>
@@ -260,12 +262,10 @@ and <code>type.y</code>, e.g. "Survival", "Cumulative incidence" or "Cumulative 
 
 
 <dt id="arg-label-strata">label.strata<a class="anchor" aria-label="anchor" href="#arg-label-strata"></a></dt>
-<dd><p>Character vector or named character vector specifying labels for strata.
-Names (if present) must match the (re-ordered) underlying strata levels.
-<strong>Note:</strong> when any of the panel modes is active
-(<code>panel.per.variable = TRUE</code>, <code>panel.per.event = TRUE</code>, <code>panel.censoring = TRUE</code>,
-or <code>panel.mode = "auto"</code> and it actually dispatches to a panel),
-strata labels are suppressed to avoid duplicated legends across sub-plots.</p></dd>
+<dd><p>Character vector of display labels for strata. Names map
+to the original strata codes. Unnamed labels follow <code>level.strata</code> or
+the fitted strata order. Unspecified labels use stored value labels
+from the data and then the original stratum levels.</p></dd>
 
 
 <dt id="arg-level-strata">level.strata<a class="anchor" aria-label="anchor" href="#arg-level-strata"></a></dt>
@@ -486,6 +486,11 @@ invisibly for further modification (default <code>FALSE</code>).</p></dd>
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments passed to internal helper functions.</p></dd>
 
+
+<dt id="arg-label-legend">label.legend<a class="anchor" aria-label="anchor" href="#arg-label-legend"></a></dt>
+<dd><p>Optional stratum legend title. Defaults to the
+stratification variable's label or name when available.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -591,6 +596,25 @@ For ADaM-style data, use <code>code.event1 = 0</code>, <code>code.censoring = 1<
 
 </div>
 
+    </div>
+    <div class="section level2">
+    <h2 id="interval-censored-fits">Interval-censored fits<a class="anchor" aria-label="anchor" href="#interval-censored-fits"></a></h2>
+
+
+<p>Pass a fit made with <code>cifcurve(Interval(l, r, epsilon) ~ strata, data = d)</code>
+to <code>cifplot()</code>. The plot uses the same estimates as <code>summary(fit)</code>, with
+linear segments within finite support intervals and jumps at exact event
+times. The supported scales are <code>type.y = "risk"</code> and <code>"surv"</code>.
+The risk table shows confirmed counts at the x-axis breaks. The optional
+estimate table shows point estimates on the selected scale and flags
+interpolated values with an asterisk. Censoring marks show observed
+right-censoring times. The returned <code>plot</code> contains
+the curve and <code>patchwork</code> contains the combined display when tables are
+requested. Printing and <code>filename.ggsave</code> use the combined display.
+Set <code>breaks.x</code> and <code>limits.x</code> in <code>cifplot()</code> to update the axis and tables
+together. Later modifications to <code>plot</code> do not rebuild <code>patchwork</code>.
+Confidence bands, competing and intercurrent event marks, and quantiles
+are unavailable for these plots.</p>
     </div>
     <div class="section level2">
     <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>

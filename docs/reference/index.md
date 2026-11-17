@@ -36,8 +36,11 @@
 
 - [`ciftest()`](https://gestimation.github.io/cifmodeling/reference/ciftest.md)
   : Tests for survival and cumulative incidence curves
-- [`ciftest_mdir()`](https://gestimation.github.io/cifmodeling/reference/ciftest_mdir.md)
-  : Multiple-direction quadratic score test
+
+## Automated reporting
+
+- [`cifreport()`](https://gestimation.github.io/cifmodeling/reference/cifreport.md)
+  : Create a survival and competing-risk report
 
 ## Data
 
@@ -52,6 +55,8 @@
   : Extract per-stratum event times from a formula and data
 - [`Event()`](https://gestimation.github.io/cifmodeling/reference/Event.md)
   : Create a survival or competing-risks response
+- [`Interval()`](https://gestimation.github.io/cifmodeling/reference/Interval.md)
+  : Encode an interval-censored event history
 - [`as_ggplot()`](https://gestimation.github.io/cifmodeling/reference/as_ggplot.md)
   : Extract a ggplot for customization or export
 - [`as_modelsummary()`](https://gestimation.github.io/cifmodeling/reference/as_modelsummary.md)

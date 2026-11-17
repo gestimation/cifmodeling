@@ -19,13 +19,12 @@ tightly connected functions:
   creates multi-panel displays for survival/CIF curves, arranged either
   **in a grid layout or as an inset overlay**.
 - [`ciftest()`](https://gestimation.github.io/cifmodeling/reference/ciftest.md)
-  compares survival or CIF curves using log-rank, Gray, robust score,
-  augmented score, or multiple-direction tests.
+  compares survival or CIF curves using log-rank, Gray, augmented score,
+  or time-directed tests.
 - [`polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg.md)
   fits **coherent regression models** on all cause-specific CIFs
   simultaneously to estimate RR/OR/SHR using direct polytomous
-  regression. [Tanaka and Scheike
-  (2026)](https://doi.org/10.1093/biomtc/ujag160)
+  regression (Tanaka and Scheike 2026).
 
 > **Explore the main features visually:**\
 > See the
@@ -50,8 +49,7 @@ tightly connected functions:
 ## Quick start
 
 This example uses `diabetes.complications`, an anonymized dataset from
-the Japan Diabetes Complications Study. [Tanaka et
-al. (2013)](https://doi.org/10.1097/EDE.0b013e318281725e)
+the Japan Diabetes Complications Study (Tanaka et al. 2013).
 
 ``` r
 
@@ -83,9 +81,13 @@ outcome and the augmented score test for a competing-risk outcome. Short
 aliases are available for interactive use: `"L"`/`"LR"`/`"log-rank"`,
 `"G"`, and `"A"`/`"aug"`/`"augmentation"`. The `"early"` and `"late"`
 presets choose the outcome-specific test with Fleming–Harrington
-weights, while `"multiple"` (or `"multi"`/`"m"`) combines the default
-directions `(2, 0)`, `(0, 2)`, and `(0, 0)`. Optional lower truncation
-of nuisance probabilities is controlled by `prob.truncation`.
+weights. `test = "ditzhaus"` (or `"d"`) combines the default directions
+`(2, 0)`, `(0, 2)`, and `(0, 0)` in a quadratic form. For two groups
+with competing risks, `test = "maxcombo"` (or `"m"`) uses augmented
+scores with directions `(0, 0)`, `(2, 0)`, and `(0, 1)` by default. Use
+`alternative` to select a one-sided MaxCombo test and
+`code.exposure.ref` to specify its reference group. Optional lower
+truncation of nuisance probabilities is controlled by `prob.truncation`.
 
 ``` r
 
@@ -322,11 +324,10 @@ data. The tools assist users in the following ways:
   models all cause-specific CIFs together, parameterizing the nuisance
   structure with polytomous log odds products and enforcing that their
   CIFs sum to at most one.
-- **Curve-comparison tests**:
+- **Tests for survival and CIF curves**:
   [`ciftest()`](https://gestimation.github.io/cifmodeling/reference/ciftest.md)
-  provides log-rank, Gray, robust score, augmented score, and
-  rank-adaptive multiple-direction tests through the same formula
-  syntax.
+  provides log-rank, Gray, augmented score, and time-directed tests
+  through the same formula syntax.
 - **Tidy summaries and reporting**: support for
   [`generics::tidy()`](https://generics.r-lib.org/reference/tidy.html),
   [`glance()`](https://generics.r-lib.org/reference/glance.html), and
@@ -354,16 +355,11 @@ interface.
 Beyond providing a unified interface,
 [`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md)
 also extends `survfit()` in a few targeted ways. For unweighted survival
-data, it reproduces the standard Kaplan-Meier estimator with **Greenwood
-and Tsiatis SEs** and a unified set of CI transformations. For
-unweighted competing risks data, it computes Aalen-Johansen CIFs with
-both **Aalen-type and delta-method SEs**. The default inference for
-weighted curves uses **influence-function based SEs** (Deng and Wang
-2025). The [formulas
-vignette](https://gestimation.github.io/cifmodeling/articles/v3_formulas.html)
-also describes the weighted Kaplan–Meier estimator and the adjusted
-Greenwood variance. [Xie and Liu
-(2005)](https://doi.org/10.1002/sim.2174)
+data, it reproduces the standard Kaplan-Meier estimator with Greenwood
+and Tsiatis SEs and a unified set of CI transformations. For weighted
+survival and competing risks data, influence-function based SEs are also
+implemented (Deng and Wang 2025). The formulas vignette also describes
+other SEs and CIs based on $`t`$-distribution (Fay and Graubard 2001).
 
 If you need very fine-grained plot customization, you can compute the
 estimator and keep a survfit-compatible object with
@@ -450,3 +446,27 @@ functions, including
 Numerical results are compared against related functions in
 **survival**, **cmprsk**, and **mets** where independent reference
 implementations are available.
+
+## References
+
+- Deng Y, Wang R. Adjusted Nelson–Aalen estimators by inverse treatment
+  probability weighting with an estimated propensity score. *Statistics
+  in Medicine*. 2025;44(10–12):e70085.
+  [doi:10.1002/sim.70085](https://onlinelibrary.wiley.com/doi/full/10.1002/sim.70085)
+- Fay MP, Graubard BI. Small-sample adjustments for Wald-type tests
+  using sandwich estimators. *Biometrics*. 2001;57(4):1198–1206.
+  [doi:10.1111/j.0006-341X.2001.01198.x](https://onlinelibrary.wiley.com/doi/10.1111/j.0006-341X.2001.01198.x)
+- Scheike TH, Zhang M-J, Gerds TA. Predicting cumulative incidence
+  probability by direct binomial regression. *Biometrika*.
+  2008;95(1):205–220.
+  [doi:10.1093/biomet/asm096](https://doi.org/10.1093/biomet/asm096)
+- Tanaka S, Scheike TH. Estimating effects on cumulative incidence
+  probabilities by direct polytomous regression and polytomous log-odds
+  product. *Biometrics*. 2026;82(3):ujag160.
+  [doi:10.1093/biomtc/ujag160](https://doi.org/10.1093/biomtc/ujag160)
+- Tanaka S, Yoshimura Y, Kawasaki R, Kamada C, Tanaka S, Horikawa C,
+  Ohashi Y, Araki A, Ito H, Akanuma Y, Yamada N, Yamashita H, Sone H,
+  for the Japan Diabetes Complications Study Group. Fruit intake and
+  incident diabetic retinopathy with type 2 diabetes. *Epidemiology*.
+  2013;24(2):204–211.
+  [doi:10.1097/EDE.0b013e318281725e](https://doi.org/10.1097/EDE.0b013e318281725e)
