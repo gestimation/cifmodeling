@@ -301,12 +301,12 @@ group. The joint model ensures that the event probabilities remain
 coherent: their sum cannot exceed one.
 
 For **Retinopathy**, the estimated eight-year RR was **1.35** (95% CI
-**1.10–1.66**). The 95% CI does not include 1, under this model and
-variance estimator.
+**1.10\<U+2013\>1.66**). The 95% CI does not include 1, under this model
+and variance estimator.
 
 For **Macrovascular complication**, the estimated eight-year RR was
-**1.08** (95% CI **0.67–1.73**). The 95% CI includes 1; both directions
-of association remain compatible with the data.
+**1.08** (95% CI **0.67\<U+2013\>1.73**). The 95% CI includes 1; both
+directions of association remain compatible with the data.
 
 A ratio formed from separately estimated AJ CIFs and an unadjusted
 [`polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg.md)
@@ -502,8 +502,8 @@ summary(fit_composite_rr)
     #> 1 1.29   1.08    1.53
 
 **Reading the final RR.** Low versus other fruit intake had an estimated
-eight-year RR of **1.29** (95% CI **1.08–1.53**) for *either first
-complication*. Unlike the retinopathy RR, this effect includes
+eight-year RR of **1.29** (95% CI **1.08\<U+2013\>1.53**) for *either
+first complication*. Unlike the retinopathy RR, this effect includes
 macrovascular first events.
 
 ## Take-home messages

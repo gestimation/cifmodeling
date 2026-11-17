@@ -3,9 +3,8 @@
 This page summarizes the user-facing arguments of the main `cifmodeling`
 functions, including their **declared defaults**. It complements the
 detailed help available through `?function_name`. The defaults below
-were checked against the GitHub `master` source on 16 November 2026.
-Defaults in an installed release may differ from those in the
-development version.
+describe the development version. Defaults in an installed release may
+differ.
 
 For introductions and examples, see [direct
 regression](https://gestimation.github.io/cifmodeling/articles/v2_polyreg.md),
@@ -423,7 +422,7 @@ functions](https://gestimation.github.io/cifmodeling/articles/v3_gray_extensions
 
 For competing risks, `test = "auto"` selects an augmented score test.
 The single-direction `"early"` and `"late"` presets use FH `(1,0)` and
-`(0,1)`. The Ditzhaus test uses `(2,0)`, `(0,2)`, and `(0,0)` by
+`(0,1)`. The Ditzhaus test uses `(0,0)`, `(0,1)`, and `(2,0)` by
 default. MaxCombo uses `(0,0)`, `(2,0)`, and `(0,1)` by default.
 
 ### Outcome, grouping, and test choice

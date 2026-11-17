@@ -76,9 +76,8 @@
 <p>This page summarizes the user-facing arguments of the main
 <code>cifmodeling</code> functions, including their <strong>declared
 defaults</strong>. It complements the detailed help available through
-<code>?function_name</code>. The defaults below were checked against the
-GitHub <code>master</code> source on 16 November 2026. Defaults in an
-installed release may differ from those in the development version.</p>
+<code>?function_name</code>. The defaults below describe the development
+version. Defaults in an installed release may differ.</p>
 <p>For introductions and examples, see <a href="v2_polyreg.html">direct
 regression</a>, <a href="v3_gray_extensions.html">tests</a>, <a href="v4_formulas.html">computational formulas</a>, <a href="v5_examples.html">worked examples</a>, <a href="v6_gallery.html">the gallery</a>, <a href="v7_reporting_results.html">reporting</a>, and <a href="v8_information.html">data conventions</a>.</p>
 <p><strong>How to read these tables:</strong> “Required” means that the
@@ -1695,8 +1694,8 @@ cumulative incidence functions</a>.</p>
 <p>For competing risks, <code>test = "auto"</code> selects an augmented
 score test. The single-direction <code>"early"</code> and
 <code>"late"</code> presets use FH <code>(1,0)</code> and
-<code>(0,1)</code>. The Ditzhaus test uses <code>(2,0)</code>,
-<code>(0,2)</code>, and <code>(0,0)</code> by default. MaxCombo uses
+<code>(0,1)</code>. The Ditzhaus test uses <code>(0,0)</code>,
+<code>(0,1)</code>, and <code>(2,0)</code> by default. MaxCombo uses
 <code>(0,0)</code>, <code>(2,0)</code>, and <code>(0,1)</code> by
 default.</p>
 <div class="section level3">
