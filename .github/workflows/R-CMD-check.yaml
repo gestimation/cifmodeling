@@ -28,6 +28,6 @@ jobs:
         run: |
           rcmdcheck::rcmdcheck(
             args = c("--no-manual","--as-cran","--ignore-vignettes"),
-            build_args = c("--no-build-vignettes"),
+            build_args = c("--no-build-vignettes", "--no-manual"),
             error_on = "warning"
           )
