@@ -1,7 +1,10 @@
 .cifreport_plot <- function(curve, labels, scale, outcome.type, conf.int, risk_scale, cifplot.args) {
-  # ggsurvfit lays out the risk table on the active graphics device.
-  grDevices::pdf(NULL, width = 8, height = 5.5)
-  on.exit(grDevices::dev.off(), add = TRUE)
+  # Use a device that can measure the Unicode symbols in ggsurvfit risk tables.
+  file <- tempfile(fileext = ".pdf")
+  on.exit(unlink(file), add = TRUE)
+  device <- if (capabilities("cairo")) grDevices::cairo_pdf else grDevices::pdf
+  device(file, width = 8, height = 5.5)
+  on.exit(grDevices::dev.off(), add = TRUE, after = FALSE)
   args <- list(formula_or_fit = curve, outcome.type = outcome.type, conf.int = conf.int,
                label.y = scale, type.y = if (risk_scale) "risk" else "surv")
   if ("type.y" %in% names(cifplot.args)) args$label.y <- NULL
