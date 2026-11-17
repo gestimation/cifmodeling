@@ -89,7 +89,7 @@ ciftest(
   and `"A"`, `"aug"`, and `"augmentation"` select the augmented score
   test. The early and late choices are outcome-specific single-direction
   presets. `"ditzhaus"` (alias `"d"`) runs the quadratic-form test with
-  default directions `(rho, gamma) = (2, 0), (0, 2), (0, 0)`.
+  default directions `(rho, gamma) = (0, 0), (0, 1), (2, 0)`.
   `"maxcombo"` (alias `"m"`) uses augmented scores with default
   directions `(0, 0), (2, 0), (0, 1)`. `"score"` uses the null score-IID
   variance; for competing-risk outcomes it may use censoring

@@ -29,13 +29,10 @@ and
 
 - label.strata:
 
-  Character vector or named character vector specifying labels for
-  strata. Names (if present) must match the (re-ordered) underlying
-  strata levels. **Note:** when any of the panel modes is active
-  (`panel.per.variable = TRUE`, `panel.per.event = TRUE`,
-  `panel.censoring = TRUE`, or `panel.mode = "auto"` and it actually
-  dispatches to a panel), strata labels are suppressed to avoid
-  duplicated legends across sub-plots.
+  Character vector of display labels for strata. Names map to the
+  original strata codes. Unnamed labels follow `level.strata` or the
+  fitted strata order. Unspecified labels use stored value labels from
+  the data and then the original stratum levels.
 
 - level.strata:
 
@@ -48,6 +45,11 @@ and
   Optional character vector specifying the display order of strata in
   the legend/number-at-risk table. Specify the levels of strata. Levels
   not listed are dropped.
+
+- label.legend:
+
+  Optional stratum legend title. Defaults to the stratification
+  variable's label or name when available.
 
 - legend.position:
 
@@ -65,7 +67,8 @@ and
 
 - label.x:
 
-  Character x-axis label (default `"Time"`).
+  Character x-axis label. Defaults to the time variable's label or name
+  for a cifcurve fit, and `"Time"` if unavailable.
 
 - label.y:
 

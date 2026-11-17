@@ -19,12 +19,10 @@
 <url><loc>https://gestimation.github.io/cifmodeling/reference/as_ggplot.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/as_modelsummary.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/as_prediction_data.html</loc></url>
-<url><loc>https://gestimation.github.io/cifmodeling/reference/binregRatioLOP.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/build_closed_form_augmentation.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/build_fg_score_iid.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/build_iterated_score_iid.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/calculateKM.html</loc></url>
-<url><loc>https://gestimation.github.io/cifmodeling/reference/calculatePercentageLOP.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/calculate_A12_logrank_weightit.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/calculate_gray.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/censoring_km_score_correction.html</loc></url>
@@ -47,7 +45,6 @@
 <url><loc>https://gestimation.github.io/cifmodeling/reference/get_weightit_mparts.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/index.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/Interval.html</loc></url>
-<url><loc>https://gestimation.github.io/cifmodeling/reference/methods.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/polyreg-methods.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/polyreg.html</loc></url>
 <url><loc>https://gestimation.github.io/cifmodeling/reference/predict_censoring_km.html</loc></url>

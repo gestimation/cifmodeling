@@ -171,7 +171,7 @@ the preceding example.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Extract event-2 time from data frame</span></span>
 <span><span class="va">time_to_event</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/extract_time_to_event.html">extract_time_to_event</a></span><span class="op">(</span><span class="fu"><a href="../reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">epsilon</span><span class="op">)</span> <span class="op">~</span> <span class="va">fruitq1</span>,</span>
-<span>                                       data <span class="op">=</span> <span class="va">gallery_data</span>, </span>
+<span>                                       data <span class="op">=</span> <span class="va">gallery_data</span>,</span>
 <span>                                       which.event <span class="op">=</span> <span class="st">"event2"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Ensure named list by strata</span></span>
@@ -223,8 +223,8 @@ regression model, <strong>not</strong> from visual inspection of the
 curves.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fit direct polytomous regression</span></span>
-<span><span class="va">output1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/polyreg.html">polyreg</a></span><span class="op">(</span>nuisance.model<span class="op">=</span><span class="fu"><a href="../reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="fl">1</span>, exposure<span class="op">=</span><span class="st">"fruitq1"</span>, code.exposure.ref<span class="op">=</span><span class="st">"Q1"</span>, </span>
-<span>          data<span class="op">=</span><span class="va">gallery_data</span>, effect.measure1<span class="op">=</span><span class="st">"RR"</span>, effect.measure2<span class="op">=</span><span class="st">"RR"</span>, </span>
+<span><span class="va">output1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/polyreg.html">polyreg</a></span><span class="op">(</span>nuisance.model<span class="op">=</span><span class="fu"><a href="../reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>,<span class="va">epsilon</span><span class="op">)</span><span class="op">~</span><span class="fl">1</span>, exposure<span class="op">=</span><span class="st">"fruitq1"</span>, code.exposure.ref<span class="op">=</span><span class="st">"Q1"</span>,</span>
+<span>          data<span class="op">=</span><span class="va">gallery_data</span>, effect.measure1<span class="op">=</span><span class="st">"RR"</span>, effect.measure2<span class="op">=</span><span class="st">"RR"</span>,</span>
 <span>          time.point<span class="op">=</span><span class="fl">8</span>, outcome.type<span class="op">=</span><span class="st">"competing-risk"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Create a label of the risk ratio of event1</span></span>

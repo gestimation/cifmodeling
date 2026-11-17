@@ -130,7 +130,7 @@ example.
 
 # Extract event-2 time from data frame
 time_to_event <- extract_time_to_event(Event(t, epsilon) ~ fruitq1,
-                                       data = gallery_data, 
+                                       data = gallery_data,
                                        which.event = "event2")
 
 # Ensure named list by strata
@@ -193,8 +193,8 @@ model, **not** from visual inspection of the curves.
 ``` r
 
 # Fit direct polytomous regression
-output1 <- polyreg(nuisance.model=Event(t,epsilon)~1, exposure="fruitq1", code.exposure.ref="Q1", 
-          data=gallery_data, effect.measure1="RR", effect.measure2="RR", 
+output1 <- polyreg(nuisance.model=Event(t,epsilon)~1, exposure="fruitq1", code.exposure.ref="Q1",
+          data=gallery_data, effect.measure1="RR", effect.measure2="RR",
           time.point=8, outcome.type="competing-risk")
 
 # Create a label of the risk ratio of event1

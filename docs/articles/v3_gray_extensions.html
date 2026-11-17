@@ -243,7 +243,7 @@ group</em> has the higher CIF.</p>
 </h2>
 <p><code>test = "ditzhaus"</code> (or <code>"d"</code>) runs a
 quadratic-form test. For competing-risk outcomes, the default combines
-augmented scores with FH(2,0), FH(0,2), and FH(0,0) weights to give one
+augmented scores with FH(0,0), FH(0,1), and FH(2,0) weights to give one
 omnibus p-value.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_ditzhaus</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ciftest.html">ciftest</a></span><span class="op">(</span></span>
@@ -258,7 +258,7 @@ omnibus p-value.</p>
 <span><span class="co">## </span></span>
 <span><span class="co">## Outcome: competing-risk</span></span>
 <span><span class="co">## Component test: augmented</span></span>
-<span><span class="co">## Directions: early (2, 0), late (0, 2), unweighted (0, 0)</span></span>
+<span><span class="co">## Directions: unweighted (0, 0), FH01 (0, 1), early (2, 0)</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Chi-squared = 8.5265, df = 3, p-value = 0.0363</span></span></code></pre>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
@@ -272,9 +272,9 @@ omnibus p-value.</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_ditzhaus</span><span class="op">$</span><span class="va">directions</span></span></code></pre></div>
 <pre><code><span><span class="co">##    direction rho gamma</span></span>
-<span><span class="co">## 1      early   2     0</span></span>
-<span><span class="co">## 2       late   0     2</span></span>
-<span><span class="co">## 3 unweighted   0     0</span></span></code></pre>
+<span><span class="co">## 1 unweighted   0     0</span></span>
+<span><span class="co">## 2       FH01   0     1</span></span>
+<span><span class="co">## 3      early   2     0</span></span></code></pre>
 <p><code><a href="../reference/ciftest.html">ciftest()</a></code> combines the scores into a quadratic-form
 statistic:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Q</mi><mo>=</mo><msup><mi>U</mi><mi>⊤</mi></msup><msup><mi>V</mi><mo>+</mo></msup><mi>U</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
@@ -381,95 +381,9 @@ groups.</p>
 <span><span class="co">## Max Z = -2.2142, p-value = 0.9955</span></span></code></pre>
 </div>
 <div class="section level2">
-<h2 id="reuse-ciftest-results-in-multcomp">Reuse <code>ciftest()</code> results in <code>multcomp</code><a class="anchor" aria-label="anchor" href="#reuse-ciftest-results-in-multcomp"></a>
-</h2>
-<p>For maximum-type tests, pass the <strong>joint score vector and
-covariance matrix</strong> returned by <code><a href="../reference/ciftest.html">ciftest()</a></code> to the
-optional <code>multcomp</code> package (Hothorn, Bretz, and Westfall,
-2008). The examples reuse <code>fit_maxcombo</code> to obtain adjusted
-p-values for individual directions. Run them interactively with
-<code>multcomp</code> installed.</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">score_model</span> <span class="op">&lt;-</span> <span class="fu">multcomp</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/multcomp/man/parm.html" class="external-link">parm</a></span><span class="op">(</span></span>
-<span>  coef <span class="op">=</span> <span class="va">fit_maxcombo</span><span class="op">$</span><span class="va">score</span>,</span>
-<span>  vcov <span class="op">=</span> <span class="va">fit_maxcombo</span><span class="op">$</span><span class="va">vcov.score</span>,</span>
-<span>  df <span class="op">=</span> <span class="fl">0</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">K</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">fit_maxcombo</span><span class="op">$</span><span class="va">score</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/dimnames.html" class="external-link">dimnames</a></span><span class="op">(</span><span class="va">K</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">fit_maxcombo</span><span class="op">$</span><span class="va">score</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">fit_maxcombo</span><span class="op">$</span><span class="va">score</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><code>parm()</code> makes the scores and covariance matrix available
-to <code>glht()</code> by treating the scores as <em>formal
-coefficients</em>, not fitted regression coefficients. Here,
-<code>df = 0</code> specifies an asymptotic normal reference; the
-identity matrix <code>K</code> selects the individual scores, and
-<code>adjusted("single-step")</code> accounts for their
-correlations.</p>
-<div class="section level3">
-<h3 id="two-sided-maximum-type-test">Two-sided maximum-type test<a class="anchor" aria-label="anchor" href="#two-sided-maximum-type-test"></a>
-</h3>
-<p>For two groups, <code>alternative = "two.sided"</code> uses the
-largest absolute standardized score,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Z</mi><mi>j</mi></msub><mo>=</mo><msub><mi>U</mi><mi>j</mi></msub><mi>/</mi><msqrt><msub><mi>V</mi><mrow><mi>j</mi><mi>j</mi></mrow></msub></msqrt></mrow><annotation encoding="application/x-tex">Z_j=U_j/\sqrt{V_{jj}}</annotation></semantics></math>:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>T</mi><mrow><mi mathvariant="normal">max</mi><mo>⁡</mo></mrow><mo>±</mo></msubsup><mo>=</mo><munder><mi mathvariant="normal">max</mi><mi>j</mi></munder><mo stretchy="false" form="prefix">|</mo><msub><mi>Z</mi><mi>j</mi></msub><mo stretchy="false" form="prefix">|</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">
-T_{\max}^{\pm}=\max_j |Z_j|.
-</annotation></semantics></math></p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">g_two</span> <span class="op">&lt;-</span> <span class="fu">multcomp</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/multcomp/man/glht.html" class="external-link">glht</a></span><span class="op">(</span></span>
-<span>  <span class="va">score_model</span>,</span>
-<span>  linfct <span class="op">=</span> <span class="va">K</span>,</span>
-<span>  alternative <span class="op">=</span> <span class="st">"two.sided"</span></span>
-<span><span class="op">)</span></span>
-<span><span class="va">result_two</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">g_two</span>, test <span class="op">=</span> <span class="fu">multcomp</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/multcomp/man/methods.html" class="external-link">adjusted</a></span><span class="op">(</span><span class="st">"single-step"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">result_two</span></span>
-<span><span class="va">global_two_sided_p</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">result_two</span><span class="op">$</span><span class="va">test</span><span class="op">$</span><span class="va">pvalues</span><span class="op">)</span></span>
-<span><span class="va">global_two_sided_p</span></span></code></pre></div>
-<p><code>summary(g_two, test = multcomp::adjusted("single-step"))</code>
-provides p-values adjusted for the correlated directions.
-<code>global_two_sided_p</code> extracts the global two-sided
-maximum-test p-value as the smallest adjusted p-value. Unlike the
-quadratic-form test, this procedure focuses on the largest standardized
-score among the prespecified directions.</p>
-</div>
-<div class="section level3">
-<h3 id="one-sided-maximum-type-test">One-sided maximum-type test<a class="anchor" aria-label="anchor" href="#one-sided-maximum-type-test"></a>
-</h3>
-<p>To test a <strong>prespecified positive score direction</strong>, use
-<code>alternative = "greater"</code>, corresponding to</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>T</mi><mrow><mi mathvariant="normal">max</mi><mo>⁡</mo></mrow><mo>+</mo></msubsup><mo>=</mo><munder><mi mathvariant="normal">max</mi><mi>j</mi></munder><msub><mi>Z</mi><mi>j</mi></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
-T_{\max}^{+}=\max_j Z_j.
-</annotation></semantics></math></p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">g_one</span> <span class="op">&lt;-</span> <span class="fu">multcomp</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/multcomp/man/glht.html" class="external-link">glht</a></span><span class="op">(</span></span>
-<span>  <span class="va">score_model</span>,</span>
-<span>  linfct <span class="op">=</span> <span class="va">K</span>,</span>
-<span>  alternative <span class="op">=</span> <span class="st">"greater"</span></span>
-<span><span class="op">)</span></span>
-<span><span class="va">result_one</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">g_one</span>, test <span class="op">=</span> <span class="fu">multcomp</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/multcomp/man/methods.html" class="external-link">adjusted</a></span><span class="op">(</span><span class="st">"single-step"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">result_one</span></span>
-<span><span class="va">global_one_sided_p</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">result_one</span><span class="op">$</span><span class="va">test</span><span class="op">$</span><span class="va">pvalues</span><span class="op">)</span></span>
-<span><span class="va">global_one_sided_p</span></span></code></pre></div>
-<p><code>global_one_sided_p</code> is the corresponding global one-sided
-maximum-test p-value. Use <code>alternative = "less"</code> for a
-negative score direction. <strong>Check group coding and score signs
-before interpreting <code>"greater"</code> or <code>"less"</code> as
-clinical benefit or harm.</strong> The <code>"early"</code> and
-<code>"late"</code> settings specify temporal <em>weighting</em>,
-whereas <code>"greater"</code> and <code>"less"</code> specify score
-<em>sign</em>. With more than two groups, each temporal direction can
-contain multiple group contrasts, so the one-score-per-direction
-notation above does not apply.</p>
-<p><code>multcomp</code> is optional; <code>ciftest(test = "m")</code>
-works without it. If maximum-type calculations warn about a singular or
-nearly singular covariance matrix, inspect
-<code>fit_maxcombo$vcov.score</code> and the selected directions.</p>
-</div>
-</div>
-<div class="section level2">
 <h2 id="choosing-a-test">Choosing a test<a class="anchor" aria-label="anchor" href="#choosing-a-test"></a>
 </h2>
-<p>Use this table to select a <code><a href="../reference/ciftest.html">ciftest()</a></code> option or the
-<code>multcomp</code> extension:</p>
+<p>Use this table to select a <code><a href="../reference/ciftest.html">ciftest()</a></code> option:</p>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -525,15 +439,6 @@ score</td>
 <td align="left"><code>ciftest(..., test = "maxcombo", alternative = ...)</code></td>
 <td align="left">MaxCombo statistic and global p-value</td>
 </tr>
-<tr class="even">
-<td align="left">Obtain adjusted p-values by direction</td>
-<td align="left">
-<code><a href="https://rdrr.io/pkg/multcomp/man/glht.html" class="external-link">multcomp::glht()</a></code> with
-<code>fit_maxcombo$score</code> and
-<code>fit_maxcombo$vcov.score</code>
-</td>
-<td align="left">One- or two-sided adjusted p-values</td>
-</tr>
 </tbody>
 </table>
 <p>These options test related but distinct alternatives. For
@@ -556,9 +461,6 @@ Statistics</em>, <strong>16</strong>, 1141–1154.</li>
 <li>Ditzhaus M, Friedrich S (2020). More powerful logrank permutation
 tests for two-sample survival data. <em>Journal of Statistical
 Computation and Simulation</em>, <strong>90</strong>, 2209–2227. <a href="https://doi.org/10.1080/00949655.2020.1773463" class="external-link">doi:10.1080/00949655.2020.1773463</a>.</li>
-<li>Hothorn T, Bretz F, Westfall P (2008). Simultaneous inference in
-general parametric models. <em>Biometrical Journal</em>,
-<strong>50</strong>, 346–363.</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

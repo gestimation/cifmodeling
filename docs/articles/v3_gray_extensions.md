@@ -200,7 +200,7 @@ this does **not** mean that censoring adjustment is omitted. The terms
 
 `test = "ditzhaus"` (or `"d"`) runs a quadratic-form test. For
 competing-risk outcomes, the default combines augmented scores with
-FH(2,0), FH(0,2), and FH(0,0) weights to give one omnibus p-value.
+FH(0,0), FH(0,1), and FH(2,0) weights to give one omnibus p-value.
 
 ``` r
 
@@ -218,7 +218,7 @@ fit_ditzhaus
     ## 
     ## Outcome: competing-risk
     ## Component test: augmented
-    ## Directions: early (2, 0), late (0, 2), unweighted (0, 0)
+    ## Directions: unweighted (0, 0), FH01 (0, 1), early (2, 0)
     ## 
     ## Chi-squared = 8.5265, df = 3, p-value = 0.0363
 
@@ -240,9 +240,9 @@ fit_ditzhaus$directions
 ```
 
     ##    direction rho gamma
-    ## 1      early   2     0
-    ## 2       late   0     2
-    ## 3 unweighted   0     0
+    ## 1 unweighted   0     0
+    ## 2       FH01   0     1
+    ## 3      early   2     0
 
 [`ciftest()`](https://gestimation.github.io/cifmodeling/reference/ciftest.md)
 combines the scores into a quadratic-form statistic:
@@ -355,102 +355,11 @@ ciftest(
     ## Standardized scores: unweighted = 2.8162, early = 2.8371, FH01 = 2.2142
     ## Max Z = -2.2142, p-value = 0.9955
 
-## Reuse `ciftest()` results in `multcomp`
-
-For maximum-type tests, pass the **joint score vector and covariance
-matrix** returned by
-[`ciftest()`](https://gestimation.github.io/cifmodeling/reference/ciftest.md)
-to the optional `multcomp` package (Hothorn, Bretz, and Westfall, 2008).
-The examples reuse `fit_maxcombo` to obtain adjusted p-values for
-individual directions. Run them interactively with `multcomp` installed.
-
-``` r
-
-score_model <- multcomp::parm(
-  coef = fit_maxcombo$score,
-  vcov = fit_maxcombo$vcov.score,
-  df = 0
-)
-
-K <- diag(length(fit_maxcombo$score))
-dimnames(K) <- list(names(fit_maxcombo$score), names(fit_maxcombo$score))
-```
-
-`parm()` makes the scores and covariance matrix available to `glht()` by
-treating the scores as *formal coefficients*, not fitted regression
-coefficients. Here, `df = 0` specifies an asymptotic normal reference;
-the identity matrix `K` selects the individual scores, and
-`adjusted("single-step")` accounts for their correlations.
-
-### Two-sided maximum-type test
-
-For two groups, `alternative = "two.sided"` uses the largest absolute
-standardized score, $`Z_j=U_j/\sqrt{V_{jj}}`$:
-
-``` math
-T_{\max}^{\pm}=\max_j |Z_j|.
-```
-
-``` r
-
-g_two <- multcomp::glht(
-  score_model,
-  linfct = K,
-  alternative = "two.sided"
-)
-result_two <- summary(g_two, test = multcomp::adjusted("single-step"))
-result_two
-global_two_sided_p <- min(result_two$test$pvalues)
-global_two_sided_p
-```
-
-`summary(g_two, test = multcomp::adjusted("single-step"))` provides
-p-values adjusted for the correlated directions. `global_two_sided_p`
-extracts the global two-sided maximum-test p-value as the smallest
-adjusted p-value. Unlike the quadratic-form test, this procedure focuses
-on the largest standardized score among the prespecified directions.
-
-### One-sided maximum-type test
-
-To test a **prespecified positive score direction**, use
-`alternative = "greater"`, corresponding to
-
-``` math
-T_{\max}^{+}=\max_j Z_j.
-```
-
-``` r
-
-g_one <- multcomp::glht(
-  score_model,
-  linfct = K,
-  alternative = "greater"
-)
-result_one <- summary(g_one, test = multcomp::adjusted("single-step"))
-result_one
-global_one_sided_p <- min(result_one$test$pvalues)
-global_one_sided_p
-```
-
-`global_one_sided_p` is the corresponding global one-sided maximum-test
-p-value. Use `alternative = "less"` for a negative score direction.
-**Check group coding and score signs before interpreting `"greater"` or
-`"less"` as clinical benefit or harm.** The `"early"` and `"late"`
-settings specify temporal *weighting*, whereas `"greater"` and `"less"`
-specify score *sign*. With more than two groups, each temporal direction
-can contain multiple group contrasts, so the one-score-per-direction
-notation above does not apply.
-
-`multcomp` is optional; `ciftest(test = "m")` works without it. If
-maximum-type calculations warn about a singular or nearly singular
-covariance matrix, inspect `fit_maxcombo$vcov.score` and the selected
-directions.
-
 ## Choosing a test
 
 Use this table to select a
 [`ciftest()`](https://gestimation.github.io/cifmodeling/reference/ciftest.md)
-option or the `multcomp` extension:
+option:
 
 | Goal | Call or result | What you obtain |
 |:---|:---|:---|
@@ -461,7 +370,6 @@ option or the `multcomp` extension:
 | Focus on an earlier or later difference | `ciftest(..., test = "early")` or `"late"` | Single-direction FH-weighted test |
 | Combine directions in a quadratic form | `ciftest(..., test = "ditzhaus")` or `directions = ...` | Omnibus quadratic statistic, rank-based df, p-value |
 | Use the largest signed or absolute standardized score | `ciftest(..., test = "maxcombo", alternative = ...)` | MaxCombo statistic and global p-value |
-| Obtain adjusted p-values by direction | [`multcomp::glht()`](https://rdrr.io/pkg/multcomp/man/glht.html) with `fit_maxcombo$score` and `fit_maxcombo$vcov.score` | One- or two-sided adjusted p-values |
 
 These options test related but distinct alternatives. For confirmatory
 analyses, prespecify the test and weight directions; choosing the
@@ -483,5 +391,3 @@ for the full argument list.
   tests for two-sample survival data. *Journal of Statistical
   Computation and Simulation*, **90**, 2209–2227.
   [doi:10.1080/00949655.2020.1773463](https://doi.org/10.1080/00949655.2020.1773463).
-- Hothorn T, Bretz F, Westfall P (2008). Simultaneous inference in
-  general parametric models. *Biometrical Journal*, **50**, 346–363.
