@@ -3,7 +3,7 @@ ciftest_mdir <- function(
     call,
     formula,
     data,
-    directions = c("early", "late", "unweighted"),
+    directions,
     weights = NULL,
     subset.condition = NULL,
     outcome.type = "auto",
