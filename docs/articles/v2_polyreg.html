@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -35,13 +35,13 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/v1_overview.html">Overview</a></li>
     <li><a class="dropdown-item" href="../articles/v2_polyreg.html">Direct polytomous regression</a></li>
-    <li><a class="dropdown-item" href="../articles/v3_formulas.html">Computational formulas in cifcurve()</a></li>
-    <li><a class="dropdown-item" href="../articles/v4_examples.html">Examples</a></li>
-    <li><a class="dropdown-item" href="../articles/v5_gallery.html">Gallery</a></li>
-    <li><a class="dropdown-item" href="../articles/v6_information.html">Additional information</a></li>
-    <li><a class="dropdown-item" href="../articles/v7_arguments.html">Full lists of arguments</a></li>
-    <li><a class="dropdown-item" href="../articles/v8_reporting_cif.html">Reporting cumulative incidence</a></li>
-    <li><a class="dropdown-item" href="../articles/v9_reporting_polyreg.html">Reporting CIF regression</a></li>
+    <li><a class="dropdown-item" href="../articles/v3_gray_extensions.html">Tests of cumulative incidence functions</a></li>
+    <li><a class="dropdown-item" href="../articles/v4_formulas.html">Computational formulas in cifcurve()</a></li>
+    <li><a class="dropdown-item" href="../articles/v5_examples.html">Worked examples</a></li>
+    <li><a class="dropdown-item" href="../articles/v6_gallery.html">Gallery</a></li>
+    <li><a class="dropdown-item" href="../articles/v7_reporting_results.html">Reporting results</a></li>
+    <li><a class="dropdown-item" href="../articles/v8_information.html">Data conventions and implementation details</a></li>
+    <li><a class="dropdown-item" href="../articles/v9_arguments.html">Function reference</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -73,177 +73,380 @@
 
     
     
-<!-- badges: start -->
-<!-- badges: end -->
 <div class="section level2">
-<h2 id="why-direct-modeling-of-cifs">Why direct modeling of CIFs?<a class="anchor" aria-label="anchor" href="#why-direct-modeling-of-cifs"></a>
+<h2 id="why-model-cumulative-incidence-directly">Why model cumulative incidence directly?<a class="anchor" aria-label="anchor" href="#why-model-cumulative-incidence-directly"></a>
 </h2>
-<p>In survival analysis, users often interpret the results through plots
-of cumulative incidence: <em>how far apart are the CIF curves at a given
-time, and how does this separation evolve over follow-up?</em> Standard
-Fine-Gray models, however, parameterize <strong>subdistribution
-hazards</strong>, whose regression coefficients are only indirectly
-related to the observed differences between CIF curves for the event of
-interest. This makes it difficult to interpret the model on the
-probability scale and to quantify effects on all competing events.</p>
-<p>Tanaka and Scheike (2026) developed direct polytomous regression to
-address this gap. It models <strong>all cause-specific CIFs
-jointly</strong>, parameterizing the nuisance structure (i.e. a model of
-confounders) with polytomous log odds products. It also targets
-<strong>effect measures on the CIF scale itself</strong>: at
-user-specified time points it estimates ratios of CIFs (risk ratios,
-odds ratios, subdistribution hazard ratios), and in proportional-effect
-settings it compares CIFs in terms of a constant ratio over time. As a
-result, the regression parameters are much more directly aligned with
-what is visible in CIF curves.</p>
+<p>In competing-risk studies, researchers often want to compare event
+probabilities between groups. For example, is an exposure associated
+with a higher eight-year risk of diabetic retinopathy, and how does it
+relate to the risk of macrovascular complications?</p>
+<p>The cumulative incidence function (CIF) is the probability that a
+given event occurs first by time
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>.
+Fine–Gray regression models its <em>subdistribution hazard</em>. By
+contrast, direct polytomous regression can express exposure effects
+directly as risk ratios (RRs) or odds ratios (ORs) of cumulative
+incidence. It also supports the subdistribution hazard ratio (SHR)
+scale.</p>
+<p>At a given time, the cause-specific CIFs must sum to <strong>no more
+than one</strong>. Separate models for each event need not satisfy this
+constraint. The approach of Tanaka and Scheike (2026), implemented in
+<code><a href="../reference/polyreg.html">polyreg()</a></code>, models the events <strong>jointly</strong> to
+produce coherent probabilities.</p>
 </div>
 <div class="section level2">
-<h2 id="coherent-modeling-of-cifs-using-polytomous-log-odds-products">Coherent modeling of CIFs using polytomous log odds products<a class="anchor" aria-label="anchor" href="#coherent-modeling-of-cifs-using-polytomous-log-odds-products"></a>
+<h2 id="how-does-the-model-work">How does the model work?<a class="anchor" aria-label="anchor" href="#how-does-the-model-work"></a>
 </h2>
-<p>Standard semiparametric regression approaches that fit separate
-models for each cause have two drawbacks in competing risks settings:
-they may lose efficiency by ignoring the correlation between causes, and
-they can be <strong>incoherent</strong> in the sense that the implied
-cause-specific CIFs do not necessarily sum to at most one. Direct
-polytomous regression addresses these challenges by
-<strong>log-odds-product modeling of all cause-specific CIFs</strong>
-(Tanaka and Scheike 2026). It introduces a nuisance model specified as
-<strong>polytomous log odds products</strong> in addition to the model
-for effect measures (e.g., risk ratios for the exposure), so that the
-sum restriction on CIFs is enforced naturally. For an uncensored binary
-outcome, this specification reduces to the log odds product model of
-Richardson, Robins and Wang (2017). The same framework applies both to
-models with common multiplicative effects over time and to models
-targeting effects at specific time points.</p>
-<p>The models in <code>polyreg</code> are specified by three main
-components:</p>
-<ul>
-<li><p>Nuisance model: Describes the relationship between outcomes and
-covariates (excluding exposure).</p></li>
-<li><p>Effect measures and time points: Defines the exposure effects to
-be estimated and the time point of interest if necessary.</p></li>
-<li><p>Censoring adjustment: Specifies strata for inverse probability
-weighting to adjust for dependent censoring.</p></li>
-</ul>
+<div class="section level3">
+<h3 id="one-set-of-probabilities-for-all-events">One set of probabilities for all events<a class="anchor" aria-label="anchor" href="#one-set-of-probabilities-for-all-events"></a>
+</h3>
+<p>Let
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>A</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">A=0</annotation></semantics></math>
+denote the reference exposure group and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>A</mi><mo>=</mo><mi>a</mi></mrow><annotation encoding="application/x-tex">A=a</annotation></semantics></math>
+another exposure group. Let
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>L</mi><annotation encoding="application/x-tex">L</annotation></semantics></math>
+denote other covariates. For event
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>,
+write</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>p</mi><mrow><mi>j</mi><mi>a</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo>,</mo><mi>l</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mi>T</mi><mo>≤</mo><mi>t</mi><mo>,</mo><mspace width="0.167em"></mspace><mi>ϵ</mi><mo>=</mo><mi>j</mi><mo>∣</mo><mi>A</mi><mo>=</mo><mi>a</mi><mo>,</mo><mi>L</mi><mo>=</mo><mi>l</mi><mo stretchy="false" form="postfix">)</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">
+p_{ja}(t,l)=P(T\leq t,\,\epsilon=j\mid A=a,L=l).
+</annotation></semantics></math></p>
+<p>The probability of remaining event-free at time
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>
+is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>p</mi><mrow><mn>0</mn><mi>a</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo>,</mo><mi>l</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>1</mn><mo>−</mo><msubsup><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><mi>J</mi></msubsup><msub><mi>p</mi><mrow><mi>j</mi><mi>a</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo>,</mo><mi>l</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">p_{0a}(t,l)=1-\sum_{j=1}^{J}p_{ja}(t,l)</annotation></semantics></math>.
+For each exposure level, the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>J</mi><annotation encoding="application/x-tex">J</annotation></semantics></math>
+event probabilities and the event-free probability therefore sum to
+one.</p>
+<p>For example, suppose the reference-group probabilities of two events
+are 0.20 and 0.30. Independently specifying RRs of 2 and 3 would give
+probabilities of 0.40 and 0.90 in the exposed group. Their sum is 1.30,
+which is impossible. Joint modeling prevents such incompatible
+probabilities.</p>
+</div>
+<div class="section level3">
+<h3 id="exposure-effects-and-the-nuisance-component">Exposure effects and the nuisance component<a class="anchor" aria-label="anchor" href="#exposure-effects-and-the-nuisance-component"></a>
+</h3>
+<p><code><a href="../reference/polyreg.html">polyreg()</a></code> combines two model components:</p>
+<ol style="list-style-type: decimal">
+<li>
+<p><strong>Exposure-effect components</strong> specify how each
+event probability is compared between exposure groups. For example, the
+RR for event
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>
+is</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mrow><mi mathvariant="normal">R</mi><mi mathvariant="normal">R</mi></mrow><mrow><mi>j</mi><mi>a</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo>,</mo><mi>l</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mfrac><mrow><msub><mi>p</mi><mrow><mi>j</mi><mi>a</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo>,</mo><mi>l</mi><mo stretchy="false" form="postfix">)</mo></mrow><mrow><msub><mi>p</mi><mrow><mi>j</mi><mn>0</mn></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo>,</mo><mi>l</mi><mo stretchy="false" form="postfix">)</mo></mrow></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\mathrm{RR}_{ja}(t,l)=\frac{p_{ja}(t,l)}{p_{j0}(t,l)}.
+</annotation></semantics></math></p>
+</li>
+<li>
+<p><strong>Nuisance components</strong> specify the remaining
+probability structure. Rather than modeling each event’s baseline risk
+independently, the method uses <em>polytomous log-odds
+products</em>:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ϕ</mi><mi>j</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo>,</mo><mi>l</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">{</mo><mfrac><mrow><munderover><mo>∏</mo><mrow><mi>a</mi><mo>=</mo><mn>0</mn></mrow><mi>K</mi></munderover><msub><mi>p</mi><mrow><mi>j</mi><mi>a</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo>,</mo><mi>l</mi><mo stretchy="false" form="postfix">)</mo></mrow><mrow><munderover><mo>∏</mo><mrow><mi>a</mi><mo>=</mo><mn>0</mn></mrow><mi>K</mi></munderover><msub><mi>p</mi><mrow><mn>0</mn><mi>a</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo>,</mo><mi>l</mi><mo stretchy="false" form="postfix">)</mo></mrow></mfrac><mo stretchy="true" form="postfix">}</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><mi>j</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>J</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\phi_j(t,l)=\log\left\{
+\frac{\prod_{a=0}^{K}p_{ja}(t,l)}
+     {\prod_{a=0}^{K}p_{0a}(t,l)}
+\right\},\qquad j=1,\ldots,J.
+</annotation></semantics></math></p>
+</li>
+</ol>
+<p>Here, exposure
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>A</mi><annotation encoding="application/x-tex">A</annotation></semantics></math>
+has categories
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>K</mi></mrow><annotation encoding="application/x-tex">0,\ldots,K</annotation></semantics></math>.
+Importantly,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>p</mi><mrow><mn>0</mn><mi>a</mi></mrow></msub><annotation encoding="application/x-tex">p_{0a}</annotation></semantics></math>
+is the probability of <strong>remaining free of all event
+types</strong>, not just event
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>.
+With one event type and binary exposure, the expression reduces to the
+usual log-odds product for a binary outcome.</p>
+<p>Under the conditions established by Tanaka and Scheike (2026), the
+exposure-effect parameters and nuisance components determine a unique
+set of valid probabilities for the RR, OR, and SHR parameterizations
+they study. This <em>variation independence</em> allows exposure effects
+to be specified without violating the constraints on CIFs. See the
+original paper for the proof.</p>
+<p>The nuisance component describes part of the <strong>joint outcome
+distribution</strong>; it is not simply a model for confounders.
+Covariates can be included to adjust exposure comparisons, but
+adjustment alone does not establish causality.</p>
+</div>
+<div class="section level3">
+<h3 id="which-effect-measure-should-i-choose">Which effect measure should I choose?<a class="anchor" aria-label="anchor" href="#which-effect-measure-should-i-choose"></a>
+</h3>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th align="left">Measure</th>
+<th align="left">What it compares at a chosen time</th>
+<th align="left">
+<code><a href="../reference/polyreg.html">polyreg()</a></code> setting</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">RR</td>
+<td align="left">Cumulative incidence probabilities</td>
+<td align="left"><code>"RR"</code></td>
+</tr>
+<tr class="even">
+<td align="left">OR</td>
+<td align="left">Odds of the event occurring by that time</td>
+<td align="left"><code>"OR"</code></td>
+</tr>
+<tr class="odd">
+<td align="left">SHR</td>
+<td align="left">Cumulative subdistribution hazards,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><mrow><mi mathvariant="normal">C</mi><mi mathvariant="normal">I</mi><mi mathvariant="normal">F</mi></mrow><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">-\log(1-\mathrm{CIF})</annotation></semantics></math>
+</td>
+<td align="left"><code>"SHR"</code></td>
+</tr>
+</tbody>
+</table>
+<p>In a <strong>fixed-time</strong> model, SHR denotes a ratio of
+<em>cumulative</em> subdistribution hazards at the chosen time, not a
+ratio of instantaneous hazards. Under a proportional subdistribution
+hazards model, the ratio is constant over time and corresponds to the
+common SHR parameter.</p>
+</div>
 </div>
 <div class="section level2">
-<h2 id="nuisance-model">1. Nuisance model<a class="anchor" aria-label="anchor" href="#nuisance-model"></a>
+<h2 id="specifying-a-model-with-polyreg">Specifying a model with <code>polyreg()</code><a class="anchor" aria-label="anchor" href="#specifying-a-model-with-polyreg"></a>
 </h2>
-<p>The <code>nuisance.model</code> argument specifies the formula
-linking the outcome to covariates. Its format depends on the outcome
-type:</p>
-<ul>
-<li><p>Competing risks or survival outcome: Use <code>Surv()</code> or
-<code><a href="../reference/Event.html">Event()</a></code> with time and status variables.</p></li>
-<li><p>Binomial outcome: Use standard R formula notation.</p></li>
-</ul>
-<p>Default event codes:</p>
-<ul>
-<li><p>Competing risks outcome: 1 and 2 for event types, 0 for
-censoring.</p></li>
-<li><p>Survival outcome: 1 for events, 0 for censoring.</p></li>
-<li><p>Binomial outcome: 0 and 1.</p></li>
-</ul>
-<p>Event codes can be customized using <code>code.event1</code>,
-<code>code.event2</code>, and <code>code.censoring</code>. The
-<code>outcome.type</code> argument must be set to:</p>
-<ul>
-<li><p>Effects on CIFs at a specific time:
-<code>"competing-risk"</code></p></li>
-<li><p>Effects on a risk at a specific time:
-<code>"survival"</code></p></li>
-<li><p>Constant effects on CIFs over time:
-<code>"proportional-competing-risk"</code></p></li>
-<li><p>Constant effects on a risk over time:
-<code>"proportional-survival"</code></p></li>
-<li><p>Effects on a risk of a binomial outcome:
-<code>"binomial"</code></p></li>
-</ul>
-<p>Covariates included in <code>nuisance.model</code> should adjust for
-confounding factors to obtain unbiased exposure effect estimates.</p>
-</div>
-<div class="section level2">
-<h2 id="effect-measures-and-time-points">2. Effect measures and time points<a class="anchor" aria-label="anchor" href="#effect-measures-and-time-points"></a>
-</h2>
-<p>Three effect measures available:</p>
-<ul>
-<li><p>Risk ratio (RR)</p></li>
-<li><p>Odds ratio (OR)</p></li>
-<li><p>Subdistribution hazard ratio (SHR)</p></li>
-</ul>
-<p>Set the desired measure using <code>effect.measure1</code> and, for
-competing risks analysis, <code>effect.measure2</code>. The
-<code>time.point</code> argument specifies the follow-up time at which
-effects are estimated.</p>
-</div>
-<div class="section level2">
-<h2 id="censoring-adjustment">3. Censoring adjustment<a class="anchor" aria-label="anchor" href="#censoring-adjustment"></a>
-</h2>
-<p>The IPCW method is used to adjust for dependent censoring. Use
-<code>strata=</code> to specify stratification variables. If no strata
-are specified, Kaplan-Meier weights are used.</p>
-</div>
-<div class="section level2">
-<h2 id="estimator-and-confidence-intervals">Estimator and confidence intervals<a class="anchor" aria-label="anchor" href="#estimator-and-confidence-intervals"></a>
-</h2>
-<p>In <code><a href="../reference/polyreg.html">polyreg()</a></code>, the regression parameters are calculated
-by the stratified IPCW estimators, which asymptotically achieve minimum
-variance within a class of augmented IPCW estimators, without the
-computational burden of deriving augmentation terms for each cause. For
-confidence intervals, <code><a href="../reference/polyreg.html">polyreg()</a></code> normally chooses a single,
-simple method based on <code>outcome.type</code>:</p>
+<p>Specify a <code><a href="../reference/polyreg.html">polyreg()</a></code> model in three steps:</p>
 <ul>
 <li>
-<code>"competing-risk"</code>, <code>"survival"</code>,
-<code>"binomial"</code>: Wald CIs based on sandwich variance</li>
+<strong>Outcome and covariates:</strong> In
+<code>nuisance.model</code>, place <code>Event(time, status)</code> (or
+<code>survival::Surv(time, status)</code>) on the left and covariates
+other than the exposure on the right. <code>~ 1</code> specifies an
+intercept-only nuisance model.</li>
 <li>
-<code>"proportional-competing-risk"</code>,
-<code>"proportional-survival"</code>: Bootstrap CIs (normal
-approximation)</li>
+<strong>Exposure and effect measures:</strong> Specify the
+categorical exposure through <code>exposure</code>, its reference level
+through <code>code.exposure.ref</code>, and the cause-specific effect
+measures through <code>effect.measure1</code> and
+<code>effect.measure2</code>. For fixed-time models, set
+<code>time.point</code>.</li>
+<li>
+<strong>Censoring:</strong> <code><a href="../reference/polyreg.html">polyreg()</a></code> uses inverse
+probability of censoring weighting (IPCW). Specify <code>strata</code>
+to estimate the censoring distribution within censoring-estimation
+strata; otherwise, the function uses a pooled Kaplan–Meier estimate.
+This choice should reflect the censoring assumptions.</li>
 </ul>
-<p>For time-point (non-proportional) models, the default is Wald CIs
-using a sandwich variance directly from influence functions. If
-<code>report.boot.conf = TRUE</code>, the variance is instead estimated
-by a wild (multiplier) bootstrap applied to the influence functions
-(<code>boot.multiplier</code>, boot.replications), and Wald CIs are
-formed from that bootstrap variance. For common effects (proportional
-models), <code>boot()</code> refits the estimator in each replicate and
-forms normal-approximate CIs from the bootstrap mean and SD. If desired,
-BCa CIs can be requested via <code>boot.bca = TRUE</code> (only for
-proportional models). Users normally do not need to set any CI
-flags.</p>
+<p>Choose the analysis through <code>outcome.type</code>:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th align="left"><code>outcome.type</code></th>
+<th align="left">Analysis</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code>"competing-risk"</code></td>
+<td align="left">Cause-specific CIF effects at a chosen time</td>
+</tr>
+<tr class="even">
+<td align="left"><code>"survival"</code></td>
+<td align="left">Effect on the risk of a single event at a chosen
+time</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>"proportional-competing-risk"</code></td>
+<td align="left">Time-constant effect parameters (RR, OR, or SHR) for
+competing events</td>
+</tr>
+<tr class="even">
+<td align="left"><code>"proportional-survival"</code></td>
+<td align="left">Time-constant effect parameters for a survival
+outcome</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>"binomial"</code></td>
+<td align="left">Effect on a binary outcome</td>
+</tr>
+</tbody>
+</table>
+<p>The default competing-risk event codes are 1 and 2, with 0 for
+censoring. Change them through <code>code.event1</code>,
+<code>code.event2</code>, and <code>code.censoring</code> if needed. A
+fixed-time competing-risk model requires both event types to be observed
+by <code>time.point</code>, with sufficient follow-up to estimate their
+risks.</p>
+<p>The <code>"proportional-"</code> names refer to models with an
+exposure-effect parameter that is <strong>constant over time on the
+chosen effect-measure scale</strong>. They do not generally assume that
+the CIFs themselves are proportional: a constant RR gives proportional
+CIFs, whereas a constant OR or SHR applies to the respective odds or
+cumulative subdistribution-hazard scale.</p>
+<p>Set <code>outcome.type = "proportional-competing-risk"</code> (or
+<code>"proportional-survival"</code> for a survival outcome) to fit such
+a model. You may omit <code>time.point</code> to use the available event
+times. See <code><a href="../reference/polyreg.html">?polyreg</a></code> for time selection and bootstrap
+inference.</p>
 </div>
 <div class="section level2">
-<h2 id="return">Return<a class="anchor" aria-label="anchor" href="#return"></a>
+<h2 id="example-eight-year-risks-in-a-diabetes-cohort">Example: eight-year risks in a diabetes cohort<a class="anchor" aria-label="anchor" href="#example-eight-year-risks-in-a-diabetes-cohort"></a>
 </h2>
-<p>This function returns an object of class <code>"polyreg"</code> with
-the following main components:</p>
-<ul>
-<li><p><code>coef</code>: regression coefficients on the chosen
-effect-measure scale.</p></li>
-<li><p><code>vcov</code>: variance–covariance matrix for the regression
-coefficients.</p></li>
-<li><p><code>diagnostic.statistics</code>: a data frame containing
-inverse probability weights, influence functions, and predicted
-potential outcomes for individual observations.</p></li>
-<li><p><code>summary</code>: a list of event-wise <em>tidy</em> and
-<em>glance</em> tables summarising the estimated exposure
-effects.</p></li>
-</ul>
-<p>In practice, users are expected to work with the usual S3
-methods:</p>
+<p>We use <code>diabetes.complications</code>, with follow-up time
+<code>t</code> in years and <code>epsilon</code> coding diabetic
+retinopathy (1), macrovascular complications (2), and censoring (0). We
+compare low fruit intake (the lowest quartile,
+<code>fruitq == "Q1"</code>) with the other quartiles.</p>
+<p>First, create a binary exposure indicator, using 0 as the reference
+level:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>         <span class="co"># regression coefficients</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>         <span class="co"># variance–covariance matrix</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/stats/nobs.html" class="external-link">nobs</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>         <span class="co"># number of observations used in the fit</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>      <span class="co"># formatted, event-wise table printed to the console</span></span></code></pre></div>
-<p>Calling <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> on a “polyreg” object prints a
-modelsummary-like table of point estimates, CIs, and p-values for each
-event, and returns the underlying summary list invisibly. The summary
-component can be passed to external tools such as
-<code>modelsummary</code> or <code>broom</code> for additional
-formatting if desired, but no external packages are required to inspect
-the model fit.</p>
+<code class="sourceCode R"><span><span class="va">analysis_data</span> <span class="op">&lt;-</span> <span class="va">diabetes.complications</span></span>
+<span><span class="va">analysis_data</span><span class="op">$</span><span class="va">low_fruit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">analysis_data</span><span class="op">$</span><span class="va">fruitq</span> <span class="op">==</span> <span class="st">"Q1"</span><span class="op">)</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="unadjusted-crude-rrs-for-both-events">Unadjusted (crude) RRs for both events<a class="anchor" aria-label="anchor" href="#unadjusted-crude-rrs-for-both-events"></a>
+</h3>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit_unadjusted</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/polyreg.html">polyreg</a></span><span class="op">(</span></span>
+<span>  nuisance.model <span class="op">=</span> <span class="fu"><a href="../reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">epsilon</span><span class="op">)</span> <span class="op">~</span> <span class="fl">1</span>,</span>
+<span>  exposure <span class="op">=</span> <span class="st">"low_fruit"</span>,</span>
+<span>  data <span class="op">=</span> <span class="va">analysis_data</span>,</span>
+<span>  code.exposure.ref <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  outcome.type <span class="op">=</span> <span class="st">"competing-risk"</span>,</span>
+<span>  time.point <span class="op">=</span> <span class="fl">8</span>,</span>
+<span>  effect.measure1 <span class="op">=</span> <span class="st">"RR"</span>,</span>
+<span>  effect.measure2 <span class="op">=</span> <span class="st">"RR"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_unadjusted</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;                       event1        event2      </span></span>
+<span><span class="co">#&gt; ---------------------------------------------- </span></span>
+<span><span class="co">#&gt; low_fruit, 1 vs 0    </span></span>
+<span><span class="co">#&gt;                       1.350         1.079       </span></span>
+<span><span class="co">#&gt;                       [1.099, 1.659]  [0.674, 1.728]</span></span>
+<span><span class="co">#&gt;                       (p=0.004)     (p=0.752)   </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ---------------------------------------------- </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; effect.measure        RR at 8       RR at 8     </span></span>
+<span><span class="co">#&gt; n.events              279 in N = 978  79 in N = 978</span></span>
+<span><span class="co">#&gt; median.follow.up      8             -           </span></span>
+<span><span class="co">#&gt; range.follow.up       [0.05, 11.00]  -           </span></span>
+<span><span class="co">#&gt; n.parameters          4             -           </span></span>
+<span><span class="co">#&gt; converged.by          Converged in objective function  -           </span></span>
+<span><span class="co">#&gt; nleqslv.message       Function criterion near zero  -</span></span></code></pre></div>
+<p>This fit estimates an eight-year RR for <strong>each</strong>
+competing event, comparing low fruit intake with the other quartiles. An
+RR above 1 indicates higher cumulative incidence, and an RR below 1
+indicates lower cumulative incidence. These are association measures
+unless the assumptions for causal interpretation are met.</p>
+</div>
+<div class="section level3">
+<h3 id="adjusting-for-baseline-covariates">Adjusting for baseline covariates<a class="anchor" aria-label="anchor" href="#adjusting-for-baseline-covariates"></a>
+</h3>
+<p>To adjust for age and sex, add them to <code>nuisance.model</code>
+while leaving the exposure in <code>exposure</code>. This example is
+displayed but not run during vignette building to limit computation
+time.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit_adjusted</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/polyreg.html">polyreg</a></span><span class="op">(</span></span>
+<span>  nuisance.model <span class="op">=</span> <span class="fu"><a href="../reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">epsilon</span><span class="op">)</span> <span class="op">~</span> <span class="va">age</span> <span class="op">+</span> <span class="va">sex</span>,</span>
+<span>  exposure <span class="op">=</span> <span class="st">"low_fruit"</span>,</span>
+<span>  data <span class="op">=</span> <span class="va">analysis_data</span>,</span>
+<span>  code.exposure.ref <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  outcome.type <span class="op">=</span> <span class="st">"competing-risk"</span>,</span>
+<span>  time.point <span class="op">=</span> <span class="fl">8</span>,</span>
+<span>  effect.measure1 <span class="op">=</span> <span class="st">"RR"</span>,</span>
+<span>  effect.measure2 <span class="op">=</span> <span class="st">"RR"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_adjusted</span><span class="op">)</span></span></code></pre></div>
+<p>This model estimates exposure RRs conditional on the specified
+covariates. A causal interpretation additionally requires assumptions
+about confounding, positivity, and censoring.</p>
+</div>
+<div class="section level3">
+<h3 id="using-another-effect-scale">Using another effect scale<a class="anchor" aria-label="anchor" href="#using-another-effect-scale"></a>
+</h3>
+<p>Change <code>effect.measure1</code> or <code>effect.measure2</code>
+to <code>"OR"</code> or <code>"SHR"</code> to use another effect scale.
+The two events can also be modeled on different scales:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit_mixed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/polyreg.html">polyreg</a></span><span class="op">(</span></span>
+<span>  nuisance.model <span class="op">=</span> <span class="fu"><a href="../reference/Event.html">Event</a></span><span class="op">(</span><span class="va">t</span>, <span class="va">epsilon</span><span class="op">)</span> <span class="op">~</span> <span class="va">age</span> <span class="op">+</span> <span class="va">sex</span>,</span>
+<span>  exposure <span class="op">=</span> <span class="st">"low_fruit"</span>,</span>
+<span>  data <span class="op">=</span> <span class="va">analysis_data</span>,</span>
+<span>  code.exposure.ref <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  outcome.type <span class="op">=</span> <span class="st">"competing-risk"</span>,</span>
+<span>  time.point <span class="op">=</span> <span class="fl">8</span>,</span>
+<span>  effect.measure1 <span class="op">=</span> <span class="st">"RR"</span>,</span>
+<span>  effect.measure2 <span class="op">=</span> <span class="st">"SHR"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_mixed</span><span class="op">)</span></span></code></pre></div>
+<p>Here, event 1 is summarized by an RR and event 2 by a fixed-time
+cumulative subdistribution-hazard ratio. These measures are on different
+scales and should not be compared numerically. The coherence theorem of
+Tanaka and Scheike (2026) assumes a common effect-measure family across
+causes. This mixed-scale example illustrates a software option, not a
+separate result established by that theorem.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="estimation-confidence-intervals-and-results">Estimation, confidence intervals, and results<a class="anchor" aria-label="anchor" href="#estimation-confidence-intervals-and-results"></a>
+</h2>
+<p>For right-censored outcomes, <code><a href="../reference/polyreg.html">polyreg()</a></code> uses IPCW-based
+estimation, with optional censoring strata. Tanaka and Scheike (2026)
+establish an asymptotic minimum-variance property <strong>within a
+specified class of augmented IPCW estimators</strong>, under their
+assumptions; this is not a general claim of semiparametric
+efficiency.</p>
+<p>For fixed-time models, confidence intervals default to a sandwich
+variance estimate. For models with time-constant effect parameters, they
+default to a refitting bootstrap with a normal approximation. See
+<code><a href="../reference/polyreg.html">?polyreg</a></code> for other bootstrap options. These intervals
+concern regression effects, not the curve-based intervals in <a href="v4_formulas.html">Computational formulas</a>.</p>
+<p>A fitted model has class <code>"polyreg"</code>, with standard
+accessors:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_unadjusted</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] -1.38313159  0.30043899 -3.99147265  0.07582589</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="va">fit_unadjusted</span><span class="op">)</span></span>
+<span><span class="co">#&gt;              [,1]          [,2]         [,3]          [,4]</span></span>
+<span><span class="co">#&gt; [1,] 2.539857e-02  5.688786e-03 9.114685e-03  3.927105e-05</span></span>
+<span><span class="co">#&gt; [2,] 5.688786e-03  1.104372e-02 2.138178e-05 -5.263603e-03</span></span>
+<span><span class="co">#&gt; [3,] 9.114685e-03  2.138178e-05 7.213912e-02  2.795468e-02</span></span>
+<span><span class="co">#&gt; [4,] 3.927105e-05 -5.263603e-03 2.795468e-02  5.773891e-02</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/nobs.html" class="external-link">nobs</a></span><span class="op">(</span><span class="va">fit_unadjusted</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 978</span></span></code></pre></div>
+<p><code>summary(fit_unadjusted)</code> displays event-specific
+estimates, confidence intervals, and p-values. The fitted object also
+contains weights, observation-level diagnostics, and summary tables. See
+<a href="v7_reporting_results.html">Reporting results</a> to format
+regression tables.</p>
+</div>
+<div class="section level2">
+<h2 id="further-reading">Further reading<a class="anchor" aria-label="anchor" href="#further-reading"></a>
+</h2>
+<ul>
+<li>
+<a href="v1_overview.html">Overview</a> for the full analysis
+workflow.</li>
+<li>
+<a href="v5_examples.html">Worked examples</a> for nonparametric
+estimation, regression, and plotting.</li>
+<li>
+<a href="v7_reporting_results.html">Reporting results</a> for
+formatted regression tables.</li>
+<li>
+<a href="v9_arguments.html">Function reference</a> for all arguments
+and defaults.</li>
+</ul>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
@@ -251,7 +454,7 @@ the model fit.</p>
 <ul>
 <li>Tanaka S, Scheike TH. Estimating effects on cumulative incidence
 probabilities by direct polytomous regression and polytomous log-odds
-product. <em>Biometrics</em>. 2026, 82(3), ujag160. <a href="https://doi.org/10.1093/biomtc/ujag160" class="external-link">doi:10.1093/biomtc/ujag160</a>
+product. <em>Biometrics</em>. 2026;82(3):ujag160. <a href="https://doi.org/10.1093/biomtc/ujag160" class="external-link">doi:10.1093/biomtc/ujag160</a>
 </li>
 </ul>
 </div>

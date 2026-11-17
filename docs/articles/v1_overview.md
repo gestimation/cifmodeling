@@ -1,278 +1,321 @@
 # Overview
 
-## Quick start
+## What can cifmodeling do?
 
-Are you comfortable writing `Surv(time, status) ~ strata` but hesitant
-to dive into the Fine-Gray models or custom `ggplot2` code?
-**cifmodeling** helps clinicians, epidemiologists, and applied
-researchers move from basic Kaplan-Meier curves to clear,
-publication-ready survival and competing risk plots – with just a few
-lines of R.
+**cifmodeling** brings estimation, testing, regression, visualization,
+and reporting into a single formula-based workflow for survival and
+competing-risk data. Start with a cumulative incidence curve; use the
+same event coding to compare groups, model exposure effects, and prepare
+publication-ready outputs.
 
-It provides a unified, high-level interface for survival and competing
-risks analysis, combining nonparametric estimation, regression modeling,
-visualization, and lightweight flowchart summaries.
+| What you want to do | What cifmodeling provides |
+|:---|:---|
+| Estimate and present event probabilities | [`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md) with [`cifplot()`](https://gestimation.github.io/cifmodeling/reference/cifplot.md) or [`cifpanel()`](https://gestimation.github.io/cifmodeling/reference/cifpanel.md) |
+| Estimate a fixed-time RR, OR, or SHR | Coherent direct CIF regression with [`polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg.md) |
+| Test differences over follow-up | Gray, augmented-score, and multiple-direction tests with [`ciftest()`](https://gestimation.github.io/cifmodeling/reference/ciftest.md) |
+| Produce analysis tables and reports | `gtsummary` integration and [`cifreport()`](https://gestimation.github.io/cifmodeling/reference/cifreport.md) when available |
 
-The first example uses `diabetes.complications`, an anonymized dataset
-from the Japan Diabetes Complications Study. Tanaka et al. (2013)
-examined fruit intake and incident diabetic retinopathy in this cohort.
+The quick start below uses just two groups and one event. More
+specialized options are introduced afterward, with links to runnable
+examples and technical details. You can use the package without reading
+all nine vignettes.
 
-``` r
+## Quick start: one event, two groups
 
-library(cifmodeling)
-data(diabetes.complications)
-cifplot(Event(t,epsilon)~fruitq, data=diabetes.complications, 
-        outcome.type="competing-risk", panel.per.event=TRUE)
-```
+We use `diabetes.complications`, an anonymized dataset from the Japan
+Diabetes Complications Study. Tanaka et al. (2013) studied the
+association between fruit intake and diabetic retinopathy in this
+cohort. The variable `t` gives follow-up time in years, and `epsilon`
+indicates censoring (0), diabetic retinopathy (1), or a macrovascular
+complication (2). The binary variable `fruitq1` compares the lowest
+fruit-intake quartile (Q1) with the other quartiles (Q2–Q4). [Worked
+examples](https://gestimation.github.io/cifmodeling/articles/v5_examples.md)
+creates the same grouping as `low_fruit` from `fruitq`.
 
-![Aalen-Johansen cumulative incidence curves from
-cifplot()](fig/overview-example01-1-1.png)
-
-Aalen-Johansen cumulative incidence curves from cifplot()
-
-In competing risks data, censoring is often coded as 0, the event of
-interest as 1, and competing risks as 2. In the `diabetes.complications`
-data frame, `epsilon` follows this convention. With
-`panel.per.event = TRUE`,
-[`cifplot()`](https://gestimation.github.io/cifmodeling/reference/cifplot.md)
-visualizes both competing events, with the CIF of diabetic retinopathy
-(`epsilon = 1`) shown on the left and the CIF of macrovascular
-complications (`epsilon = 2`) on the right.
-
-Before fitting a model, it is often helpful to check how many
-observations are in each group and what outcome status they have at a
-clinically relevant time point.
-[`cifflowchart()`](https://gestimation.github.io/cifmodeling/reference/cifflowchart.md)
-provides a compact, CONSORT-like summary of treatment groups,
-exclusions, and outcome status using the same formula style.
+Suppose we want to estimate **the probability of diabetic retinopathy by
+each time point** in the two groups. If a macrovascular complication
+occurs first, retinopathy cannot be the first event in this analysis. We
+therefore use the Aalen–Johansen (AJ) estimator of the cumulative
+incidence function (CIF), which accounts for competing events instead of
+treating them as ordinary censoring.
 
 ``` r
 
-cifmodeling::cifflowchart(
+fit_cif <- cifcurve(
   Event(t, epsilon) ~ fruitq1,
   data = diabetes.complications,
-  time.point = 8,
-  outcome.type = "competing-risk"
+  outcome.type = "competing-risk",
+  code.event1 = 1
+)
+
+cifplot(
+  fit_cif,
+  type.y = "risk",
+  label.x = "Years from registration",
+  label.y = "Cumulative incidence of retinopathy",
+  add.risktable = FALSE
 )
 ```
 
-## Why cifmodeling?
+![Cumulative incidence of diabetic retinopathy in two fruit-intake
+groups](fig/overview-overview-cif-1.png)
 
-In clinical and epidemiologic research, analysts often need to handle
-censoring, competing risks, intercurrent events (e.g. treatment
-switching), and descriptive checks of the analysis population, but
-existing R packages typically separate these tasks across different
-interfaces. **cifmodeling** provides a unified, publication-ready
-toolkit that integrates nonparametric estimation, regression modeling,
-visualization, and lightweight flowchart summaries for survival and
-competing risks data. The tools assist users in the following ways:
+Cumulative incidence of diabetic retinopathy in two fruit-intake groups
 
-- **Unified interface** for the Kaplan–Meier and Aalen–Johansen curves,
-  with survival and competing risks handled by the same
-  [`Event()`](https://gestimation.github.io/cifmodeling/reference/Event.md) +
-  formula + data syntax.
-- **Effects on the CIF scale**: while the Fine-Gray models
-  subdistribution hazards,
-  [`polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg.md)
-  directly targets ratios of CIFs (risk ratios, odds ratios,
-  subdistribution hazard ratios), so parameters align closely with
-  differences seen in CIF curves.
-- **Coherent, joint modeling of all competing events**:
-  [`polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg.md)
-  models all cause-specific CIFs together, parameterizing the nuisance
-  structure with polytomous log odds products and enforcing that their
-  CIFs sum to at most one.
-- **Tidy summaries and reporting**: support for
-  [`generics::tidy()`](https://generics.r-lib.org/reference/tidy.html),
-  [`glance()`](https://generics.r-lib.org/reference/glance.html), and
-  `augment()`, which integrate
-  [`polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg.md)
-  smoothly with `modelsummary` and other broom-style tools.
-- **Publication-ready graphics** built on `ggsurvfit` and `ggplot2`,
-  including number-at-risk/CIF+CI tables,
-  censoring/competing-risk/intercurrent-event marks, and multi-panel
-  layouts.
-- **Descriptive flowcharts** with
-  [`cifflowchart()`](https://gestimation.github.io/cifmodeling/reference/cifflowchart.md),
-  which summarizes exclusions, groups, and observed outcome status
-  before formal estimation or modeling.
+Each curve estimates the probability that retinopathy occurs **first**
+by a given time. A higher curve indicates greater cumulative incidence;
+the vertical distance between curves is a difference in estimated
+probabilities, not a hazard ratio. The plot is descriptive and does not
+establish a causal effect of fruit intake.
 
-## Tools for survival and competing risks analysis
-
-The **cifmodeling** package is centered around a small set of connected
-functions:
-
-- [`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md)
-  computes Kaplan-Meier and Aalen-Johansen estimates and returns a
-  survfit-compatible object.
-- [`cifplot()`](https://gestimation.github.io/cifmodeling/reference/cifplot.md)
-  generates a survival or cumulative incidence function (CIF) curve. The
-  visualization is built on top of `ggsurvfit` and `ggplot2`.
-- [`cifpanel()`](https://gestimation.github.io/cifmodeling/reference/cifpanel.md)
-  creates multi-panel displays for survival/CIF curves, arranged either
-  **in a grid layout or as an inset overlay**.
-- [`cifflowchart()`](https://gestimation.github.io/cifmodeling/reference/cifflowchart.md)
-  creates a lightweight flowchart of exclusions, groups, and outcome
-  status. It is intended as a descriptive check of the analysis
-  population, not as a full CONSORT automation tool.
-- [`polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg.md)
-  fits **coherent regression models** on all cause-specific CIFs
-  simultaneously to estimate RR/OR/SHR, offering a practical complement
-  to Fine-Gray.
-
-These functions adopt a formula + data syntax, return practical outputs
-for estimation, visualization, and reporting, and integrate with
-`ggsurvfit`, `DiagrammeR`, and `modelsummary` where appropriate.
-
-> **Explore the main features visually:**\
-> See the
-> [Gallery](https://gestimation.github.io/cifmodeling/articles/v5_gallery.html)
-> for a curated set of examples using
-> [`cifplot()`](https://gestimation.github.io/cifmodeling/reference/cifplot.md)
-> and
-> [`cifpanel()`](https://gestimation.github.io/cifmodeling/reference/cifpanel.md).
-
-> **Interested in the precise variance formulas and influence functions
-> for the Aalen-Johansen estimator?**\
-> Visit [Computational formulas in
-> cifcurve()](https://gestimation.github.io/cifmodeling/articles/v3_formulas.html).
-
-> **Learn the modeling framework with
-> [`polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg.md):**\
-> See the [Direct polytomous
-> regression](https://gestimation.github.io/cifmodeling/articles/v2_polyreg.html)
-> for coherent, joint modeling of all cause-specific CIFs.
-
-> **Prefer to build intuition before diving into code?**\
-> Visit the *Coffee and Research – Story and Quiz* series for
-> narrative-style introductions to study design, survival and competing
-> risks analysis, and frequentist and causality thinking:
-> <https://gestimation.github.io/coffee-and-research/en/>
-
-## Position in the survival ecosystem
-
-Several excellent R packages exist for survival and competing risks
-analysis. The **survival** package provides the canonical API for
-survival data. In combination with the **ggsurvfit** package,
-[`survival::survfit()`](https://rdrr.io/pkg/survival/man/survfit.html)
-can produce publication-ready survival plots. For CIF plots, however,
-integration in the general ecosystem is less streamlined.
-**cifmodeling** fills this gap by offering
+[`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md)
+returns a `survfit`-compatible object. For a competing-risk outcome, its
+`$surv` component stores **one minus the CIF for the event of
+interest**. Setting `type.y = "risk"` in
 [`cifplot()`](https://gestimation.github.io/cifmodeling/reference/cifplot.md)
-for survival/CIF plots and multi-panel figures via a single, unified
-interface.
+displays the CIF itself. To plot both events in separate panels, use
+`panel.per.event = TRUE` (see the
+[Gallery](https://gestimation.github.io/cifmodeling/articles/v6_gallery.md)).
 
-Beyond providing a unified interface,
-[`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md)
-also extends `survfit()` in a few targeted ways. For unweighted survival
-data, it reproduces the standard Kaplan-Meier estimator with **Greenwood
-and Tsiatis SEs** and a unified set of CI transformations. For
-unweighted competing risks data, it computes Aalen-Johansen CIFs with
-both **Aalen-type and delta-method SEs**. The default inference for
-weighted curves uses **influence-function based SEs** (Deng and Wang
-2025). The [formulas
-vignette](https://gestimation.github.io/cifmodeling/articles/v3_formulas.md)
-also describes the weighted Kaplan–Meier estimator and the adjusted
-Greenwood variance of Xie and Liu (2005).
+## From a curve to a statistical question
 
-If you need very fine-grained plot customization, you can compute the
-estimator and keep a survfit-compatible object with
-[`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md)
-(or supply your own survfit object) and then style it using
-`ggsurvfit/ggplot2` layers. In other words:
+A curve, a test, and a regression model answer different questions:
 
-- use
-  [`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md)
-  for estimation,
-- use
-  [`cifplot()`](https://gestimation.github.io/cifmodeling/reference/cifplot.md)
-  /
-  [`cifpanel()`](https://gestimation.github.io/cifmodeling/reference/cifpanel.md)
-  for quick, high-quality figures,
-- use
-  [`cifflowchart()`](https://gestimation.github.io/cifmodeling/reference/cifflowchart.md)
-  for compact summaries of exclusions, groups, and outcome status, and
-- fall back to the `ggplot` ecosystem when you want full artistic
-  control.
+| Question | Main function | What it tells you |
+|:---|:---|:---|
+| What is the probability of an event by time *t*? | [`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md) | An AJ estimate of the CIF and a pointwise confidence interval |
+| Do the CIFs differ between groups over follow-up? | [`ciftest()`](https://gestimation.github.io/cifmodeling/reference/ciftest.md) | A curve-comparison test, such as Gray’s test |
+| What is the exposure effect on risk at eight years? | [`polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg.md) | A fixed-time RR or OR, with covariate adjustment if specified |
+| How can I present the results? | [`cifplot()`](https://gestimation.github.io/cifmodeling/reference/cifplot.md), [`cifpanel()`](https://gestimation.github.io/cifmodeling/reference/cifpanel.md), reporting tools | Plots, tables, and reports |
 
-The **causalRisk** package offers IPW-based estimation of counterfactual
-cumulative risks and hazards. It is most relevant when treatment,
-censoring, and missingness mechanisms must be modeled explicitly. In
-contrast, **cifmodeling** focuses on nonparametric estimation and direct
-CIF regression rather than structural causal models.
-
-The **mets** package is a more specialized toolkit that provides
-advanced methods for competing risks analysis.
-[`cifmodeling::polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg.md)
-focuses on coherent modeling of all CIFs simultaneously to estimate the
-exposure effects in terms of RR/OR/SHR. This coherence can come with
-longer runtimes for large problems. If you prefer fitting separate
-regression models for each competing event or specifically need the
-Fine-Gray models (Fine and Gray 1999) and the direct binomial models
-(Scheike, Zhang and Gerds 2008),
-[`mets::cifreg()`](http://kkholst.github.io/mets/reference/cifreg.md)
-and
-[`mets::binreg()`](http://kkholst.github.io/mets/reference/binreg.md)
-are excellent choices.
-
-In short, **cifmodeling** provides a unified high-level grammar for
-estimation, visualization, descriptive flowcharts, and direct CIF
-regression — something no existing package currently offers in one
-place.
-
-| Function | cifmodeling | survival | cmprsk | mets | ggsurvfit |
-|----|----|----|----|----|----|
-| AJ estimator | Yes | Yes (multistate `survfit`) | Yes (`cuminc`) | Yes | Depends on input |
-| Weighted AJ estimator and valid SE | Yes (IPW + IF-based SE) | Yes (case weights / robust SE) | No | Yes (IPW + IF-based SE) | Depends on input |
-| Gray test | No | No (only log-rank via `survdiff`) | Yes (`cuminc`) | No | [`tidycmprsk::glance()`](https://generics.r-lib.org/reference/glance.html) + `add_pvalue()` |
-| Fine–Gray model | No | `finegray`+`coxph` | `crr` | `cifregFG` | No |
-| Direct CIF regression | `polyreg` | No | No | `cifreg`, `binreg` | No |
-| Surv()/Event() interface | Yes (`Event`, `Surv`) | Yes (`Surv`) | No (`ftime`/`fstatus`) | Yes (`Event`, `Surv`) | Yes (`Surv`, `ggcuminc` + tidiers) |
-| Publication-ready survival/CIF plot | Yes (`cifplot`, `cifpanel`) | `plot` (base) | `plot.cuminc` (base) | `plot` (base) | Designed for publication |
-| Support for tidy/glance/augment | Yes (`polyreg` + methods) | Yes (via **broom**) | Yes (via **tidycmprsk**) | No | Yes (via **broom**) |
-
-## Installation
-
-The package is implemented in R and relies on `Rcpp`, `nleqslv` and
-`boot` for its numerical back-end. The examples in this document also
-use `ggplot2`, `ggsurvfit`, `patchwork` and `modelsummary` for
-tabulation and plotting. Install the core package and these companion
-packages with:
+For example, use the classical Gray test to compare retinopathy CIFs
+over follow-up. This takes the same formula and data used to estimate
+the curves:
 
 ``` r
 
-# Install cifmodeling with core dependencies
-install.packages(c("cifmodeling", "Rcpp", "nleqslv", "boot"))
-
-# Recommended packages for plotting and tabulation in this README
-install.packages(c("ggplot2", "ggsurvfit", "patchwork", "modelsummary"))
+ciftest(
+  Event(t, epsilon) ~ fruitq1,
+  data = diabetes.complications,
+  outcome.type = "competing-risk",
+  test = "gray"
+)
+#> 
+#> Gray's test
+#> 
+#> Outcome: competing-risk
+#> Test: gray
+#> FH weights: rho = 0, gamma = 0
+#> Analysis strata: pooled
+#> Censoring strata: not used by this test
+#> Working AJ strata: not used by this test
+#> Variance: gray
+#> 
+#> Chi-squared = 8.8786, df = 1, p-value = 0.002885
 ```
 
-## Quality control
+The null hypothesis is that the cause-specific CIFs are equal across
+groups. This differs from testing an RR at eight years. For competing
+risks,
+[`ciftest()`](https://gestimation.github.io/cifmodeling/reference/ciftest.md)
+defaults to an *augmented score test*; `test = "gray"` requests the
+classical Gray test. See [Tests of cumulative incidence
+functions](https://gestimation.github.io/cifmodeling/articles/v3_gray_extensions.md)
+for other options, including the Ditzhaus quadratic-form test
+(`test = "ditzhaus"`) and MaxCombo (`test = "maxcombo"` or `"m"`).
 
-**cifmodeling** includes an extensive test suite built with
-**testthat**, which checks the numerical accuracy and graphical
-consistency of all core functions
-([`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md),
-[`cifplot()`](https://gestimation.github.io/cifmodeling/reference/cifplot.md),
-[`cifpanel()`](https://gestimation.github.io/cifmodeling/reference/cifpanel.md),
-[`cifflowchart()`](https://gestimation.github.io/cifmodeling/reference/cifflowchart.md),
-and
-[`polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg.md)).
-The estimators are routinely compared against related functions in
-**survival**, **cmprsk** and **mets** packages to ensure consistency.
-The package is continuously tested on GitHub Actions (Windows, macOS,
-Linux) to maintain reproducibility and CRAN-level compliance.
+To estimate an **eight-year risk ratio**, use
+[`polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg.md).
+The exposure is specified separately from the outcome and the other
+covariates:
+
+``` r
+
+fit_rr <- polyreg(
+  nuisance.model = Event(t, epsilon) ~ age + sex,
+  exposure = "fruitq1",
+  data = diabetes.complications,
+  code.exposure.ref = 0,
+  time.point = 8,
+  outcome.type = "competing-risk",
+  effect.measure1 = "RR",
+  effect.measure2 = "RR"
+)
+summary(fit_rr)
+```
+
+Here, `age` and `sex` are included in the nuisance model, and
+`effect.measure1 = "RR"` specifies the effect measure for retinopathy.
+Both event types are modeled jointly. The estimated RR describes a
+model-based association; causal interpretation requires additional
+assumptions. This code is not run in the overview. See [Direct
+polytomous
+regression](https://gestimation.github.io/cifmodeling/articles/v2_polyreg.md)
+for a runnable example and [Worked
+examples](https://gestimation.github.io/cifmodeling/articles/v5_examples.md)
+for interpreting RRs and their confidence intervals.
+
+**From results to a report.** Once the model is fitted, you can format
+its results with `gtsummary`, or use
+[`cifreport()`](https://gestimation.github.io/cifmodeling/reference/cifreport.md)
+to produce baseline tables, fixed-time estimates, curve comparisons, and
+figures in a single analysis. See [Reporting
+results](https://gestimation.github.io/cifmodeling/articles/v7_reporting_results.md)
+for a runnable, two-outcome report and Word/HTML/PDF export.
+[`cifreport()`](https://gestimation.github.io/cifmodeling/reference/cifreport.md)
+requires a version that exports this function.
+
+## Choose a learning path
+
+If you want to use the package right away, start with the worked
+analysis. If you want to examine model assumptions, test statistics, or
+variance estimators, start with the methods vignettes.
+
+| Your goal | Suggested route |
+|:---|:---|
+| **Learn by doing** | [Worked examples (v5)](https://gestimation.github.io/cifmodeling/articles/v5_examples.md) → [Gallery (v6)](https://gestimation.github.io/cifmodeling/articles/v6_gallery.md) → [Reporting results (v7)](https://gestimation.github.io/cifmodeling/articles/v7_reporting_results.md) |
+| **Understand the methods** | [Direct regression (v2)](https://gestimation.github.io/cifmodeling/articles/v2_polyreg.md) → [CIF tests (v3)](https://gestimation.github.io/cifmodeling/articles/v3_gray_extensions.md) → [Computational formulas (v4)](https://gestimation.github.io/cifmodeling/articles/v4_formulas.md) |
+| **Find a technical answer** | [Data conventions and implementation (v8)](https://gestimation.github.io/cifmodeling/articles/v8_information.md) → [Function reference (v9)](https://gestimation.github.io/cifmodeling/articles/v9_arguments.md) |
+
+You do not need to read the vignettes in numerical order. In particular,
+[Worked
+examples](https://gestimation.github.io/cifmodeling/articles/v5_examples.md)
+combines CIF estimation, curve comparison, fixed-time RRs, and a
+composite endpoint in one analysis.
+
+## Main functions at a glance
+
+| Function | Main purpose | Learn more |
+|:---|:---|:---|
+| [`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md) | KM survival or AJ cumulative incidence, SEs, and pointwise CIs; supports fixed case weights | [Formulas](https://gestimation.github.io/cifmodeling/articles/v4_formulas.md), [Examples](https://gestimation.github.io/cifmodeling/articles/v5_examples.md) |
+| [`ciftest()`](https://gestimation.github.io/cifmodeling/reference/ciftest.md) | Log-rank, Gray, score, augmented score, and multiple-direction tests | [Tests](https://gestimation.github.io/cifmodeling/articles/v3_gray_extensions.md) |
+| [`polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg.md) | Joint direct modeling of competing-event CIFs; RR, OR, or SHR effect scales | [Regression](https://gestimation.github.io/cifmodeling/articles/v2_polyreg.md) |
+| [`cifplot()`](https://gestimation.github.io/cifmodeling/reference/cifplot.md) / [`cifpanel()`](https://gestimation.github.io/cifmodeling/reference/cifpanel.md) | Curves, risk tables, event markers, and multi-panel plots | [Gallery](https://gestimation.github.io/cifmodeling/articles/v6_gallery.md) |
+| [`cifflowchart()`](https://gestimation.github.io/cifmodeling/reference/cifflowchart.md) | Descriptive flowchart of analysis groups, exclusions, and outcome status | [Function reference](https://gestimation.github.io/cifmodeling/articles/v9_arguments.md) or [`?cifflowchart`](https://gestimation.github.io/cifmodeling/reference/cifflowchart.md) |
+| [`summary()`](https://rdrr.io/r/base/summary.html) / [`gtsummary::tbl_survfit()`](https://www.danieldsjoberg.com/gtsummary/reference/tbl_survfit.html) | Extract KM/AJ estimates at specified times and present curve summaries as tables | [Reporting](https://gestimation.github.io/cifmodeling/articles/v7_reporting_results.md) |
+| [`generics::tidy()`](https://generics.r-lib.org/reference/tidy.html) / [`gtsummary::tbl_regression()`](https://www.danieldsjoberg.com/gtsummary/reference/tbl_regression.html) | Extract test or regression results and prepare event-specific regression tables | [Reporting](https://gestimation.github.io/cifmodeling/articles/v7_reporting_results.md) |
+| [`cifreport()`](https://gestimation.github.io/cifmodeling/reference/cifreport.md) | Automated Word, HTML, or PDF analysis report, when available in the installed version | [Reporting](https://gestimation.github.io/cifmodeling/articles/v7_reporting_results.md) |
+
+When choosing a function, keep three distinctions in mind:
+
+- **Cumulative incidence versus survival.** Without competing events, KM
+  estimates survival. With competing events, AJ estimates the
+  probability of each event occurring *first*. Define the outcome
+  accordingly.
+- **Comparison over follow-up versus at a fixed time.** A
+  curve-comparison test and an eight-year RR answer different questions;
+  neither replaces the other.
+- **Direct regression versus hazard regression.** Fine–Gray regression
+  models the subdistribution hazard.
+  [`polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg.md)
+  directly models fixed-time RRs or ORs using a joint probability model
+  for competing events. It also supports SHR scales and models with
+  time-constant effect parameters; see [Direct polytomous
+  regression](https://gestimation.github.io/cifmodeling/articles/v2_polyreg.md).
+
+## Where cifmodeling fits among R packages
+
+**cifmodeling** complements established R packages. **survival**
+provides KM and Cox regression, **cmprsk** provides CIF estimation,
+classical Gray tests, and Fine–Gray regression, **mets** provides
+related competing-risk regression methods, and **ggsurvfit** focuses on
+plotting. **cifmodeling** brings selected estimation, testing,
+regression, plotting, and reporting functions together under one
+interface.
+
+| Analysis task | cifmodeling | Other established options |
+|:---|:---|:---|
+| KM/AJ estimation and curves | [`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md), [`cifplot()`](https://gestimation.github.io/cifmodeling/reference/cifplot.md) | [`survival::survfit()`](https://rdrr.io/pkg/survival/man/survfit.html), `ggsurvfit` |
+| Classical Gray test | `ciftest(test = "gray")` | [`cmprsk::cuminc()`](https://rdrr.io/pkg/cmprsk/man/cuminc.html) |
+| Fine–Gray regression | Not a regression function in cifmodeling | [`cmprsk::crr()`](https://rdrr.io/pkg/cmprsk/man/crr.html), [`survival::finegray()`](https://rdrr.io/pkg/survival/man/finegray.html) with `coxph()` |
+| Direct CIF regression | [`polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg.md) | [`mets::cifreg()`](http://kkholst.github.io/mets/reference/cifreg.md) / `binreg()` provide related, but distinct, methods |
+| Reports and tables | [`cifreport()`](https://gestimation.github.io/cifmodeling/reference/cifreport.md) and reporting adapters | `gtsummary`, `modelsummary` |
+
+## Practical notes before analyzing your data
+
+**Check event codes and follow-up.** In these examples, 0 denotes
+censoring, 1 retinopathy, and 2 a competing event. Other datasets may
+use different codes; specify them explicitly when needed. Fixed-time
+competing-risk models fitted with
+[`polyreg()`](https://gestimation.github.io/cifmodeling/reference/polyreg.md)
+require both event types to be observed by the evaluation time. See
+[Data conventions and implementation
+details](https://gestimation.github.io/cifmodeling/articles/v8_information.md).
+
+**Check what the confidence intervals cover.**
+[`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md)
+returns pointwise intervals, not simultaneous confidence bands. If you
+supply externally estimated propensity-score weights, its fixed-weight
+influence-function variance does not account for uncertainty in
+estimating those weights. Deng and Wang (2025) derive influence
+functions for estimators that account for propensity-score estimation.
+See [Computational
+formulas](https://gestimation.github.io/cifmodeling/articles/v4_formulas.md)
+for the fixed-weight formulas.
+
+**Distinguish association from causation.** Differences between the
+observed fruit-intake groups are not automatically causal effects.
+Interpreting adjusted or weighted estimates causally requires
+appropriate study-design and identification assumptions.
+
+## Installation and reproducibility
+
+Install the CRAN release with:
+
+``` r
+
+install.packages("cifmodeling")
+```
+
+The GitHub development version may include features not yet available on
+CRAN:
+
+``` r
+
+# Optional: install the development version
+# install.packages("remotes")
+remotes::install_github("gestimation/cifmodeling")
+```
+
+For example,
+[`cifreport()`](https://gestimation.github.io/cifmodeling/reference/cifreport.md)
+is available in the GitHub development source but was not exported in
+CRAN version 1.2.4. Check your installation with:
+
+``` r
+
+packageVersion("cifmodeling")
+"cifreport" %in% getNamespaceExports("cifmodeling")
+```
+
+For reproducibility, record the package version, event codes, follow-up
+horizon, model specification, and inference settings. The package
+includes numerical and interface tests, but you should still verify your
+analyses against the installed version.
+
+## Related learning resources
+
+For a broader, informal introduction to study design, survival analysis,
+and statistical inference, see the [Coffee and Research – Story and
+Quiz](https://gestimation.github.io/coffee-and-research/en/) series.
 
 ## References
 
+- Deng Y, Wang R. Adjusted Nelson–Aalen estimators by inverse treatment
+  probability weighting with an estimated propensity score. *Statistics
+  in Medicine*. 2025;44(10–12):e70085.
+  [doi:10.1002/sim.70085](https://onlinelibrary.wiley.com/doi/full/10.1002/sim.70085)
+- Tanaka S, Scheike TH. Estimating effects on cumulative incidence
+  probabilities by direct polytomous regression and polytomous log-odds
+  product. *Biometrics*. 2026;82(3):ujag160.
+  [doi:10.1093/biomtc/ujag160](https://doi.org/10.1093/biomtc/ujag160)
 - Tanaka S, Yoshimura Y, Kawasaki R, Kamada C, Tanaka S, Horikawa C,
   Ohashi Y, Araki A, Ito H, Akanuma Y, Yamada N, Yamashita H, Sone H,
   for the Japan Diabetes Complications Study Group. Fruit intake and
   incident diabetic retinopathy with type 2 diabetes. *Epidemiology*.
-  2013, 24(2), 204–211.
+  2013;24(2):204–211.
   [doi:10.1097/EDE.0b013e318281725e](https://doi.org/10.1097/EDE.0b013e318281725e)
 - Xie J, Liu C. Adjusted Kaplan–Meier estimator and log-rank test with
   inverse probability of treatment weighting for survival data.
-  *Statistics in Medicine*. 2005, 24(20), 3089–3110.
+  *Statistics in Medicine*. 2005;24(20):3089–3110.
   [doi:10.1002/sim.2174](https://doi.org/10.1002/sim.2174)

@@ -31,7 +31,7 @@ direction, preserving the zeroth-step identity in the observed sample.'></head><
 
     <a class="navbar-brand me-2" href="../index.html">cifmodeling</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,13 +44,13 @@ direction, preserving the zeroth-step identity in the observed sample.'></head><
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/v1_overview.html">Overview</a></li>
     <li><a class="dropdown-item" href="../articles/v2_polyreg.html">Direct polytomous regression</a></li>
-    <li><a class="dropdown-item" href="../articles/v3_formulas.html">Computational formulas in cifcurve()</a></li>
-    <li><a class="dropdown-item" href="../articles/v4_examples.html">Examples</a></li>
-    <li><a class="dropdown-item" href="../articles/v5_gallery.html">Gallery</a></li>
-    <li><a class="dropdown-item" href="../articles/v6_information.html">Additional information</a></li>
-    <li><a class="dropdown-item" href="../articles/v7_arguments.html">Full lists of arguments</a></li>
-    <li><a class="dropdown-item" href="../articles/v8_reporting_cif.html">Reporting cumulative incidence</a></li>
-    <li><a class="dropdown-item" href="../articles/v9_reporting_polyreg.html">Reporting CIF regression</a></li>
+    <li><a class="dropdown-item" href="../articles/v3_gray_extensions.html">Tests of cumulative incidence functions</a></li>
+    <li><a class="dropdown-item" href="../articles/v4_formulas.html">Computational formulas in cifcurve()</a></li>
+    <li><a class="dropdown-item" href="../articles/v5_examples.html">Worked examples</a></li>
+    <li><a class="dropdown-item" href="../articles/v6_gallery.html">Gallery</a></li>
+    <li><a class="dropdown-item" href="../articles/v7_reporting_results.html">Reporting results</a></li>
+    <li><a class="dropdown-item" href="../articles/v8_information.html">Data conventions and implementation details</a></li>
+    <li><a class="dropdown-item" href="../articles/v9_arguments.html">Function reference</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -108,6 +108,10 @@ direction, preserving the zeroth-step identity in the observed sample.</p>
 <span>  tau <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  prob.bound <span class="op">=</span> <span class="fl">1e-07</span>,</span>
 <span>  prob.truncation <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  directions <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  component.test <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  alternative <span class="op">=</span> <span class="st">"two.sided"</span>,</span>
+<span>  code.exposure.ref <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -147,12 +151,14 @@ The aliases <code>"C"</code> and <code>"S"</code> are accepted.</p></dd>
 
 <dt id="arg-test">test<a class="anchor" aria-label="anchor" href="#arg-test"></a></dt>
 <dd><p>One of <code>"auto"</code>, <code>"early"</code>, <code>"late"</code>, <code>"logrank"</code>, <code>"gray"</code>,
-<code>"score"</code>, <code>"augmented"</code>, or <code>"multiple"</code>. The aliases <code>"L"</code>, <code>"LR"</code>,
+<code>"score"</code>, <code>"augmented"</code>, <code>"ditzhaus"</code>, or <code>"maxcombo"</code>. The aliases <code>"L"</code>, <code>"LR"</code>,
 and <code>"log-rank"</code> select log-rank; <code>"G"</code> selects Gray; and <code>"A"</code>, <code>"aug"</code>,
 and <code>"augmentation"</code> select the augmented score test. The early and late
-choices are outcome-specific single-direction presets. <code>"multiple"</code>
-(aliases <code>"multi"</code> and <code>"m"</code>) returns <code><a href="ciftest_mdir.html">ciftest_mdir()</a></code> using the default
-directions <code>(rho, gamma) = (2, 0), (0, 2), (0, 0)</code>. <code>"score"</code> uses the
+choices are outcome-specific single-direction presets. <code>"ditzhaus"</code>
+(alias <code>"d"</code>) runs the quadratic-form test with default directions
+<code>(rho, gamma) = (2, 0), (0, 2), (0, 0)</code>. <code>"maxcombo"</code> (alias <code>"m"</code>) uses
+augmented scores with default directions <code>(0, 0), (2, 0), (0, 1)</code>.
+<code>"score"</code> uses the
 null score-IID variance; for competing-risk outcomes it may use censoring
 Kaplan–Meier strata.</p></dd>
 
@@ -172,7 +178,8 @@ Kaplan–Meier strata.</p></dd>
 <dt id="arg-rho-gamma">rho, gamma<a class="anchor" aria-label="anchor" href="#arg-rho-gamma"></a></dt>
 <dd><p>Optional non-negative Fleming-Harrington weight
 parameters. Omitted values default to zero. They cannot be combined with
-the fixed <code>"early"</code> and <code>"late"</code> presets.</p></dd>
+the fixed <code>"early"</code> and <code>"late"</code> presets, <code>"ditzhaus"</code>, <code>"maxcombo"</code>, or
+<code>directions</code>.</p></dd>
 
 
 <dt id="arg-iteration">iteration<a class="anchor" aria-label="anchor" href="#arg-iteration"></a></dt>
@@ -225,6 +232,38 @@ than being silently replaced.</p></dd>
 denominators used by score and augmented tests.</p></dd>
 
 
+<dt id="arg-directions">directions<a class="anchor" aria-label="anchor" href="#arg-directions"></a></dt>
+<dd><p>Optional Fleming–Harrington directions supplied as a
+character vector of <code>"early"</code>, <code>"late"</code>,
+or <code>"unweighted"</code> presets (respectively <code>(2, 0)</code>, <code>(0, 2)</code>, and <code>(0, 0)</code>),
+a two-column numeric matrix or data frame with <code>rho</code> and <code>gamma</code>, or a
+named list of numeric pairs. A non-<code>NULL</code> value supplies the directions
+for <code>test = "maxcombo"</code> or selects the Ditzhaus test for other test
+choices, even with a single direction.</p></dd>
+
+
+<dt id="arg-component-test">component.test<a class="anchor" aria-label="anchor" href="#arg-component-test"></a></dt>
+<dd><p>Optional component test for the Ditzhaus test.
+Accepts <code>"auto"</code>,
+<code>"logrank"</code>, <code>"gray"</code>, <code>"score"</code>, or <code>"augmented"</code> and their aliases.
+The default <code>NULL</code> is equivalent to <code>"auto"</code>, which selects log-rank for
+survival and the augmented score test for competing risks.</p></dd>
+
+
+<dt id="arg-alternative">alternative<a class="anchor" aria-label="anchor" href="#arg-alternative"></a></dt>
+<dd><p>Alternative for MaxCombo. <code>"two.sided"</code> is the default.
+<code>"less"</code> tests for lower cumulative incidence of <code>code.event1</code> in the
+comparison group relative to the reference along the specified score
+directions. <code>"greater"</code> tests in the opposite direction.</p></dd>
+
+
+<dt id="arg-code-exposure-ref">code.exposure.ref<a class="anchor" aria-label="anchor" href="#arg-code-exposure-ref"></a></dt>
+<dd><p>Reference group for MaxCombo. Supply a numeric
+code or a character level present in the analysis data. With <code>NULL</code>
+(the default), the first factor level among groups present in the analysis
+data is the reference.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Reserved for future extensions.</p></dd>
 
@@ -248,7 +287,39 @@ anchoring diagnostics, and fixed-point diagnostics. The event-time FH
 process actually used by the fit is returned in
 <code>diagnostics$fh.weight.process</code>, including whether it came from the pooled
 or event-stratified AJ left limit or the native Gray subdistribution
-construction.</p>
+construction.
+Multiple-direction results inherit from <code>"ciftest_mdir"</code> and store the
+directions in <code>directions</code> and the individual fits in <code>components</code>.
+MaxCombo results also store the standardized scores in <code>z</code>, the selected
+<code>alternative</code>, and the reference and comparison group levels in <code>comparison</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>The Ditzhaus test combines Fleming–Harrington scores in the
+quadratic form of Ditzhaus and Friedrich. Log-rank and Gray components use
+their joint classical covariances. Score and augmented components use the
+cross-product of stacked individual score contributions. The reference
+distribution is chi-square with degrees of freedom given by the numerical
+rank of the joint covariance.</p>
+<p>MaxCombo is a two-group test for competing-risk outcomes. It uses the
+largest absolute standardized augmented score for a two-sided test, the
+largest standardized score for <code>"greater"</code>, and the largest negated
+standardized score for <code>"less"</code>. The joint normal reference distribution
+uses the correlations estimated from the stacked individual scores.
+Joint normal probabilities are evaluated by one-dimensional quadrature
+for two or three directions and by conditional normal integration for
+larger sets. The numerical error estimate is in
+<code>diagnostics$integration.error</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
+    <p>Ditzhaus M, Friedrich S. More powerful logrank permutation
+tests for two-sample survival data. arXiv preprint (2018).
+Plackett RL. A reduction formula for normal multivariate integrals.
+Biometrika. 1954;41:351–360. <a href="https://doi.org/10.1093/biomet/41.3-4.351" class="external-link">doi:10.1093/biomet/41.3-4.351</a>
+
+Genz A. Numerical computation of multivariate normal probabilities.
+J Comput Graph Stat. 1992;1:141–149. <a href="https://doi.org/10.1080/10618600.1992.10477010" class="external-link">doi:10.1080/10618600.1992.10477010</a></p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

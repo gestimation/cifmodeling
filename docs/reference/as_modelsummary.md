@@ -13,7 +13,8 @@ as_modelsummary(
   event = c("both", "event1", "event2"),
   conf.int = x$conf.int,
   variance = NULL,
-  ...
+  ...,
+  display.labels = TRUE
 )
 ```
 
@@ -39,6 +40,12 @@ as_modelsummary(
 
   Covariance estimator: if or bootstrap for polyreg. Omitting it
   preserves the stored inference.
+
+- display.labels:
+
+  Use stored display labels for the exposure contrasts in the
+  modelsummary table. Set to `FALSE` to retain the original term names
+  in the adapter output.
 
 ## Value
 

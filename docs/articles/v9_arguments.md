@@ -1,0 +1,584 @@
+# Function reference
+
+This page summarizes the user-facing arguments of the main `cifmodeling`
+functions, including their **declared defaults**. It complements the
+detailed help available through `?function_name`. The defaults below
+were checked against the GitHub `master` source on 16 November 2026.
+Defaults in an installed release may differ from those in the
+development version.
+
+For introductions and examples, see [direct
+regression](https://gestimation.github.io/cifmodeling/articles/v2_polyreg.md),
+[tests](https://gestimation.github.io/cifmodeling/articles/v3_gray_extensions.md),
+[computational
+formulas](https://gestimation.github.io/cifmodeling/articles/v4_formulas.md),
+[worked
+examples](https://gestimation.github.io/cifmodeling/articles/v5_examples.md),
+[the
+gallery](https://gestimation.github.io/cifmodeling/articles/v6_gallery.md),
+[reporting](https://gestimation.github.io/cifmodeling/articles/v7_reporting_results.md),
+and [data
+conventions](https://gestimation.github.io/cifmodeling/articles/v8_information.md).
+
+**How to read these tables:** “Required” means that the argument has no
+default. A vector such as `c("normal", "t")` shows the default declared
+in R; when [`match.arg()`](https://rdrr.io/r/base/match.arg.html) is
+used, the first choice is selected. Depending on the function, `NULL`
+may mean “select automatically,” “inherit,” or “disable.”
+
+## `cifcurve()`
+
+Estimate Kaplan–Meier (KM) survival or Aalen–Johansen (AJ) cumulative
+incidence. See [Computational
+formulas](https://gestimation.github.io/cifmodeling/articles/v4_formulas.md)
+for estimators, standard errors, and Student intervals.
+
+Here, **IF** denotes influence function and **FG** denotes Fay–Graubard
+variance correction (not Fine–Gray regression). **FDF** and **EDF**
+denote Fay-type and equal-allocation working degrees of freedom,
+respectively.
+
+For competing-risk fits, `fit$surv` stores **`1 - CIF`**; plotting on
+the risk scale displays the CIF. Supplied weights are treated as fixed,
+so uncertainty from external weight estimation is excluded. The optional
+one-sided test uses a **normal** reference, even when `conf.dist = "t"`.
+
+### Data and event definitions
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `formula` | Required | Time-to-event formula with `Event(time, status)` or right-censored `Surv()`; optional group on the right. |
+| `data` | Required | Data frame used for the analysis. |
+| `weights` | `NULL` | Nonnegative case weights. Supplied weights, including IPTW, are treated as fixed in the variance calculations. |
+| `n.risk.type` | `"weighted"` | Display risk-set counts as weighted, unweighted, or Kish effective sample size (`"ess"`). |
+| `subset.condition` | `NULL` | Optional condition selecting observations for analysis. |
+| `na.action` | `na.omit` | Function used to handle missing values. |
+| `outcome.type` | `NULL` | `"survival"` (KM) or `"competing-risk"` (AJ); `NULL` infers the type from observed event codes. |
+| `code.event1` | `1` | Code for the primary event. |
+| `code.event2` | `2` | Code for the competing event. |
+| `code.censoring` | `0` | Code for censoring. |
+
+### Variance, intervals, and tests
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `error` | `NULL` | Variance method: KM `"greenwood"`, `"tsiatis"`, `"if"`, `"fay"`; AJ `"delta"`, `"aalen"`, `"if"`, `"fay"`. Weighted fits use IF-based methods. |
+| `conf.type` | `"arcsine-square root"` | CI transformation (`"arcsine-square root"` by default); applied to KM survival or to `1 - CIF` for AJ. |
+| `conf.int` | `0.95` | Two-sided confidence level. |
+| `conf.dist` | `c("normal", "t")` | `"normal"` or `"t"` reference for pointwise CIs. The `"t"` option requires IF or Fay variance. |
+| `df.method` | `c("deletion", "equal")` | Student degrees-of-freedom allocation: `"deletion"` (FDF) or `"equal"` (EDF; IF only). |
+| `time.point` | `NULL` | Evaluation time for the optional one-sided test with `null.hypothesis`. |
+| `null.hypothesis` | `NULL` | Null probability at `time.point`; the one-sided alternative is higher survival or lower primary-event CIF. |
+
+### Engine and diagnostics
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `report.influence.function` | `FALSE` | Return uncorrected case-weight influence contributions when the C++ engine is used. |
+| `report.survfit.std.err` | `FALSE` | Report standard errors on the log-survival scale. |
+| `engine` | `"calculateAJ_Rcpp"` | Estimator engine; C++ is standard. `"calculateKM"` is a restricted legacy option; `"auto"` is accepted. |
+| `prob.bound` | `1e-7` | Lower numerical probability bound. |
+
+The result inherits from `survfit`. Use
+`summary(fit, times = ..., extend = TRUE)` to retrieve estimates and
+saved interval diagnostics. IF/FG fits also contain `df`, `df.reason`,
+`critical.value`, and `conf.status`. Student references are working
+approximations, not exact finite-sample distributions.
+
+## `cifplot()`
+
+Plot a curve from a formula or display an existing fitted object. For
+illustrated examples, see
+[Gallery](https://gestimation.github.io/cifmodeling/articles/v6_gallery.md).
+
+To display IF-t or FG-t intervals, first fit
+`cifcurve(conf.dist = "t", ...)` and pass the result as
+`formula_or_fit`. The formula-based plotting interface does **not**
+forward `conf.dist` or `df.method`.
+
+### Data and inference
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `formula_or_fit` | Required | Formula or fitted survival/CIF object. Passing a fitted `cifcurve` preserves its previously calculated intervals. |
+| `data` | `NULL` | Data frame used for the analysis. |
+| `weights` | `NULL` | Optional nonnegative case weights or a weight-column name; see the function help for restrictions. |
+| `subset.condition` | `NULL` | Optional condition selecting observations for analysis. |
+| `na.action` | `na.omit` | Function used to handle missing values. |
+| `outcome.type` | `"competing-risk"` | Outcome type for formula-based plotting; default is competing risks. With a fitted `cifcurve`, its stored type is used when omitted. |
+| `code.event1` | `1` | Code for the primary event. |
+| `code.event2` | `2` | Code for the competing event. |
+| `code.censoring` | `0` | Code for censoring. |
+| `code.events` | `NULL` | Event/censoring code vector or panel-wise list; e.g. `c(event1, event2, censoring)` for competing risks. |
+| `error` | `NULL` | Variance estimator, such as `"greenwood"`, `"delta"`, `"if"`, or `"fay"`, subject to outcome and weights. |
+| `conf.type` | `"arcsine-square root"` | Pointwise interval transformation; choices include `"plain"`, `"log"`, `"log-log"`, `"logit"`, `"arcsin"`, `"none"`. |
+| `conf.int` | `0.95` | Two-sided confidence level. |
+| `n.risk.type` | `c("weighted", "unweighted", "ess")` | Display risk-set counts as weighted, unweighted, or Kish effective sample size (`"ess"`). |
+
+### Axes, strata, and labels
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `type.y` | `NULL` | Plotting scale (not a CI transformation), e.g., `"surv"`, `"risk"`, `"cumhaz"`, or `"cloglog"`. |
+| `label.x` | `NULL` | X-axis label, optionally specified per panel. |
+| `label.y` | `NULL` | Y-axis label, optionally specified per panel. |
+| `label.legend` | `NULL` | Optional legend title. |
+| `label.strata` | `NULL` | Display labels for groups or strata; may be specified per panel where supported. |
+| `level.strata` | `NULL` | Underlying group levels used to match display labels. |
+| `order.strata` | `NULL` | Order in which strata are displayed; may be panel-specific. |
+| `limits.x` | `NULL` | X-axis display limits. |
+| `limits.y` | `NULL` | Y-axis display limits. |
+| `breaks.x` | `NULL` | X-axis tick locations. |
+| `breaks.y` | `NULL` | Y-axis tick locations. |
+| `use.coord.cartesian` | `FALSE` | Zoom with `coord_cartesian()` rather than restricting the scale. |
+
+### Pointwise confidence intervals, event marks, and tables
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `add.conf` | `TRUE` | Show confidence intervals. |
+| `add.risktable` | `TRUE` | Display numbers at risk beneath the curve. |
+| `add.estimate.table` | `FALSE` | Display a table of estimates and confidence intervals. |
+| `symbol.risk.table` | `"square"` | Group marker in risk/estimate tables (`"square"`, `"circle"`, or `"triangle"`). |
+| `font.size.risk.table` | `3` | Text size in risk/estimate tables. |
+| `add.censor.mark` | `TRUE` | Display censoring marks. |
+| `shape.censor.mark` | `3` | Point shape for censoring marks. |
+| `size.censor.mark` | `2` | Point size for censoring marks. |
+| `add.competing.risk.mark` | `FALSE` | Display marks at competing-event times. |
+| `competing.risk.time` | [`list()`](https://rdrr.io/r/base/list.html) | Optional named list of competing-event times, grouped by strata. |
+| `shape.competing.risk.mark` | `16` | Point shape for competing-event marks. |
+| `size.competing.risk.mark` | `2` | Point size for competing-event marks. |
+| `add.intercurrent.event.mark` | `FALSE` | Display marks for user-specified intercurrent events. |
+| `intercurrent.event.time` | [`list()`](https://rdrr.io/r/base/list.html) | Named list of intercurrent-event times. |
+| `shape.intercurrent.event.mark` | `1` | Point shape for intercurrent-event marks. |
+| `size.intercurrent.event.mark` | `2` | Point size for intercurrent-event marks. |
+| `add.quantile` | `FALSE` | Mark a selected quantile on the plot. |
+| `level.quantile` | `0.5` | Quantile probability (e.g., `0.5` for the median). |
+
+### Automatic panels
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `panel.per.event` | `FALSE` | Show cause-specific CIF panels for competing risks. |
+| `panel.censoring` | `FALSE` | Show event/censoring panels for a survival outcome. |
+| `panel.per.variable` | `FALSE` | Plot each right-hand-side variable in its own panel. |
+| `panel.mode` | `"auto"` | `"auto"` selects an appropriate event, censoring, or variable layout unless a panel switch is set. |
+| `rows.columns.panel` | `NULL` | Panel grid dimensions: number of rows and columns. |
+
+### Appearance and export
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `style` | `"classic"` | Plot style; defaults to `"classic"`. |
+| `palette` | `NULL` | Optional colour palette. |
+| `linewidth` | `0.8` | Width of plotted curves. |
+| `linetype` | `FALSE` | Distinguish curves by line type. |
+| `font.family` | `"sans"` | Plot font family. |
+| `font.size` | `12` | Base plot font size. |
+| `legend.position` | `"top"` | Legend placement. |
+| `print.panel` | `FALSE` | Print the assembled panel immediately. |
+| `filename.ggsave` | `NULL` | Output path for a saved figure; `NULL` does not request saving. |
+| `width.ggsave` | `6` | Saved-figure width. |
+| `height.ggsave` | `6` | Saved-figure height. |
+| `dpi.ggsave` | `300` | Saved-figure resolution (dots per inch). |
+
+### Advanced configuration
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `survfit.info` | `NULL` | Advanced internal configuration list; not usually set directly. |
+| `axis.info` | `NULL` | Advanced internal axis configuration; not usually set directly. |
+| `visual.info` | `NULL` | Advanced internal graphics configuration; not usually set directly. |
+| `panel.info` | `NULL` | Advanced internal panel configuration; not usually set directly. |
+| `style.info` | `NULL` | Advanced internal theme configuration; not usually set directly. |
+| `inset.info` | `NULL` | Advanced internal inset configuration; not usually set directly. |
+| `print.info` | `NULL` | Advanced internal print configuration; not usually set directly. |
+| `ggsave.info` | `NULL` | Advanced internal save configuration; not usually set directly. |
+| `...` | Variadic | Additional plotting options. `conf.dist` and `df.method` are **not** forwarded to [`cifcurve()`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md) here. |
+
+Plotting options change the display, not the inference already stored in
+a fitted curve.
+
+This example preserves IF-t intervals when plotting an existing fit.
+
+``` r
+
+data(diabetes.complications)
+fit <- cifcurve(
+  Event(t, epsilon) ~ fruitq1, data = diabetes.complications,
+  outcome.type = "competing-risk", error = "if", conf.dist = "t",
+  df.method = "equal", conf.type = "log-log"
+)
+cifplot(fit, add.risktable = FALSE)
+```
+
+## `cifpanel()`
+
+Arrange plots in a grid or display one plot as an inset. Supply existing
+plots through `plots`, or use formulas to build individual panels.
+
+For Student intervals, first construct the curve and its plot, then
+assemble them with `plots`. The formula-based panel interface does
+**not** forward `conf.dist` or `df.method`.
+
+### Panel input and inference
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `plots` | `NULL` | Existing plots displayed without refitting models. |
+| `formula` | `NULL` | Time-to-event formula used to create plots. |
+| `formulas` | `NULL` | Separate formulas for individual panels; takes precedence over `formula`. |
+| `data` | `NULL` | Data frame used for the analysis. |
+| `weights` | `NULL` | Optional nonnegative case weights or a weight-column name; see the function help for restrictions. |
+| `subset.condition` | `NULL` | Optional condition selecting observations for analysis. |
+| `na.action` | `na.omit` | Function used to handle missing values. |
+| `outcome.type` | `NULL` | Survival or competing-risk outcome; inferred when `NULL`. |
+| `code.event1` | `1` | Code for the primary event. |
+| `code.event2` | `2` | Code for the competing event. |
+| `code.censoring` | `0` | Code for censoring. |
+| `code.events` | `NULL` | Event/censoring code vector or one vector per panel. |
+| `error` | `NULL` | Optional variance method for the curves constructed in this call. |
+| `conf.type` | `NULL` | Optional CI transformation for curves constructed in this call. |
+| `conf.int` | `NULL` | Optional confidence level for curves constructed in this call. |
+| `n.risk.type` | `c("weighted", "unweighted", "ess")` | Display risk-set counts as weighted, unweighted, or Kish effective sample size (`"ess"`). |
+
+### Axes, strata, and labels
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `type.y` | `NULL` | Plotting scale (not a CI transformation), e.g., `"surv"`, `"risk"`, `"cumhaz"`, or `"cloglog"`. |
+| `label.x` | `NULL` | X-axis label, optionally specified per panel. |
+| `label.y` | `NULL` | Y-axis label, optionally specified per panel. |
+| `label.legend` | `NULL` | Optional legend title. |
+| `label.strata` | `NULL` | Display labels for groups or strata; may be specified per panel where supported. |
+| `level.strata` | `NULL` | Underlying group levels used to match display labels. |
+| `order.strata` | `NULL` | Order in which strata are displayed; may be panel-specific. |
+| `limits.x` | `NULL` | X-axis display limits. |
+| `limits.y` | `NULL` | Y-axis display limits. |
+| `breaks.x` | `NULL` | X-axis tick locations. |
+| `breaks.y` | `NULL` | Y-axis tick locations. |
+
+### Panels, annotations, and insets
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `rows.columns.panel` | `c(1, 1)` | Grid layout specified as `c(rows, columns)`. |
+| `inset.panel` | `FALSE` | Place a second plot inside the first instead of using a grid. |
+| `title.panel` | `NULL` | Title for the assembled figure. |
+| `subtitle.panel` | `NULL` | Subtitle for the assembled figure. |
+| `caption.panel` | `NULL` | Caption for the assembled figure. |
+| `tag.panel` | `NULL` | Automatic panel-tag style passed to patchwork. |
+| `title.plot` | `NULL` | Titles for individual plots, in panel order. |
+| `legend.collect` | `TRUE` | Combine legends across grid panels. |
+| `inset.left` | `0.60` | Left edge of the inset region (0–1). |
+| `inset.bottom` | `0.05` | Bottom edge of the inset region (0–1). |
+| `inset.right` | `0.98` | Right edge of the inset region (0–1). |
+| `inset.top` | `0.45` | Top edge of the inset region (0–1). |
+| `inset.align.to` | `c("panel", "plot", "full")` | Align inset to `"panel"`, `"plot"`, or `"full"`. |
+| `inset.legend.position` | `NULL` | Legend position within the inset. |
+
+### Pointwise confidence intervals, event marks, and tables
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `add.conf` | `NULL` | Show confidence intervals. |
+| `add.risktable` | `NULL` | Display numbers at risk beneath the curve. |
+| `add.estimate.table` | `NULL` | Display a table of estimates and confidence intervals. |
+| `symbol.risk.table` | `NULL` | Group marker in the risk table (`"square"`, `"circle"`, or `"triangle"`). |
+| `font.size.risk.table` | `NULL` | Text size in risk/estimate tables. |
+| `add.censor.mark` | `NULL` | Display censoring marks. |
+| `shape.censor.mark` | `NULL` | Point shape for censoring marks. |
+| `size.censor.mark` | `NULL` | Point size for censoring marks. |
+| `add.competing.risk.mark` | `NULL` | Display marks at competing-event times. |
+| `competing.risk.time` | `NULL` | Optional named list of competing-event times, grouped by strata. |
+| `shape.competing.risk.mark` | `NULL` | Point shape for competing-event marks. |
+| `size.competing.risk.mark` | `NULL` | Point size for competing-event marks. |
+| `add.intercurrent.event.mark` | `NULL` | Display marks for user-specified intercurrent events. |
+| `intercurrent.event.time` | `NULL` | Named list of intercurrent-event times. |
+| `shape.intercurrent.event.mark` | `NULL` | Point shape for intercurrent-event marks. |
+| `size.intercurrent.event.mark` | `NULL` | Point size for intercurrent-event marks. |
+| `add.quantile` | `NULL` | Mark a selected quantile on the plot. |
+| `level.quantile` | `NULL` | Quantile probability (e.g., `0.5` for the median). |
+
+### Appearance and export
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `style` | `"classic"` | Plot style; defaults to `"classic"`. |
+| `palette` | `NULL` | Optional colour palette. |
+| `linewidth` | `0.8` | Width of plotted curves. |
+| `linetype` | `FALSE` | Distinguish curves by line type. |
+| `font.family` | `"sans"` | Plot font family. |
+| `font.size` | `8` | Base plot font size. |
+| `legend.position` | `"top"` | Legend placement. |
+| `print.panel` | `FALSE` | Print the assembled panel immediately. |
+| `filename.ggsave` | `NULL` | Output path for a saved figure; `NULL` does not request saving. |
+| `width.ggsave` | `NULL` | Saved-figure width. |
+| `height.ggsave` | `NULL` | Saved-figure height. |
+| `dpi.ggsave` | `300` | Saved-figure resolution (dots per inch). |
+
+### Advanced configuration
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `survfit.info` | `NULL` | Advanced internal configuration list; not usually set directly. |
+| `axis.info` | `NULL` | Advanced internal axis configuration; not usually set directly. |
+| `visual.info` | `NULL` | Advanced internal graphics configuration; not usually set directly. |
+| `panel.info` | `NULL` | Advanced internal panel configuration; not usually set directly. |
+| `style.info` | `NULL` | Advanced internal theme configuration; not usually set directly. |
+| `inset.info` | `NULL` | Advanced internal inset configuration; not usually set directly. |
+| `print.info` | `NULL` | Advanced internal print configuration; not usually set directly. |
+| `ggsave.info` | `NULL` | Advanced internal save configuration; not usually set directly. |
+| `engine` | `"cifplot"` | Internal plotting engine; currently `"cifplot"`. |
+| `...` | Variadic | Plotting options passed on to the individual panels; these do not set `conf.dist` or `df.method`. |
+
+Most display settings accept either a shared value or panel-specific
+values. A `NULL` default often inherits the settings of the underlying
+plot.
+
+## `polyreg()`
+
+Fit direct polytomous regression models for survival and competing-risk
+outcomes. See [Direct polytomous
+regression](https://gestimation.github.io/cifmodeling/articles/v2_polyreg.md)
+for the model formulation.
+
+Specify the exposure separately from `nuisance.model`. Fixed-time models
+use sandwich intervals by default, whereas models with time-constant
+effect parameters use bootstrap intervals by default. The default
+outcome type is **`"competing-risk"`**, not `NULL`.
+
+### Model and estimand
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `nuisance.model` | Required | Formula for the outcome and nuisance covariates, **excluding** the exposure of interest. |
+| `exposure` | Required | Categorical exposure column, specified separately from `nuisance.model`. |
+| `strata` | `NULL` | Optional variable defining strata for IPCW estimation of the censoring distribution. |
+| `data` | Required | Data frame used for the analysis. |
+| `subset.condition` | `NULL` | Optional condition selecting observations for analysis. |
+| `na.action` | `na.omit` | Function used to handle missing values. |
+| `outcome.type` | `"competing-risk"` | `"competing-risk"`, `"survival"`, `"binomial"`, or their `"proportional-"` variants. `NULL` triggers inference. |
+| `code.event1` | `1` | Code for the primary event. |
+| `code.event2` | `2` | Code for the competing event. |
+| `code.censoring` | `0` | Code for censoring. |
+| `code.exposure.ref` | `0` | Reference exposure code. If it is absent, the first observed level is used with a warning. |
+| `effect.measure1` | `"RR"` | Event-1 effect measure: `"RR"`, `"OR"`, or `"SHR"`. |
+| `effect.measure2` | `"RR"` | Event-2 effect measure: `"RR"`, `"OR"`, or `"SHR"`. |
+| `time.point` | `NULL` | Time for fixed-time survival/competing-risk effects; can be omitted for models with time-constant effect parameters. |
+
+### Intervals and output
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `conf.int` | `0.95` | Two-sided confidence level. |
+| `report.nuisance.parameter` | `FALSE` | Include fitted nuisance parameters in the result. |
+| `report.optim.convergence` | `FALSE` | Include numerical convergence details. |
+| `report.sandwich.conf` | `TRUE` | Request sandwich confidence intervals (the default for fixed-time models). |
+| `report.boot.conf` | `NULL` | Request bootstrap intervals; `NULL` selects according to outcome type (the default for models with time-constant effect parameters). |
+| `boot.bca` | `FALSE` | Use BCa rather than normal-approximation bootstrap limits when supported. |
+| `boot.multiplier` | `"rademacher"` | Multiplier weights for the IF bootstrap: `"rademacher"`, `"mammen"`, or `"gaussian"`. |
+| `boot.replications` | `200` | Number of bootstrap replicates. |
+| `boot.seed` | `46` | Seed for reproducible bootstrap calculations. |
+| `label.exposure` | `NULL` | Display label for the exposure. |
+| `label.strata` | `NULL` | Display labels for exposure levels. |
+
+### Numerical settings
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `nleqslv.method` | `"Newton"` | Root-solving algorithm: `"Newton"` or `"Broyden"`. |
+| `optim.parameter1` | `1e-6` | Outer-loop convergence tolerance. |
+| `optim.parameter2` | `1e-6` | Inner-loop convergence tolerance. |
+| `optim.parameter3` | `100` | Absolute bound on numerical parameters. |
+| `optim.parameter4` | `50` | Maximum outer-loop iterations. |
+| `optim.parameter5` | `50` | Maximum root-solver iterations per outer step. |
+| `optim.parameter6` | `50` | Maximum Levenberg–Marquardt iterations. |
+| `optim.parameter7` | `1e-10` | Levenberg–Marquardt convergence tolerance. |
+| `optim.parameter8` | `1e-6` | Hessian-update tolerance for Levenberg–Marquardt. |
+| `optim.parameter9` | `1e-3` | Initial Levenberg–Marquardt damping value. |
+| `optim.parameter10` | `40` | Upper bound for the damping value. |
+| `optim.parameter11` | `1e-6` | Lower bound for the damping value. |
+| `optim.parameter12` | `2` | Damping multiplier for an unsuccessful step. |
+| `optim.parameter13` | `0.5` | Damping multiplier for a successful step. |
+| `data.initial.values` | `NULL` | Optional data frame of starting values for model fitting. |
+| `normalize.covariate` | `TRUE` | Center and scale nuisance covariates to improve numerical stability. |
+| `terminate.time.point` | `TRUE` | Restrict contributing time points to shared observed follow-up support. |
+| `prob.bound` | `1e-7` | Lower numerical bound used inside probability computations. |
+
+The fitted object supports
+[`coef()`](https://rdrr.io/r/stats/coef.html),
+[`vcov()`](https://rdrr.io/r/stats/vcov.html),
+[`summary()`](https://rdrr.io/r/base/summary.html), and event-specific
+[`gtsummary::tbl_regression()`](https://www.danieldsjoberg.com/gtsummary/reference/tbl_regression.html).
+See [Reporting
+results](https://gestimation.github.io/cifmodeling/articles/v7_reporting_results.md)
+for examples.
+
+## `ciftest()`
+
+Compare curves with log-rank, Gray, score, augmented score, or
+multiple-direction tests. See [Tests of cumulative incidence
+functions](https://gestimation.github.io/cifmodeling/articles/v3_gray_extensions.md).
+
+For competing risks, `test = "auto"` selects an augmented score test.
+The single-direction `"early"` and `"late"` presets use FH `(1,0)` and
+`(0,1)`. The Ditzhaus test uses `(2,0)`, `(0,2)`, and `(0,0)` by
+default. MaxCombo uses `(0,0)`, `(2,0)`, and `(0,1)` by default.
+
+### Outcome, grouping, and test choice
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `formula` | Required | Time-to-event formula with exactly one grouping variable on the right. |
+| `data` | Required | Data frame used for the analysis. |
+| `weights` | `NULL` | Optional case weights. Classical Gray supports integer frequency weights. |
+| `subset.condition` | `NULL` | Optional condition selecting observations for analysis. |
+| `na.action` | `na.omit` | Function used to handle missing values. |
+| `outcome.type` | `"auto"` | `"auto"` chooses the outcome type; or specify `"survival"` or `"competing-risk"`. |
+| `test` | `"auto"` | `"auto"` chooses log-rank (survival) or augmented score (competing risks). `"ditzhaus"` (or `"d"`) selects the quadratic-form test. `"maxcombo"` (or `"m"`) selects MaxCombo with augmented scores for two groups with competing risks. |
+| `code.event1` | `1` | Code for the primary event. |
+| `code.event2` | `2` | Code for the competing event. |
+| `code.censoring` | `0` | Code for censoring. |
+| `rho` | `NULL` | Nonnegative FH weight exponent (early emphasis); `NULL` resolves to zero for custom single-direction tests. |
+| `gamma` | `NULL` | Nonnegative FH weight exponent (late emphasis); `NULL` resolves to zero for custom single-direction tests. |
+| `directions` | `NULL` | FH presets, a two-column `(rho, gamma)` matrix or data frame, or a named list of pairs. Supplies custom weights to MaxCombo or selects the Ditzhaus test for other test choices. |
+| `component.test` | `NULL` | Component for the Ditzhaus test. Choose `"logrank"`, `"gray"`, `"score"`, `"augmented"`, or `"auto"`. |
+| `alternative` | `"two.sided"` | MaxCombo alternative. `"less"` tests for a lower CIF in the comparison group relative to the reference along the selected score directions. `"greater"` tests in the opposite direction. |
+| `code.exposure.ref` | `NULL` | Numeric exposure code or character factor level for the MaxCombo reference group. The first factor level present in the analysis data is used by default. |
+
+### Strata and numerical controls
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `iteration` | `0L` | Number of augmented-score fixed-point refinements; zero uses the closed-form score. |
+| `tolerance` | `NULL` | Optional convergence tolerance for fixed-point refinement. |
+| `strata` | `NULL` | Analysis strata; risk sets and scores are constructed separately and summed. |
+| `strata.censor` | `NULL` | Strata for estimating the censoring Kaplan–Meier distribution; may include the comparison group. |
+| `strata.competing.risk` | `NULL` | Columns defining working-AJ strata; the comparison group is crossed automatically. |
+| `tau` | `NULL` | Optional end of the testing interval. |
+| `prob.bound` | `1e-7` | Strict numerical bound on required nuisance probabilities. |
+| `prob.truncation` | `NULL` | Optional lower truncation above `prob.bound` for positive nuisance denominators. |
+| `...` | Variadic | Reserved for future use. |
+
+Multiple-direction fits store the joint score vector in `$score` and its
+covariance matrix in `$vcov.score`. The Ditzhaus statistic uses an
+asymptotic chi-square reference with degrees of freedom equal to the
+covariance rank. MaxCombo uses the joint normal distribution of the
+standardized scores.
+
+## `cifreport()`
+
+Generate baseline, event, curve, and risk-ratio tables, together with
+plots and a report. See [Reporting
+results](https://gestimation.github.io/cifmodeling/articles/v7_reporting_results.md).
+
+**Omitting** `filename.cifreport` creates a dated Word report;
+**explicitly setting it to `NULL`** returns results without saving a
+file.
+
+### Population and outcomes
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `data` | Required | Data frame used for the analysis. |
+| `outcomes` | Required | Named list of outcome definitions: `time`, `event`, and optional codes, estimator, outcome type, and times. |
+| `exposure` | Required | Grouping column names or named exposure specifications. |
+| `characteristics` | [`character()`](https://rdrr.io/r/base/character.html) | Baseline variables included in Table 1. |
+| `time.point` | `NULL` | Shared evaluation times; individual outcomes can override them. |
+| `subset.condition` | `NULL` | Condition defining the overall analysis population. |
+| `outcome.type` | `NULL` | Shared survival or competing-risk outcome; an outcome definition may override it. |
+| `subgroup` | `NULL` | One categorical variable for population-specific sections. |
+| `code.exposure.ref` | `NULL` | Reference group code for unadjusted risk ratios. |
+
+### Tables and plots
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `overall` | `FALSE` | Add an overall column to Table 1 when there are multiple groups. |
+| `conf.int` | `0.95` | Two-sided confidence level. |
+| `table1.args` | [`list()`](https://rdrr.io/r/base/list.html) | Named arguments for [`gtsummary::tbl_summary()`](https://www.danieldsjoberg.com/gtsummary/reference/tbl_summary.html); `data`, `by`, and `include` are controlled internally. |
+| `label.strata` | `NULL` | Display labels for exposure groups in tables and plots. |
+| `order.strata` | `NULL` | Exposure group display order. |
+| `level.strata` | `NULL` | Explicit exposure levels, used to align unnamed labels. |
+| `cifplot.args` | [`list()`](https://rdrr.io/r/base/list.html) | Named [`cifplot()`](https://gestimation.github.io/cifmodeling/reference/cifplot.md) display options for the generated figures. |
+
+### Output files and labels
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `filename.cifreport` | `NULL` | Omitted: dated Word report. Explicit `NULL`: no file. Otherwise, one or more `.docx`, `.pdf`, or `.html` paths. |
+| `title` | `NULL` | Report title; if omitted, includes data name and current date. |
+| `data.name` | `NULL` | Dataset name used in the default output filename and title. |
+| `output.file` | `NULL` | Legacy name for `filename.cifreport`; do not pass both. |
+
+The report supports unweighted, right-censored data with one row per
+subject. File export requires optional reporting packages and Pandoc;
+PDF export also requires Chrome, Chromium, or Edge.
+
+## `cifflowchart()`
+
+Draw a participant and event flowchart from a grouping or event-history
+formula.
+
+Unlike most other functions,
+[`cifflowchart()`](https://gestimation.github.io/cifmodeling/reference/cifflowchart.md)
+defaults to `na.action = na.pass`, allowing missing categories to appear
+rather than being silently excluded.
+
+### Input and exclusions
+
+| Argument | Default | Purpose |
+|:---|:---|:---|
+| `formula` | Required | `response ~ group`, `response ~ 1`, or `Event(time, status) ~ group`. |
+| `data` | Required | Data frame with the variables needed to count subjects and events. |
+| `time.point` | `NULL` | Optional event-history cutoff for an [`Event()`](https://gestimation.github.io/cifmodeling/reference/Event.md) formula. |
+| `withdraw.consent` | `NULL` | Exclusion indicator or reason for withdrawn consent. |
+| `ineligible` | `NULL` | Exclusion indicator or reason for ineligibility. |
+| `pre.exclude` | `NULL` | Other exclusion indicator or reason before analysis allocation. |
+| `post.exclude` | `NULL` | Exclusion indicator or reason after allocation. |
+| `subset.condition` | `NULL` | Condition applied to the input data before counting. |
+| `na.action` | `na.pass` | Missingness handling; `na.pass` retains missing outcomes and groups in the flowchart. |
+| `outcome.type` | `NULL` | Optional survival or competing-risk outcome type. |
+| `code.event1` | `1` | Primary event code when [`Event()`](https://gestimation.github.io/cifmodeling/reference/Event.md) is supplied. |
+| `code.event2` | `2` | Competing-event code when [`Event()`](https://gestimation.github.io/cifmodeling/reference/Event.md) is supplied. |
+| `code.censoring` | `0` | Censoring code when [`Event()`](https://gestimation.github.io/cifmodeling/reference/Event.md) is supplied. |
+
+### Display
+
+| Argument       | Default  | Purpose                                       |
+|:---------------|:---------|:----------------------------------------------|
+| `label.strata` | `NULL`   | Optional group labels.                        |
+| `order.strata` | `NULL`   | Optional group order.                         |
+| `label.events` | `NULL`   | Optional labels for event categories.         |
+| `title`        | `NULL`   | Optional title displayed above the flowchart. |
+| `percent`      | `TRUE`   | Include percentages in the flowchart nodes.   |
+| `digits`       | `1`      | Number of decimal places for percentages.     |
+| `...`          | Variadic | Reserved for future use.                      |
+
+The function returns a
+[`DiagrammeR::grViz()`](https://rich-iannone.github.io/DiagrammeR/reference/grViz.html)
+HTML widget; the `DiagrammeR` package is required to display it.
+
+## Related output helpers
+
+`as_modelsummary(fit, event = "event1")` prepares a `polyreg` fit for
+`modelsummary`.
+[`generics::tidy()`](https://generics.r-lib.org/reference/tidy.html)
+returns tidy results for `polyreg` and `ciftest`, while
+[`gtsummary::tbl_regression()`](https://www.danieldsjoberg.com/gtsummary/reference/tbl_regression.html)
+and
+[`tbl_survfit()`](https://www.danieldsjoberg.com/gtsummary/reference/tbl_survfit.html)
+create publication-style tables. See [Reporting
+results](https://gestimation.github.io/cifmodeling/articles/v7_reporting_results.md)
+for examples.
+
+For details specific to your installed version, consult
+[`?cifcurve`](https://gestimation.github.io/cifmodeling/reference/cifcurve.md),
+[`?cifplot`](https://gestimation.github.io/cifmodeling/reference/cifplot.md),
+[`?cifpanel`](https://gestimation.github.io/cifmodeling/reference/cifpanel.md),
+[`?polyreg`](https://gestimation.github.io/cifmodeling/reference/polyreg.md),
+[`?ciftest`](https://gestimation.github.io/cifmodeling/reference/ciftest.md),
+[`?cifreport`](https://gestimation.github.io/cifmodeling/reference/cifreport.md),
+or
+[`?cifflowchart`](https://gestimation.github.io/cifmodeling/reference/cifflowchart.md).

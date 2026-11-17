@@ -38,7 +38,7 @@ cifplot(
   conf.int = 0.95,
   n.risk.type = c("weighted", "unweighted", "ess"),
   type.y = NULL,
-  label.x = "Time",
+  label.x = NULL,
   label.y = NULL,
   label.strata = NULL,
   level.strata = NULL,
@@ -91,7 +91,8 @@ cifplot(
   inset.info = NULL,
   print.info = NULL,
   ggsave.info = NULL,
-  ...
+  ...,
+  label.legend = NULL
 )
 ```
 
@@ -199,7 +200,8 @@ cifplot(
 
 - label.x:
 
-  Character x-axis label (default `"Time"`).
+  Character x-axis label. Defaults to the time variable's label or name
+  for a cifcurve fit, and `"Time"` if unavailable.
 
 - label.y:
 
@@ -209,13 +211,10 @@ cifplot(
 
 - label.strata:
 
-  Character vector or named character vector specifying labels for
-  strata. Names (if present) must match the (re-ordered) underlying
-  strata levels. **Note:** when any of the panel modes is active
-  (`panel.per.variable = TRUE`, `panel.per.event = TRUE`,
-  `panel.censoring = TRUE`, or `panel.mode = "auto"` and it actually
-  dispatches to a panel), strata labels are suppressed to avoid
-  duplicated legends across sub-plots.
+  Character vector of display labels for strata. Names map to the
+  original strata codes. Unnamed labels follow `level.strata` or the
+  fitted strata order. Unspecified labels use stored value labels from
+  the data and then the original stratum levels.
 
 - level.strata:
 
@@ -456,6 +455,11 @@ cifplot(
 
   Additional arguments passed to internal helper functions.
 
+- label.legend:
+
+  Optional stratum legend title. Defaults to the stratification
+  variable's label or name when available.
+
 ## Value
 
 A `"cifplot"` object (a list) with at least the following elements:
@@ -662,6 +666,24 @@ The arguments below fine-tune internal estimation and figure appearance.
 
 - Per-stratum time lists should have names identical to plotted strata
   labels.
+
+## Interval-censored fits
+
+Pass a fit made with
+`cifcurve(Interval(l, r, epsilon) ~ strata, data = d)` to `cifplot()`.
+The plot uses the same estimates as `summary(fit)`, with linear segments
+within finite support intervals and jumps at exact event times. The
+supported scales are `type.y = "risk"` and `"surv"`. The risk table
+shows confirmed counts at the x-axis breaks. The optional estimate table
+shows point estimates on the selected scale and flags interpolated
+values with an asterisk. Censoring marks show observed right-censoring
+times. The returned `plot` contains the curve and `patchwork` contains
+the combined display when tables are requested. Printing and
+`filename.ggsave` use the combined display. Set `breaks.x` and
+`limits.x` in `cifplot()` to update the axis and tables together. Later
+modifications to `plot` do not rebuild `patchwork`. Confidence bands,
+competing and intercurrent event marks, and quantiles are unavailable
+for these plots.
 
 ## Lifecycle
 

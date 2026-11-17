@@ -100,7 +100,8 @@ cifpanel(
   print.info = NULL,
   ggsave.info = NULL,
   engine = "cifplot",
-  ...
+  ...,
+  label.legend = NULL
 )
 ```
 
@@ -219,7 +220,8 @@ cifpanel(
 
 - label.x:
 
-  Character x-axis label (default `"Time"`).
+  Character x-axis label. Defaults to the time variable's label or name
+  for a cifcurve fit, and `"Time"` if unavailable.
 
 - label.y:
 
@@ -229,13 +231,10 @@ cifpanel(
 
 - label.strata:
 
-  Character vector or named character vector specifying labels for
-  strata. Names (if present) must match the (re-ordered) underlying
-  strata levels. **Note:** when any of the panel modes is active
-  (`panel.per.variable = TRUE`, `panel.per.event = TRUE`,
-  `panel.censoring = TRUE`, or `panel.mode = "auto"` and it actually
-  dispatches to a panel), strata labels are suppressed to avoid
-  duplicated legends across sub-plots.
+  Character vector of display labels for strata. Names map to the
+  original strata codes. Unnamed labels follow `level.strata` or the
+  fitted strata order. Unspecified labels use stored value labels from
+  the data and then the original stratum levels.
 
 - order.strata:
 
@@ -508,6 +507,11 @@ cifpanel(
   calls that build each panel. Use this to pass low-level options such
   as `competing.risk.time`, `intercurrent.event.time`, or styling
   overrides.
+
+- label.legend:
+
+  Optional stratum legend title. Defaults to the stratification
+  variable's label or name when available.
 
 ## Value
 

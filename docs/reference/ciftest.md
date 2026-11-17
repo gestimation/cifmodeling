@@ -40,6 +40,10 @@ ciftest(
   tau = NULL,
   prob.bound = 1e-07,
   prob.truncation = NULL,
+  directions = NULL,
+  component.test = NULL,
+  alternative = "two.sided",
+  code.exposure.ref = NULL,
   ...
 )
 ```
@@ -80,15 +84,16 @@ ciftest(
 - test:
 
   One of `"auto"`, `"early"`, `"late"`, `"logrank"`, `"gray"`,
-  `"score"`, `"augmented"`, or `"multiple"`. The aliases `"L"`, `"LR"`,
-  and `"log-rank"` select log-rank; `"G"` selects Gray; and `"A"`,
-  `"aug"`, and `"augmentation"` select the augmented score test. The
-  early and late choices are outcome-specific single-direction presets.
-  `"multiple"` (aliases `"multi"` and `"m"`) returns
-  [`ciftest_mdir()`](https://gestimation.github.io/cifmodeling/reference/ciftest_mdir.md)
-  using the default directions `(rho, gamma) = (2, 0), (0, 2), (0, 0)`.
-  `"score"` uses the null score-IID variance; for competing-risk
-  outcomes it may use censoring Kaplan–Meier strata.
+  `"score"`, `"augmented"`, `"ditzhaus"`, or `"maxcombo"`. The aliases
+  `"L"`, `"LR"`, and `"log-rank"` select log-rank; `"G"` selects Gray;
+  and `"A"`, `"aug"`, and `"augmentation"` select the augmented score
+  test. The early and late choices are outcome-specific single-direction
+  presets. `"ditzhaus"` (alias `"d"`) runs the quadratic-form test with
+  default directions `(rho, gamma) = (2, 0), (0, 2), (0, 0)`.
+  `"maxcombo"` (alias `"m"`) uses augmented scores with default
+  directions `(0, 0), (2, 0), (0, 1)`. `"score"` uses the null score-IID
+  variance; for competing-risk outcomes it may use censoring
+  Kaplan–Meier strata.
 
 - code.event1:
 
@@ -106,7 +111,8 @@ ciftest(
 
   Optional non-negative Fleming-Harrington weight parameters. Omitted
   values default to zero. They cannot be combined with the fixed
-  `"early"` and `"late"` presets.
+  `"early"` and `"late"` presets, `"ditzhaus"`, `"maxcombo"`, or
+  `directions`.
 
 - iteration:
 
@@ -157,6 +163,37 @@ ciftest(
   is applied only to positive censoring and working-survival
   denominators used by score and augmented tests.
 
+- directions:
+
+  Optional Fleming–Harrington directions supplied as a character vector
+  of `"early"`, `"late"`, or `"unweighted"` presets (respectively
+  `(2, 0)`, `(0, 2)`, and `(0, 0)`), a two-column numeric matrix or data
+  frame with `rho` and `gamma`, or a named list of numeric pairs. A
+  non-`NULL` value supplies the directions for `test = "maxcombo"` or
+  selects the Ditzhaus test for other test choices, even with a single
+  direction.
+
+- component.test:
+
+  Optional component test for the Ditzhaus test. Accepts `"auto"`,
+  `"logrank"`, `"gray"`, `"score"`, or `"augmented"` and their aliases.
+  The default `NULL` is equivalent to `"auto"`, which selects log-rank
+  for survival and the augmented score test for competing risks.
+
+- alternative:
+
+  Alternative for MaxCombo. `"two.sided"` is the default. `"less"` tests
+  for lower cumulative incidence of `code.event1` in the comparison
+  group relative to the reference along the specified score directions.
+  `"greater"` tests in the opposite direction.
+
+- code.exposure.ref:
+
+  Reference group for MaxCombo. Supply a numeric code or a character
+  level present in the analysis data. With `NULL` (the default), the
+  first factor level among groups present in the analysis data is the
+  reference.
+
 - ...:
 
   Reserved for future extensions.
@@ -180,4 +217,38 @@ anchoring diagnostics, and fixed-point diagnostics. The event-time FH
 process actually used by the fit is returned in
 `diagnostics$fh.weight.process`, including whether it came from the
 pooled or event-stratified AJ left limit or the native Gray
-subdistribution construction.
+subdistribution construction. Multiple-direction results inherit from
+`"ciftest_mdir"` and store the directions in `directions` and the
+individual fits in `components`. MaxCombo results also store the
+standardized scores in `z`, the selected `alternative`, and the
+reference and comparison group levels in `comparison`.
+
+## Details
+
+The Ditzhaus test combines Fleming–Harrington scores in the quadratic
+form of Ditzhaus and Friedrich. Log-rank and Gray components use their
+joint classical covariances. Score and augmented components use the
+cross-product of stacked individual score contributions. The reference
+distribution is chi-square with degrees of freedom given by the
+numerical rank of the joint covariance.
+
+MaxCombo is a two-group test for competing-risk outcomes. It uses the
+largest absolute standardized augmented score for a two-sided test, the
+largest standardized score for `"greater"`, and the largest negated
+standardized score for `"less"`. The joint normal reference distribution
+uses the correlations estimated from the stacked individual scores.
+Joint normal probabilities are evaluated by one-dimensional quadrature
+for two or three directions and by conditional normal integration for
+larger sets. The numerical error estimate is in
+`diagnostics$integration.error`.
+
+## References
+
+Ditzhaus M, Friedrich S. More powerful logrank permutation tests for
+two-sample survival data. arXiv preprint (2018). Plackett RL. A
+reduction formula for normal multivariate integrals. Biometrika.
+1954;41:351–360.
+[doi:10.1093/biomet/41.3-4.351](https://doi.org/10.1093/biomet/41.3-4.351)
+Genz A. Numerical computation of multivariate normal probabilities. J
+Comput Graph Stat. 1992;1:141–149.
+[doi:10.1080/10618600.1992.10477010](https://doi.org/10.1080/10618600.1992.10477010)

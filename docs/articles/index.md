@@ -9,35 +9,36 @@
 - [Direct polytomous
   regression](https://gestimation.github.io/cifmodeling/articles/v2_polyreg.md):
 
+### Tests of cumulative incidence functions
+
+- [Tests of cumulative incidence
+  functions](https://gestimation.github.io/cifmodeling/articles/v3_gray_extensions.md):
+
 ### Computational formulas in cifcurve()
 
 - [Computational formulas in
-  cifcurve()](https://gestimation.github.io/cifmodeling/articles/v3_formulas.md):
+  cifcurve()](https://gestimation.github.io/cifmodeling/articles/v4_formulas.md):
 
-### Examples
+### Worked examples
 
-- [Examples](https://gestimation.github.io/cifmodeling/articles/v4_examples.md):
+- [Worked
+  examples](https://gestimation.github.io/cifmodeling/articles/v5_examples.md):
 
 ### Gallery
 
-- [Gallery](https://gestimation.github.io/cifmodeling/articles/v5_gallery.md):
+- [Gallery](https://gestimation.github.io/cifmodeling/articles/v6_gallery.md):
 
-### Additional information
+### Reporting results
 
-- [Additional
-  information](https://gestimation.github.io/cifmodeling/articles/v6_information.md):
+- [Reporting
+  results](https://gestimation.github.io/cifmodeling/articles/v7_reporting_results.md):
 
-### Full lists of arguments
+### Data conventions and implementation details
 
-- [Full lists of
-  arguments](https://gestimation.github.io/cifmodeling/articles/v7_arguments.md):
+- [Data conventions and implementation
+  details](https://gestimation.github.io/cifmodeling/articles/v8_information.md):
 
-### Reporting cumulative incidence
+### Function reference
 
-- [Reporting Cumulative Incidence with
-  gtsummary](https://gestimation.github.io/cifmodeling/articles/v8_reporting_cif.md):
-
-### Reporting CIF regression
-
-- [Reporting CIF Regression with
-  gtsummary](https://gestimation.github.io/cifmodeling/articles/v9_reporting_polyreg.md):
+- [Function
+  reference](https://gestimation.github.io/cifmodeling/articles/v9_arguments.md):
