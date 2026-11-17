@@ -6,6 +6,7 @@
   test and `code.exposure.ref` to specify the reference group.
   MaxCombo computes joint normal probabilities internally.
 * Use `ciftest(test = "ditzhaus")` or `test = "d"` for the quadratic-form test.
+  Its default Fleming–Harrington directions are `(0, 0)`, `(0, 1)`, and `(2, 0)`.
   The selectors `"multiple"` and `"multi"` were removed. Supplying
   `directions` still selects the quadratic-form test unless `test = "maxcombo"`.
   Use `component.test` to choose a component for the Ditzhaus test.

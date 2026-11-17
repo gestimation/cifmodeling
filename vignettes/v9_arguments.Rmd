@@ -9,9 +9,8 @@ vignette: >
 
 This page summarizes the user-facing arguments of the main `cifmodeling` functions,
 including their **declared defaults**. It complements the detailed help available
-through `?function_name`. The defaults below were checked against the GitHub `master`
-source on 16 November 2026. Defaults in an installed release may differ from those in
-the development version.
+through `?function_name`. The defaults below describe the development version.
+Defaults in an installed release may differ.
 
 For introductions and examples, see [direct regression](v2_polyreg.html),
 [tests](v3_gray_extensions.html), [computational formulas](v4_formulas.html),
@@ -405,7 +404,7 @@ tests. See [Tests of cumulative incidence functions](v3_gray_extensions.html).
 
 For competing risks, `test = "auto"` selects an augmented score test. The
 single-direction `"early"` and `"late"` presets use FH `(1,0)` and `(0,1)`.
-The Ditzhaus test uses `(2,0)`, `(0,2)`, and `(0,0)` by default. MaxCombo
+The Ditzhaus test uses `(0,0)`, `(0,1)`, and `(2,0)` by default. MaxCombo
 uses `(0,0)`, `(2,0)`, and `(0,1)` by default.
 
 ### Outcome, grouping, and test choice

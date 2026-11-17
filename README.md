@@ -90,7 +90,7 @@ outcome. Short aliases are available for interactive use:
 `"L"`/`"LR"`/`"log-rank"`, `"G"`, and `"A"`/`"aug"`/`"augmentation"`.
 The `"early"` and `"late"` presets choose the outcome-specific test with
 Fleming–Harrington weights. `test = "ditzhaus"` (or `"d"`) combines the
-default directions `(2, 0)`, `(0, 2)`, and `(0, 0)` in a quadratic form.
+default directions `(0, 0)`, `(0, 1)`, and `(2, 0)` in a quadratic form.
 For two groups with competing risks, `test = "maxcombo"` (or `"m"`) uses
 augmented scores with directions `(0, 0)`, `(2, 0)`, and `(0, 1)` by
 default. Use `alternative` to select a one-sided MaxCombo test and

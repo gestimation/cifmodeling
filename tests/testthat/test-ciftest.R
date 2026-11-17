@@ -20,12 +20,22 @@ testthat::test_that("the public test resolver follows outcome defaults and prese
   late_fit <- ciftest(
     Event(time, status) ~ group, competing_data, test = "late"
   )
-  multiple_fit <- ciftest(
-    Event(time, status) ~ group, survival_data, test = "d"
-  )
-  ditzhaus_fit <- ciftest(Event(time, status) ~ group, survival_data, test = "ditzhaus")
-  testthat::expect_equal(ditzhaus_fit$p.value, multiple_fit$p.value)
-  testthat::expect_identical(ditzhaus_fit$test.requested, "ditzhaus")
+  formula <- Event(time, status) ~ group
+  default_directions <- rbind(c(0, 0), c(0, 1), c(2, 0))
+  for (data in list(survival_data, competing_data)) {
+    ditzhaus_fit <- ciftest(formula, data, test = "ditzhaus")
+    alias_fit <- ciftest(formula, data, test = "d")
+    explicit_fit <- ciftest(formula, data, directions = default_directions)
+    testthat::expect_s3_class(ditzhaus_fit, "ciftest_mdir")
+    testthat::expect_identical(ditzhaus_fit$test.requested, "ditzhaus")
+    testthat::expect_identical(
+      unname(as.matrix(ditzhaus_fit$directions[, c("rho", "gamma")])),
+      default_directions
+    )
+    testthat::expect_identical(alias_fit$directions, ditzhaus_fit$directions)
+    testthat::expect_equal(ditzhaus_fit$p.value, alias_fit$p.value)
+    testthat::expect_equal(ditzhaus_fit$p.value, explicit_fit$p.value)
+  }
   for (retired in c("multiple", "multi")) {
     testthat::expect_error(ciftest(Event(time, status) ~ group, survival_data, test = retired),
                            'Use `test = "ditzhaus"`')
@@ -54,11 +64,6 @@ testthat::test_that("the public test resolver follows outcome defaults and prese
   )
   testthat::expect_identical(c(early_fit$rho, early_fit$gamma), c(1, 0))
   testthat::expect_identical(c(late_fit$rho, late_fit$gamma), c(0, 1))
-  testthat::expect_s3_class(multiple_fit, "ciftest_mdir")
-  testthat::expect_identical(
-    unname(as.matrix(multiple_fit$directions[, c("rho", "gamma")])),
-    matrix(c(2, 0, 0, 0, 2, 0), ncol = 2)
-  )
   testthat::expect_error(
     ciftest(Event(time, status) ~ group, competing_data,
             test = "early", rho = 0.5),

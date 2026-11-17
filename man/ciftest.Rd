@@ -57,7 +57,7 @@ and \code{"log-rank"} select log-rank; \code{"G"} selects Gray; and \code{"A"}, 
 and \code{"augmentation"} select the augmented score test. The early and late
 choices are outcome-specific single-direction presets. \code{"ditzhaus"}
 (alias \code{"d"}) runs the quadratic-form test with default directions
-\verb{(rho, gamma) = (2, 0), (0, 2), (0, 0)}. \code{"maxcombo"} (alias \code{"m"}) uses
+\verb{(rho, gamma) = (0, 0), (0, 1), (2, 0)}. \code{"maxcombo"} (alias \code{"m"}) uses
 augmented scores with default directions \verb{(0, 0), (2, 0), (0, 1)}.
 \code{"score"} uses the
 null score-IID variance; for competing-risk outcomes it may use censoring
